@@ -1,5 +1,14 @@
+import { useEventListener } from "@vueuse/core";
 import { getHeaderHeight } from "src/utils/html/scroll";
-import { nextTick, onBeforeUnmount, onMounted, type Ref, ref, watch } from "vue";
+import {
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  onMounted,
+  type Ref,
+  ref,
+  watchEffect,
+} from "vue";
 
 interface UseStickyObserverReturn {
   sentinelElement: Ref<HTMLElement | null>;
@@ -8,58 +17,80 @@ interface UseStickyObserverReturn {
   refresh: () => void;
 }
 
-/**
- * Detects when an element becomes sticky below a fixed Quasar header.
- *
- * Bind `sentinelElement` to a zero-height `<div>` placed immediately above the
- * sticky element.  The composable measures the `q-header` height on mount and
- * watches the sentinel ref — when it appears (e.g. after a `v-if` renders),
- * an IntersectionObserver flips `isSticky` when the sentinel scrolls behind
- * the header.  Use `headerHeight` as a CSS variable (`--header-height`) on the
- * sticky element so `top` stays in sync.
- */
+/** Bind the sentinel immediately above the sticky element and use headerHeight for its CSS offset. */
 export function useStickyObserver(): UseStickyObserverReturn {
   const sentinelElement = ref<HTMLElement | null>(null);
   const isSticky = ref(false);
   const headerHeight = ref(0);
-  let observer: IntersectionObserver | undefined;
+  const supportsIntersectionObserver =
+    typeof IntersectionObserver !== "undefined";
+  const isActive = ref(false);
+  let pendingFrame: number | undefined;
 
-  onMounted(async () => {
-    await nextTick();
-    headerHeight.value = getHeaderHeight();
-  });
+  function activate(): void {
+    isActive.value = true;
+  }
 
-  watch(sentinelElement, (el) => {
-    observer?.disconnect();
-    if (el) {
-      headerHeight.value = getHeaderHeight();
-      observer = new IntersectionObserver(
+  function deactivate(): void {
+    isActive.value = false;
+    if (pendingFrame !== undefined) {
+      window.cancelAnimationFrame(pendingFrame);
+      pendingFrame = undefined;
+    }
+  }
+
+  onMounted(activate);
+  onActivated(activate);
+  onDeactivated(deactivate);
+  onBeforeUnmount(deactivate);
+
+  watchEffect(
+    (onCleanup) => {
+      if (!isActive.value) return;
+      refresh();
+      const el = sentinelElement.value;
+      if (el === null || !supportsIntersectionObserver) return;
+      const height = headerHeight.value;
+      const observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0];
-          if (entry.isIntersecting) {
-            isSticky.value = false;
-          } else {
-            // Only sticky when sentinel scrolled ABOVE the header,
-            // not when it's below the visible viewport (long content)
-            isSticky.value = entry.boundingClientRect.top < headerHeight.value;
-          }
+          if (entry === undefined || !isActive.value) return;
+          // A sentinel below the viewport is not sticky.
+          isSticky.value =
+            !entry.isIntersecting && entry.boundingClientRect.top < height;
         },
-        { rootMargin: `-${headerHeight.value}px 0px 0px 0px` },
+        { rootMargin: `-${height}px 0px 0px 0px` }
       );
       observer.observe(el);
-    } else {
-      isSticky.value = false;
-    }
-  });
+      onCleanup(() => observer.disconnect());
+    },
+    { flush: "post" }
+  );
 
-  onBeforeUnmount(() => {
-    observer?.disconnect();
+  const eventTarget = () =>
+    isActive.value && sentinelElement.value !== null ? window : undefined;
+  const fallbackTarget = () =>
+    supportsIntersectionObserver ? undefined : eventTarget();
+  // Capture includes nested scroll containers; measure at most once per frame.
+  useEventListener(fallbackTarget, "scroll", scheduleRefresh, {
+    capture: true,
+    passive: true,
   });
+  useEventListener(eventTarget, "resize", scheduleRefresh);
+
+  function scheduleRefresh(): void {
+    pendingFrame ??= window.requestAnimationFrame(() => {
+      pendingFrame = undefined;
+      refresh();
+    });
+  }
 
   function refresh(): void {
+    if (!isActive.value) return;
+    headerHeight.value = getHeaderHeight();
     const el = sentinelElement.value;
-    if (!el) return;
-    isSticky.value = el.getBoundingClientRect().top < headerHeight.value;
+    isSticky.value =
+      el !== null && el.getBoundingClientRect().top < headerHeight.value;
   }
 
   return { sentinelElement, isSticky, headerHeight, refresh };

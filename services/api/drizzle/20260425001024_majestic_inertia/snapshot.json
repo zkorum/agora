@@ -1,0 +1,485 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "22ed3326-918b-402b-b4b0-885e7d3fc720",
+  "prevIds": [
+    "3ea5a5be-c015-4f7c-b5cb-30aee3d54c3f"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content"
+      ],
+      "writes": [
+        "s|fk|public.conversation_content.conversation_content_conversation_proof_id_conversation_proof_i",
+        "n|fk|public.conversation_content.conversation_content_conversation_proof_id_conversation_proof_i",
+        "e|fk|public.conversation_content.conversation_content_conversation_proof_id_conversation_proof_i",
+        "n|con|public.conversation_content.conversation_content_conversation_proof_id_conversation_proof_i"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "e|col|public.conversation_content.conversation_proof_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "device"
+      ],
+      "writes": [
+        "s|fk|public.device.device_id_proof_id_id_proof_id_fk",
+        "n|fk|public.device.device_id_proof_id_id_proof_id_fk",
+        "e|fk|public.device.device_id_proof_id_id_proof_id_fk",
+        "n|con|public.device.device_id_proof_id_id_proof_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.device",
+        "n|sch|public",
+        "e|col|public.device.id_proof_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content"
+      ],
+      "writes": [
+        "s|fk|public.opinion_content.opinion_content_opinion_proof_id_opinion_proof_id_fk",
+        "n|fk|public.opinion_content.opinion_content_opinion_proof_id_opinion_proof_id_fk",
+        "e|fk|public.opinion_content.opinion_content_opinion_proof_id_opinion_proof_id_fk",
+        "n|con|public.opinion_content.opinion_content_opinion_proof_id_opinion_proof_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "e|col|public.opinion_content.opinion_proof_id"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_content"
+      ],
+      "writes": [
+        "s|fk|public.vote_content.vote_content_vote_proof_id_vote_proof_id_fk",
+        "n|fk|public.vote_content.vote_content_vote_proof_id_vote_proof_id_fk",
+        "e|fk|public.vote_content.vote_content_vote_proof_id_vote_proof_id_fk",
+        "n|con|public.vote_content.vote_content_vote_proof_id_vote_proof_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.vote_content",
+        "n|sch|public",
+        "e|col|public.vote_content.vote_proof_id"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_proof"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_proof",
+        "n|tbl|public.conversation_proof",
+        "e|tbl|public.conversation_proof",
+        "n|rel|public.conversation_proof",
+        "n|type|public.conversation_proof"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "id_proof"
+      ],
+      "writes": [
+        "s|tbl|public.id_proof",
+        "n|tbl|public.id_proof",
+        "e|tbl|public.id_proof",
+        "n|rel|public.id_proof",
+        "n|type|public.id_proof"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_proof"
+      ],
+      "writes": [
+        "s|tbl|public.opinion_proof",
+        "n|tbl|public.opinion_proof",
+        "e|tbl|public.opinion_proof",
+        "n|rel|public.opinion_proof",
+        "n|type|public.opinion_proof"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_proof"
+      ],
+      "writes": [
+        "s|tbl|public.vote_proof",
+        "n|tbl|public.vote_proof",
+        "e|tbl|public.vote_proof",
+        "n|rel|public.vote_proof",
+        "n|type|public.vote_proof"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content"
+      ],
+      "writes": [
+        "s|uq|public.conversation_content.conversation_content_conversation_proof_id_unique",
+        "n|uq|public.conversation_content.conversation_content_conversation_proof_id_unique",
+        "e|uq|public.conversation_content.conversation_content_conversation_proof_id_unique",
+        "n|con|public.conversation_content.conversation_content_conversation_proof_id_unique",
+        "n|rel|public.conversation_content_conversation_proof_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "e|col|public.conversation_content.conversation_proof_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.conversation_content.conversation_proof_id"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "conversation_proof_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.conversation_proof_id",
+        "n|col|public.conversation_content.conversation_proof_id",
+        "e|col|public.conversation_content.conversation_proof_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "device",
+        "id_proof_id"
+      ],
+      "writes": [
+        "s|col|public.device.id_proof_id",
+        "n|col|public.device.id_proof_id",
+        "e|col|public.device.id_proof_id"
+      ],
+      "reads": [
+        "n|tbl|public.device",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "opinion_proof_id"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.opinion_proof_id",
+        "n|col|public.opinion_content.opinion_proof_id",
+        "e|col|public.opinion_content.opinion_proof_id"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "vote_content",
+        "vote_proof_id"
+      ],
+      "writes": [
+        "s|col|public.vote_content.vote_proof_id",
+        "n|col|public.vote_content.vote_proof_id",
+        "e|col|public.vote_content.vote_proof_id"
+      ],
+      "reads": [
+        "n|tbl|public.vote_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "proof_type"
+      ],
+      "writes": [
+        "s|enum|public.proof_type",
+        "n|enum|public.proof_type",
+        "e|enum|public.proof_type",
+        "n|type|public.proof_type"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"conversation_proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"id_proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"opinion_proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"vote_proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"proof_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_content\",\"conversation_proof_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"proof_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"author_did\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"proof_version\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"conversation_proof\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"device\",\"id_proof_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"proof_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"proof_version\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"id_proof\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_content\",\"opinion_proof_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"proof_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"opinion_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"author_did\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"proof_version\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_proof\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_content\",\"vote_proof_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"proof_type\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"vote_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"author_did\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"proof\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"proof_version\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"vote_proof\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_content\",\"conversation_content_conversation_proof_id_conversation_proof_i\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_proof\",\"conversation_proof_conversation_id_conversation_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"conversation_proof\",\"conversation_proof_author_did_device_did_write_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"device\",\"device_id_proof_id_id_proof_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"id_proof\",\"id_proof_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_content\",\"opinion_content_opinion_proof_id_opinion_proof_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_proof\",\"opinion_proof_opinion_id_opinion_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_proof\",\"opinion_proof_author_did_device_did_write_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_content\",\"vote_content_vote_proof_id_vote_proof_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_proof\",\"vote_proof_vote_id_vote_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"vote_proof\",\"vote_proof_author_did_device_did_write_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"conversation_proof\",\"conversation_proof_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"id_proof\",\"id_proof_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"opinion_proof\",\"opinion_proof_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"vote_proof\",\"vote_proof_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"conversation_content\",\"conversation_content_conversation_proof_id_unique\"]"
+    }
+  ]
+}

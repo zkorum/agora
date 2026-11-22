@@ -1,0 +1,1522 @@
+<template>
+  <div class="comparison-container">
+    <ComparisonStatementComposer
+      :key="conversationSlugId"
+      :conversation-slug-id="conversationSlugId"
+      :policy="conversationData.metadata.participantStatements"
+      :disabled="isParticipationDisabled"
+    />
+    <VotingSessionToolbar
+      :progress="{ kind: 'percentage', value: progressPercent }"
+      :can-undo="canUndo"
+      :is-busy="isActionPending"
+      :is-disabled="isParticipationDisabled || isInitializingEngine"
+      @undo="handleUndoClick"
+    />
+    <span class="progress-encouragement">{{ t("votesCountMessage") }}</span>
+    <!-- Loading state -->
+    <PageLoadingSpinner
+      v-if="
+        isInitializingEngine ||
+        isLoadingCandidates ||
+        itemsQuery.isPending.value ||
+        (loadQuery.isPending.value && !loadQuery.isError.value)
+      "
+    />
+
+    <!-- Items fetch error -->
+    <ErrorRetryBlock
+      v-else-if="itemsQuery.isError.value"
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="retryInitialize"
+    />
+
+    <!-- Initialization error (e.g. candidate set fetch failed) -->
+    <ErrorRetryBlock
+      v-else-if="initError || candidateResolutionError"
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="retryInitialize"
+    />
+
+    <!-- Completed ranking -->
+    <div
+      v-else-if="isComplete && finalRanking.length > 0 && !isActionPending"
+      ref="completedSection"
+      class="voting-section"
+      tabindex="-1"
+    >
+      <div class="section-header-row">
+        <div class="section-header">{{ t("complete") }}</div>
+        <AnalysisActionButton
+          type="learnMore"
+          @action-click="showLearnMoreDialog = true"
+        />
+      </div>
+      <div class="complete-message">{{ t("completeMessage") }}</div>
+      <q-btn
+        unelevated
+        no-caps
+        color="primary"
+        :label="t('viewMyRanking')"
+        class="view-ranking-btn"
+        @click="props.onViewAnalysis()"
+      />
+      <q-btn
+        flat
+        no-caps
+        color="primary"
+        :label="t('redoRanking')"
+        :disable="isActionPending || isParticipationDisabled"
+        style="align-self: flex-start"
+        @click="handleRedoRanking"
+      />
+    </div>
+
+    <!-- Not enough statements -->
+    <div v-else-if="itemList.length < 2" class="info-message">
+      {{ itemList.length === 0 ? t("noStatements") : t("needMoreStatements") }}
+    </div>
+
+    <!-- Active voting -->
+    <div v-else-if="candidateItems.length > 0" class="voting-section">
+      <div class="section-header-row">
+        <div class="section-header">
+          {{ isPairwise ? pairwiseT("title") : t("title") }}
+        </div>
+        <AnalysisActionButton
+          type="learnMore"
+          @action-click="showLearnMoreDialog = true"
+        />
+      </div>
+
+      <div v-if="!isPairwise" class="step-indicator">
+        <div class="step-item">
+          <div
+            class="step-circle step-circle-best"
+            :class="{
+              'step-active': selectedBest === undefined,
+              'step-done': selectedBest !== undefined,
+            }"
+          >
+            <q-icon
+              v-if="selectedBest !== undefined"
+              name="check"
+              size="0.8rem"
+            />
+            <span v-else>1</span>
+          </div>
+          <span
+            class="step-label"
+            :class="{ 'step-label-active': selectedBest === undefined }"
+          >
+            {{ t("stepSelectBest") }}
+          </span>
+        </div>
+        <div
+          class="step-connector"
+          :class="{ 'step-connector-done': selectedBest !== undefined }"
+        ></div>
+        <div class="step-item">
+          <div
+            class="step-circle step-circle-worst"
+            :class="{
+              'step-active':
+                selectedBest !== undefined && selectedWorst === undefined,
+            }"
+          >
+            <span>2</span>
+          </div>
+          <span
+            class="step-label"
+            :class="{
+              'step-label-active':
+                selectedBest !== undefined && selectedWorst === undefined,
+            }"
+          >
+            {{ t("stepSelectWorst") }}
+          </span>
+        </div>
+      </div>
+
+      <div class="candidates-grid-wrapper">
+        <div
+          v-if="isPairwise"
+          ref="pairwiseGrid"
+          class="pairwise-grid"
+          :class="{ 'pairwise-grid-stacked': hasLongPairwiseContent }"
+          role="group"
+          :aria-label="pairwiseT('title')"
+          :aria-busy="isActionPending"
+        >
+          <PairwiseCandidateCard
+            v-for="item in candidateItems"
+            :key="item.slugId"
+            :conversation-slug-id="conversationSlugId"
+            :item="item"
+            :selected="selectedBest === item.slugId"
+            :disabled="
+              isActionPending ||
+              isParticipationDisabled ||
+              isLoadingCandidates ||
+              !isPairwiseContentReady
+            "
+            @choose="
+              handleCandidateAction({ slugId: $event, allowDialog: false })
+            "
+            @details="openPairwiseDetails"
+            @content-state-change="updatePairwiseCandidateState"
+          />
+        </div>
+        <div
+          v-else
+          class="candidates-grid"
+          :class="{ 'candidates-transitioning': isTransitioning }"
+        >
+          <div
+            v-for="item in candidateItems"
+            :key="item.slugId"
+            class="candidate-card"
+            role="button"
+            tabindex="0"
+            :aria-disabled="isActionPending || isParticipationDisabled"
+            :class="{
+              'selected-best': selectedBest === item.slugId,
+              'selected-worst': selectedWorst === item.slugId,
+            }"
+            @click="
+              handleCandidateAction({ slugId: item.slugId, allowDialog: true })
+            "
+            @keydown.enter.prevent="
+              handleCandidateAction({ slugId: item.slugId, allowDialog: true })
+            "
+            @keydown.space.prevent="
+              handleCandidateAction({ slugId: item.slugId, allowDialog: true })
+            "
+          >
+            <ComparisonCandidateCardContent
+              ref="candidateContentComponents"
+              :conversation-slug-id="conversationSlugId"
+              :item="item"
+              @content-changed="checkTruncation"
+            />
+            <div class="candidate-label">
+              <span v-if="selectedBest === item.slugId" class="label-best">
+                {{ t("mostImportant") }}
+              </span>
+              <span
+                v-else-if="selectedWorst === item.slugId"
+                class="label-worst"
+              >
+                {{ t("leastImportant") }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div v-if="showTransitionSpinner" class="transition-spinner-overlay">
+          <q-spinner-dots color="primary" size="2.5rem" />
+        </div>
+      </div>
+    </div>
+
+    <ErrorRetryBlock
+      v-else
+      :title="t('loadingError')"
+      :retry-label="t('retryButton')"
+      compact
+      @retry="retryInitialize"
+    />
+
+    <ComparisonStatementDialog
+      v-model="showStatementDialog"
+      :conversation-slug-id="conversationSlugId"
+      :item-slug-id="dialogItemSlugId"
+      :display-content="dialogDisplayContent"
+      :external-url="dialogExternalUrl"
+      :vote-label="dialogVoteLabel"
+      :vote-color="dialogVoteColor"
+      :vote-flat="dialogVoteFlat"
+      :on-vote="dialogVoteCallback"
+    />
+
+    <q-dialog v-model="showLearnMoreDialog" position="bottom">
+      <ZKBottomDialogContainer :title="t('learnMoreTitle')">
+        <div class="learn-more-content">
+          <p>{{ isPairwise ? pairwiseT("how") : t("learnMoreHow") }}</p>
+          <p>{{ isPairwise ? pairwiseT("why") : t("learnMoreWhy") }}</p>
+          <p>
+            <a
+              href="#"
+              class="learn-more-link"
+              @click.prevent="openScoringDetail"
+              >{{ t("learnMoreScoringLink") }}</a
+            >
+          </p>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
+
+    <q-dialog v-model="showScoringDetailDialog" position="bottom">
+      <ZKBottomDialogContainer :title="t('scoringDetailTitle')">
+        <div class="learn-more-content">
+          <p>
+            {{ isPairwise ? pairwiseT("scoring") : t("scoringDetailPipeline") }}
+          </p>
+          <p class="learn-more-reference">
+            {{ t("scoringDetailReference") }}
+            <a
+              href="https://github.com/tournesol-app/tournesol/tree/main/solidago"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="learn-more-link"
+              >Solidago</a
+            >
+            <template v-if="!isPairwise">
+              ·
+              <a
+                href="https://en.wikipedia.org/wiki/Best%E2%80%93worst_scaling"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="learn-more-link"
+                >Best-Worst Scaling</a
+              >
+            </template>
+          </p>
+        </div>
+      </ZKBottomDialogContainer>
+    </q-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useQueryClient } from "@tanstack/vue-query";
+import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
+import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
+import ComparisonStatementComposer from "./ComparisonStatementComposer.vue";
+import VotingSessionToolbar from "src/components/post/voting/VotingSessionToolbar.vue";
+import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
+import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
+import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import type { RegisterChildRefreshHandler } from "src/composables/conversation/useConversationParentState";
+import { useParticipationGate } from "src/composables/conversation/useParticipationGate";
+import { useVotingActionGuard } from "src/composables/opinion/useVotingActionGuard";
+import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { ConversationParticipationRejection } from "src/shared/types/dto";
+import type {
+  ComparisonAnswer,
+  ExtendedConversationDisplayData,
+  RankingItemDisplayedContent,
+} from "src/shared/types/zod";
+import {
+  type ComparisonEngine,
+  createComparisonEngine,
+  recordComparisonAnswer,
+  restoreComparisonEngine,
+} from "src/shared/utils/comparisonEngine";
+import { getComparisonCandidateSetSize } from "src/shared/utils/comparisonPresentation";
+import { useAuthenticationStore } from "src/stores/authentication";
+import { useComparisonApi } from "src/utils/api/comparison/comparison";
+import {
+  type ComparisonSaveContext,
+  useComparisonItemsQuery,
+  useComparisonLoadQuery,
+  useComparisonSaveMutation,
+} from "src/utils/api/comparison/useComparisonQueries";
+import {
+  type ComparisonCandidateDisplayItem,
+  createComparisonCandidateDisplaySnapshot,
+  retryComparisonCandidateResolution,
+} from "src/utils/comparisonCandidateDisplay";
+import { getComparisonProgressPercent } from "src/utils/comparisonProgress";
+import {
+  type ComparisonSelection,
+  haveSameComparisonAnswers,
+  isPairwiseCandidateSet,
+  reconcileComparisonItems,
+  selectPairwiseComparison,
+} from "src/utils/comparisonSession";
+import { getComparisonLoadQueryKey } from "src/utils/query/conversationQueryKeys";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
+import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
+import { useNotify } from "src/utils/ui/notify";
+import {
+  computed,
+  inject,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  ref,
+  shallowRef,
+  triggerRef,
+  useTemplateRef,
+  watch,
+} from "vue";
+
+import ComparisonCandidateCardContent from "./ComparisonCandidateCardContent.vue";
+import ComparisonStatementDialog from "./ComparisonStatementDialog.vue";
+import {
+  type ComparisonVotingTabTranslations,
+  comparisonVotingTabTranslations,
+} from "./ComparisonVotingTab.i18n";
+import PairwiseCandidateCard, {
+  type PairwiseCandidateState,
+} from "./PairwiseCandidateCard.vue";
+import { pairwiseVotingTranslations } from "./PairwiseVoting.i18n";
+
+const props = defineProps<{
+  conversationData: ExtendedConversationDisplayData;
+  onViewAnalysis: () => void;
+}>();
+
+const { t } = useComponentI18n<ComparisonVotingTabTranslations>(
+  comparisonVotingTabTranslations
+);
+const { t: pairwiseT } = useComponentI18n(pairwiseVotingTranslations);
+const comparisonMethod = computed(() => {
+  const metadata = props.conversationData.metadata;
+  return metadata.conversationType === "prioritizing" &&
+    metadata.prioritizationType === "comparisons"
+    ? metadata.comparisonMethod
+    : "bws";
+});
+const isPairwise = computed(() => comparisonMethod.value === "pairwise");
+const candidateSetSize = computed(() =>
+  getComparisonCandidateSetSize(comparisonMethod.value)
+);
+const pairwiseGrid = useTemplateRef<HTMLElement>("pairwiseGrid");
+const completedSection = useTemplateRef<HTMLElement>("completedSection");
+const isActive = ref(true);
+
+const $q = useQuasar();
+const { showNotifyMessage } = useNotify();
+const actionGuard = useVotingActionGuard();
+const isActionPending = actionGuard.isPending;
+const authStore = useAuthenticationStore();
+const { userId } = storeToRefs(authStore);
+const queryClient = useQueryClient();
+const viewerScope = useViewerQueryScope();
+const { loadComparisonResponse } = useComparisonApi();
+let routingRefreshVersion = 0;
+const conversationSlugId = computed(
+  () => props.conversationData.metadata.conversationSlugId
+);
+const isParticipationDisabled = computed(() => {
+  const moderation = props.conversationData.metadata.moderation;
+  return (
+    props.conversationData.metadata.isClosed ||
+    (moderation.status === "moderated" && moderation.action === "lock")
+  );
+});
+const {
+  participationStatus,
+  openParticipationOnboarding,
+  captureParticipationAction,
+} = useParticipationGate(conversationSlugId);
+
+// Inject parent refresh handler (same pattern as ConversationCommentTab)
+const registerChildRefreshHandler = inject<RegisterChildRefreshHandler>(
+  "registerChildRefreshHandler",
+  () => {
+    /* noop */
+    return () => {
+      /* noop */
+    };
+  }
+);
+let unregisterChildRefreshHandler: (() => void) | undefined;
+
+async function openOnboarding(): Promise<void> {
+  await openParticipationOnboarding();
+}
+
+function handleBlockedSave(
+  rejection: ConversationParticipationRejection
+): void {
+  if (rejection.participationStatus.status === "blocked")
+    showNotifyMessage(t("savingError"));
+  void captureParticipationAction().handleBlockedReason(rejection);
+}
+
+// TanStack queries for items and saved state
+const itemsQuery = useComparisonItemsQuery({
+  conversationSlugId,
+  enabled: true,
+});
+
+const loadQuery = useComparisonLoadQuery({
+  conversationSlugId,
+  enabled: true,
+});
+
+// Pull-to-refresh handler: refetch items and saved state
+async function handleChildRefresh(): Promise<void> {
+  if (isActionPending.value || isLoadingCandidates.value) return;
+  await Promise.all([itemsQuery.refetch(), loadQuery.refetch()]);
+}
+
+function registerRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler =
+    registerChildRefreshHandler(handleChildRefresh);
+}
+
+function unregisterRefreshHandler(): void {
+  unregisterChildRefreshHandler?.();
+  unregisterChildRefreshHandler = undefined;
+}
+
+// Register on initial setup and re-register on KeepAlive reactivation
+// (whichever tab activates last must own the handler)
+registerRefreshHandler();
+onActivated(() => {
+  isActive.value = true;
+  registerRefreshHandler();
+});
+onDeactivated(() => {
+  isActive.value = false;
+  unregisterRefreshHandler();
+});
+
+const itemList = computed<ComparisonCandidateDisplayItem[]>(() => {
+  const data = itemsQuery.data.value;
+  if (data === undefined) return [];
+  return data.map((item) => {
+    const displayText = getRankingItemDisplayText({
+      displayContent: item.displayContent,
+    });
+    return {
+      slugId: item.slugId,
+      title: displayText.title,
+      body: displayText.body,
+      displayContent: item.displayContent,
+      externalUrl: item.externalUrl ?? null,
+    };
+  });
+});
+
+const itemBySlugId = computed(() => {
+  const map = new Map<string, ComparisonCandidateDisplayItem>();
+  for (const item of itemList.value) {
+    map.set(item.slugId, item);
+  }
+  return map;
+});
+
+const candidateItems = ref<ComparisonCandidateDisplayItem[]>([]);
+const candidateResolutionError = ref(false);
+const pairwiseCandidateStates = ref(new Map<string, PairwiseCandidateState>());
+const isPairwiseContentReady = computed(
+  () =>
+    candidateItems.value.length === 2 &&
+    candidateItems.value.every(
+      (item) =>
+        pairwiseCandidateStates.value.get(item.slugId)?.available === true
+    )
+);
+const hasLongPairwiseContent = computed(() =>
+  candidateItems.value.some(
+    (item) => pairwiseCandidateStates.value.get(item.slugId)?.isLong === true
+  )
+);
+
+function updatePairwiseCandidateState(state: PairwiseCandidateState): void {
+  pairwiseCandidateStates.value.set(state.slugId, state);
+}
+
+watch(candidateItems, (items) => {
+  const currentIds = new Set(items.map((item) => item.slugId));
+  for (const slugId of pairwiseCandidateStates.value.keys()) {
+    if (!currentIds.has(slugId)) pairwiseCandidateStates.value.delete(slugId);
+  }
+});
+
+const candidateItemBySlugId = computed(() => {
+  const map = new Map<string, ComparisonCandidateDisplayItem>();
+  for (const item of candidateItems.value) {
+    map.set(item.slugId, item);
+  }
+  return map;
+});
+
+function updateCandidateItemSnapshot(): boolean {
+  if (itemList.value.length < 2) {
+    candidateItems.value = [];
+    candidateResolutionError.value = false;
+    return true;
+  }
+  if (
+    isPairwise.value &&
+    !isComplete.value &&
+    !isPairwiseCandidateSet(candidates.value)
+  ) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    return false;
+  }
+  if (
+    candidates.value.length === 0 &&
+    instance.value !== undefined &&
+    !isComplete.value
+  ) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    return false;
+  }
+  const resolvedCandidateItems = createComparisonCandidateDisplaySnapshot({
+    candidateSlugIds: candidates.value,
+    itemBySlugId: itemBySlugId.value,
+  });
+  if (resolvedCandidateItems.length !== candidates.value.length) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    return false;
+  }
+
+  candidateItems.value = resolvedCandidateItems;
+  candidateResolutionError.value = false;
+  return true;
+}
+
+function needsDialog(slugId: string): boolean {
+  if (truncatedCards.value.has(slugId)) return true;
+  const item = candidateItemBySlugId.value.get(slugId);
+  if (item === undefined) return false;
+  if (item.body !== null) return true;
+  if (item.externalUrl !== null) return true;
+  return false;
+}
+
+// Save mutation with rollback
+const saveMutation = useComparisonSaveMutation({
+  conversationSlugId,
+  comparisonMethod,
+  onRollback: (context: ComparisonSaveContext) => {
+    instance.value = restoreComparisonEngine(context.previousState);
+    candidates.value = context.previousCandidates;
+    selection.value = { kind: "none" };
+    cancelTransition();
+  },
+  onBlocked: handleBlockedSave,
+  onNetworkError: () => {
+    showNotifyMessage(t("savingError"));
+  },
+  onSessionRefreshError: () => {
+    showNotifyMessage(t("savedSessionRefreshFailed"));
+  },
+});
+
+// Comparison engine state
+const instance = shallowRef<ComparisonEngine>();
+const isInitializingEngine = ref(true);
+const isLoadingCandidates = ref(false);
+const isComplete = computed(
+  () =>
+    instance.value !== undefined &&
+    instance.value.itemCount >= 2 &&
+    instance.value.complete
+);
+const finalRanking = computed(() => instance.value?.result ?? []);
+const candidates = ref<string[]>([]);
+const selection = shallowRef<ComparisonSelection>({ kind: "none" });
+const selectedBest = computed(() =>
+  selection.value.kind === "none" ? undefined : selection.value.best
+);
+const selectedWorst = computed(() =>
+  selection.value.kind === "comparison" ? selection.value.worst : undefined
+);
+const isTransitioning = ref(false);
+const showTransitionSpinner = ref(false);
+let transitionSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function clearTransitionSpinner(): void {
+  if (transitionSpinnerTimeout !== null) {
+    clearTimeout(transitionSpinnerTimeout);
+    transitionSpinnerTimeout = null;
+  }
+  showTransitionSpinner.value = false;
+}
+
+function cancelTransition(): void {
+  clearTransitionSpinner();
+  isTransitioning.value = false;
+}
+
+onBeforeUnmount(() => {
+  actionGuard.invalidate();
+  unregisterRefreshHandler();
+  cancelTransition();
+});
+
+// Statement dialog state
+const showStatementDialog = ref(false);
+const dialogVoteLabel = ref<string | undefined>(undefined);
+const dialogVoteColor = ref<string | undefined>(undefined);
+const dialogVoteFlat = ref(false);
+const dialogVoteCallback = ref<(() => void) | undefined>(undefined);
+
+const dialogItemSlugId = ref<string | undefined>(undefined);
+const dialogDisplayContent = ref<RankingItemDisplayedContent | undefined>(
+  undefined
+);
+const dialogExternalUrl = ref<string | null>(null);
+
+function openVotingDialog(slugId: string): void {
+  const isCurrentDialog = actionGuard.capture();
+  const item = candidateItemBySlugId.value.get(slugId);
+  dialogItemSlugId.value = item?.slugId;
+  dialogDisplayContent.value = item?.displayContent;
+  dialogExternalUrl.value = item?.externalUrl ?? null;
+
+  if (selectedBest.value === slugId) {
+    // Card is already selected as best — clicking deselects it
+    dialogVoteLabel.value = t("cancelSelection");
+    dialogVoteColor.value = undefined;
+    dialogVoteFlat.value = true;
+  } else if (selectedBest.value === undefined) {
+    dialogVoteLabel.value = t("mostImportant");
+    dialogVoteColor.value = "positive";
+    dialogVoteFlat.value = false;
+  } else {
+    dialogVoteLabel.value = t("leastImportant");
+    dialogVoteColor.value = "negative";
+    dialogVoteFlat.value = false;
+  }
+
+  dialogVoteCallback.value = () => {
+    if (isCurrentDialog())
+      void handleCandidateAction({ slugId, allowDialog: false });
+  };
+
+  showStatementDialog.value = true;
+}
+
+function openPairwiseDetails(slugId: string): void {
+  const item = candidateItemBySlugId.value.get(slugId);
+  if (item === undefined || isActionPending.value) return;
+  dialogItemSlugId.value = item.slugId;
+  dialogDisplayContent.value = item.displayContent;
+  dialogExternalUrl.value = item.externalUrl;
+  dialogVoteLabel.value = undefined;
+  dialogVoteCallback.value = undefined;
+  showStatementDialog.value = true;
+}
+
+// Truncation detection for candidate cards
+const truncatedCards = ref(new Set<string>());
+const candidateContentComponents = ref<Array<{ isTruncated: () => boolean }>>(
+  []
+);
+
+function checkTruncation(): void {
+  const newSet = new Set<string>();
+  for (const [index, component] of candidateContentComponents.value.entries()) {
+    const slugId = candidateItems.value[index]?.slugId;
+    if (slugId === undefined) continue;
+    if (component.isTruncated()) {
+      newSet.add(slugId);
+    }
+  }
+  truncatedCards.value = newSet;
+}
+
+const progressPercent = computed(() => {
+  if (!instance.value || instance.value.itemCount < 2) return 0;
+  return getComparisonProgressPercent({
+    progress: instance.value.progress,
+    complete: instance.value.complete && !isActionPending.value,
+  });
+});
+
+const showLearnMoreDialog = ref(false);
+const showScoringDetailDialog = ref(false);
+
+function openScoringDetail(): void {
+  showLearnMoreDialog.value = false;
+  showScoringDetailDialog.value = true;
+}
+
+const canUndo = computed(() => {
+  if (!instance.value) return false;
+  return instance.value.comparisonCount > 0;
+});
+
+// Initialize engine when both queries resolve
+const engineInitialized = ref(false);
+const initError = ref(false);
+
+function resolveInitialization(): boolean {
+  const items = itemsQuery.data.value;
+  const loadData = loadQuery.data.value;
+  const loadError = loadQuery.isError.value;
+  if (items === undefined || engineInitialized.value) return false;
+  // Wait for load query to settle (success or error)
+  if (loadData === undefined && !loadError) return false;
+
+  const slugIds = items.map((item) => item.slugId);
+  if (slugIds.length < 2) {
+    candidateItems.value = [];
+    candidates.value = [];
+    initError.value = false;
+    candidateResolutionError.value = false;
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
+    return true;
+  }
+
+  isInitializingEngine.value = true;
+
+  if (loadData !== undefined && loadData.comparisons !== null) {
+    // Restore from saved state
+    const comparisons: ComparisonAnswer[] = loadData.comparisons.map((c) => ({
+      best: c.best,
+      worst: c.worst,
+      set: c.set,
+    }));
+    const restored = restoreComparisonEngine({ items: slugIds, comparisons });
+    instance.value = restored;
+  } else {
+    // No saved state or load failed — create fresh instance
+    const fresh = createComparisonEngine(slugIds);
+    instance.value = fresh;
+  }
+
+  // Use candidate sets from load response (computed server-side)
+  if (loadData !== undefined) {
+    candidates.value = loadData.candidateSets[0] ?? [];
+  } else if (!instance.value.complete) {
+    initError.value = true;
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
+    return false;
+  }
+
+  if (!instance.value.complete && candidates.value.length === 0) {
+    candidateItems.value = [];
+    candidateResolutionError.value = true;
+    isInitializingEngine.value = false;
+    engineInitialized.value = true;
+    return false;
+  }
+
+  const candidatesResolved = updateCandidateItemSnapshot();
+  isInitializingEngine.value = false;
+  engineInitialized.value = true;
+  if (!candidatesResolved) {
+    return false;
+  }
+
+  initError.value = false;
+  return true;
+}
+
+watch(
+  [
+    () => itemsQuery.data.value,
+    () => itemsQuery.isError.value,
+    () => loadQuery.data.value,
+    () => loadQuery.isError.value,
+    engineInitialized,
+  ],
+  ([, itemsError]) => {
+    if (itemsError) {
+      isInitializingEngine.value = false;
+      return;
+    }
+    resolveInitialization();
+  },
+  { immediate: true }
+);
+
+const canRefreshCandidateItemSnapshot = computed(
+  () =>
+    !isInitializingEngine.value &&
+    !isActionPending.value &&
+    !isTransitioning.value &&
+    !showStatementDialog.value &&
+    selection.value.kind === "none"
+);
+
+// Keep wording stable during a choice, then apply current content before the next one.
+watch(
+  [candidates, itemBySlugId, canRefreshCandidateItemSnapshot],
+  ([, , canRefresh]) => {
+    if (canRefresh) {
+      updateCandidateItemSnapshot();
+      if (!isPairwise.value) void nextTick(checkTruncation);
+    }
+  },
+  { immediate: true }
+);
+
+function reconcileEngineItems({
+  preserveCandidates,
+}: {
+  preserveCandidates: boolean;
+}): void {
+  const current = instance.value;
+  if (current === undefined || itemsQuery.data.value === undefined) return;
+  const restored = reconcileComparisonItems({
+    instance: current,
+    items: itemList.value.map((item) => item.slugId),
+  });
+  const changed = restored !== current;
+  if (changed) {
+    instance.value = restored;
+  }
+  if (preserveCandidates) return;
+  let replacedCandidates = false;
+  if (restored.complete) {
+    replacedCandidates = candidates.value.length !== 0;
+    candidates.value = [];
+    candidateItems.value = [];
+    candidateResolutionError.value = false;
+  } else if (
+    candidates.value.length < 2 ||
+    candidates.value.some((id) => !itemBySlugId.value.has(id))
+  ) {
+    candidates.value = restored.getCandidates(candidateSetSize.value);
+    replacedCandidates = true;
+  }
+  if (replacedCandidates && !restored.complete) {
+    void refreshCandidateRouting();
+  }
+}
+
+async function refreshCandidateRouting(): Promise<void> {
+  const isCurrent = actionGuard.capture();
+  const refreshVersion = ++routingRefreshVersion;
+  const slugId = conversationSlugId.value;
+  isLoadingCandidates.value = true;
+  try {
+    const response = await loadComparisonResponse({
+      conversationSlugId: slugId,
+    });
+    if (
+      !isCurrent() ||
+      refreshVersion !== routingRefreshVersion ||
+      !canRefreshCandidateItemSnapshot.value ||
+      instance.value === undefined ||
+      response.status !== "success"
+    )
+      return;
+    if (
+      !haveSameComparisonAnswers({
+        left: instance.value.exportState().comparisons,
+        right: response.data.comparisons ?? [],
+      })
+    )
+      return;
+    const nextCandidates = response.data.candidateSets[0];
+    if (
+      nextCandidates === undefined ||
+      nextCandidates.some((id) => !itemBySlugId.value.has(id))
+    )
+      return;
+    queryClient.setQueryData(
+      getComparisonLoadQueryKey({
+        conversationSlugId: slugId,
+        viewerScope: viewerScope.value,
+      }),
+      response.data
+    );
+    candidates.value = nextCandidates;
+  } finally {
+    if (isCurrent() && refreshVersion === routingRefreshVersion)
+      isLoadingCandidates.value = false;
+  }
+}
+
+async function applySavedCandidates({
+  candidateSets,
+  isCurrent,
+}: {
+  candidateSets: string[][];
+  isCurrent: () => boolean;
+}): Promise<void> {
+  const nextCandidates = candidateSets[0] ?? [];
+  if (nextCandidates.some((id) => !itemBySlugId.value.has(id))) {
+    const refreshed = await itemsQuery.refetch();
+    if (!isCurrent()) return;
+    if (refreshed.isError) {
+      candidateResolutionError.value = true;
+      return;
+    }
+  }
+  reconcileEngineItems({ preserveCandidates: true });
+  candidates.value = instance.value?.complete ? [] : nextCandidates;
+}
+
+watch([itemList, canRefreshCandidateItemSnapshot], ([, canRefresh]) => {
+  if (canRefresh && engineInitialized.value)
+    reconcileEngineItems({ preserveCandidates: false });
+});
+
+watch(
+  () => props.conversationData.metadata.opinionCount,
+  (count, previous) => {
+    if (count !== previous) void itemsQuery.refetch();
+  }
+);
+
+function resetVotingSession(): void {
+  actionGuard.invalidate();
+  routingRefreshVersion += 1;
+  cancelTransition();
+  instance.value = undefined;
+  engineInitialized.value = false;
+  isInitializingEngine.value = true;
+  isLoadingCandidates.value = false;
+  candidates.value = [];
+  candidateItems.value = [];
+  selection.value = { kind: "none" };
+  showStatementDialog.value = false;
+}
+
+watch(
+  userId,
+  (nextId, previousId) => {
+    if (previousId === undefined && nextId !== undefined && authStore.isGuest)
+      return;
+    resetVotingSession();
+  },
+  { flush: "sync" }
+);
+watch(conversationSlugId, resetVotingSession, { flush: "sync" });
+
+async function retryInitialize(): Promise<void> {
+  isInitializingEngine.value = true;
+  const retryResult = await retryComparisonCandidateResolution({
+    refetchItems: async () => await itemsQuery.refetch(),
+    refetchLoad: async () => await loadQuery.refetch(),
+    resolve: () => {
+      engineInitialized.value = false;
+      return resolveInitialization();
+    },
+  });
+  if (retryResult !== "resolved") {
+    isInitializingEngine.value = false;
+  }
+}
+
+async function handleCandidateAction({
+  slugId,
+  allowDialog,
+}: {
+  slugId: string;
+  allowDialog: boolean;
+}): Promise<void> {
+  const isCurrentFocus = actionGuard.capture();
+  const activeElement = document.activeElement;
+  const focusedChoice =
+    activeElement instanceof HTMLElement &&
+    pairwiseGrid.value?.contains(activeElement)
+      ? activeElement
+      : undefined;
+  await actionGuard.run(async (isCurrent) => {
+    if (
+      isParticipationDisabled.value ||
+      isLoadingCandidates.value ||
+      (isPairwise.value && !isPairwiseContentReady.value) ||
+      !candidates.value.includes(slugId)
+    )
+      return;
+    if (participationStatus.value.status !== "ready") {
+      if (isCurrent()) await openOnboarding();
+      return;
+    }
+    if (!isCurrent()) return;
+    if (!isPairwise.value && allowDialog && needsDialog(slugId)) {
+      openVotingDialog(slugId);
+      return;
+    }
+    await selectCandidate({ slugId, isCurrent });
+  });
+  await nextTick();
+  if (
+    isCurrentFocus() &&
+    isActive.value &&
+    focusedChoice !== undefined &&
+    (document.activeElement === focusedChoice ||
+      document.activeElement === document.body)
+  ) {
+    const nextFocus = focusedChoice.isConnected
+      ? focusedChoice
+      : isComplete.value
+        ? completedSection.value
+        : pairwiseGrid.value?.querySelector<HTMLButtonElement>(
+            ".pairwise-choice"
+          );
+    nextFocus?.focus({ preventScroll: true });
+  }
+}
+
+async function selectCandidate({
+  slugId,
+  isCurrent,
+}: {
+  slugId: string;
+  isCurrent: () => boolean;
+}): Promise<void> {
+  const currentSelection = selection.value;
+  if (currentSelection.kind === "comparison") return;
+  if (isPairwise.value) {
+    const comparison = selectPairwiseComparison({
+      candidates: candidates.value,
+      best: slugId,
+    });
+    if (comparison === undefined) return;
+    selection.value = comparison;
+    await recordVote({ comparison, isCurrent });
+    return;
+  }
+  if (currentSelection.kind === "none") {
+    selection.value = { kind: "best", best: slugId };
+    return;
+  }
+
+  // Clicking the same as best = deselect
+  if (currentSelection.best === slugId) {
+    selection.value = { kind: "none" };
+    return;
+  }
+
+  const comparison = {
+    kind: "comparison",
+    best: currentSelection.best,
+    worst: slugId,
+  } satisfies ComparisonSelection;
+  selection.value = comparison;
+  await recordVote({ comparison, isCurrent });
+}
+
+function captureSaveContext({
+  engine,
+  isCurrent,
+}: {
+  engine: ComparisonEngine;
+  isCurrent: () => boolean;
+}): ComparisonSaveContext {
+  return {
+    previousState: engine.exportState(),
+    previousCandidates: [...candidates.value],
+    isCurrent,
+    isParticipationCurrent: captureParticipationAction().isCurrent,
+  };
+}
+
+async function recordVote({
+  comparison,
+  isCurrent,
+}: {
+  comparison: Extract<ComparisonSelection, { kind: "comparison" }>;
+  isCurrent: () => boolean;
+}): Promise<void> {
+  reconcileEngineItems({ preserveCandidates: true });
+  if (candidates.value.some((id) => !itemBySlugId.value.has(id))) {
+    selection.value = { kind: "none" };
+    reconcileEngineItems({ preserveCandidates: false });
+    showNotifyMessage(t("itemsChanged"));
+    return;
+  }
+
+  const engine = instance.value;
+  if (engine === undefined) return;
+  const context = captureSaveContext({ engine, isCurrent });
+  const { best, worst } = comparison;
+  const currentCandidates = [...candidates.value];
+
+  // Optimistic update: record in engine
+  recordComparisonAnswer({
+    instance: engine,
+    candidates: currentCandidates,
+    best,
+    worst,
+  });
+  triggerRef(instance);
+
+  isTransitioning.value = true;
+
+  // Show spinner if fetch takes longer than 2s
+  clearTransitionSpinner();
+  transitionSpinnerTimeout = setTimeout(() => {
+    showTransitionSpinner.value = true;
+  }, 2000);
+
+  // Save + get next candidates from server response.
+  // Runs in parallel with the 400ms transition animation.
+  const saveParams = {
+    ranking: engine.result ?? null,
+    comparisons: engine.exportState().comparisons,
+    isComplete: engine.complete,
+    context,
+  };
+  try {
+    const [saveResult] = await Promise.all([
+      saveMutation.mutateAsync(saveParams),
+      new Promise<void>((resolve) => setTimeout(resolve, 400)),
+    ]);
+    if (isCurrent() && saveResult.success) {
+      await applySavedCandidates({
+        candidateSets: saveResult.candidateSets,
+        isCurrent,
+      });
+    }
+  } catch {
+    // The mutation has already restored the previous candidates.
+  } finally {
+    if (isCurrent()) {
+      selection.value = { kind: "none" };
+      cancelTransition();
+    }
+  }
+}
+
+async function undoLastVote(isCurrent: () => boolean): Promise<void> {
+  if (!instance.value) return;
+  routingRefreshVersion += 1;
+  isLoadingCandidates.value = false;
+
+  reconcileEngineItems({ preserveCandidates: true });
+
+  const state = instance.value.exportState();
+  if (state.comparisons.length === 0) return;
+
+  // Cancel any in-flight transition from the vote being undone
+  cancelTransition();
+
+  // Snapshot for rollback (undo should be reversible on save failure)
+  const context = captureSaveContext({ engine: instance.value, isCurrent });
+
+  const remainingComparisons = state.comparisons.slice(0, -1);
+  const removedComparison = state.comparisons[state.comparisons.length - 1];
+  if (removedComparison === undefined) return;
+
+  const restored = restoreComparisonEngine({
+    items: state.items,
+    comparisons: remainingComparisons,
+  });
+
+  instance.value = restored;
+  selection.value = { kind: "none" };
+
+  const restoredCandidates = removedComparison.set.filter((id) =>
+    itemBySlugId.value.has(id)
+  );
+  candidates.value =
+    restoredCandidates.length >= 2
+      ? restoredCandidates
+      : restored.getCandidates(candidateSetSize.value);
+
+  try {
+    await saveMutation.mutateAsync({
+      ranking: restored.result ?? null,
+      comparisons: restored.exportState().comparisons,
+      isComplete: restored.complete,
+      context,
+    });
+  } catch {
+    // The mutation restores both the history and the previous candidate set.
+  }
+}
+
+async function handleUndoClick(): Promise<void> {
+  await actionGuard.run(async (isCurrent) => {
+    if (isParticipationDisabled.value || !canUndo.value) return;
+    if (participationStatus.value.status !== "ready") {
+      if (isCurrent()) await openOnboarding();
+      return;
+    }
+    if (isCurrent()) await undoLastVote(isCurrent);
+  });
+}
+
+async function handleRedoRanking(): Promise<void> {
+  await actionGuard.run(async (isCurrent) => {
+    if (isParticipationDisabled.value || instance.value === undefined) return;
+    if (participationStatus.value.status !== "ready") {
+      if (isCurrent()) await openOnboarding();
+      return;
+    }
+    const confirmed = await new Promise<boolean>((resolve) => {
+      $q.dialog({
+        title: t("redoConfirmTitle"),
+        message: t("redoConfirmMessage"),
+        cancel: true,
+        persistent: true,
+      })
+        .onOk(() => resolve(true))
+        .onDismiss(() => resolve(false));
+    });
+    if (!confirmed || !isCurrent() || instance.value === undefined) return;
+    // Snapshot for rollback
+    const context = captureSaveContext({ engine: instance.value, isCurrent });
+
+    cancelTransition();
+    const slugIds = itemList.value.map((item) => item.slugId);
+    instance.value = createComparisonEngine(slugIds);
+
+    // Save empty state, use candidateSets from response
+    try {
+      const result = await saveMutation.mutateAsync({
+        ranking: null,
+        comparisons: [],
+        isComplete: false,
+        context,
+      });
+      if (result.success && isCurrent()) {
+        await applySavedCandidates({
+          candidateSets: result.candidateSets,
+          isCurrent,
+        });
+      }
+    } catch {
+      // Rollback and notification are owned by the mutation.
+    }
+  });
+}
+</script>
+
+<style scoped lang="scss">
+@use "sass:color";
+.comparison-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.info-message {
+  text-align: center;
+  color: $color-text-weak;
+  padding: 2rem 1rem;
+  font-size: 0.95rem;
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header {
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  color: $color-text-strong;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  border: 2px solid $color-border-weak;
+  color: $color-text-weak;
+  background: $color-background-default;
+  transition: all 0.2s ease;
+}
+
+.step-circle.step-active.step-circle-best {
+  border-color: $positive;
+  background: $positive;
+  color: white;
+}
+
+.step-circle.step-active.step-circle-worst {
+  border-color: $negative;
+  background: $negative;
+  color: white;
+}
+
+.step-circle.step-done {
+  border-color: $color-border-weak;
+  background: $color-border-weak;
+  color: white;
+}
+
+.step-connector {
+  height: 2px;
+  flex: 0 0 2rem;
+  background: $color-border-weak;
+  margin-top: 14px;
+  transition: background 0.2s ease;
+}
+
+.step-connector.step-connector-done {
+  background: $color-border-weak;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  color: $color-text-weak;
+  text-align: center;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.step-label.step-label-active {
+  opacity: 1;
+  font-weight: var(--font-weight-medium);
+}
+
+.progress-encouragement {
+  font-size: 0.75rem;
+  color: $color-text-weak;
+  opacity: 0.6;
+}
+
+.candidates-grid-wrapper {
+  position: relative;
+}
+
+.pairwise-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -0.5rem;
+
+  > .pairwise-card {
+    flex: 1 1 17.5rem;
+    margin: 0.5rem;
+  }
+
+  &.pairwise-grid-stacked {
+    flex-direction: column;
+
+    > .pairwise-card {
+      flex-basis: auto;
+    }
+  }
+}
+
+.candidates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  transition: opacity 0.3s ease;
+
+  &.candidates-transitioning {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+}
+
+.transition-spinner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.candidate-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid $color-border-weak;
+  border-radius: 12px;
+  background: $color-background-default;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  min-height: 80px;
+  min-width: 0;
+  overflow: hidden;
+
+  &:hover {
+    border-color: color.adjust($color-border-weak, $lightness: -10%);
+  }
+
+  &.selected-best {
+    border-color: $positive;
+    background: rgba($positive, 0.08);
+  }
+
+  &.selected-worst {
+    border-color: $negative;
+    background: rgba($negative, 0.08);
+  }
+}
+
+.candidate-label {
+  min-height: 1.2rem;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.label-best {
+  color: color.adjust($positive, $lightness: -10%);
+}
+
+.label-worst {
+  color: $negative;
+}
+
+.voting-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.complete-message {
+  font-size: 0.95rem;
+  color: $color-text-weak;
+  line-height: 1.5;
+}
+
+.view-ranking-btn {
+  align-self: flex-start;
+  border-radius: 8px;
+}
+
+.learn-more-content {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: $color-text-weak;
+
+  p {
+    margin: 0 0 0.75rem;
+  }
+}
+
+.learn-more-reference {
+  font-size: 0.85rem;
+}
+
+.learn-more-link {
+  color: $primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+</style>

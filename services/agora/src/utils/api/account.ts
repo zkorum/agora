@@ -1,8 +1,10 @@
+import { isAxiosError } from "axios";
 import type { ApiV1UserUsernameUpdatePostRequest } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { Dto } from "src/shared/types/dto";
 import { useUserStore } from "src/stores/user";
+import type { z } from "zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { queryClient } from "../query/client";
@@ -73,15 +75,32 @@ export function useBackendAccountApi() {
     }
   }
 
-  async function deleteUserAccount(): Promise<void> {
+  async function deleteUserAccount(): Promise<
+    z.infer<typeof Dto.deleteUserAccountResponse>
+  > {
     const { url, options } =
       await DefaultApiAxiosParamCreator().apiV1UserDeletePost();
     const encodedUcan = await buildEncodedUcan(url, options);
-    await DefaultApiFactory(undefined, undefined, api).apiV1UserDeletePost({
-      headers: {
-        ...buildAuthorizationHeader(encodedUcan),
-      },
-    });
+    try {
+      const response = await DefaultApiFactory(
+        undefined,
+        undefined,
+        api
+      ).apiV1UserDeletePost({
+        headers: {
+          ...buildAuthorizationHeader(encodedUcan),
+        },
+      });
+      return Dto.deleteUserAccountResponse.parse(response.data);
+    } catch (error) {
+      if (isAxiosError<unknown>(error) && error.response?.status === 409) {
+        const result = Dto.deleteUserAccountResponse.safeParse(
+          error.response.data
+        );
+        if (result.success && !result.data.success) return result.data;
+      }
+      throw error;
+    }
   }
 
   async function isUsernameInUse(username: string): Promise<boolean | null> {

@@ -80,7 +80,7 @@ describe("hasActivePremiumFeatureEntitlement", () => {
                     },
                     {
                         organizationId: 1,
-                        feature: "event_ticket",
+                        feature: "analysis_variants",
                         expiresAt: null,
                     },
                 ],

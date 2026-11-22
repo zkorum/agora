@@ -1,5 +1,4 @@
 import {
-    zodEventSlug,
     zodImportFailureReason,
     zodParticipationMode,
     zodSlugId,
@@ -18,7 +17,6 @@ const zodImportFormData = withJsonSchemaId(
         .object({
             participationMode: zodParticipationMode,
             isIndexed: z.boolean(),
-            requiresEventTicket: zodEventSlug.optional(),
             aiLabelingEnabled: z.boolean().default(true),
             preferredOpinionGroupCount: z
                 .number()

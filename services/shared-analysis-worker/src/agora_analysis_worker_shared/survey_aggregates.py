@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -13,6 +14,7 @@ from agora_analysis_worker_shared.generated_models import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Mapping, Sequence
     from uuid import UUID
 
 PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD = 5
@@ -65,16 +67,16 @@ class SurveyResponseSnapshot:
 
 
 @dataclass(frozen=True)
-class SurveyAggregateGroupMembership:
+class SurveyAggregateGroupMembership[ParticipantKey]:
     candidate_id: int
     group_id: int
-    user_ids: frozenset[UUID]
+    participant_keys: frozenset[ParticipantKey]
 
 
 @dataclass(frozen=True)
 class SurveyAggregatePopulation:
-    participant_ids: frozenset[UUID]
-    group_memberships: tuple[SurveyAggregateGroupMembership, ...]
+    local_index_by_user_id: Mapping[UUID, int]
+    group_memberships: tuple[SurveyAggregateGroupMembership[UUID], ...]
 
 
 @dataclass(frozen=True)
@@ -123,100 +125,135 @@ class SurveyAggregateBuildResult:
 
 
 @dataclass(frozen=True)
-class _ParticipantAnswer:
-    participant_id: UUID
-    answer: SurveyAnswerSnapshot
+class SurveyChoiceAnswer[ParticipantKey]:
+    participant_key: ParticipantKey
+    question_slug_id: str
+    option_slug_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class _OptionCount:
-    option: SurveyOptionSnapshot
+    option_slug_id: str
     count: int
 
 
-def build_suppressed_survey_aggregates(
+def prepare_survey_choice_answers[ParticipantKey](
     *,
     config: SurveyConfigSnapshot,
-    responses: list[SurveyResponseSnapshot],
-    group_memberships: list[SurveyAggregateGroupMembership],
-    suppression_threshold: int = PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
-) -> SurveyAggregateBuildResult:
-    return _build_survey_aggregates(
-        config=config,
-        responses=responses,
-        group_memberships=group_memberships,
-        suppression_threshold=suppression_threshold,
-    )
+    responses: Iterable[SurveyResponseSnapshot],
+    participant_key_for: Callable[[UUID], ParticipantKey | None],
+) -> list[SurveyChoiceAnswer[ParticipantKey]]:
+    """Apply capture-time eligibility, then retain only choices under the selected key."""
+    questions = [
+        question
+        for question in config.questions
+        if question.question_type == SurveyQuestionType.choice
+    ]
+    answers: list[SurveyChoiceAnswer[ParticipantKey]] = []
+    for response in responses:
+        participant_key = participant_key_for(response.participant_id)
+        if participant_key is None or response.withdrawn:
+            continue
+        if not config.is_optional and not is_survey_response_complete_valid(
+            config=config, response=response
+        ):
+            continue
+        for question in questions:
+            answer = response.answers_by_question_id.get(question.id)
+            if answer is not None and _is_valid_choice_answer(question=question, answer=answer):
+                answers.append(
+                    SurveyChoiceAnswer(
+                        participant_key=participant_key,
+                        question_slug_id=question.slug_id,
+                        option_slug_ids=tuple(answer.option_slug_ids),
+                    )
+                )
+    return answers
 
 
-def _build_survey_aggregates(
-    *,
-    config: SurveyConfigSnapshot,
-    responses: list[SurveyResponseSnapshot],
-    group_memberships: list[SurveyAggregateGroupMembership],
-    suppression_threshold: int | None,
-) -> SurveyAggregateBuildResult:
-    choice_questions = sorted(
-        [
-            question
-            for question in config.questions
-            if question.question_type == SurveyQuestionType.choice
-        ],
+def _choice_questions(questions: Sequence[SurveyQuestionSnapshot]) -> list[SurveyQuestionSnapshot]:
+    return sorted(
+        (question for question in questions if question.question_type == SurveyQuestionType.choice),
         key=lambda question: (question.display_order, question.slug_id),
     )
-    counted_responses = [
-        response
-        for response in responses
-        if not response.withdrawn
-        and (
-            config.is_optional
-            or is_survey_response_complete_valid(config=config, response=response)
-        )
-    ]
-    questions = [_question_record(question) for question in choice_questions]
+
+
+def build_suppressed_survey_choice_aggregates[ParticipantKey](
+    *,
+    questions: Sequence[SurveyQuestionSnapshot],
+    answers: Sequence[SurveyChoiceAnswer[ParticipantKey]],
+    group_memberships: Sequence[SurveyAggregateGroupMembership[ParticipantKey]],
+    suppression_threshold: int = PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
+) -> SurveyAggregateBuildResult:
+    choice_questions = _choice_questions(questions)
+    question_records = [_question_record(question) for question in choice_questions]
     options = [
         _option_record(question=question, option=option)
         for question in choice_questions
         for option in _sorted_options(question)
     ]
-    results: list[SurveyAggregateResultRecord] = []
+    return SurveyAggregateBuildResult(
+        questions=question_records,
+        options=options,
+        results=build_suppressed_survey_choice_results(
+            option_slugs_by_question={
+                question.slug_id: tuple(option.slug_id for option in _sorted_options(question))
+                for question in choice_questions
+            },
+            answers=answers,
+            group_memberships=group_memberships,
+            suppression_threshold=suppression_threshold,
+            include_overall=True,
+        ),
+    )
 
-    for question in choice_questions:
-        valid_overall_answers = _valid_answers_for_question(
-            question=question,
-            responses=counted_responses,
-        )
-        overall_counts = _option_counts(
-            question=question,
-            participant_answers=valid_overall_answers,
-        )
-        results.extend(
-            _aggregate_block_records(
-                scope=SurveyAggregateScopeEnum.overall,
-                candidate_id=None,
-                group_id=None,
-                question=question,
-                option_counts=overall_counts,
-                denominator=len(valid_overall_answers),
-                suppression_reason=(SurveyAggregateSuppressionReasonEnum.count_below_threshold),
-                suppression_threshold=suppression_threshold,
+
+def build_suppressed_survey_choice_results[ParticipantKey](
+    *,
+    option_slugs_by_question: Mapping[str, Sequence[str]],
+    answers: Sequence[SurveyChoiceAnswer[ParticipantKey]],
+    group_memberships: Sequence[SurveyAggregateGroupMembership[ParticipantKey]],
+    suppression_threshold: int,
+    include_overall: bool,
+) -> list[SurveyAggregateResultRecord]:
+    results: list[SurveyAggregateResultRecord] = []
+    answers_by_question: dict[str, list[SurveyChoiceAnswer[ParticipantKey]]] = {}
+    for answer in answers:
+        answers_by_question.setdefault(answer.question_slug_id, []).append(answer)
+
+    for question_slug, option_slugs in option_slugs_by_question.items():
+        valid_overall_answers = answers_by_question.get(question_slug, [])
+        if include_overall:
+            results.extend(
+                _aggregate_block_records(
+                    scope=SurveyAggregateScopeEnum.overall,
+                    candidate_id=None,
+                    group_id=None,
+                    question_slug=question_slug,
+                    option_counts=_option_counts(
+                        option_slugs=option_slugs,
+                        participant_answers=valid_overall_answers,
+                    ),
+                    denominator=len(valid_overall_answers),
+                    suppression_reason=SurveyAggregateSuppressionReasonEnum.count_below_threshold,
+                    suppression_threshold=suppression_threshold,
+                )
             )
-        )
 
         for membership in group_memberships:
             group_answers = [
                 participant_answer
                 for participant_answer in valid_overall_answers
-                if participant_answer.participant_id in membership.user_ids
+                if participant_answer.participant_key in membership.participant_keys
             ]
             results.extend(
                 _aggregate_block_records(
                     scope=SurveyAggregateScopeEnum.opinion_group,
                     candidate_id=membership.candidate_id,
                     group_id=membership.group_id,
-                    question=question,
+                    question_slug=question_slug,
                     option_counts=_option_counts(
-                        question=question,
+                        option_slugs=option_slugs,
                         participant_answers=group_answers,
                     ),
                     denominator=len(group_answers),
@@ -227,11 +264,7 @@ def _build_survey_aggregates(
                 )
             )
 
-    return SurveyAggregateBuildResult(
-        questions=questions,
-        options=options,
-        results=results,
-    )
+    return results
 
 
 def _question_record(question: SurveyQuestionSnapshot) -> SurveyAggregateQuestionRecord:
@@ -267,38 +300,15 @@ def _sorted_options(question: SurveyQuestionSnapshot) -> list[SurveyOptionSnapsh
     return sorted(question.options, key=lambda option: (option.display_order, option.slug_id))
 
 
-def _valid_answers_for_question(
+def _option_counts[ParticipantKey](
     *,
-    question: SurveyQuestionSnapshot,
-    responses: list[SurveyResponseSnapshot],
-) -> list[_ParticipantAnswer]:
-    valid_answers: list[_ParticipantAnswer] = []
-    for response in responses:
-        answer = response.answers_by_question_id.get(question.id)
-        if answer is None:
-            continue
-        if _is_valid_choice_answer(question=question, answer=answer):
-            valid_answers.append(
-                _ParticipantAnswer(participant_id=response.participant_id, answer=answer)
-            )
-    return valid_answers
-
-
-def _option_counts(
-    *,
-    question: SurveyQuestionSnapshot,
-    participant_answers: list[_ParticipantAnswer],
+    option_slugs: Sequence[str],
+    participant_answers: Sequence[SurveyChoiceAnswer[ParticipantKey]],
 ) -> list[_OptionCount]:
+    counts = Counter(option for answer in participant_answers for option in answer.option_slug_ids)
     return [
-        _OptionCount(
-            option=option,
-            count=sum(
-                1
-                for participant_answer in participant_answers
-                if option.slug_id in participant_answer.answer.option_slug_ids
-            ),
-        )
-        for option in _sorted_options(question)
+        _OptionCount(option_slug_id=option_slug, count=counts[option_slug])
+        for option_slug in option_slugs
     ]
 
 
@@ -307,24 +317,22 @@ def _aggregate_block_records(
     scope: SurveyAggregateScopeEnum,
     candidate_id: int | None,
     group_id: int | None,
-    question: SurveyQuestionSnapshot,
+    question_slug: str,
     option_counts: list[_OptionCount],
     denominator: int,
     suppression_reason: SurveyAggregateSuppressionReasonEnum,
-    suppression_threshold: int | None,
+    suppression_threshold: int,
 ) -> list[SurveyAggregateResultRecord]:
-    is_suppressed = False
-    if suppression_threshold is not None:
-        is_suppressed = any(
-            0 < option_count.count < suppression_threshold for option_count in option_counts
-        )
+    is_suppressed = any(
+        0 < option_count.count < suppression_threshold for option_count in option_counts
+    )
     return [
         SurveyAggregateResultRecord(
             scope=scope,
             candidate_id=candidate_id,
             group_id=group_id,
-            question_key=question.slug_id,
-            option_key=f"{question.slug_id}:{option_count.option.slug_id}",
+            question_key=question_slug,
+            option_key=f"{question_slug}:{option_count.option_slug_id}",
             suppressed_count=None if is_suppressed else option_count.count,
             suppressed_percentage=None
             if is_suppressed

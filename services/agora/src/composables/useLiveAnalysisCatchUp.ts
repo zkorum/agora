@@ -7,18 +7,19 @@ import {
   ZodSupportedDisplayLanguageCodes,
   ZodSupportedSpokenLanguageCodes,
 } from "src/shared/languages";
-import type {
-  AnalysisFreshnessRequest,
-  SSEConversationAnalysisUpdatedData,
-} from "src/shared/types/dto";
+import type { SSEConversationAnalysisUpdatedData } from "src/shared/types/dto";
 import { type AnalysisView, zodAnalysisView } from "src/shared/types/zod";
 import {
-  buildAnalysisFreshnessRequest,
+  type AnalysisRefreshScope,
   getExpectedDescriptionLocalesFromEvent,
   isAnalysisFreshEnough,
   LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
 } from "src/utils/analysis/analysisFreshness";
 import type { AnalysisData } from "src/utils/api/comment/comment";
+import {
+  type ViewerQueryScope,
+  viewerQueryScopeSchema,
+} from "src/utils/query/viewerScope";
 
 type QueryKey = readonly unknown[];
 
@@ -31,6 +32,7 @@ interface LiveAnalysisQueryParams {
   aiLabelingEnabled: boolean | undefined;
   displayLanguage: SupportedDisplayLanguageCodes;
   spokenLanguages: SupportedSpokenLanguageCodes[];
+  viewerScope: ViewerQueryScope;
 }
 
 interface LiveAnalysisQueryInfo extends LiveAnalysisQueryParams {
@@ -51,12 +53,15 @@ interface LiveAnalysisCatchUpState {
 }
 
 interface FetchLiveAnalysisParams extends LiveAnalysisQueryParams {
-  freshness: AnalysisFreshnessRequest | null;
+  refreshScope: AnalysisRefreshScope;
 }
 
 interface LiveAnalysisCatchUpController {
   requestCatchUp: (data: SSEConversationAnalysisUpdatedData) => void;
-  clearConversation: (params: { conversationSlugId: string }) => void;
+  clearConversation: (params: {
+    conversationSlugId: string;
+    matchesQueryKey?: (queryKey: QueryKey) => boolean;
+  }) => void;
   clearAll: () => void;
 }
 
@@ -125,12 +130,13 @@ function parseLiveAnalysisQueryParams({
   if (!displayLanguageResult.success) {
     return undefined;
   }
-  const spokenLanguagesResult = ZodSupportedSpokenLanguageCodes.array().safeParse(
-    queryKey[6]
-  );
+  const spokenLanguagesResult =
+    ZodSupportedSpokenLanguageCodes.array().safeParse(queryKey[6]);
   if (!spokenLanguagesResult.success) {
     return undefined;
   }
+  const viewer = viewerQueryScopeSchema.safeParse(queryKey[7]);
+  if (!viewer.success) return undefined;
 
   return {
     conversationSlugId,
@@ -139,6 +145,7 @@ function parseLiveAnalysisQueryParams({
     aiLabelingEnabled: rawAiLabelingEnabled,
     displayLanguage: displayLanguageResult.data,
     spokenLanguages: spokenLanguagesResult.data,
+    viewerScope: viewer.data,
   };
 }
 
@@ -175,9 +182,7 @@ function isQueryRelevantToAnalysisEvent({
     return false;
   }
 
-  return (
-    data.candidateIds.includes(frameKey.candidateId)
-  );
+  return data.candidateIds.includes(frameKey.candidateId);
 }
 
 export function createLiveAnalysisCatchUpController({
@@ -239,9 +244,7 @@ export function createLiveAnalysisCatchUpController({
     return getActiveLiveAnalysisQueries({
       conversationSlugId,
       includeCheckpoints: true,
-    }).find(
-      (query) => query.queryHash === queryHash
-    );
+    }).find((query) => query.queryHash === queryHash);
   }
 
   function clearQueryState({ queryHash }: { queryHash: string }): void {
@@ -304,30 +307,31 @@ export function createLiveAnalysisCatchUpController({
     expectedSnapshotId: number | null;
     expectedDescriptionLocales: SupportedDisplayLanguageCodes[];
   }): boolean {
-    const existingState = catchUpStateByQueryHash.get(query.queryHash);
-    const existingLocales = new Set(
-      existingState?.expectedDescriptionLocales ?? []
-    );
-    const didAddDescriptionLocale = expectedDescriptionLocales.some(
-      (locale) => !existingLocales.has(locale)
-    );
-    const nextExpectedSnapshotId = Math.max(
-      existingState?.expectedSnapshotId ?? 0,
-      expectedSnapshotId ?? 0
-    );
-    catchUpStateByQueryHash.set(query.queryHash, {
+    const state: LiveAnalysisCatchUpState = catchUpStateByQueryHash.get(
+      query.queryHash
+    ) ?? {
       conversationSlugId,
       queryKey: query.queryKey,
-      expectedSnapshotId:
-        nextExpectedSnapshotId === 0 ? null : nextExpectedSnapshotId,
-      expectedDescriptionLocales: mergeLocales({
-        current: existingState?.expectedDescriptionLocales ?? [],
-        incoming: expectedDescriptionLocales,
-      }),
-      lastStartedAt: existingState?.lastStartedAt ?? 0,
-      inFlight: existingState?.inFlight ?? false,
-      timeout: existingState?.timeout,
+      expectedSnapshotId: null,
+      expectedDescriptionLocales: [],
+      lastStartedAt: 0,
+      inFlight: false,
+      timeout: undefined,
+    };
+    const didAddDescriptionLocale = expectedDescriptionLocales.some(
+      (locale) => !state.expectedDescriptionLocales.includes(locale)
+    );
+    const nextExpectedSnapshotId = Math.max(
+      state.expectedSnapshotId ?? 0,
+      expectedSnapshotId ?? 0
+    );
+    state.expectedSnapshotId =
+      nextExpectedSnapshotId === 0 ? null : nextExpectedSnapshotId;
+    state.expectedDescriptionLocales = mergeLocales({
+      current: state.expectedDescriptionLocales,
+      incoming: expectedDescriptionLocales,
     });
+    catchUpStateByQueryHash.set(query.queryHash, state);
     return didAddDescriptionLocale;
   }
 
@@ -423,12 +427,6 @@ export function createLiveAnalysisCatchUpController({
     state.lastStartedAt = Date.now();
 
     try {
-      const freshness = buildAnalysisFreshnessRequest({
-        previousAnalysis: query.analysis,
-        expectedSnapshotId: state.expectedSnapshotId,
-        expectedDescriptionLocales: state.expectedDescriptionLocales,
-        enablePrimaryFallback: true,
-      });
       const analysis = await fetchLiveAnalysis({
         conversationSlugId: query.conversationSlugId,
         analysisView: query.analysisView,
@@ -436,8 +434,11 @@ export function createLiveAnalysisCatchUpController({
         aiLabelingEnabled: query.aiLabelingEnabled,
         displayLanguage: query.displayLanguage,
         spokenLanguages: query.spokenLanguages,
-        freshness,
+        viewerScope: query.viewerScope,
+        refreshScope: state.expectedSnapshotId === null ? "labels" : "frame",
       });
+      // A selection change cancels this catch-up even if its fetch already ran.
+      if (catchUpStateByQueryHash.get(queryHash) !== state) return;
       queryClient.setQueryData(query.queryKey, analysis);
     } catch (error) {
       console.warn("[LiveAnalysisCatchUp] Refetch failed", {
@@ -450,6 +451,7 @@ export function createLiveAnalysisCatchUpController({
     } finally {
       state.inFlight = false;
     }
+    if (catchUpStateByQueryHash.get(queryHash) !== state) return;
 
     const refreshedQuery = getActiveLiveAnalysisQueryByHash({
       conversationSlugId: state.conversationSlugId,
@@ -514,11 +516,16 @@ export function createLiveAnalysisCatchUpController({
 
   function clearConversation({
     conversationSlugId,
+    matchesQueryKey = () => true,
   }: {
     conversationSlugId: string;
+    matchesQueryKey?: (queryKey: QueryKey) => boolean;
   }): void {
     for (const [queryHash, state] of Array.from(catchUpStateByQueryHash)) {
-      if (state.conversationSlugId === conversationSlugId) {
+      if (
+        state.conversationSlugId === conversationSlugId &&
+        matchesQueryKey(state.queryKey)
+      ) {
         clearQueryState({ queryHash });
       }
     }

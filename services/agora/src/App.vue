@@ -21,10 +21,6 @@
 
   <PostSignupPreferencesDialog />
   <EmbeddedBrowserWarningDialog />
-
-  <!-- Global Zupass iframe container - shared by all components -->
-  <!-- Parcnet creates its own dialog with overlay, positioned fixed -->
-  <div ref="zupassIframeContainer" class="zupass-iframe-container"></div>
 </template>
 
 <script setup lang="ts">
@@ -43,7 +39,6 @@ import { createOfflineNotificationController } from "./composables/offlineNotifi
 import { useComponentI18n } from "./composables/ui/useComponentI18n";
 import { isNetworkOffline } from "./composables/useNetworkStatus";
 import { useRealtimeSSE } from "./composables/useRealtimeSSE";
-import { useZupassVerification } from "./composables/zupass/useZupassVerification";
 import {
   buildContentTranslationTopic,
   buildProjectContentTranslationTopic,
@@ -59,6 +54,7 @@ import {
   isProjectRouteName,
 } from "./utils/router/conversationRouteContext";
 import { getSingleRouteParam } from "./utils/router/params";
+import { qvStatsTopics } from "./utils/sse/qvStatsSubscriptions";
 import { contentTranslationSubscriptions } from "./utils/translation/contentTranslationSubscriptions";
 import { useNotify } from "./utils/ui/notify";
 
@@ -81,9 +77,6 @@ const authInitializationController = createAuthInitializationController({
 });
 
 useHtmlNodeCssPatch();
-
-// Initialize global Zupass iframe container
-const { zupassIframeContainer } = useZupassVerification();
 
 // Determine layout mode from route name
 const route = useRoute();
@@ -117,6 +110,7 @@ const realtimeProjectSlug = computed(() => {
 });
 const realtimeTopics = computed(() => {
   const topics = new Set(contentTranslationSubscriptions.topics.value);
+  for (const topic of qvStatsTopics.value) topics.add(topic);
   if (realtimeConversationSlugId.value !== undefined) {
     topics.add(
       buildContentTranslationTopic({
@@ -230,10 +224,3 @@ onUnmounted(() => {
   authInitializationController.stop();
 });
 </script>
-
-<style lang="scss">
-.zupass-iframe-container {
-  // Empty container - Parcnet will inject iframe and dialog
-  // Dialog is positioned fixed with its own backdrop, doesn't need special styling here
-}
-</style>

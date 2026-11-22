@@ -1,4 +1,4 @@
-import { projectCapabilityValues } from "@/shared-backend/schema.js";
+import { projectCapabilityValues } from "@/shared/organizationAccess.js";
 import type { PremiumFeature } from "@/shared/types/zod.js";
 
 export type AllProjectCapability = (typeof projectCapabilityValues)[number];

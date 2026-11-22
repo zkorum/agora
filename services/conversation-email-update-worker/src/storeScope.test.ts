@@ -109,7 +109,7 @@ describe("scoped store predicates", () => {
         expect(query.sql.match(/"lifted_at" is null/g)).toHaveLength(2);
     });
 
-    it("requires active owner membership, capability, organization, and project ownership", () => {
+    it("requires an authorized owner role, active membership, organization, and project ownership", () => {
         const db = drizzle.mock();
         const query = activeOwnerAuthorizationQuery({
             db,
@@ -118,21 +118,19 @@ describe("scoped store predicates", () => {
         }).toSQL();
 
         expect(query.sql).toContain(
-            'inner join "organization" on ("organization"."id" = "organization_membership"."organization_id" and "organization"."deleted_at" is null)',
+            'inner join "organization" on (("organization"."id" = "organization_membership"."organization_id") and (("organization"."deleted_at" is null)))',
         );
         expect(query.sql).toContain(
-            'inner join "project_organization_ownership" on ("project_organization_ownership"."organization_id" = "organization"."id" and "project_organization_ownership"."project_id" = $1 and "project_organization_ownership"."deleted_at" is null)',
+            'inner join "project_organization_ownership" on (("project_organization_ownership"."organization_id" = "organization"."id") and ("project_organization_ownership"."project_id" = $1) and (("project_organization_ownership"."deleted_at" is null)))',
         );
         expect(query.sql).toContain(
-            'inner join "organization_membership_all_project_capability" on ("organization_membership_all_project_capability"."organization_membership_id" = "organization_membership"."id" and "organization_membership_all_project_capability"."capability" = $2 and "organization_membership_all_project_capability"."deleted_at" is null)',
-        );
-        expect(query.sql).toContain(
-            'where ("organization_membership"."user_id" = $3 and "organization_membership"."deleted_at" is null)',
+            'where (("organization_membership"."user_id" = $2) and (("organization_membership"."deleted_at" is null)) and ("organization_membership"."role" in ($3, $4)))',
         );
         expect(query.params).toEqual([
             42,
-            "conversation_email_update",
             "f97f8461-8c04-4604-ae09-29e417b9b1e9",
+            "admin",
+            "manager",
             1,
         ]);
     });

@@ -14,12 +14,15 @@ import type { PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgre
 import { alias, unionAll, type AnyPgColumn } from "drizzle-orm/pg-core";
 import {
     conversationEmailUpdateConversationTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
+    comparisonAnswerTable,
+    comparisonResponseTable,
     opinionModerationTable,
     opinionTable,
     voteContentTable,
     voteTable,
+    userTable,
+    gatheringResponseTable,
+    gatheringResponseContentTable,
 } from "./schema.js";
 
 export type ConversationEmailParticipationScope =
@@ -76,9 +79,9 @@ export function buildConversationEmailParticipationQuery({
         voteContentTable,
         "conversation_email_current_vote_content",
     );
-    const historicalMaxdiffComparison = alias(
-        maxdiffComparisonTable,
-        "conversation_email_historical_maxdiff_comparison",
+    const historicalComparisonAnswer = alias(
+        comparisonAnswerTable,
+        "conversation_email_historical_comparison_answer",
     );
     const visibleOpinionModeration = or(
         isNull(opinionModerationTable.id),
@@ -117,10 +120,17 @@ export function buildConversationEmailParticipationQuery({
         );
     const opinionParticipation = db
         .select({
-            userId: opinionTable.authorId,
+            userId: userTable.id,
             conversationId: opinionTable.conversationId,
         })
         .from(opinionTable)
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, opinionTable.authorId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
         .leftJoin(
             opinionModerationTable,
             and(
@@ -141,46 +151,50 @@ export function buildConversationEmailParticipationQuery({
                 visibleOpinionModeration,
             ),
         );
-    const maxdiffParticipation = db
+    const comparisonParticipation = db
         .select({
-            userId: maxdiffResultTable.participantId,
-            conversationId: maxdiffResultTable.conversationId,
+            userId: userTable.id,
+            conversationId: comparisonResponseTable.conversationId,
         })
-        .from(maxdiffResultTable)
+        .from(comparisonResponseTable)
+        .innerJoin(
+            userTable,
+            eq(userTable.id, comparisonResponseTable.participantId),
+        )
         .where(
             and(
                 participationScopeCondition({
                     db,
-                    conversationId: maxdiffResultTable.conversationId,
-                    participantId: maxdiffResultTable.participantId,
+                    conversationId: comparisonResponseTable.conversationId,
+                    participantId: comparisonResponseTable.participantId,
                     scope,
                 }),
                 exists(
                     db
-                        .select({ id: maxdiffComparisonTable.id })
-                        .from(maxdiffComparisonTable)
+                        .select({ id: comparisonAnswerTable.id })
+                        .from(comparisonAnswerTable)
                         .where(
                             and(
                                 eq(
-                                    maxdiffComparisonTable.maxdiffResultId,
-                                    maxdiffResultTable.id,
+                                    comparisonAnswerTable.comparisonResponseId,
+                                    comparisonResponseTable.id,
                                 ),
-                                isNull(maxdiffComparisonTable.deletedAt),
+                                isNull(comparisonAnswerTable.deletedAt),
                             ),
                         ),
                 ),
                 exists(
                     db
-                        .select({ id: historicalMaxdiffComparison.id })
-                        .from(historicalMaxdiffComparison)
+                        .select({ id: historicalComparisonAnswer.id })
+                        .from(historicalComparisonAnswer)
                         .where(
                             and(
                                 eq(
-                                    historicalMaxdiffComparison.maxdiffResultId,
-                                    maxdiffResultTable.id,
+                                    historicalComparisonAnswer.comparisonResponseId,
+                                    comparisonResponseTable.id,
                                 ),
                                 lte(
-                                    historicalMaxdiffComparison.createdAt,
+                                    historicalComparisonAnswer.createdAt,
                                     cutoffAt,
                                 ),
                             ),
@@ -188,9 +202,67 @@ export function buildConversationEmailParticipationQuery({
                 ),
             ),
         );
+    const gatheringParticipation = db
+        .select({
+            userId: userTable.id,
+            conversationId: gatheringResponseTable.conversationId,
+        })
+        .from(gatheringResponseTable)
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, gatheringResponseTable.authorId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .where(
+            and(
+                participationScopeCondition({
+                    db,
+                    conversationId: gatheringResponseTable.conversationId,
+                    participantId: gatheringResponseTable.authorId,
+                    scope,
+                }),
+                eq(gatheringResponseTable.isSeed, false),
+                isNull(gatheringResponseTable.deletedAt),
+                isNull(gatheringResponseTable.accountHiddenAt),
+                isNotNull(gatheringResponseTable.currentContentId),
+                or(
+                    isNull(gatheringResponseTable.moderation),
+                    eq(gatheringResponseTable.moderation, "move"),
+                ),
+                lte(gatheringResponseTable.createdAt, cutoffAt),
+                // A facilitator copying a response is not the author's participation/consent.
+                or(
+                    isNull(gatheringResponseTable.baselineContentId),
+                    exists(
+                        db
+                            .select({ id: gatheringResponseContentTable.id })
+                            .from(gatheringResponseContentTable)
+                            .where(
+                                and(
+                                    eq(
+                                        gatheringResponseContentTable.responseId,
+                                        gatheringResponseTable.id,
+                                    ),
+                                    ne(
+                                        gatheringResponseContentTable.id,
+                                        gatheringResponseTable.baselineContentId,
+                                    ),
+                                    lte(
+                                        gatheringResponseContentTable.createdAt,
+                                        cutoffAt,
+                                    ),
+                                ),
+                            ),
+                    ),
+                ),
+            ),
+        );
     return unionAll(
         voteParticipation,
         opinionParticipation,
-        maxdiffParticipation,
+        comparisonParticipation,
+        gatheringParticipation,
     );
 }

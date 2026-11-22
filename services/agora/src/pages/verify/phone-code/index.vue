@@ -23,6 +23,7 @@
           <template #body>
             <PhoneOtpForm
               ref="phoneOtpFormRef"
+              :recover-account="false"
               :purpose="phoneAuthPurpose"
               @change-identifier="changePhoneNumber"
             />

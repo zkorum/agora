@@ -1,0 +1,103 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d0361063-45be-4fb0-a859-1a98abce4778",
+  "prevIds": [
+    "a29aa095-768e-4467-a30e-536ba32075b8"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "is_site_moderator"
+      ],
+      "writes": [
+        "s|col|public.user.is_site_moderator",
+        "n|col|public.user.is_site_moderator",
+        "e|col|public.user.is_site_moderator"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "is_site_org_admin"
+      ],
+      "writes": [
+        "s|col|public.user.is_site_org_admin",
+        "n|col|public.user.is_site_org_admin",
+        "e|col|public.user.is_site_org_admin"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "is_moderator"
+      ],
+      "writes": [
+        "s|col|public.user.is_moderator",
+        "n|col|public.user.is_moderator",
+        "e|col|public.user.is_moderator"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "is_site_moderator",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "is_site_org_admin",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user\",\"is_moderator\"]"
+    }
+  ]
+}

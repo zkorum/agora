@@ -39,7 +39,7 @@ describe("default project provisioning", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await db.execute(
             sql.raw(readDbFixtureSql("default-project-provisioning.sql")),
         );
@@ -106,7 +106,7 @@ describe("default project provisioning", () => {
         expect(projects.at(0)?.currentContentId).toEqual(expect.any(Number));
     });
 
-    it("reactivates and repairs the existing historical container", async () => {
+    it("creates a new shell and preserves the deleted historical container", async () => {
         const projects = await db
             .insert(projectTable)
             .values({
@@ -136,18 +136,16 @@ describe("default project provisioning", () => {
             organizationId,
         });
 
-        expect(result).toEqual({
-            projectId: project.id,
-            projectSlug: project.slug,
-            projectTitle: project.title,
-        });
-        const reactivatedProjects = await db
+        expect(result.projectId).not.toBe(project.id);
+        expect(result.projectSlug).toBe(project.slug);
+        const historicalProjects = await db
             .select()
             .from(projectTable)
             .where(eq(projectTable.id, project.id));
-        expect(reactivatedProjects.at(0)?.deletedAt).toBeNull();
-        expect(reactivatedProjects.at(0)?.currentContentId).toEqual(
-            expect.any(Number),
+        expect(historicalProjects.at(0)?.deletedAt).toEqual(NOW);
+        expect(historicalProjects.at(0)?.currentContentId).toBeNull();
+        expect(historicalProjects.at(0)?.autoProvisionedForOrganizationId).toBe(
+            organizationId,
         );
         const ownerships = await db
             .select()
@@ -156,6 +154,60 @@ describe("default project provisioning", () => {
         expect(
             ownerships.filter((ownership) => ownership.deletedAt === null),
         ).toHaveLength(1);
+    });
+
+    it("does not reattach an explicitly removed ownership relationship", async () => {
+        const project = await getOrCreateDefaultProjectForOrganization({
+            db,
+            organizationId,
+        });
+        await db
+            .update(projectOrganizationOwnershipTable)
+            .set({ deletedAt: NOW });
+        await expect(
+            getOrCreateDefaultProjectForOrganization({ db, organizationId }),
+        ).rejects.toThrow("Default project ownership is unavailable");
+        const ownerships = await db
+            .select()
+            .from(projectOrganizationOwnershipTable)
+            .where(
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    project.projectId,
+                ),
+            );
+        expect(ownerships).toHaveLength(1);
+        expect(ownerships.at(0)?.deletedAt).toEqual(NOW);
+    });
+
+    it("does not provision for a deleted organization", async () => {
+        await db.update(organizationTable).set({ deletedAt: NOW });
+        await expect(
+            getOrCreateDefaultProjectForOrganization({ db, organizationId }),
+        ).rejects.toThrow("Organization not found");
+        await expect(db.select().from(projectTable)).resolves.toHaveLength(0);
+    });
+
+    it("does not infer ownership from provenance when an existing shell has no ownership history", async () => {
+        const [project] = await db
+            .insert(projectTable)
+            .values({
+                slug: "unowned-default",
+                title: "Unowned",
+                directoryVisibility: "unlisted",
+                autoProvisionedForOrganizationId: organizationId,
+            })
+            .returning();
+        if (project === undefined) throw new Error("Missing default fixture");
+        await expect(
+            getOrCreateDefaultProjectForOrganization({ db, organizationId }),
+        ).rejects.toThrow("Default project ownership is unavailable");
+        await expect(
+            db.select().from(projectOrganizationOwnershipTable),
+        ).resolves.toHaveLength(0);
+        await expect(
+            db.select().from(projectContentTable),
+        ).resolves.toHaveLength(0);
     });
 
     it("participates in an outer transaction rollback", async () => {

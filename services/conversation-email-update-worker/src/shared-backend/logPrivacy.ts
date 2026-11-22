@@ -234,8 +234,6 @@ export const logContextSchema = z.object({
             "analysis_schedule",
             "math_queue",
             "survey_scoring_queue_failed",
-            "event_ticket_verified",
-            "event_ticket_verification_failed",
             "log_sanitization_failed",
         ])
         .optional(),
@@ -248,7 +246,7 @@ export const logContextSchema = z.object({
             suggestionId: uuid.optional(),
             suggestionIds: z.array(uuid).max(3).optional(),
             confident: z.boolean().optional(),
-            conversationType: z.enum(["polis", "ranking"]).optional(),
+            conversationType: z.enum(["polis", "prioritizing"]).optional(),
             source: z.enum(["bedrock", "simulated"]).optional(),
             durationMs: counter.optional(),
             reason: z

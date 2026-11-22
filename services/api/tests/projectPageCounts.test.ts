@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -19,6 +20,8 @@ import {
     fetchConversationProjectContext,
 } from "../src/service/projectPage.js";
 import {
+    comparisonAnalysisCloseTable,
+    conversationAnalysisCloseTable,
     conversationContentTable,
     conversationContentTranslationTable,
     conversationTable,
@@ -33,9 +36,15 @@ import {
     projectTranslationTargetLanguageTable,
     rankingConversationConfigTable,
     rankingConversationStatsSnapshotTable,
+    qvConfigTable,
+    qvLiveStatsTable,
 } from "../src/shared-backend/schema.js";
-import { Dto } from "../src/shared/types/dto.js";
-import type { ConversationLanguageSettingsSource } from "../src/shared/types/dto.js";
+import {
+    Dto,
+    type ConversationLanguageSettingsSource,
+} from "../src/shared/types/dto.js";
+import { fetchConversationDisplayCountsByConversationId } from "../src/service/conversationDisplayCounts.js";
+import { isProjectIndexable } from "../src/service/conversationIndexing.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
 vi.mock("../src/app.js", () => ({
@@ -65,7 +74,7 @@ describe("project published participation counts", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         // Intentionally no vote, participant, or survey tables: project reads
         // must depend only on the same persisted counters as conversation pages.
         await db.execute(sql.raw(readDbFixtureSql("project-page-counts.sql")));
@@ -79,7 +88,8 @@ describe("project published participation counts", () => {
     beforeEach(async () => {
         await db.execute(sql`TRUNCATE project_contact, project_external_organization,
             organization, conversation, conversation_view_snapshot,
-            ranking_conversation_config, ranking_conversation_stats_snapshot, project,
+            ranking_conversation_config, ranking_conversation_stats_snapshot,
+            comparison_analysis_close, conversation_analysis_close, project,
             project_content, project_content_translation,
             project_translation_target_language, conversation_content,
             conversation_content_translation, conversation_translation_target_language
@@ -342,7 +352,8 @@ describe("project published participation counts", () => {
                 await addTranslatedActivity(languageSettingsSource);
                 let projectReads = 0;
                 let projectTargetReads = 0;
-                const measuredDb = drizzle(client, {
+                const measuredDb = drizzle({
+                    client,
                     logger: {
                         logQuery(query) {
                             if (query.includes('from "project" '))
@@ -503,6 +514,61 @@ describe("project published participation counts", () => {
         });
     });
 
+    it("keeps direct links working while an unlisted project exposes summary cards only", async () => {
+        await addConversation({ slugId: "11" });
+        await addConversation({ slugId: "12", isIndexed: false });
+        const common = {
+            db,
+            baseImageServiceUrl: "https://images.example.com",
+            currentDisplayLanguage: "en",
+            requesterUserId: undefined,
+        } as const;
+        const fetchPage = async () =>
+            await fetchProjectPage({
+                ...common,
+                request: Dto.fetchProjectPageRequest.parse({
+                    projectSlug: "test-project",
+                }),
+            });
+        await db
+            .update(projectTable)
+            .set({ directoryVisibility: "unlisted" })
+            .where(eq(projectTable.id, 1));
+        const unlisted = await fetchPage();
+        await expect(
+            isProjectIndexable({ db, projectSlug: "test-project" }),
+        ).resolves.toBe(false);
+        expect(unlisted.activities.map(({ isIndexed }) => isIndexed)).toEqual([
+            false,
+            false,
+        ]);
+        expect(
+            unlisted.activities.every((activity) => !("slugId" in activity)),
+        ).toBe(true);
+        await expect(
+            fetchProjectConversationPage({
+                ...common,
+                request: {
+                    projectSlug: "test-project",
+                    conversationSlugId: "11",
+                },
+            }),
+        ).resolves.toMatchObject({ project: { slug: "test-project" } });
+
+        await db
+            .update(projectTable)
+            .set({ directoryVisibility: "listed" })
+            .where(eq(projectTable.id, 1));
+        const relisted = await fetchPage();
+        await expect(
+            isProjectIndexable({ db, projectSlug: "test-project" }),
+        ).resolves.toBe(true);
+        expect(relisted.activities).toMatchObject([
+            { isIndexed: true, slugId: "11" },
+            { isIndexed: false },
+        ]);
+    });
+
     it("loads both complete project payloads from snapshots alone for 57 conversations", async () => {
         const snapshots: (typeof conversationViewSnapshotTable.$inferInsert)[] =
             [];
@@ -640,7 +706,7 @@ describe("project published participation counts", () => {
         );
     });
 
-    it("requires a person's name for external affiliations that the admin contact contract cannot select", async () => {
+    it("requires a name or email for external affiliations that the admin contact contract cannot select", async () => {
         const [organization] = await db
             .insert(projectExternalOrganizationTable)
             .values({
@@ -663,46 +729,66 @@ describe("project published participation counts", () => {
         ).rejects.toMatchObject({
             cause: {
                 code: "23514",
-                constraint_name: "project_contact_name_or_affiliation_check",
+                constraint_name: "project_contact_identity_or_email_check",
             },
         });
     });
 
     it.each([undefined, null, "", " \t\n\r ", "\u00a0\u2003\ufeff"])(
-        "rejects a direct database insert without a name or organization (%j)",
+        "rejects a website-only database contact without a name or organization (%j)",
         async (name) => {
             await expect(
                 db.insert(projectContactTable).values({
                     projectId: 1,
                     firstName: name,
                     lastName: name,
-                    email: "contact@example.com",
+                    websiteUrl: "https://example.com/contact",
                 }),
             ).rejects.toMatchObject({
                 cause: {
                     code: "23514",
-                    constraint_name:
-                        "project_contact_name_or_affiliation_check",
+                    constraint_name: "project_contact_identity_or_email_check",
                 },
             });
         },
     );
 
-    it("rejects removing the last contact identity through a direct database update", async () => {
+    it("allows removing the name while retaining email but rejects an unidentified website-only contact", async () => {
         await db.insert(projectContactTable).values({
             projectId: 1,
             firstName: "Alex",
             email: "alex@example.com",
         });
+        await db
+            .update(projectContactTable)
+            .set({ firstName: null })
+            .where(eq(projectContactTable.projectId, 1));
+        const page = Dto.fetchProjectPageResponse.parse(
+            await fetchProjectPage({
+                db,
+                baseImageServiceUrl: "https://images.example.com",
+                currentDisplayLanguage: "en",
+                requesterUserId: undefined,
+                request: Dto.fetchProjectPageRequest.parse({
+                    projectSlug: "test-project",
+                }),
+            }),
+        );
+        expect(page.project.contact).toMatchObject({
+            firstName: undefined,
+            lastName: undefined,
+            affiliationName: undefined,
+            email: "alex@example.com",
+        });
         await expect(
             db
                 .update(projectContactTable)
-                .set({ firstName: null })
+                .set({ email: null, websiteUrl: "https://example.com/contact" })
                 .where(eq(projectContactTable.projectId, 1)),
         ).rejects.toMatchObject({
             cause: {
                 code: "23514",
-                constraint_name: "project_contact_name_or_affiliation_check",
+                constraint_name: "project_contact_identity_or_email_check",
             },
         });
     });
@@ -760,7 +846,8 @@ describe("project published participation counts", () => {
         await db
             .update(conversationTable)
             .set({
-                conversationType: "ranking",
+                conversationType: "prioritizing",
+                prioritizationType: "comparisons",
                 polisConfigId: null,
                 rankingConfigId: config.id,
             })
@@ -770,16 +857,19 @@ describe("project published participation counts", () => {
             participantCount: 1,
             voteCount: 2,
         });
-        await db.insert(rankingConversationStatsSnapshotTable).values({
+        const publishedCounts = {
             conversationId,
-            isClosed: false,
-            scoringInputRevision: 1,
             itemCount: 2,
             totalItemCount: 2,
             participantCount: 3,
             totalParticipantCount: 10,
             voteCount: 12,
             totalVoteCount: 40,
+        };
+        await db.insert(rankingConversationStatsSnapshotTable).values({
+            ...publishedCounts,
+            isClosed: false,
+            scoringInputRevision: 1,
         });
 
         await expect(
@@ -788,6 +878,113 @@ describe("project published participation counts", () => {
             activityCount: 1,
             participationCount: 3,
             voteCount: 12,
+        });
+
+        const closeEpoch = randomUUID();
+        const finalizedAt = new Date(Math.floor(Date.now() / 1_000) * 1_000);
+        await db
+            .update(conversationTable)
+            .set({
+                isClosed: true,
+                voteBufferEpoch: closeEpoch,
+                closingTargetRevision: 2,
+                closedFinalizedAt: finalizedAt,
+            })
+            .where(eq(conversationTable.id, conversationId));
+        const [closing] = await db
+            .insert(rankingConversationStatsSnapshotTable)
+            .values({
+                ...publishedCounts,
+                isClosed: true,
+                scoringInputRevision: 2,
+            })
+            .returning({ id: rankingConversationStatsSnapshotTable.id });
+        const [close] = await db
+            .insert(conversationAnalysisCloseTable)
+            .values({
+                conversationId,
+                closeEpoch,
+                sourceRevision: 2,
+                finalizedAt,
+            })
+            .returning({ id: conversationAnalysisCloseTable.id });
+        await db.insert(comparisonAnalysisCloseTable).values({
+            conversationId,
+            closeId: close.id,
+            originalStatsSnapshotId: closing.id,
+            closingStatsSnapshotId: closing.id,
+            liveStatsSnapshotId: closing.id,
+            servedStatsSnapshotId: closing.id,
+        });
+        await db
+            .update(rankingConversationConfigTable)
+            .set({
+                participantCount: 1,
+                voteCount: 5,
+                scoringInputRevision: 3,
+                processedScoringInputRevision: 3,
+            })
+            .where(eq(rankingConversationConfigTable.id, config.id));
+        await db.insert(rankingConversationStatsSnapshotTable).values({
+            ...publishedCounts,
+            participantCount: 1,
+            voteCount: 5,
+            isClosed: true,
+            scoringInputRevision: 3,
+        });
+        const displayed = await fetchConversationDisplayCountsByConversationId({
+            db,
+            conversationIds: [conversationId],
+        });
+        expect(displayed.get(conversationId)).toMatchObject({
+            rankingStatsSnapshotId: closing.id,
+            participantCount: 3,
+            voteCount: 12,
+        });
+    });
+
+    it("uses the independent QV participant projection for conversation and project totals", async () => {
+        const config = (
+            await db.insert(qvConfigTable).values({ itemCount: 2 }).returning()
+        ).at(0);
+        if (config === undefined) throw new Error("Missing QV fixture");
+        const conversationId = await addConversation({ slugId: "1" });
+        await db
+            .update(conversationTable)
+            .set({
+                conversationType: "prioritizing",
+                prioritizationType: "qv",
+                polisConfigId: null,
+                creditVotingConfigId: config.id,
+            })
+            .where(eq(conversationTable.id, conversationId));
+        await addSnapshot({
+            conversationId,
+            participantCount: 1,
+            voteCount: 30,
+        });
+        await db
+            .insert(qvLiveStatsTable)
+            .values({ conversationId, participantCount: 8, revision: 4 });
+        const counts = (
+            await fetchConversationDisplayCountsByConversationId({
+                db,
+                conversationIds: [conversationId],
+            })
+        ).get(conversationId);
+        expect(counts).toMatchObject({
+            participantCount: 8,
+            totalParticipantCount: 8,
+            qvStatsRevision: 4,
+            voteCount: 0,
+            opinionCount: 2,
+        });
+        await expect(
+            fetchProjectAggregateCounts({ db, projectId: 1 }),
+        ).resolves.toEqual({
+            activityCount: 1,
+            participationCount: 8,
+            voteCount: 0,
         });
     });
 });

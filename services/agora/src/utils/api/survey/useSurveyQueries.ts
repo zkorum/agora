@@ -10,6 +10,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   SurveyAnswerSaveRequest,
   SurveyFormSnapshot,
+  SurveyResponseWithdrawRequest,
 } from "src/shared/types/dto";
 import type {
   AnalysisView,
@@ -349,12 +350,15 @@ export function useSurveyWithdrawMutation({
     mutationKey: writes.mutationKey,
     mutationFn: async ({
       context,
+      expectedForm,
     }: {
       context: ReturnType<typeof writes.capture>;
+      expectedForm: NonNullable<SurveyResponseWithdrawRequest["expectedForm"]>;
     }) => {
       if (!context.isViewerCurrent()) return undefined;
       const response = await withdrawSurveyResponse({
         conversationSlugId: context.conversationSlugId,
+        expectedForm,
         skipEmailUpdateConsent: onboarding.hasSkippedEmailUpdateConsent(
           context.conversationSlugId
         ),
@@ -369,10 +373,12 @@ export function useSurveyWithdrawMutation({
       writes.reconcile({ response, context }),
     retry: false,
   });
-  async function mutateAsync() {
+  async function mutateAsync(
+    expectedForm: NonNullable<SurveyResponseWithdrawRequest["expectedForm"]>
+  ) {
     const context = writes.capture();
     try {
-      const response = await mutation.mutateAsync({ context });
+      const response = await mutation.mutateAsync({ context, expectedForm });
       return writes.present({ response, context });
     } catch (error) {
       if (!context.isScreenCurrent() || !context.isViewerCurrent())

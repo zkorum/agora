@@ -7,8 +7,6 @@ export interface CommentComposerTranslations {
   conversationLockedError: string;
   conversationClosedError: string;
   createOpinionError: string;
-  eventTicketRequiredTitle: string;
-  eventTicketRequiredMessage: string;
   exitPromptTitle: string;
   exitPromptDescription: string;
   validationWarningMultipleIdeas: string;
@@ -28,9 +26,6 @@ export const commentComposerTranslations: Record<
       "Cannot create statement because the conversation is locked",
     conversationClosedError: "This conversation has been closed",
     createOpinionError: "Error while trying to create a new statement",
-    eventTicketRequiredTitle: "Event Ticket Required",
-    eventTicketRequiredMessage:
-      "You need to verify your Devconnect 2025 ticket to participate in this conversation.",
     exitPromptTitle: "Save statement as draft?",
     exitPromptDescription: "Your draft statement will be here when you return.",
     validationWarningMultipleIdeas:
@@ -45,9 +40,6 @@ export const commentComposerTranslations: Record<
     conversationLockedError: "لا يمكن إنشاء مقترح لأن المحادثة مقفلة",
     conversationClosedError: "تم إغلاق هذه المحادثة",
     createOpinionError: "خطأ أثناء محاولة إنشاء مقترح جديد",
-    eventTicketRequiredTitle: "تذكرة الحدث مطلوبة",
-    eventTicketRequiredMessage:
-      "تحتاج إلى التحقق من تذكرة Devconnect 2025 الخاصة بك للمشاركة في هذه المحادثة.",
     exitPromptTitle: "حفظ المقترح كمسودة؟",
     exitPromptDescription: "ستكون مسودتك هنا عند عودتك.",
     validationWarningMultipleIdeas:
@@ -63,9 +55,6 @@ export const commentComposerTranslations: Record<
       "No se puede crear una proposición porque la conversación está bloqueada",
     conversationClosedError: "Esta conversación ha sido cerrada",
     createOpinionError: "Error al intentar crear una nueva proposición",
-    eventTicketRequiredTitle: "Entrada del evento requerida",
-    eventTicketRequiredMessage:
-      "Necesita verificar su entrada de Devconnect 2025 para participar en esta conversación.",
     exitPromptTitle: "¿Guardar proposición como borrador?",
     exitPromptDescription: "Su borrador estará aquí cuando regrese.",
     validationWarningMultipleIdeas:
@@ -81,9 +70,6 @@ export const commentComposerTranslations: Record<
       "امکان ایجاد گزاره وجود ندارد زیرا گفتگو قفل شده است",
     conversationClosedError: "این گفتگو بسته شده است",
     createOpinionError: "خطا هنگام ایجاد گزاره جدید",
-    eventTicketRequiredTitle: "بلیط رویداد الزامی است",
-    eventTicketRequiredMessage:
-      "برای مشارکت در این گفتگو باید بلیط Devconnect 2025 خود را تأیید کنید.",
     exitPromptTitle: "گزاره به عنوان پیش‌نویس ذخیره شود؟",
     exitPromptDescription: "پیش‌نویس شما هنگام بازگشت اینجا خواهد بود.",
     validationWarningMultipleIdeas:
@@ -100,9 +86,6 @@ export const commentComposerTranslations: Record<
     conversationClosedError: "Cette conversation a été fermée",
     createOpinionError:
       "Erreur lors de la tentative de création d'une nouvelle proposition",
-    eventTicketRequiredTitle: "Billet d'événement requis",
-    eventTicketRequiredMessage:
-      "Vous devez vérifier votre billet Devconnect 2025 pour participer à cette conversation.",
     exitPromptTitle: "Enregistrer la proposition comme brouillon ?",
     exitPromptDescription: "Votre brouillon sera ici à votre retour.",
     validationWarningMultipleIdeas:
@@ -116,9 +99,6 @@ export const commentComposerTranslations: Record<
     conversationLockedError: "无法创建意见，因为对话已锁定",
     conversationClosedError: "此对话已被关闭",
     createOpinionError: "尝试创建新意见时出错",
-    eventTicketRequiredTitle: "需要活动门票",
-    eventTicketRequiredMessage:
-      "您需要验证您的 Devconnect 2025 门票才能参与此对话。",
     exitPromptTitle: "将意见保存为草稿？",
     exitPromptDescription: "您的草稿将在您返回时保留在这里。",
     validationWarningMultipleIdeas:
@@ -132,9 +112,6 @@ export const commentComposerTranslations: Record<
     conversationLockedError: "無法創建意見，因為對話已鎖定",
     conversationClosedError: "此對話已被關閉",
     createOpinionError: "嘗試創建新意見時出錯",
-    eventTicketRequiredTitle: "需要活動門票",
-    eventTicketRequiredMessage:
-      "您需要驗證您的 Devconnect 2025 門票才能參與此對話。",
     exitPromptTitle: "將意見儲存為草稿？",
     exitPromptDescription: "您的草稿將在您返回時保留在這裡。",
     validationWarningMultipleIdeas:
@@ -148,9 +125,6 @@ export const commentComposerTranslations: Record<
     conversationLockedError: "לא ניתן ליצור הצהרה כי השיחה נעולה",
     conversationClosedError: "שיחה זו נסגרה",
     createOpinionError: "שגיאה בעת ניסיון ליצור הצהרה חדשה",
-    eventTicketRequiredTitle: "נדרש כרטיס אירוע",
-    eventTicketRequiredMessage:
-      "עליכם לאמת את כרטיס ה-Devconnect 2025 שלכם כדי להשתתף בשיחה זו.",
     exitPromptTitle: "לשמור הצהרה כטיוטה?",
     exitPromptDescription: "הטיוטה שלך תהיה כאן כשתחזור.",
     validationWarningMultipleIdeas:
@@ -164,9 +138,6 @@ export const commentComposerTranslations: Record<
     conversationLockedError: "会話がロックされているため、意見を作成できません",
     conversationClosedError: "この会話は終了しました",
     createOpinionError: "新しい意見を作成しようとした際にエラーが発生しました",
-    eventTicketRequiredTitle: "イベントチケットが必要",
-    eventTicketRequiredMessage:
-      "この会話に参加するには、Devconnect 2025 チケットを確認する必要があります。",
     exitPromptTitle: "意見を下書きとして保存しますか？",
     exitPromptDescription: "下書きは戻ったときにここにあります。",
     validationWarningMultipleIdeas:
@@ -181,9 +152,6 @@ export const commentComposerTranslations: Record<
     conversationLockedError: "Талкуу кулпуланганы үчүн пикир түзүү мүмкүн эмес",
     conversationClosedError: "Бул талкуу жабылган",
     createOpinionError: "Жаңы пикир түзүүдө ката кетти",
-    eventTicketRequiredTitle: "Иш-чара билети талап кылынат",
-    eventTicketRequiredMessage:
-      "Бул талкууга катышуу үчүн Devconnect 2025 билетиңизди текшерүү керек.",
     exitPromptTitle: "Пикирди карала катары сактоо?",
     exitPromptDescription: "Кайтканыңызда каралаңыз бул жерде болот.",
     validationWarningMultipleIdeas:
@@ -199,9 +167,6 @@ export const commentComposerTranslations: Record<
       "Невозможно создать высказывание, так как обсуждение заблокировано",
     conversationClosedError: "Это обсуждение закрыто",
     createOpinionError: "Ошибка при создании нового высказывания",
-    eventTicketRequiredTitle: "Требуется билет на мероприятие",
-    eventTicketRequiredMessage:
-      "Для участия в этом обсуждении необходимо подтвердить билет Devconnect 2025.",
     exitPromptTitle: "Сохранить высказывание как черновик?",
     exitPromptDescription: "Ваш черновик будет здесь, когда вы вернётесь.",
     validationWarningMultipleIdeas:

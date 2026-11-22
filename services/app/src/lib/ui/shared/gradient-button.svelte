@@ -35,12 +35,13 @@
         ? "soft"
         : "secondary",
   );
+  const linkAttributes = $derived(
+    href === undefined ? {} : { href, target, rel },
+  );
 </script>
 
 <Button
-  {href}
-  {target}
-  {rel}
+  {...linkAttributes}
   variant={buttonVariant}
   {size}
   {disabled}

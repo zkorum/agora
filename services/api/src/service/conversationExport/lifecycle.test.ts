@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { pushSchema } from "drizzle-kit/api";
+import { and, eq, sql } from "drizzle-orm";
+import { pushSchema } from "drizzle-kit/api-postgres";
 import { withReplicas } from "drizzle-orm/pg-core";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { drizzle as drizzleNodePostgres } from "drizzle-orm/node-postgres";
@@ -20,6 +20,7 @@ import {
     conversationTable,
     conversationContentTable,
     conversationExportArtifactTable,
+    conversationExportObjectTable,
     conversationExportGenerationTable,
     conversationExportRequestTable,
     conversationExportRequestFileTable,
@@ -86,9 +87,21 @@ import {
     cleanupStaleExports,
     createExportWorker,
     getConversationExportHistory,
-    getConversationExportStatus,
+    getConversationExportStatus as getAuthorizedConversationExportStatus,
 } from "./core.js";
 import { getExportReadinessForConversation } from "./readiness.js";
+import { cleanupExportObjects, lockCurrentExportAttempt } from "./storage.js";
+import { resolveConversationExportStatusAccess } from "./access.js";
+
+async function getConversationExportStatus(
+    params: Parameters<typeof resolveConversationExportStatusAccess>[0],
+) {
+    const access = await resolveConversationExportStatusAccess(params);
+    return await getAuthorizedConversationExportStatus({
+        db: params.db,
+        access,
+    });
+}
 
 process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
 const USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -130,14 +143,14 @@ describe("export lifecycle with a stale replica", () => {
                 },
             });
             clients.push(client);
-            const database = drizzle(client);
+            const database = drizzle({ client });
             // Generate the real schema in a disposable database, including its constraints.
             // Drizzle Kit's push API expects node-postgres's result.rows shape.
             const pool = new Pool({ ...connection, user: connection.username });
             try {
                 const migration = await pushSchema(
                     schema,
-                    drizzleNodePostgres(pool),
+                    drizzleNodePostgres({ client: pool }),
                 );
                 await migration.apply();
             } finally {
@@ -166,6 +179,7 @@ describe("export lifecycle with a stale replica", () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        mocks.delete.mockReset().mockResolvedValue(undefined);
         mocks.access.mockReset().mockResolvedValue("public");
         mocks.sign.mockReset().mockResolvedValue({
             url: "https://example.com/download",
@@ -192,6 +206,7 @@ describe("export lifecycle with a stale replica", () => {
         await database.transaction(async (tx) => {
             await tx.delete(conversationExportRequestFileTable);
             await tx.delete(conversationExportRequestTable);
+            await tx.delete(conversationExportObjectTable);
             await tx.delete(conversationExportArtifactTable);
             await tx.delete(conversationExportGenerationTable);
             await tx.update(conversationTable).set({ currentContentId: null });
@@ -301,6 +316,20 @@ describe("export lifecycle with a stale replica", () => {
         await worker.shutdown();
     }
 
+    async function getStoredBundle(audience: "owner" | "redacted") {
+        const artifacts = await primary
+            .select()
+            .from(conversationExportArtifactTable)
+            .where(
+                and(
+                    eq(conversationExportArtifactTable.fileType, "bundle"),
+                    eq(conversationExportArtifactTable.audience, audience),
+                ),
+            );
+        const key = artifacts.at(0)?.s3Key;
+        return key == null ? undefined : storedObjects.get(key);
+    }
+
     async function getGeneration() {
         const [generation] = await primary
             .select({
@@ -407,9 +436,7 @@ describe("export lifecycle with a stale replica", () => {
         });
         expect(mocks.generate).toHaveBeenCalledOnce();
         expect(mocks.download).toHaveBeenCalledOnce();
-        const zipBuffer = storedObjects.get(
-            "exports/conversations/convo01/gener01/redacted/bundle.zip",
-        );
+        const zipBuffer = await getStoredBundle("redacted");
         if (zipBuffer === undefined)
             throw new Error("Expected a published ZIP");
         const zip = await JSZip.loadAsync(zipBuffer);
@@ -461,9 +488,7 @@ describe("export lifecycle with a stale replica", () => {
         expect(await getGeneration()).toMatchObject({ status: "completed" });
         expect(mocks.generate).toHaveBeenCalledTimes(4);
         expect(mocks.download).not.toHaveBeenCalled();
-        const zipBuffer = storedObjects.get(
-            "exports/conversations/convo01/gener01/owner/bundle.zip",
-        );
+        const zipBuffer = await getStoredBundle("owner");
         if (zipBuffer === undefined) throw new Error("Expected owner bundle");
         const zip = await JSZip.loadAsync(zipBuffer);
         expect(await zip.file("comments.csv")?.async("string")).toContain(
@@ -495,10 +520,11 @@ describe("export lifecycle with a stale replica", () => {
                 },
             ]);
         await runWorker();
-        for (const audience of ["redacted", "owner"]) {
-            const zipBuffer = storedObjects.get(
-                `exports/conversations/convo01/gener01/${audience}/bundle.zip`,
-            );
+        for (const audience of ["redacted", "owner"] satisfies (
+            | "redacted"
+            | "owner"
+        )[]) {
+            const zipBuffer = await getStoredBundle(audience);
             if (zipBuffer === undefined)
                 throw new Error(`Expected ${audience} bundle`);
             const zip = await JSZip.loadAsync(zipBuffer);
@@ -547,6 +573,25 @@ describe("export lifecycle with a stale replica", () => {
                 expiresAt: new Date(Date.now() + 86_400_000),
             });
         await primary
+            .insert(conversationExportRequestFileTable)
+            .overridingSystemValue()
+            .values([
+                {
+                    id: 3,
+                    requestId: 2,
+                    artifactId: 1,
+                    fileType: "comments",
+                    audience: "redacted",
+                },
+                {
+                    id: 4,
+                    requestId: 2,
+                    artifactId: 2,
+                    fileType: "bundle",
+                    audience: "redacted",
+                },
+            ]);
+        await primary
             .update(conversationExportRequestTable)
             .set({ expiresAt: new Date(0) })
             .where(eq(conversationExportRequestTable.id, 1));
@@ -559,6 +604,213 @@ describe("export lifecycle with a stale replica", () => {
         for (const artifact of artifacts) {
             expect(artifact.s3Key).toBeTypeOf("string");
         }
+    });
+
+    it("keeps failed object addresses and retries them after requests are already deleted", async () => {
+        await runWorker();
+        mocks.delete.mockRejectedValueOnce(
+            new Error("Temporary storage failure"),
+        );
+        await primary
+            .update(conversationExportRequestTable)
+            .set({ expiresAt: new Date(0) });
+        await cleanupExpiredExports({ db });
+        const first = await primary
+            .select()
+            .from(conversationExportObjectTable);
+        const pending = first.filter((row) => row.objectDeletedAt === null);
+        expect(pending).toHaveLength(1);
+        expect(pending[0]).toMatchObject({
+            deleteAttempts: 1,
+            leaseToken: null,
+        });
+        expect(pending[0].cleanupRequestedAt).toBeInstanceOf(Date);
+        const retained = await primary
+            .select()
+            .from(conversationExportArtifactTable);
+        expect(retained.filter((row) => row.s3Key !== null)).toHaveLength(1);
+
+        await cleanupExpiredExports({ db });
+        const second = await primary
+            .select()
+            .from(conversationExportObjectTable);
+        expect(second.every((row) => row.objectDeletedAt !== null)).toBe(true);
+        expect(second.find((row) => row.id === pending[0].id)).toMatchObject({
+            deleteAttempts: 2,
+            cleanupRequestedAt: pending[0].cleanupRequestedAt,
+            s3Key: pending[0].s3Key,
+        });
+        expect(mocks.delete).toHaveBeenCalledTimes(3);
+    });
+
+    it("advances bounded queue sweeps past already queued objects", async () => {
+        await runWorker();
+        await primary
+            .update(conversationExportRequestTable)
+            .set({ expiresAt: new Date(0) });
+        const sweep = async () =>
+            await cleanupExportObjects({
+                db,
+                bucketName: "test-exports",
+                region: "eu-west-1",
+                limit: 1,
+                mode: "queue",
+            });
+        expect((await sweep()).queued).toBe(1);
+        expect((await sweep()).queued).toBe(1);
+        expect((await sweep()).queued).toBe(0);
+        expect(mocks.delete).not.toHaveBeenCalled();
+        expect(
+            (await primary.select().from(conversationExportObjectTable)).every(
+                (row) => row.cleanupRequestedAt !== null,
+            ),
+        ).toBe(true);
+    });
+
+    it("does not let a repeatedly failing object starve untouched cleanup work", async () => {
+        await runWorker();
+        await primary
+            .update(conversationExportRequestTable)
+            .set({ expiresAt: new Date(0) });
+        mocks.delete.mockRejectedValue(new Error("Storage unavailable"));
+        const sweep = async () =>
+            await cleanupExportObjects({
+                db,
+                bucketName: "test-exports",
+                region: "eu-west-1",
+                limit: 1,
+                mode: "execute",
+            });
+        expect((await sweep()).failed).toBe(1);
+        expect((await sweep()).failed).toBe(1);
+        expect(
+            (await primary.select().from(conversationExportObjectTable)).map(
+                (row) => row.deleteAttempts,
+            ),
+        ).toEqual([1, 1]);
+    });
+
+    it("keeps expiry and upload leases in UTC under a non-UTC database session", async () => {
+        await runWorker();
+        await primary.transaction(async (tx) => {
+            await tx.execute(sql`SET LOCAL TIME ZONE 'Pacific/Auckland'`);
+            await tx
+                .update(conversationExportGenerationTable)
+                .set({ status: "processing" });
+            await tx.update(conversationExportRequestTable).set({
+                status: "processing",
+                expiresAt: sql`(clock_timestamp() AT TIME ZONE 'UTC') + interval '1 minute'`,
+            });
+            expect(
+                await lockCurrentExportAttempt({
+                    db: tx,
+                    attempt: { id: 1, conversationId: 1, attempts: 1 },
+                }),
+            ).toBe(true);
+            expect(
+                (
+                    await cleanupExportObjects({
+                        db: tx,
+                        bucketName: "test-exports",
+                        region: "eu-west-1",
+                        mode: "execute",
+                    })
+                ).deleted,
+            ).toBe(0);
+        });
+        expect(mocks.delete).not.toHaveBeenCalled();
+    });
+
+    it("repeats a successful external delete when its acknowledgment loses the lease", async () => {
+        await runWorker();
+        await primary
+            .update(conversationExportRequestTable)
+            .set({ expiresAt: new Date(0) });
+        mocks.delete.mockImplementationOnce(
+            async ({ s3Key }: { s3Key: string }) => {
+                await primary
+                    .update(conversationExportObjectTable)
+                    .set({ leaseExpiresAt: new Date(0) })
+                    .where(eq(conversationExportObjectTable.s3Key, s3Key));
+            },
+        );
+        await cleanupExpiredExports({ db });
+        expect(
+            (await primary.select().from(conversationExportObjectTable)).filter(
+                (row) => row.objectDeletedAt === null,
+            ),
+        ).toHaveLength(1);
+        await cleanupExpiredExports({ db });
+        expect(
+            (await primary.select().from(conversationExportObjectTable)).every(
+                (row) => row.objectDeletedAt !== null,
+            ),
+        ).toBe(true);
+        expect(mocks.delete).toHaveBeenCalledTimes(3);
+    });
+
+    it("records a failed PUT before dispatch and later cleans its possibly stored object", async () => {
+        mocks.upload.mockImplementationOnce(async ({ s3Key }) => {
+            const registered = await primary
+                .select()
+                .from(conversationExportObjectTable);
+            expect(registered.map((row) => row.s3Key)).toContain(s3Key);
+            throw new Error("PUT acknowledgment lost");
+        });
+        await runWorker();
+        expect(await getGeneration()).toMatchObject({ status: "queued" });
+        await cleanupExpiredExports({ db });
+        expect(mocks.delete).toHaveBeenCalledOnce();
+        expect(
+            (await primary.select().from(conversationExportObjectTable))[0]
+                .objectDeletedAt,
+        ).toBeInstanceOf(Date);
+    });
+
+    it("fences late uploads from a cancelled generation and retains cleanup work", async () => {
+        mocks.upload.mockImplementationOnce(async () => {
+            await primary
+                .update(conversationExportGenerationTable)
+                .set({ status: "failed", failureReason: "processing_error" });
+            await primary
+                .update(conversationExportRequestTable)
+                .set({ deletedAt: new Date() });
+        });
+        await runWorker();
+        expect(
+            (
+                await primary.select().from(conversationExportArtifactTable)
+            ).every((row) => row.s3Key === null),
+        ).toBe(true);
+        const objects = await primary
+            .select()
+            .from(conversationExportObjectTable);
+        expect(objects).toHaveLength(1);
+        expect(objects[0].cleanupRequestedAt).toBeInstanceOf(Date);
+        expect(mocks.notify).not.toHaveBeenCalled();
+        await cleanupExpiredExports({ db });
+        expect(mocks.delete).toHaveBeenCalledOnce();
+    });
+
+    it("does not publish bytes captured before a source generation changed", async () => {
+        mocks.generate.mockImplementationOnce(async () => {
+            await primary
+                .update(polisConversationConfigTable)
+                .set({ analysisDataGeneration: 1 });
+            return { csvBuffer: ORIGINAL_CSV, recordCount: 1 };
+        });
+        await runWorker();
+        expect(await getGeneration()).toMatchObject({ status: "queued" });
+        expect(mocks.upload).not.toHaveBeenCalled();
+        expect(mocks.notify).not.toHaveBeenCalled();
+        await primary
+            .update(conversationExportGenerationTable)
+            .set({ nextAttemptAt: new Date(0) });
+        await runWorker();
+        expect(await getGeneration()).toMatchObject({
+            status: "completed",
+            attempts: 2,
+        });
     });
 
     it("does not fail a completed generation when stale cleanup sees an old processing row", async () => {
@@ -717,7 +969,9 @@ describe("export lifecycle with a stale replica", () => {
         });
         expect(mocks.sign).toHaveBeenCalledOnce();
         expect(mocks.sign.mock.calls.map(([params]) => params.s3Key)).toEqual([
-            "exports/conversations/convo01/gener01/redacted/comments.csv",
+            expect.stringMatching(
+                /^exports\/conversations\/convo01\/gener01\/redacted\/comments\.csv\.[0-9a-f-]+$/,
+            ),
         ]);
     });
 });

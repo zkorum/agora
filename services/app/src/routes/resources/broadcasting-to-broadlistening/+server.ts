@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 
-import { localizeHref } from "$lib/paraglide/runtime";
+import { localizeHref } from "#lib/paraglide/runtime.js";
 
 import type { RequestHandler } from "./$types";
 

@@ -5,6 +5,8 @@ import {
     count,
     desc,
     eq,
+    exists,
+    inArray,
     isNotNull,
     isNull,
     lt,
@@ -25,13 +27,10 @@ import {
     conversationTable,
     opinionModerationTable,
     opinionTable,
+    polisConversationConfigTable,
+    userTable,
 } from "@/shared-backend/schema.js";
-import {
-    deleteFromS3,
-    downloadFromS3,
-    generatePresignedUrl,
-    uploadToS3,
-} from "../s3.js";
+import { downloadFromS3, generatePresignedUrl } from "../s3.js";
 import type {
     GetConversationExportHistoryResponse,
     GetConversationExportStatusResponse,
@@ -60,10 +59,20 @@ import {
 import { createExportNotification } from "./notifications.js";
 import { getActiveSurveyConfigRecord } from "../survey.js";
 import type { ExportAccessLevel } from "./generators/base.js";
-import { getConversationViewAccessLevelForConversation } from "@/service/conversationAccess.js";
+import {
+    findConversationRecord,
+    type ConversationExportConversationRecord,
+    type ConversationExportRequestAccess,
+    type ConversationExportStatusAccess,
+} from "./access.js";
 import { generateRandomSlugId } from "@/crypto.js";
 import type { RealtimeSSEManager } from "../realtimeSSE.js";
 import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    cleanupExportObjects,
+    storeExportObject,
+    lockCurrentExportAttempt,
+} from "./storage.js";
 
 const MAX_EXPORTS_PER_CONVERSATION = 7;
 const EXPORT_COLLECTION_WINDOW_MS = 2_000;
@@ -71,8 +80,6 @@ const EXPORT_WORKER_POLL_INTERVAL_MS = 1_000;
 const EXPORT_WORKER_MAX_GENERATIONS_PER_TICK = 5;
 const EXPORT_WORKER_MAX_ATTEMPTS = 3;
 
-type ExportRequestStatus =
-    (typeof conversationExportRequestTable.$inferSelect)["status"];
 type ExportArtifactStatus =
     (typeof conversationExportArtifactTable.$inferSelect)["status"];
 type ExportCancellationReason = NonNullable<
@@ -196,51 +203,12 @@ async function generateExportBundleZip({
     return await zip.generateAsync({ type: "nodebuffer" });
 }
 
-interface ConversationExportConversationRecord {
-    id: number;
-    slugId: string;
-    title: string;
-    projectId: number;
-    conversationType: typeof conversationTable.$inferSelect.conversationType;
-}
-
-async function findConversationRecord({
-    db,
-    conversationSlugId,
-}: {
-    db: PostgresDatabase;
-    conversationSlugId: string;
-}): Promise<ConversationExportConversationRecord | undefined> {
-    const conversations = await db
-        .select({
-            id: conversationTable.id,
-            slugId: conversationTable.slugId,
-            title: conversationContentTable.title,
-            projectId: conversationTable.projectId,
-            conversationType: conversationTable.conversationType,
-        })
-        .from(conversationTable)
-        .innerJoin(
-            conversationContentTable,
-            eq(conversationTable.currentContentId, conversationContentTable.id),
-        )
-        .where(
-            and(
-                eq(conversationTable.slugId, conversationSlugId),
-                eq(conversationTable.isImporting, false),
-            ),
-        )
-        .limit(1);
-
-    return conversations[0];
-}
-
 function isConversationExportSupported({
     conversation,
 }: {
     conversation: ConversationExportConversationRecord;
 }): boolean {
-    return conversation.conversationType !== "ranking";
+    return conversation.conversationType === "polis";
 }
 
 function assertConversationExportSupported({
@@ -250,7 +218,7 @@ function assertConversationExportSupported({
 }): void {
     if (!isConversationExportSupported({ conversation })) {
         throw httpErrors.badRequest(
-            "Conversation export is not supported for prioritization conversations",
+            "Conversation export is only supported for Polis conversations",
         );
     }
 }
@@ -496,7 +464,7 @@ interface ExportRequestNotificationRecord {
 
 interface RequestConversationExportParams {
     db: PostgresDatabase;
-    conversationSlugId: string;
+    access: ConversationExportRequestAccess;
     userId: string;
     realtimeSSEManager?: RealtimeSSEManager;
 }
@@ -698,28 +666,13 @@ async function linkRequestArtifacts({
 
 export async function requestConversationExport({
     db,
-    conversationSlugId,
+    access: { conversation, exportAccessLevel },
     userId,
     realtimeSSEManager,
 }: RequestConversationExportParams): Promise<RequestConversationExportResponse> {
-    const conversation = await findConversationRecord({
-        db,
-        conversationSlugId,
-    });
-    if (conversation === undefined) {
-        return { success: false, reason: "conversation_not_found" };
-    }
-
     if (!isConversationExportSupported({ conversation })) {
         return { success: false, reason: "unsupported_conversation_type" };
     }
-
-    const exportAccessLevel =
-        await getConversationViewAccessLevelForConversation({
-            db,
-            userId,
-            projectId: conversation.projectId,
-        });
 
     const opinionCount = await getOpinionCount({
         db,
@@ -851,83 +804,7 @@ export async function requestConversationExport({
 
 interface GetConversationExportStatusParams {
     db: PostgresDatabase;
-    exportSlugId: string;
-    userId: string;
-}
-
-interface RequestStatusRecord {
-    id: number;
-    exportSlugId: string;
-    status: ExportRequestStatus;
-    conversationId: number;
-    conversationSlugId: string;
-    conversationProjectId: number;
-    failureReason: ExportFailureReason | null;
-    cancellationReason: ExportCancellationReason | null;
-    createdAt: Date;
-    expiresAt: Date;
-    deletedAt: Date | null;
-}
-
-async function getRequestStatusRecord({
-    db,
-    exportSlugId,
-    userId,
-}: GetConversationExportStatusParams): Promise<RequestStatusRecord> {
-    const requests = await db
-        .select({
-            id: conversationExportRequestTable.id,
-            exportSlugId: conversationExportRequestTable.slugId,
-            status: conversationExportRequestTable.status,
-            conversationId: conversationTable.id,
-            conversationSlugId: conversationTable.slugId,
-            conversationProjectId: conversationTable.projectId,
-            failureReason: conversationExportRequestTable.failureReason,
-            cancellationReason:
-                conversationExportRequestTable.cancellationReason,
-            createdAt: conversationExportRequestTable.createdAt,
-            generationCreatedAt: conversationExportGenerationTable.createdAt,
-            expiresAt: conversationExportRequestTable.expiresAt,
-            deletedAt: conversationExportRequestTable.deletedAt,
-        })
-        .from(conversationExportRequestTable)
-        .innerJoin(
-            conversationExportGenerationTable,
-            eq(
-                conversationExportGenerationTable.id,
-                conversationExportRequestTable.generationId,
-            ),
-        )
-        .innerJoin(
-            conversationTable,
-            eq(
-                conversationExportRequestTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .where(
-            and(
-                eq(conversationExportRequestTable.slugId, exportSlugId),
-                eq(conversationExportRequestTable.userId, userId),
-            ),
-        )
-        .limit(1);
-
-    if (requests.length === 0) {
-        throw httpErrors.notFound("Export not found");
-    }
-
-    const request = requests[0];
-    return {
-        ...request,
-        expiresAt: new Date(
-            Math.min(
-                request.expiresAt.getTime(),
-                request.generationCreatedAt.getTime() +
-                    30 * 24 * 60 * 60 * 1000,
-            ),
-        ),
-    };
+    access: ConversationExportStatusAccess;
 }
 
 async function getRequestArtifacts({
@@ -1055,75 +932,59 @@ type ExportStatusSnapshot =
 
 async function loadExportStatusSnapshot({
     db,
-    exportSlugId,
-    userId,
+    access: { request, userId, exportAccessLevel },
 }: GetConversationExportStatusParams): Promise<ExportStatusSnapshot> {
-    // A separate polling request cannot carry the worker's returned state.
-    // Load request, access, and artifact metadata together in a fresh writer-side view.
-    return await db.transaction(async (tx): Promise<ExportStatusSnapshot> => {
-        const request = await getRequestStatusRecord({
-            db: tx,
-            exportSlugId,
-            userId,
-        });
-        const exportAccessLevel =
-            await getConversationViewAccessLevelForConversation({
-                db: tx,
-                userId,
-                projectId: request.conversationProjectId,
-            });
-        const baseResponse = {
-            exportSlugId: request.exportSlugId,
-            conversationSlugId: request.conversationSlugId,
-            createdAt: request.createdAt,
-            expiresAt: request.expiresAt,
+    const baseResponse = {
+        exportSlugId: request.exportSlugId,
+        conversationSlugId: request.conversationSlugId,
+        createdAt: request.createdAt,
+        expiresAt: request.expiresAt,
+    };
+    if (request.deletedAt !== null || request.expiresAt < new Date()) {
+        return {
+            ...baseResponse,
+            status: "expired",
+            failureReason: request.failureReason ?? undefined,
+            cancellationReason: request.cancellationReason ?? undefined,
+            deletedAt: request.deletedAt ?? request.expiresAt,
         };
-        if (request.deletedAt !== null || request.expiresAt < new Date()) {
+    }
+    switch (request.status) {
+        case "processing":
+            return { ...baseResponse, status: "processing" };
+        case "failed":
             return {
                 ...baseResponse,
-                status: "expired",
+                status: "failed",
                 failureReason: request.failureReason ?? undefined,
-                cancellationReason: request.cancellationReason ?? undefined,
-                deletedAt: request.deletedAt ?? request.expiresAt,
+            };
+        case "cancelled":
+            return {
+                ...baseResponse,
+                status: "cancelled",
+                cancellationReason: request.cancellationReason ?? "",
+            };
+        case "completed": {
+            const artifacts = await getRequestArtifacts({
+                db: getPrimaryDatabase(db),
+                requestId: request.id,
+            });
+            return {
+                ...baseResponse,
+                status: "completed",
+                artifacts: artifacts
+                    .filter((artifact) =>
+                        canAccessArtifactAudience({
+                            audience: artifact.audience,
+                            subjectUserId: artifact.subjectUserId,
+                            userId,
+                            exportAccessLevel,
+                        }),
+                    )
+                    .map(parseCompletedArtifact),
             };
         }
-        switch (request.status) {
-            case "processing":
-                return { ...baseResponse, status: "processing" };
-            case "failed":
-                return {
-                    ...baseResponse,
-                    status: "failed",
-                    failureReason: request.failureReason ?? undefined,
-                };
-            case "cancelled":
-                return {
-                    ...baseResponse,
-                    status: "cancelled",
-                    cancellationReason: request.cancellationReason ?? "",
-                };
-            case "completed": {
-                const artifacts = await getRequestArtifacts({
-                    db: tx,
-                    requestId: request.id,
-                });
-                return {
-                    ...baseResponse,
-                    status: "completed",
-                    artifacts: artifacts
-                        .filter((artifact) =>
-                            canAccessArtifactAudience({
-                                audience: artifact.audience,
-                                subjectUserId: artifact.subjectUserId,
-                                userId,
-                                exportAccessLevel,
-                            }),
-                        )
-                        .map(parseCompletedArtifact),
-                };
-            }
-        }
-    });
+    }
 }
 
 export async function getConversationExportStatus(
@@ -1280,6 +1141,8 @@ async function claimNextGeneration({
                 conversationSlugId: conversationTable.slugId,
                 conversationTitle: conversationContentTable.title,
                 createdAt: conversationExportGenerationTable.createdAt,
+                sourceDataGeneration:
+                    conversationExportGenerationTable.sourceDataGeneration,
             })
             .from(conversationExportGenerationTable)
             .innerJoin(
@@ -1306,6 +1169,28 @@ async function claimNextGeneration({
                 conversationId: candidate.conversationId,
             });
 
+            await tx
+                .select({ id: conversationTable.id })
+                .from(conversationTable)
+                .where(eq(conversationTable.id, candidate.conversationId))
+                .for("no key update");
+            const sources = await tx
+                .select({
+                    dataGeneration:
+                        polisConversationConfigTable.analysisDataGeneration,
+                })
+                .from(conversationTable)
+                .innerJoin(
+                    polisConversationConfigTable,
+                    eq(
+                        polisConversationConfigTable.id,
+                        conversationTable.polisConfigId,
+                    ),
+                )
+                .where(eq(conversationTable.id, candidate.conversationId));
+            const source = sources.at(0);
+            if (source === undefined) continue;
+
             const updated = await tx
                 .update(conversationExportGenerationTable)
                 .set({
@@ -1316,6 +1201,7 @@ async function claimNextGeneration({
                     heartbeatAt: now,
                     nextAttemptAt: null,
                     updatedAt: now,
+                    sourceDataGeneration: source.dataGeneration,
                 })
                 .where(
                     and(
@@ -1328,6 +1214,17 @@ async function claimNextGeneration({
                 });
 
             if (updated.length === 1) {
+                if (candidate.sourceDataGeneration !== source.dataGeneration) {
+                    await tx
+                        .update(conversationExportArtifactTable)
+                        .set({ status: "queued" })
+                        .where(
+                            eq(
+                                conversationExportArtifactTable.generationId,
+                                candidate.id,
+                            ),
+                        );
+                }
                 return {
                     ...candidate,
                     attempts: updated[0].attempts,
@@ -1433,12 +1330,14 @@ async function processCsvArtifact({
     artifact,
     participantMap,
     bucketName,
+    region,
 }: {
     db: PostgresDatabase;
     generation: ClaimedGenerationRecord;
     artifact: CsvArtifactRecord;
     participantMap: ReturnType<typeof createExportParticipantMap>;
     bucketName: string;
+    region: string;
 }): Promise<CsvFile> {
     const now = new Date();
     await db
@@ -1468,25 +1367,19 @@ async function processCsvArtifact({
             createdAt: generation.createdAt,
         });
 
-        await uploadToS3({
-            s3Key,
+        await storeExportObject({
+            db,
+            attempt: generation,
+            artifactId: artifact.id,
+            baseKey: s3Key,
             buffer: csvBuffer,
             bucketName,
+            region,
             fileName: downloadFileName,
+            artifactFileName: fileName,
+            contentType: "text/csv",
+            recordCount,
         });
-
-        await db
-            .update(conversationExportArtifactTable)
-            .set({
-                status: "completed",
-                fileName,
-                fileSize: csvBuffer.length,
-                recordCount,
-                s3Key,
-                failureReason: null,
-                updatedAt: new Date(),
-            })
-            .where(eq(conversationExportArtifactTable.id, artifact.id));
 
         log.info(
             `Generated ${artifact.fileType}.csv for export generation ${generation.slugId}: ${String(recordCount)} records, ${String(csvBuffer.length)} bytes`,
@@ -1501,7 +1394,19 @@ async function processCsvArtifact({
                 failureReason: "processing_error",
                 updatedAt: new Date(),
             })
-            .where(eq(conversationExportArtifactTable.id, artifact.id));
+            .where(
+                and(
+                    eq(conversationExportArtifactTable.id, artifact.id),
+                    exists(
+                        db
+                            .select({
+                                id: conversationExportGenerationTable.id,
+                            })
+                            .from(conversationExportGenerationTable)
+                            .where(currentGenerationAttempt(generation)),
+                    ),
+                ),
+            );
         throw error;
     }
 }
@@ -1512,12 +1417,14 @@ async function processBundleArtifact({
     artifact,
     loadCsv,
     bucketName,
+    region,
 }: {
     db: PostgresDatabase;
     generation: ClaimedGenerationRecord;
     artifact: BundleArtifactRecord;
     loadCsv: (artifact: CsvArtifactRecord) => Promise<CsvFile>;
     bucketName: string;
+    region: string;
 }): Promise<void> {
     await db
         .update(conversationExportArtifactTable)
@@ -1554,26 +1461,21 @@ async function processBundleArtifact({
             variant: artifact.audience === "owner" ? "owner" : "public",
         });
 
-        await uploadToS3({
-            s3Key,
+        await storeExportObject({
+            db,
+            attempt: generation,
+            artifactId: artifact.id,
+            baseKey: s3Key,
             buffer: zipBuffer,
             bucketName,
+            region,
             fileName: downloadFileName,
+            artifactFileName: getArtifactFileName({
+                fileType: artifact.fileType,
+            }),
             contentType: "application/zip",
+            recordCount: bundleCsvFiles.length,
         });
-
-        await db
-            .update(conversationExportArtifactTable)
-            .set({
-                status: "completed",
-                fileName: getArtifactFileName({ fileType: artifact.fileType }),
-                fileSize: zipBuffer.length,
-                recordCount: bundleCsvFiles.length,
-                s3Key,
-                failureReason: null,
-                updatedAt: new Date(),
-            })
-            .where(eq(conversationExportArtifactTable.id, artifact.id));
     } catch (error) {
         await db
             .update(conversationExportArtifactTable)
@@ -1582,7 +1484,19 @@ async function processBundleArtifact({
                 failureReason: "processing_error",
                 updatedAt: new Date(),
             })
-            .where(eq(conversationExportArtifactTable.id, artifact.id));
+            .where(
+                and(
+                    eq(conversationExportArtifactTable.id, artifact.id),
+                    exists(
+                        db
+                            .select({
+                                id: conversationExportGenerationTable.id,
+                            })
+                            .from(conversationExportGenerationTable)
+                            .where(currentGenerationAttempt(generation)),
+                    ),
+                ),
+            );
         throw error;
     }
 }
@@ -1618,6 +1532,13 @@ async function getProcessingRequestsForGeneration({
             conversationContentTable,
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, conversationExportRequestTable.userId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
         .where(
             and(
                 eq(conversationExportRequestTable.generationId, generationId),
@@ -1642,6 +1563,12 @@ async function markGenerationCompletedAndRequests({
             db: tx,
             conversationId: generation.conversationId,
         });
+
+        if (
+            !(await lockCurrentExportAttempt({ db: tx, attempt: generation }))
+        ) {
+            throw new Error("Export generation changed before publication");
+        }
 
         const now = new Date();
         const completedGenerations = await tx
@@ -1833,6 +1760,7 @@ async function processGeneration({
     }
 
     const bucketName = config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME;
+    const region = config.EXPORT_CONVOS_AWS_S3_REGION;
     const participantMap = createExportParticipantMap();
     const artifacts = generation.artifacts;
     // CSVs share participant IDs. A partially failed CSV pass must be rerun
@@ -1865,6 +1793,7 @@ async function processGeneration({
                 artifact,
                 participantMap,
                 bucketName,
+                region,
             });
         }
         csvByArtifactId.set(artifact.id, csv);
@@ -1892,6 +1821,7 @@ async function processGeneration({
             artifact,
             loadCsv,
             bucketName,
+            region,
         });
     }
 }
@@ -2049,90 +1979,26 @@ interface DeleteConversationExportParams {
     exportSlugId: string;
 }
 
-async function deleteUnreferencedArtifactsForGenerations({
+async function cleanupUnreferencedExportObjects({
     db,
-    generationIds,
+    mode,
 }: {
     db: PostgresDatabase;
-    generationIds: number[];
+    mode: "queue" | "execute";
 }): Promise<void> {
-    if (
-        generationIds.length === 0 ||
-        !config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME
-    ) {
+    const bucketName = config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME;
+    const region = config.EXPORT_CONVOS_AWS_S3_REGION;
+    if (!bucketName || !region) {
         return;
     }
-
-    const uniqueGenerationIds = Array.from(new Set(generationIds));
-    for (const generationId of uniqueGenerationIds) {
-        const artifacts = await db.transaction(async (tx) => {
-            const [{ count: activeRequestCount }] = await tx
-                .select({ count: count() })
-                .from(conversationExportRequestTable)
-                .where(
-                    and(
-                        eq(
-                            conversationExportRequestTable.generationId,
-                            generationId,
-                        ),
-                        isNull(conversationExportRequestTable.deletedAt),
-                    ),
-                );
-
-            if (activeRequestCount > 0) {
-                return [];
-            }
-
-            return await tx
-                .select({
-                    id: conversationExportArtifactTable.id,
-                    s3Key: conversationExportArtifactTable.s3Key,
-                })
-                .from(conversationExportArtifactTable)
-                .where(
-                    eq(
-                        conversationExportArtifactTable.generationId,
-                        generationId,
-                    ),
-                );
-        });
-
-        if (artifacts.length === 0) {
-            continue;
-        }
-
-        for (const artifact of artifacts) {
-            if (artifact.s3Key === null) {
-                continue;
-            }
-
-            try {
-                await deleteFromS3({
-                    s3Key: artifact.s3Key,
-                    bucketName: config.EXPORT_CONVOS_AWS_S3_BUCKET_NAME,
-                });
-            } catch (error) {
-                log.error(
-                    error,
-                    `Failed to delete export artifact ${artifact.s3Key}`,
-                );
-            }
-        }
-
-        await db
-            .update(conversationExportArtifactTable)
-            .set({ s3Key: null, fileSize: null, updatedAt: new Date() })
-            .where(
-                eq(conversationExportArtifactTable.generationId, generationId),
-            );
-    }
+    await cleanupExportObjects({ db, bucketName, region, mode });
 }
 
 export async function deleteConversationExport({
     db,
     exportSlugId,
 }: DeleteConversationExportParams): Promise<void> {
-    const generationId = await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
         const requests = await tx
             .select({
                 id: conversationExportRequestTable.id,
@@ -2150,7 +2016,7 @@ export async function deleteConversationExport({
 
         const request = requests[0];
         if (request.deletedAt !== null) {
-            throw httpErrors.badRequest("Export already deleted");
+            return;
         }
 
         if (request.status === "processing") {
@@ -2166,10 +2032,7 @@ export async function deleteConversationExport({
         return request.generationId;
     });
 
-    await deleteUnreferencedArtifactsForGenerations({
-        db,
-        generationIds: [generationId],
-    });
+    await cleanupUnreferencedExportObjects({ db, mode: "queue" });
 }
 
 interface CleanupStaleExportsParams {
@@ -2235,23 +2098,34 @@ export async function cleanupExpiredExports({
     db,
 }: CleanupExpiredExportsParams): Promise<void> {
     const now = new Date();
-    const expiredRequests = await db
-        .update(conversationExportRequestTable)
-        .set({ deletedAt: now, updatedAt: now })
+    const expiredRequestIds = getPrimaryDatabase(db)
+        .select({ id: conversationExportRequestTable.id })
+        .from(conversationExportRequestTable)
         .where(
             and(
-                lt(conversationExportRequestTable.expiresAt, now),
+                lte(conversationExportRequestTable.expiresAt, now),
                 isNull(conversationExportRequestTable.deletedAt),
             ),
         )
-        .returning({
-            generationId: conversationExportRequestTable.generationId,
-        });
+        .orderBy(
+            conversationExportRequestTable.expiresAt,
+            conversationExportRequestTable.id,
+        )
+        .limit(1000);
+    await db
+        .update(conversationExportRequestTable)
+        .set({
+            deletedAt: conversationExportRequestTable.expiresAt,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                inArray(conversationExportRequestTable.id, expiredRequestIds),
+                isNull(conversationExportRequestTable.deletedAt),
+            ),
+        );
 
-    await deleteUnreferencedArtifactsForGenerations({
-        db,
-        generationIds: expiredRequests.map((request) => request.generationId),
-    });
+    await cleanupUnreferencedExportObjects({ db, mode: "execute" });
 }
 
 interface DeleteAllConversationExportsParams {
@@ -2280,10 +2154,6 @@ export async function deleteAllConversationExports({
             generationId: conversationExportRequestTable.generationId,
         });
 
-    if (requests.length === 0) {
-        return 0;
-    }
-
     await db
         .update(conversationExportGenerationTable)
         .set({
@@ -2306,10 +2176,7 @@ export async function deleteAllConversationExports({
             ),
         );
 
-    await deleteUnreferencedArtifactsForGenerations({
-        db,
-        generationIds: requests.map((request) => request.generationId),
-    });
+    await cleanupUnreferencedExportObjects({ db, mode: "queue" });
 
     return requests.length;
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
+  import * as m from "#lib/paraglide/messages.js";
   import LiteYoutube from "$components/shared/lite-youtube.svelte";
-  import * as m from "$lib/paraglide/messages.js";
 </script>
 
 <section class="px-8 py-20">

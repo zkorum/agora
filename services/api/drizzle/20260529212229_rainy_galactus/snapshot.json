@@ -1,0 +1,116 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4f1613c9-eb20-4f28-8e7a-40ed56700354",
+  "prevIds": [
+    "dc04f107-f077-4cf9-9643-78ac375c6595"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_aggregate_owner_current"
+      ],
+      "writes": [
+        "s|tbl|public.survey_aggregate_owner_current",
+        "n|tbl|public.survey_aggregate_owner_current",
+        "e|tbl|public.survey_aggregate_owner_current",
+        "n|rel|public.survey_aggregate_owner_current",
+        "n|type|public.survey_aggregate_owner_current"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_aggregate_result",
+        "full_count"
+      ],
+      "writes": [
+        "s|colprop|public.survey_aggregate_result.full_count.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.survey_aggregate_result",
+        "n|sch|public",
+        "n|col|public.survey_aggregate_result.full_count"
+      ],
+      "sqlHash": "26f7fa81ba6dc04c"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"survey_aggregate_owner_current\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_snapshot_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_config_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_config_revision\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"rows\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_owner_current\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_owner_current_conversation_id_conversation_id_\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_owner_current_survey_aggregate_snapshot_id_sur\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_owner_current_survey_config_id_survey_config_i\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_owner_current_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_owner_current_conversation_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"survey_aggregate_owner_current\",\"survey_aggregate_owner_current_snapshot_unique\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"survey_aggregate_result\",\"full_count\"]",
+      "set": {
+        "notNull": true
+      }
+    }
+  ]
+}

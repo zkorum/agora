@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getLocale } from "$lib/paraglide/runtime";
-  import { formatResourceDate } from "$logic/shared/resource-date";
+  import { getLocale } from "#lib/paraglide/runtime.js";
+  import { formatResourceDate } from "$logic/shared/resource-date.js";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
-  import type { PageData } from "./$types";
+  import type { PageData } from "./$types.js";
 
   let { data }: { data: PageData } = $props();
 </script>

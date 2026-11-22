@@ -1,0 +1,259 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a5b98081-ed35-488d-b2d4-8f64135d8604",
+  "prevIds": [
+    "f0acadd7-5353-43c7-975e-ae7af86fd531"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "auth_attempt_phone",
+        "is_synthetic"
+      ],
+      "writes": [
+        "s|col|public.auth_attempt_phone.is_synthetic",
+        "n|col|public.auth_attempt_phone.is_synthetic",
+        "e|col|public.auth_attempt_phone.is_synthetic"
+      ],
+      "reads": [
+        "n|tbl|public.auth_attempt_phone",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "device",
+        "session_started_at"
+      ],
+      "writes": [
+        "s|col|public.device.session_started_at",
+        "n|col|public.device.session_started_at",
+        "e|col|public.device.session_started_at"
+      ],
+      "reads": [
+        "n|tbl|public.device",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "otp_email_destination_state",
+        "wrong_guess_attempt_amount"
+      ],
+      "writes": [
+        "s|col|public.otp_email_destination_state.wrong_guess_attempt_amount",
+        "n|col|public.otp_email_destination_state.wrong_guess_attempt_amount",
+        "e|col|public.otp_email_destination_state.wrong_guess_attempt_amount"
+      ],
+      "reads": [
+        "n|tbl|public.otp_email_destination_state",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "otp_phone_destination_state",
+        "wrong_guess_attempt_amount"
+      ],
+      "writes": [
+        "s|col|public.otp_phone_destination_state.wrong_guess_attempt_amount",
+        "n|col|public.otp_phone_destination_state.wrong_guess_attempt_amount",
+        "e|col|public.otp_phone_destination_state.wrong_guess_attempt_amount"
+      ],
+      "reads": [
+        "n|tbl|public.otp_phone_destination_state",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "device",
+        "device_user_session_expiry_idx"
+      ],
+      "writes": [
+        "s|idx|public.device_user_session_expiry_idx",
+        "n|idx|public.device_user_session_expiry_idx",
+        "e|idx|public.device_user_session_expiry_idx",
+        "n|rel|public.device_user_session_expiry_idx"
+      ],
+      "reads": [
+        "n|tbl|public.device",
+        "n|sch|public",
+        "n|col|public.device.user_id",
+        "n|col|public.device.session_expiry"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "otp_email_destination_state"
+      ],
+      "writes": [
+        "s|ck|public.otp_email_destination_state.otp_email_wrong_guess_attempt_amount_nonnegative_check",
+        "n|ck|public.otp_email_destination_state.otp_email_wrong_guess_attempt_amount_nonnegative_check",
+        "e|ck|public.otp_email_destination_state.otp_email_wrong_guess_attempt_amount_nonnegative_check",
+        "n|con|public.otp_email_destination_state.otp_email_wrong_guess_attempt_amount_nonnegative_check"
+      ],
+      "reads": [
+        "n|tbl|public.otp_email_destination_state",
+        "n|sch|public",
+        "n|col|public.otp_email_destination_state.wrong_guess_attempt_amount"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "otp_phone_destination_state"
+      ],
+      "writes": [
+        "s|ck|public.otp_phone_destination_state.otp_phone_wrong_guess_attempt_amount_nonnegative_check",
+        "n|ck|public.otp_phone_destination_state.otp_phone_wrong_guess_attempt_amount_nonnegative_check",
+        "e|ck|public.otp_phone_destination_state.otp_phone_wrong_guess_attempt_amount_nonnegative_check",
+        "n|con|public.otp_phone_destination_state.otp_phone_wrong_guess_attempt_amount_nonnegative_check"
+      ],
+      "reads": [
+        "n|tbl|public.otp_phone_destination_state",
+        "n|sch|public",
+        "n|col|public.otp_phone_destination_state.wrong_guess_attempt_amount"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "auth_attempt_phone",
+        "name": "is_synthetic",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "device",
+        "name": "session_started_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "wrong_guess_attempt_amount",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "wrong_guess_attempt_amount",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "device",
+        "name": "device_user_session_expiry_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "session_expiry",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_email_destination_state",
+        "name": "otp_email_wrong_guess_attempt_amount_nonnegative_check",
+        "value": "\"otp_email_destination_state\".\"wrong_guess_attempt_amount\" >= 0",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "otp_phone_destination_state",
+        "name": "otp_phone_wrong_guess_attempt_amount_nonnegative_check",
+        "value": "\"otp_phone_destination_state\".\"wrong_guess_attempt_amount\" >= 0",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

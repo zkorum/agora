@@ -27,9 +27,13 @@
         <ListSection :settings-item-list="logoutSettings" />
       </div>
 
-      <div v-if="isLoggedIn && profileData.isSiteOrgAdmin">
-        <ListSection :settings-item-list="moderatorSettings" />
-      </div>
+      <ManagementNavigation
+        v-if="isLoggedIn"
+        :permissions="managementAccess.data.value?.permissions"
+        :organization-label="t('moderatorOrganization')"
+        :project-label="t('moderatorProject')"
+        :team-entitlements-label="t('moderatorPremiumEntitlements')"
+      />
 
       <div v-if="isDevelopment">
         <ListSection :settings-item-list="developmentSettings" />
@@ -40,17 +44,20 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import ManagementNavigation from "src/components/administrator/ManagementNavigation.vue";
 import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ListSection from "src/components/ui-library/ListSection.vue";
+import { accountRecoveryTranslations } from "src/components/verification/AccountRecovery.i18n";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useFeaturedBannerVisibility } from "src/composables/useFeaturedBannerVisibility";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLoginIntentionStore } from "src/stores/loginIntention";
 import { onboardingFlowStore } from "src/stores/onboarding/flow";
-import { useUserStore } from "src/stores/user";
 import { useBackendAccountApi } from "src/utils/api/account";
 import { useBackendAuthApi } from "src/utils/api/auth";
+import { useManagementAccess } from "src/utils/api/useManagementAccess";
+import { preserveGuestRecoveryKey } from "src/utils/auth/guestRecoveryKey";
 import { usePhoneAuthAvailability } from "src/utils/auth/phoneAuthMode";
 import { useAuthSetup } from "src/utils/auth/setup";
 import type { SettingsInterface } from "src/utils/component/settings/settings";
@@ -74,7 +81,6 @@ const { isActive } = usePageLayout({
 
 const authStore = useAuthenticationStore();
 const { isGuestOrLoggedIn, isLoggedIn, credentials } = storeToRefs(authStore);
-const { profileData } = storeToRefs(useUserStore());
 
 const { showDeleteAccountDialog } = useDialog();
 
@@ -82,6 +88,7 @@ const { deleteUserAccount } = useBackendAccountApi();
 const { showNotifyMessage } = useNotify();
 const { logoutRequested } = useAuthSetup();
 const { t } = useComponentI18n<SettingsTranslations>(settingsTranslations);
+const { t: tRecovery } = useComponentI18n(accountRecoveryTranslations);
 const { t: tSecurity } = useComponentI18n<SecurityAddEmailTranslations>(
   securityAddEmailTranslations
 );
@@ -260,26 +267,7 @@ const logoutSettings = computed<SettingsInterface[]>(() => [
   },
 ]);
 
-const moderatorSettings: SettingsInterface[] = [
-  {
-    type: "navigation",
-    label: t("moderatorOrganization"),
-    to: "/settings/account/administrator/organization/",
-    style: "none",
-  },
-  {
-    type: "navigation",
-    label: t("moderatorProject"),
-    to: "/settings/account/administrator/project/",
-    style: "none",
-  },
-  {
-    type: "navigation",
-    label: t("moderatorPremiumEntitlements"),
-    to: "/settings/account/administrator/premium-entitlements/",
-    style: "none",
-  },
-];
+const managementAccess = useManagementAccess();
 
 const developmentSettings: SettingsInterface[] = [
   {
@@ -290,29 +278,40 @@ const developmentSettings: SettingsInterface[] = [
   },
 ];
 
-const deleteAccountSettings: SettingsInterface[] = [
+const deleteAccountSettings = computed<SettingsInterface[]>(() => [
+  {
+    type: "navigation",
+    label: tRecovery("manageContent"),
+    to: "/user-profile/opinions/",
+    style: "none",
+  },
   {
     type: "action",
     label: deleteAccountLabel.value,
     action: processDeleteAccount,
     style: "negative",
   },
-];
+]);
 
 function processDeleteAccount() {
   const message = isLoggedIn.value
-    ? t("deleteAccountDialogMessage")
-    : t("deleteGuestAccountDialogMessage");
+    ? tRecovery("deleteMessage")
+    : tRecovery("guestDeleteMessage");
 
   showDeleteAccountDialog({
     title: t("deleteAccountDialogTitle"),
-    message,
+    message: `${message} ${tRecovery("historicalContentNotice")}`,
     placeholder: t("deleteAccountDialogPlaceholder"),
     errorMessage: t("deleteAccountDialogError"),
     callbackSuccess: () => {
       void (async () => {
         try {
-          await deleteUserAccount();
+          if (!isLoggedIn.value) await preserveGuestRecoveryKey();
+          const result = await deleteUserAccount();
+          if (!result.success) {
+            showNotifyMessage(t("accountDeletionNeedsAdministrator"));
+            return;
+          }
           await updateAuthState({ partialLoginStatus: { isKnown: false } });
           showNotifyMessage(t("accountDeleted"));
           await router.push({ name: "/welcome/" });

@@ -43,17 +43,21 @@ import {
 import {
     buildContentTranslationTopic,
     buildProjectContentTranslationTopic,
+    buildRealtimeConversationTopic,
     type RealtimeSSEManager,
 } from "./realtimeSSE.js";
 import { authStateChangedPayload } from "./authSession.js";
+import { readWithinRealtimeReplayWindow } from "./realtimeReplayWindow.js";
 import {
     fetchDeliveredEventUpperBound,
     initializeRealtimeDispatch,
 } from "./realtimeEventDispatch.js";
+import { formatRealtimeCursor } from "@/shared/utils/realtimeCursor.js";
 
 const REALTIME_EVENT_OUTBOX_CHANNEL = "realtime_event_outbox";
 const EVENT_CATCHUP_INTERVAL_MS = 30 * 1000;
 const EVENT_CATCHUP_BATCH_SIZE = 1_000;
+const SOURCE_INVALIDATION_TOPIC = "global:source-invalidation";
 
 const zodConversationCommentStatsUpdatedData = z.object({
     conversationSlugId: z.string().min(1),
@@ -182,6 +186,26 @@ function parseContentTranslationUpdatedData(payload: unknown) {
 type RealtimeReplayEvent =
     | {
           id: number;
+          event: "comparison_items_updated";
+          data: SSEEventDataByType["comparison_items_updated"];
+      }
+    | {
+          id: number;
+          event: "conversation_qv_calculation_updated";
+          data: SSEEventDataByType["conversation_qv_calculation_updated"];
+      }
+    | {
+          id: number;
+          event: "conversation_qv_stats_updated";
+          data: SSEEventDataByType["conversation_qv_stats_updated"];
+      }
+    | {
+          id: number;
+          event: "resync_required";
+          data: SSEEventDataByType["resync_required"];
+      }
+    | {
+          id: number;
           event: "opinion_redacted";
           data: SSEEventDataByType["opinion_redacted"];
       }
@@ -192,8 +216,8 @@ type RealtimeReplayEvent =
       }
     | {
           id: number;
-          event: "opinion_updated";
-          data: SSEEventDataByType["opinion_updated"];
+          event: "opinion_source_changed";
+          data: SSEEventDataByType["opinion_source_changed"];
       }
     | {
           id: number;
@@ -452,6 +476,22 @@ export async function queueConversationSettingsUpdatedEvent({
     });
 }
 
+export async function queueComparisonItemsUpdatedEvent({
+    db,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    conversationSlugId: string;
+}): Promise<void> {
+    await db.insert(realtimeEventOutboxTable).values({
+        eventType: "comparison_items_updated",
+        payload: {
+            conversationSlugId,
+            timestamp: Date.now(),
+        } satisfies SSEEventDataByType["comparison_items_updated"],
+    });
+}
+
 export async function queueOpinionVoteCountsUpdatedEvent({
     db,
     conversationSlugId,
@@ -516,16 +556,46 @@ export async function queueOpinionRedactedEvent({
     }
 }
 
-export async function queueOpinionUpdatedEvent({
+export async function queueOpinionSourceChangedEvent({
     db,
     data,
 }: {
     db: PostgresJsDatabase;
-    data: SSEEventDataByType["opinion_updated"];
+    data: SSEEventDataByType["opinion_source_changed"];
 }): Promise<void> {
-    await db
-        .insert(realtimeEventOutboxTable)
-        .values({ eventType: "opinion_updated", payload: data });
+    await getPrimaryDatabase(db).transaction(async (tx) => {
+        const events = await tx
+            .insert(realtimeEventOutboxTable)
+            .values({ eventType: "opinion_source_changed", payload: data })
+            .returning({ id: realtimeEventOutboxTable.id });
+        for (const event of events)
+            await tx
+                .insert(realtimeEventOutboxTopicTable)
+                .values({
+                    eventId: event.id,
+                    topic: buildRealtimeConversationTopic({
+                        conversationSlugId: data.conversationSlugId,
+                    }),
+                })
+                .onConflictDoNothing();
+    });
+}
+
+/** One content-free event invalidates cached descendants without enumerating them. */
+export async function queueSourceInvalidationEvent(
+    db: PostgresJsDatabase,
+): Promise<void> {
+    await getPrimaryDatabase(db).transaction(async (tx) => {
+        const events = await tx
+            .insert(realtimeEventOutboxTable)
+            .values({ eventType: "sources_invalidated", payload: {} })
+            .returning({ id: realtimeEventOutboxTable.id });
+        for (const event of events)
+            await tx.insert(realtimeEventOutboxTopicTable).values({
+                eventId: event.id,
+                topic: SOURCE_INVALIDATION_TOPIC,
+            });
+    });
 }
 
 export async function queueConversationAnalysisUpdatedEventsForViewSnapshots({
@@ -919,7 +989,7 @@ export async function fetchConversationAnalysisUpdatedEventForLatestViewSnapshot
     };
 }
 
-function parseRealtimeEventOutboxRow({
+export function parseRealtimeEventOutboxRow({
     id,
     eventType,
     payload,
@@ -930,6 +1000,15 @@ function parseRealtimeEventOutboxRow({
 }): ParsedRealtimeOutboxEvent | undefined {
     if (id === null) return undefined;
     switch (eventType) {
+        case "sources_invalidated":
+            return {
+                id,
+                event: "resync_required",
+                data: {
+                    cursor: formatRealtimeCursor(id) ?? "",
+                    reason: "sources_changed",
+                },
+            };
         case "opinion_vote_counts_updated": {
             const result =
                 zodSSEEventDataByType.opinion_vote_counts_updated.safeParse(
@@ -942,6 +1021,31 @@ function parseRealtimeEventOutboxRow({
         case "opinion_updated": {
             const result =
                 zodSSEEventDataByType.opinion_updated.safeParse(payload);
+            if (!result.success) return undefined;
+            // Never replay/broadcast a historical text copy after its source has
+            // become private. Clients refetch the current authorized projection.
+            const {
+                conversationSlugId,
+                opinionSlugId,
+                previousSourceVersion,
+                sourceVersion,
+                timestamp,
+            } = result.data;
+            return {
+                id,
+                event: "opinion_source_changed",
+                data: {
+                    conversationSlugId,
+                    opinionSlugId,
+                    previousSourceVersion,
+                    sourceVersion,
+                    timestamp,
+                },
+            };
+        }
+        case "opinion_source_changed": {
+            const result =
+                zodSSEEventDataByType.opinion_source_changed.safeParse(payload);
             return result.success
                 ? { id, event: eventType, data: result.data }
                 : undefined;
@@ -987,6 +1091,33 @@ function parseRealtimeEventOutboxRow({
                 event: eventType,
                 data: result.data,
             };
+        }
+        case "conversation_qv_stats_updated": {
+            const result =
+                zodSSEEventDataByType.conversation_qv_stats_updated.safeParse(
+                    payload,
+                );
+            return result.success
+                ? { id, event: eventType, data: result.data }
+                : undefined;
+        }
+        case "conversation_qv_calculation_updated": {
+            const result =
+                zodSSEEventDataByType.conversation_qv_calculation_updated.safeParse(
+                    payload,
+                );
+            return result.success
+                ? { id, event: eventType, data: result.data }
+                : undefined;
+        }
+        case "comparison_items_updated": {
+            const result =
+                zodSSEEventDataByType.comparison_items_updated.safeParse(
+                    payload,
+                );
+            return result.success
+                ? { id, event: eventType, data: result.data }
+                : undefined;
         }
         case "conversation_settings_updated": {
             const result =
@@ -1044,11 +1175,13 @@ export async function fetchConversationRealtimeEventsAfterId({
     db,
     conversationSlugId,
     lastEventId,
+    upperBound,
     limit,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     lastEventId: number;
+    upperBound: number;
     limit: number;
 }): Promise<RealtimeReplayEvent[]> {
     const primaryDb = getPrimaryDatabase(db);
@@ -1062,16 +1195,24 @@ export async function fetchConversationRealtimeEventsAfterId({
         .where(
             and(
                 gt(realtimeEventOutboxTable.deliveryId, lastEventId),
+                lte(realtimeEventOutboxTable.deliveryId, upperBound),
                 inArray(realtimeEventOutboxTable.eventType, [
                     "opinion_vote_counts_updated",
                     "conversation_analysis_updated",
                     "conversation_ranking_stats_updated",
+                    "conversation_qv_stats_updated",
+                    "conversation_qv_calculation_updated",
                     "conversation_settings_updated",
+                    "comparison_items_updated",
                     "conversation_survey_updated",
                     "opinion_updated",
+                    "opinion_source_changed",
                     "opinion_redacted",
                 ]),
-                sql`${realtimeEventOutboxTable.payload}->>'conversationSlugId' = ${conversationSlugId}`,
+                eq(
+                    sql<string>`${realtimeEventOutboxTable.payload}->>'conversationSlugId'`,
+                    conversationSlugId,
+                ),
             ),
         )
         .orderBy(realtimeEventOutboxTable.deliveryId)
@@ -1080,9 +1221,9 @@ export async function fetchConversationRealtimeEventsAfterId({
     const events: RealtimeReplayEvent[] = [];
     for (const row of rows) {
         const event = parseRealtimeEventOutboxRow(row);
-        if (event !== undefined && isRealtimeReplayEvent(event)) {
-            events.push(event);
-        }
+        if (event === undefined || !isRealtimeReplayEvent(event))
+            throw new Error("Realtime replay row could not be projected");
+        events.push(event);
     }
     return events;
 }
@@ -1091,20 +1232,18 @@ export async function fetchRealtimeTopicEventsAfterId({
     db,
     topics,
     lastEventId,
+    upperBound,
     limit,
 }: {
     db: PostgresJsDatabase;
     topics: string[];
     lastEventId: number;
+    upperBound: number;
     limit: number;
 }): Promise<RealtimeReplayEvent[]> {
-    if (topics.length === 0) {
-        return [];
-    }
-
     const primaryDb = getPrimaryDatabase(db);
     const rows = await primaryDb
-        .select({
+        .selectDistinctOn([realtimeEventOutboxTable.deliveryId], {
             id: realtimeEventOutboxTable.deliveryId,
             eventType: realtimeEventOutboxTable.eventType,
             payload: realtimeEventOutboxTable.payload,
@@ -1120,24 +1259,22 @@ export async function fetchRealtimeTopicEventsAfterId({
         .where(
             and(
                 gt(realtimeEventOutboxTable.deliveryId, lastEventId),
-                inArray(realtimeEventOutboxTopicTable.topic, topics),
+                lte(realtimeEventOutboxTable.deliveryId, upperBound),
+                inArray(realtimeEventOutboxTopicTable.topic, [
+                    ...topics,
+                    SOURCE_INVALIDATION_TOPIC,
+                ]),
             ),
         )
         .orderBy(realtimeEventOutboxTable.deliveryId)
         .limit(limit);
 
-    const seenEventIds = new Set<number>();
     const events: RealtimeReplayEvent[] = [];
     for (const row of rows) {
-        if (row.id === null) continue;
-        if (seenEventIds.has(row.id)) {
-            continue;
-        }
-        seenEventIds.add(row.id);
         const event = parseRealtimeEventOutboxRow(row);
-        if (event !== undefined && isRealtimeReplayEvent(event)) {
-            events.push(event);
-        }
+        if (event === undefined || !isRealtimeReplayEvent(event))
+            throw new Error("Realtime replay row could not be projected");
+        events.push(event);
     }
     return events;
 }
@@ -1178,6 +1315,7 @@ export function createRealtimeEventOutboxBridge({
             payload,
         });
         if (realtimeEvent === undefined) {
+            realtimeSSEManager.closeAllForResync();
             log.warn(
                 `[RealtimeOutbox] Ignoring unsupported event type ${eventType}`,
             );
@@ -1185,6 +1323,12 @@ export function createRealtimeEventOutboxBridge({
         }
 
         switch (realtimeEvent.event) {
+            case "resync_required":
+                realtimeSSEManager.broadcastToAll({
+                    event: "resync_required",
+                    data: realtimeEvent.data,
+                });
+                break;
             case "opinion_vote_counts_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
                     conversationSlugId: realtimeEvent.data.conversationSlugId,
@@ -1230,7 +1374,10 @@ export function createRealtimeEventOutboxBridge({
                 });
                 break;
             }
-            case "opinion_updated":
+            case "conversation_qv_stats_updated":
+            case "comparison_items_updated":
+            case "conversation_qv_calculation_updated":
+            case "opinion_source_changed":
             case "opinion_redacted":
             case "conversation_survey_updated": {
                 realtimeSSEManager.broadcastToConversationSubscribers({
@@ -1298,28 +1445,39 @@ export function createRealtimeEventOutboxBridge({
     const processPendingEvents = async (): Promise<void> => {
         const safeUpperBound = await fetchDeliveredEventUpperBound(primaryDb);
 
-        while (lastCaughtUpOutboxId < safeUpperBound) {
-            const rows = await primaryDb
-                .select({
-                    id: realtimeEventOutboxTable.deliveryId,
-                    eventType: realtimeEventOutboxTable.eventType,
-                    payload: realtimeEventOutboxTable.payload,
-                })
-                .from(realtimeEventOutboxTable)
-                .where(
-                    and(
-                        gt(
-                            realtimeEventOutboxTable.deliveryId,
-                            lastCaughtUpOutboxId,
-                        ),
-                        lte(
-                            realtimeEventOutboxTable.deliveryId,
-                            safeUpperBound,
-                        ),
-                    ),
-                )
-                .orderBy(realtimeEventOutboxTable.deliveryId)
-                .limit(EVENT_CATCHUP_BATCH_SIZE);
+        do {
+            const replay = await readWithinRealtimeReplayWindow({
+                db: primaryDb,
+                lastEventId: lastCaughtUpOutboxId,
+                read: async ({ db: tx }) =>
+                    await tx
+                        .select({
+                            id: realtimeEventOutboxTable.deliveryId,
+                            eventType: realtimeEventOutboxTable.eventType,
+                            payload: realtimeEventOutboxTable.payload,
+                        })
+                        .from(realtimeEventOutboxTable)
+                        .where(
+                            and(
+                                gt(
+                                    realtimeEventOutboxTable.deliveryId,
+                                    lastCaughtUpOutboxId,
+                                ),
+                                lte(
+                                    realtimeEventOutboxTable.deliveryId,
+                                    safeUpperBound,
+                                ),
+                            ),
+                        )
+                        .orderBy(realtimeEventOutboxTable.deliveryId)
+                        .limit(EVENT_CATCHUP_BATCH_SIZE),
+            });
+            if (replay.status === "resync_required") {
+                realtimeSSEManager.closeAllForResync();
+                lastCaughtUpOutboxId = replay.window.upperBound;
+                return;
+            }
+            const rows = replay.value;
 
             if (rows.length === 0) {
                 // Delivery assignments and their upper bound commit together;
@@ -1340,7 +1498,7 @@ export function createRealtimeEventOutboxBridge({
                 }
                 lastCaughtUpOutboxId = row.id;
             }
-        }
+        } while (lastCaughtUpOutboxId < safeUpperBound);
     };
 
     const catchupRequestQueue = createCatchupRequestQueue({

@@ -1,0 +1,96 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "128b9ab3-27fb-4b7a-8595-84761267bed2",
+  "prevIds": [
+    "d18b7493-9eee-4352-98d5-1606029b3963"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_contact",
+        "first_name"
+      ],
+      "writes": [
+        "s|colprop|public.project_contact.first_name.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|col|public.project_contact.first_name"
+      ],
+      "sqlHash": "7c0d5cf9935681fb"
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_contact"
+      ],
+      "writes": [
+        "s|ck|public.project_contact.project_contact_name_or_affiliation_check",
+        "n|ck|public.project_contact.project_contact_name_or_affiliation_check",
+        "e|ck|public.project_contact.project_contact_name_or_affiliation_check",
+        "n|con|public.project_contact.project_contact_name_or_affiliation_check"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|col|public.project_contact.first_name",
+        "n|col|public.project_contact.last_name",
+        "n|col|public.project_contact.organization_id"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_contact"
+      ],
+      "writes": [
+        "s|ck|public.project_contact.project_contact_email_or_website_check"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|col|public.project_contact.email",
+        "n|col|public.project_contact.website_url",
+        "e|col|public.project_contact.email",
+        "e|col|public.project_contact.website_url"
+      ],
+      "sqlHash": "4c01a7e95bb4e5e6"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_name_or_affiliation_check",
+        "value": "((\"project_contact\".\"first_name\" is not null AND \"project_contact\".\"first_name\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]') OR (\"project_contact\".\"last_name\" is not null AND \"project_contact\".\"last_name\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]') OR \"project_contact\".\"organization_id\" is not null)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"project_contact\",\"first_name\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"project_contact\",\"project_contact_email_or_website_check\"]",
+      "set": {
+        "value": "((\"project_contact\".\"email\" is not null AND \"project_contact\".\"email\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]') OR (\"project_contact\".\"website_url\" is not null AND \"project_contact\".\"website_url\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))"
+      }
+    }
+  ]
+}

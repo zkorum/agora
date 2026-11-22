@@ -245,7 +245,6 @@ async function castPersonalVote({
         await participation.handleBlockedReason(result);
         if (participation.isCurrent()) showNotifyMessage(t("voteFailed"));
       } else if (
-        result.reason === "event_ticket_required" ||
         result.reason === "account_required" ||
         result.reason === "strong_verification_required" ||
         result.reason === "email_verification_required" ||

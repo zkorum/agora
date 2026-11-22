@@ -20,7 +20,6 @@ const onboardingSuffixes = {
   "/conversation/[postSlugId].onboarding/verify/phone": "/verify/phone",
   "/conversation/[postSlugId].onboarding/verify/phone-code":
     "/verify/phone-code",
-  "/conversation/[postSlugId].onboarding/verify/ticket": "/verify/ticket",
 } satisfies Partial<Record<keyof RouteNamedMap, string>>;
 
 const suffixByName: ReadonlyMap<string, string> = new Map(

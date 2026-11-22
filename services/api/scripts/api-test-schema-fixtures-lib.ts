@@ -24,14 +24,11 @@ export function parseApiTestSchemaFixtureConfig(
 
 function extractCreateTypeStatements(sql: string): Map<string, string> {
     const statements = new Map<string, string>();
-    const typeRegex = /^CREATE TYPE\s+"public"\."\w+"\s+AS\s+ENUM\([\s\S]*?\);$/gm;
-    const typeNameRegex = /^CREATE TYPE\s+"public"\."(\w+)"/;
+    const typeRegex =
+        /^CREATE TYPE\s+(?:"public"\.)?"(\w+)"\s+AS\s+ENUM\s*\([\s\S]*?\);$/gm;
 
     for (const match of sql.matchAll(typeRegex)) {
-        const typeName = typeNameRegex.exec(match[0])?.[1];
-        if (typeName === undefined) {
-            throw new Error("Matched CREATE TYPE without type name");
-        }
+        const typeName = match[1];
         statements.set(typeName, match[0]);
     }
 
@@ -80,6 +77,13 @@ function generateFixtureSql({
     indexStatements: { tableName: string; statement: string }[];
 }): string {
     const selectedTables = new Set(tableNames);
+    // Device authentication also consults account-independent key retirement.
+    if (
+        selectedTables.has("device") &&
+        tableStatements.has("retired_device_key")
+    ) {
+        selectedTables.add("retired_device_key");
+    }
     const missingTables = tableNames.filter(
         (tableName) => !tableStatements.has(tableName),
     );

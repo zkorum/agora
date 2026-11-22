@@ -100,6 +100,7 @@ export async function resolveDraftPublicationIdentityAtBoundary({
 export function createEmptyDraft(): ConversationDraft {
   return {
     // Basic Content
+    participantStatements: { supported: true, enabled: true },
     title: "",
     content: "",
     multilingualSetting: {
@@ -110,6 +111,7 @@ export function createEmptyDraft(): ConversationDraft {
     inheritProjectLanguages: false,
     conversationEmailUpdateEnabledOverride: undefined,
     seedOpinions: [],
+    qvStatements: [],
     aiSuggestionDraftId: uid(),
 
     // Conversation Type
@@ -126,16 +128,13 @@ export function createEmptyDraft(): ConversationDraft {
     isPrivate: false,
     participationMode: "account_required",
 
-    // Event Ticket Verification
-    requiresEventTicket: undefined,
-
     // AI labeling
     aiLabelingEnabled: true,
 
     // Facilitator analysis preference
     preferredOpinionGroupCount: null,
 
-    // External Source (GitHub integration for MaxDiff)
+    // External source (GitHub integration for comparisons).
     externalSourceConfig: null,
 
     // Survey configuration

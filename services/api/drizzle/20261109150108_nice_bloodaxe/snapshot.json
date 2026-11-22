@@ -1,0 +1,43 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5b3cb197-ce82-4417-a448-276aac83bbe6",
+  "prevIds": [
+    "128b9ab3-27fb-4b7a-8595-84761267bed2"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "moderation_reason_enum"
+      ],
+      "writes": [
+        "s|enum|public.moderation_reason_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"moderation_reason_enum\"]",
+      "set": {
+        "values": [
+          "misleading",
+          "antisocial",
+          "illegal",
+          "doxing",
+          "sexual",
+          "spam",
+          "off_topic",
+          "other"
+        ]
+      }
+    }
+  ]
+}

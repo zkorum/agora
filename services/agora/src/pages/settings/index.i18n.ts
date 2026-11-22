@@ -26,9 +26,8 @@ export interface SettingsTranslations {
   componentTesting: string;
   accountDeleted: string;
   accountDeletionFailed: string;
+  accountDeletionNeedsAdministrator: string;
   deleteAccountDialogTitle: string;
-  deleteAccountDialogMessage: string;
-  deleteGuestAccountDialogMessage: string;
   deleteAccountDialogPlaceholder: string;
   deleteAccountDialogError: string;
 }
@@ -62,12 +61,10 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "Admin - Premium entitlements",
     componentTesting: "🔧 Component Testing",
     accountDeleted: "Account deleted",
+    accountDeletionNeedsAdministrator:
+      "You’re the last organization Admin. Contact the administrator.",
     accountDeletionFailed: "Oops! Account deletion failed. Please try again",
     deleteAccountDialogTitle: "Delete Account",
-    deleteAccountDialogMessage:
-      "Your account will be permanently deleted immediately. This action cannot be undone. Data may remain in third-party backups and services for up to 30 days.\n\nTo confirm, type DELETE below:",
-    deleteGuestAccountDialogMessage:
-      "Your guest account will be permanently deleted immediately. This action cannot be undone. Data may remain in backups for up to 30 days.\n\nTo confirm, type DELETE below:",
     deleteAccountDialogPlaceholder: "Type DELETE to confirm",
     deleteAccountDialogError:
       "Account deletion request failed. Try again later.",
@@ -97,12 +94,10 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "الإدارة - استحقاقات الاشتراك المميز",
     componentTesting: "🔧 اختبار المكونات",
     accountDeleted: "تم حذف الحساب",
+    accountDeletionNeedsAdministrator:
+      "أنت آخر مسؤول نشط في المؤسسة. تواصل مع الإدارة.",
     accountDeletionFailed: "عذراً! فشل حذف الحساب. يرجى المحاولة مرة أخرى",
     deleteAccountDialogTitle: "حذف الحساب",
-    deleteAccountDialogMessage:
-      "سيتم حذف حسابك نهائيًا على الفور. لا يمكن التراجع عن هذا الإجراء. قد تبقى البيانات في النسخ الاحتياطية والخدمات الخارجية لمدة تصل إلى 30 يومًا.\n\nللتأكيد، اكتب DELETE أدناه:",
-    deleteGuestAccountDialogMessage:
-      "سيتم حذف حساب الضيف الخاص بك نهائيًا على الفور. لا يمكن التراجع عن هذا الإجراء. قد تبقى البيانات في النسخ الاحتياطية لمدة تصل إلى 30 يومًا.\n\nللتأكيد، اكتب DELETE أدناه:",
     deleteAccountDialogPlaceholder: "اكتب DELETE للتأكيد",
     deleteAccountDialogError: "فشل طلب حذف الحساب. حاول مرة أخرى لاحقاً.",
   },
@@ -131,13 +126,11 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "Administración - Derechos premium",
     componentTesting: "🔧 Pruebas de componentes",
     accountDeleted: "Cuenta eliminada",
+    accountDeletionNeedsAdministrator:
+      "Eres el último administrador de la organización. Contacta con la administración.",
     accountDeletionFailed:
       "¡Ups! Error al eliminar la cuenta. Inténtelo de nuevo",
     deleteAccountDialogTitle: "Eliminar cuenta",
-    deleteAccountDialogMessage:
-      "Su cuenta se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad y servicios de terceros hasta 30 días.\n\nPara confirmar, escriba DELETE a continuación:",
-    deleteGuestAccountDialogMessage:
-      "Su cuenta de invitado se eliminará permanentemente de inmediato. Esta acción no se puede deshacer. Los datos pueden permanecer en copias de seguridad hasta 30 días.\n\nPara confirmar, escriba DELETE a continuación:",
     deleteAccountDialogPlaceholder: "Escriba DELETE para confirmar",
     deleteAccountDialogError:
       "Falló la solicitud de eliminación de cuenta. Intente de nuevo más tarde.",
@@ -167,13 +160,11 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "مدیریت - دسترسی‌های پریمیوم",
     componentTesting: "🔧 آزمایش کامپوننت‌ها",
     accountDeleted: "حساب کاربری حذف شد",
+    accountDeletionNeedsAdministrator:
+      "شما آخرین مدیر فعال سازمان هستید. با مدیریت تماس بگیرید.",
     accountDeletionFailed:
       "متأسفیم! حذف حساب ناموفق بود. لطفاً دوباره تلاش کنید",
     deleteAccountDialogTitle: "حذف حساب کاربری",
-    deleteAccountDialogMessage:
-      "حساب شما بلافاصله به‌طور دائمی حذف خواهد شد. این عمل قابل بازگشت نیست. داده‌ها ممکن است تا ۳۰ روز در پشتیبان‌های ثالث باقی بمانند.\n\nبرای تأیید، DELETE را در زیر تایپ کنید:",
-    deleteGuestAccountDialogMessage:
-      "حساب مهمان شما بلافاصله به‌طور دائمی حذف خواهد شد. این عمل قابل بازگشت نیست. داده‌ها ممکن است تا ۳۰ روز در پشتیبان‌ها باقی بمانند.\n\nبرای تأیید، DELETE را در زیر تایپ کنید:",
     deleteAccountDialogPlaceholder: "برای تأیید DELETE تایپ کنید",
     deleteAccountDialogError:
       "درخواست حذف حساب ناموفق بود. بعداً دوباره تلاش کنید.",
@@ -203,12 +194,10 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "ניהול - הרשאות פרימיום",
     componentTesting: "🔧 בדיקת רכיבים",
     accountDeleted: "החשבון נמחק",
+    accountDeletionNeedsAdministrator:
+      "נותרת מנהל הארגון הפעיל היחיד. יש לפנות להנהלה.",
     accountDeletionFailed: "אופס! מחיקת החשבון נכשלה. אנא נסו שוב",
     deleteAccountDialogTitle: "מחיקת חשבון",
-    deleteAccountDialogMessage:
-      "החשבון שלכם יימחק לצמיתות באופן מיידי. לא ניתן לבטל פעולה זו. נתונים עשויים להישאר בגיבויים ושירותי צד שלישי עד 30 יום.\n\nלאישור, הקלידו DELETE למטה:",
-    deleteGuestAccountDialogMessage:
-      "חשבון האורח שלכם יימחק לצמיתות באופן מיידי. לא ניתן לבטל פעולה זו. נתונים עשויים להישאר בגיבויים עד 30 יום.\n\nלאישור, הקלידו DELETE למטה:",
     deleteAccountDialogPlaceholder: "הקלידו DELETE לאישור",
     deleteAccountDialogError: "בקשת מחיקת החשבון נכשלה. נסו שוב מאוחר יותר.",
   },
@@ -237,13 +226,11 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "Administration - Droits premium",
     componentTesting: "🔧 Tests de composants",
     accountDeleted: "Compte supprimé",
+    accountDeletionNeedsAdministrator:
+      "Vous êtes le dernier Admin de l’organisation. Contactez l’administration.",
     accountDeletionFailed:
       "Oups ! Échec de la suppression du compte. Veuillez réessayer",
     deleteAccountDialogTitle: "Supprimer le compte",
-    deleteAccountDialogMessage:
-      "Votre compte sera définitivement supprimé immédiatement. Cette action ne peut pas être annulée. Les données peuvent rester dans les sauvegardes et services tiers jusqu'à 30 jours.\n\nPour confirmer, tapez DELETE ci-dessous:",
-    deleteGuestAccountDialogMessage:
-      "Votre compte invité sera définitivement supprimé immédiatement. Cette action ne peut pas être annulée. Les données peuvent rester dans les sauvegardes jusqu'à 30 jours.\n\nPour confirmer, tapez DELETE ci-dessous:",
     deleteAccountDialogPlaceholder: "Tapez DELETE pour confirmer",
     deleteAccountDialogError:
       "La demande de suppression du compte a échoué. Réessayez plus tard.",
@@ -273,12 +260,10 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "管理 - 高级权益",
     componentTesting: "🔧 组件测试",
     accountDeleted: "账户已删除",
+    accountDeletionNeedsAdministrator:
+      "你是该组织最后一位管理员。请联系平台管理员。",
     accountDeletionFailed: "哎呀！账户删除失败，请重试",
     deleteAccountDialogTitle: "删除账户",
-    deleteAccountDialogMessage:
-      "您的账户将立即被永久删除。此操作无法撤销。数据可能会在第三方备份和服务中保留最多30天。\n\n要确认，请在下方输入 DELETE:",
-    deleteGuestAccountDialogMessage:
-      "您的访客账户将立即被永久删除。此操作无法撤销。数据可能会在备份中保留最多30天。\n\n要确认，请在下方输入 DELETE:",
     deleteAccountDialogPlaceholder: "输入 DELETE 确认",
     deleteAccountDialogError: "账户删除请求失败。请稍后重试。",
   },
@@ -307,12 +292,10 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "管理 - 進階權益",
     componentTesting: "🔧 組件測試",
     accountDeleted: "帳戶已刪除",
+    accountDeletionNeedsAdministrator:
+      "你是該組織最後一位管理員。請聯絡平台管理員。",
     accountDeletionFailed: "哎呀！帳戶刪除失敗，請重試",
     deleteAccountDialogTitle: "刪除帳戶",
-    deleteAccountDialogMessage:
-      "您的帳戶將立即被永久刪除。此操作無法撤銷。數據可能會在第三方備份和服務中保留最多30天。\n\n要確認，請在下方輸入 DELETE:",
-    deleteGuestAccountDialogMessage:
-      "您的訪客帳戶將立即被永久刪除。此操作無法撤銷。數據可能會在備份中保留最多30天。\n\n要確認，請在下方輸入 DELETE:",
     deleteAccountDialogPlaceholder: "輸入 DELETE 確認",
     deleteAccountDialogError: "帳戶刪除請求失敗。請稍後重試。",
   },
@@ -341,13 +324,11 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "管理 - プレミアム権限",
     componentTesting: "🔧 コンポーネントテスト",
     accountDeleted: "アカウントが削除されました",
+    accountDeletionNeedsAdministrator:
+      "あなたは組織の最後の管理者です。運営にお問い合わせください。",
     accountDeletionFailed:
       "おっと！アカウントの削除に失敗しました。もう一度お試しください",
     deleteAccountDialogTitle: "アカウントを削除",
-    deleteAccountDialogMessage:
-      "アカウントは即座に完全削除されます。この操作は取り消すことができません。データは最大30日間サードパーティのバックアップとサービスに残る場合があります。\n\n確認するには、以下にDELETEと入力してください:",
-    deleteGuestAccountDialogMessage:
-      "ゲストアカウントは即座に完全削除されます。この操作は取り消すことができません。データは最大30日間バックアップに残る場合があります。\n\n確認するには、以下にDELETEと入力してください:",
     deleteAccountDialogPlaceholder: "DELETE と入力して確認",
     deleteAccountDialogError:
       "アカウント削除リクエストが失敗しました。後でもう一度お試しください。",
@@ -377,13 +358,11 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "Башкаруу — премиум укуктар",
     componentTesting: "🔧 Компоненттерди тестирлөө",
     accountDeleted: "Каттоо эсеби жок кылынды",
+    accountDeletionNeedsAdministrator:
+      "Сиз уюмдун акыркы активдүү администраторусуз. Администрацияга кайрылыңыз.",
     accountDeletionFailed:
       "Ой! Каттоо эсебин жок кылуу ишке ашкан жок. Кайра аракет кылыңыз",
     deleteAccountDialogTitle: "Каттоо эсебин жок кылуу",
-    deleteAccountDialogMessage:
-      "Каттоо эсебиңиз дароо биротоло жок кылынат. Бул аракетти кайтаруу мүмкүн эмес. Маалыматтар үчүнчү тараптын камдык көчүрмөлөрүндө 30 күнгө чейин сакталышы мүмкүн.\n\nАракетти ырастоо үчүн, төмөнгө DELETE деп жазыңыз:",
-    deleteGuestAccountDialogMessage:
-      "Конок каттоо эсебиңиз дароо биротоло жок кылынат. Бул аракетти кайтаруу мүмкүн эмес. Маалыматтар камдык көчүрмөлөрдө 30 күнгө чейин сакталышы мүмкүн.\n\nАракетти ырастоо үчүн, төмөнгө DELETE деп жазыңыз:",
     deleteAccountDialogPlaceholder: "Ырастоо үчүн DELETE жазыңыз",
     deleteAccountDialogError:
       "Каттоо эсебин жок кылуу сурамы ишке ашкан жок. Кийинчерээк кайра аракет кылыңыз.",
@@ -413,12 +392,10 @@ export const settingsTranslations: Record<
     moderatorPremiumEntitlements: "Администрирование — премиум-доступ",
     componentTesting: "🔧 Тестирование компонентов",
     accountDeleted: "Аккаунт удалён",
+    accountDeletionNeedsAdministrator:
+      "Вы последний активный администратор организации. Обратитесь к администрации.",
     accountDeletionFailed: "Ой! Не удалось удалить аккаунт. Попробуйте ещё раз",
     deleteAccountDialogTitle: "Удалить аккаунт",
-    deleteAccountDialogMessage:
-      "Ваш аккаунт будет немедленно удалён без возможности восстановления. Данные могут сохраняться в сторонних резервных копиях до 30 дней.\n\nДля подтверждения введите DELETE ниже:",
-    deleteGuestAccountDialogMessage:
-      "Ваш гостевой аккаунт будет немедленно удалён без возможности восстановления. Данные могут сохраняться в резервных копиях до 30 дней.\n\nДля подтверждения введите DELETE ниже:",
     deleteAccountDialogPlaceholder: "Введите DELETE для подтверждения",
     deleteAccountDialogError:
       "Запрос на удаление аккаунта не выполнен. Попробуйте позже.",

@@ -6,6 +6,29 @@ import { createStructuredLogger } from "./logger.js";
 import { normalizeError, structuredEventSchema } from "./observability.js";
 
 describe("privacy-safe structured logging", () => {
+    it("recognizes the shared explicit replica-routing message", () => {
+        const lines: string[] = [];
+        const log = createStructuredLogger({
+            environment: "test",
+            workerId: "worker-01",
+            level: "info",
+            destination: {
+                write(line) {
+                    lines.push(line);
+                },
+            },
+        });
+        log.info(
+            "Connected to read replica - explicit reads use replica, writes use primary",
+        );
+        expect(lines).toHaveLength(1);
+        const parsed: unknown = JSON.parse(lines.at(0) ?? "{}");
+        expect(parsed).toMatchObject({
+            event: "dependency_status",
+            operation: "route_reads",
+            role: "read_replica",
+        });
+    });
     it("projects late-position event variants and removes unrelated child context", () => {
         const lines: string[] = [];
         const log = createStructuredLogger({

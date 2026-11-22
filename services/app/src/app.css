@@ -1,6 +1,27 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "./";
+@source not "./lib/paraglide";
+@source not "./**/*.test.ts";
 @plugin "@tailwindcss/typography";
 @plugin "@iconify/tailwind4";
+
+@font-face {
+  font-family: "Albert Sans";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./lib/assets/fonts/albert-sans/AlbertSans-Variable.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Albert Sans";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./lib/assets/fonts/albert-sans/AlbertSans-Italic-Variable.woff2")
+    format("woff2");
+}
 
 /* ========================================
  * THEME TOKENS
@@ -22,6 +43,7 @@
 
   /* Colors - Sky (light backgrounds/borders) */
   --color-sky-white: var(--sky-white);
+  --color-sky-off-white: var(--sky-off-white);
   --color-sky-lightest: var(--sky-lightest);
   --color-sky-lighter: var(--sky-lighter);
   --color-sky-light: var(--sky-light);
@@ -38,6 +60,16 @@
   /* Colors - Brand (for gradients) */
   --color-brand-purple: var(--brand-purple);
   --color-brand-blue: var(--brand-blue);
+
+  /* Landing-page artwork and editorial surfaces. */
+  --color-portrait-tint: #2d226c;
+  --color-resource-surface: #fefeff;
+  --color-resource-placeholder: #f1f1f1;
+
+  /* Workspace identity, unread surfaces and dialog scrims. */
+  --color-project-mint: #bfe5d7;
+  --color-surface-unread: #fbfaff;
+  --color-overlay-soft: #211a3340;
 
   /* Colors - Gradient composing — Figma: node 20232:13181 */
   --color-gradient-light-purple: var(--gradient-light-purple);
@@ -67,6 +99,7 @@
   --color-yellow-light: var(--yellow-light);
   --color-yellow-base: var(--yellow-base);
   --color-yellow-darkest: var(--yellow-darkest);
+  --color-accent-yellow: var(--accent-yellow);
 
   /* Colors - Semantic (component-level) */
   --color-background: var(--background);
@@ -151,7 +184,10 @@
   /* ---- Layer 1: Palette ---- */
 
   /* Font */
-  --font-albert-sans: "Albert Sans Variable", sans-serif;
+  --font-albert-sans:
+    "Albert Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", sans-serif;
 
   /* Ink palette (dark text/backgrounds) */
   --ink-darkest: #0a0714;
@@ -162,6 +198,7 @@
 
   /* Sky palette (light backgrounds/borders) */
   --sky-white: #ffffff;
+  --sky-off-white: #fbfafb;
   --sky-lightest: #f6f5f8;
   --sky-lighter: #e9e9f1;
   --sky-light: #e2e1e7;
@@ -178,6 +215,9 @@
   /* Brand (for gradients) */
   --brand-purple: var(--primary-base);
   --brand-blue: #4f92f6;
+
+  /* Organization identity */
+  --organization-coral: #f06c48;
 
   /* Gradient composing */
   --gradient-light-purple: #f1eeff;
@@ -206,7 +246,8 @@
   --yellow-lighter: #ffd188;
   --yellow-light: #ffc462;
   --yellow-base: #ffb323;
-  --yellow-darkest: #a05e03;
+  --yellow-darkest: #693e03;
+  --accent-yellow: #ffcc00;
 
   /* ---- Layer 2: Semantic aliases (reference palette) ---- */
 
@@ -229,6 +270,7 @@
   --shadow-md-val:
     0 0 1px rgba(20, 20, 20, 0.08), 0 1px 8px 2px rgba(20, 20, 20, 0.08);
   --shadow-card-val: 0 8px 12px 0 rgba(0, 0, 0, 0.15);
+  --shadow-surface-subtle: 0 2px 6px #00000008;
 
   /* Border radius */
   --button-sm-radius: 0.5rem; /* 8px for h-6 (24px) */
@@ -257,6 +299,8 @@
 
   body {
     @apply overflow-x-hidden bg-background font-sans text-foreground;
+    font-optical-sizing: auto;
+    font-synthesis: none;
   }
 }
 
@@ -293,6 +337,67 @@
 
   span {
     @apply block text-sm;
+  }
+}
+
+/* Match rich-text typography between editable and rendered content. */
+@utility agora-rich-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  p:empty {
+    /* Preserve blank lines stored as empty paragraphs. */
+    min-block-size: 1lh;
+  }
+
+  :is(p, ul, ol, div) + :is(p, ul, ol, div) {
+    margin-block-start: 0.5em;
+  }
+
+  :is(ul, ol) {
+    padding-inline-start: 1.5em;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ul ul {
+    list-style-type: circle;
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  ol ol {
+    list-style-type: lower-alpha;
+  }
+
+  :is(b, strong) {
+    font-weight: 700;
+  }
+
+  :is(i, em) {
+    font-style: italic;
+  }
+
+  :is(s, strike) {
+    text-decoration: line-through;
+  }
+
+  u {
+    text-decoration: underline;
+  }
+
+  a {
+    color: var(--primary-dark);
+    text-decoration: underline;
+  }
+
+  a:focus-visible {
+    outline: 2px solid var(--primary-base);
+    outline-offset: 2px;
   }
 }
 

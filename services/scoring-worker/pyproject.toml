@@ -1,7 +1,7 @@
 [project]
 name = "scoring-worker"
 version = "0.1.0"
-description = "Solidago scoring worker for native BWS rankings and optional COCM voting rights"
+description = "Solidago scoring worker for native BWS rankings"
 requires-python = ">=3.13"
 dependencies = [
     "certifi>=2026.10.19",

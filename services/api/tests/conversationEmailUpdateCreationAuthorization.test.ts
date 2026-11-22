@@ -15,10 +15,11 @@ import {
 } from "../src/shared-backend/schema.js";
 import {
     hasProjectParticipantContactEmail,
-    lockConversationEmailUpdateConfigurationAccess,
+    lockConversationCreateTarget,
     lockProjectParticipantContactEmail,
 } from "../src/service/projectAccess.js";
 import { lockConversationEmailUpdateProject } from "../src/service/conversationEmailUpdateProjectLock.js";
+import { hasScopedProjectCapability } from "../src/service/organizationAuthorization.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
 process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
@@ -32,7 +33,6 @@ describe("conversation Email Update creation authorization", () => {
     let db: PostgresJsDatabase;
     let organizationId: number;
     let projectId: number;
-    let capabilityId: number;
     let entitlementId: number;
     let contactId: number;
 
@@ -53,7 +53,7 @@ describe("conversation Email Update creation authorization", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await db.execute(
             sql.raw(
                 readDbFixtureSql(
@@ -99,7 +99,11 @@ describe("conversation Email Update creation authorization", () => {
         organizationId = organization.id;
         const memberships = await db
             .insert(organizationMembershipTable)
-            .values({ userId: USER_ID, organizationId: organization.id })
+            .values({
+                userId: USER_ID,
+                organizationId: organization.id,
+                role: "admin",
+            })
             .returning({ id: organizationMembershipTable.id });
         const membership = memberships.at(0);
         if (membership === undefined) {
@@ -162,26 +166,29 @@ describe("conversation Email Update creation authorization", () => {
         ) {
             throw new Error("Failed to seed Email Update authorization");
         }
-        capabilityId = capability.id;
         entitlementId = entitlement.id;
         contactId = contact.id;
+        await db
+            .insert(organizationMembershipAllProjectCapabilityTable)
+            .values({
+                organizationMembershipId: membership.id,
+                capability: "conversation_create",
+            });
     }
 
     it("accepts active authorization and an email contact", async () => {
+        const authorized = await hasScopedProjectCapability({
+            db,
+            userId: USER_ID,
+            target: { kind: "project", projectSlug: "test-project" },
+            capability: "conversation_email_update",
+        });
         await expect(
             db.transaction(async (tx) => {
                 const projectLocked = await lockConversationEmailUpdateProject({
                     db: tx,
                     projectId,
                 });
-                const authorized =
-                    await lockConversationEmailUpdateConfigurationAccess({
-                        db: tx,
-                        userId: USER_ID,
-                        projectId,
-                        organizationId,
-                        now: NOW,
-                    });
                 return { projectLocked, authorized };
             }),
         ).resolves.toEqual({ projectLocked: true, authorized: true });
@@ -190,33 +197,94 @@ describe("conversation Email Update creation authorization", () => {
         ).resolves.toBe(true);
     });
 
+    it("coordinates concurrent creation without membership authorization locks", async () => {
+        const otherUserId = "00000000-0000-4000-8000-000000000002";
+        await db
+            .insert(userTable)
+            .values({ id: otherUserId, username: "other-author" });
+        const otherMembership = (
+            await db
+                .insert(organizationMembershipTable)
+                .values({ userId: otherUserId, organizationId, role: "admin" })
+                .returning()
+        ).at(0);
+        if (otherMembership === undefined)
+            throw new Error("Missing second membership");
+        await db
+            .insert(organizationMembershipAllProjectCapabilityTable)
+            .values([
+                {
+                    organizationMembershipId: otherMembership.id,
+                    capability: "conversation_create",
+                },
+                {
+                    organizationMembershipId: otherMembership.id,
+                    capability: "conversation_email_update",
+                },
+            ]);
+        const otherProject = (
+            await db
+                .insert(projectTable)
+                .values({
+                    slug: "other-project",
+                    title: "Other",
+                    directoryVisibility: "listed",
+                })
+                .returning({ id: projectTable.id })
+        ).at(0);
+        if (otherProject === undefined)
+            throw new Error("Missing second project");
+        await db
+            .insert(projectOrganizationOwnershipTable)
+            .values({ projectId: otherProject.id, organizationId });
+        let arrived = 0;
+        let release = () => {};
+        const ready = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const results = await Promise.allSettled(
+            [
+                { id: projectId, userId: USER_ID },
+                { id: otherProject.id, userId: otherUserId },
+            ].map(async ({ id, userId }) => {
+                return await db.transaction(async (tx) => {
+                    await tx.execute(sql`SET LOCAL lock_timeout = '500ms'`);
+                    expect(
+                        await lockConversationCreateTarget({
+                            db: tx,
+                            userId,
+                            target: { projectId: id, organizationId },
+                        }),
+                    ).toBe(true);
+                    arrived += 1;
+                    if (arrived === 2) release();
+                    await ready;
+                    return true;
+                });
+            }),
+        );
+        expect(results).toEqual([
+            { status: "fulfilled", value: true },
+            { status: "fulfilled", value: true },
+        ]);
+    });
+
     it("rejects revoked authorization and a contact without email", async () => {
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({
-                deletedAt: NOW,
-                revokedByUserId: USER_ID,
-            })
-            .where(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.id,
-                    capabilityId,
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.userId, USER_ID));
         await db
             .update(projectContactTable)
             .set({ email: null, websiteUrl: "https://example.com" })
             .where(eq(projectContactTable.id, contactId));
 
         await expect(
-            db.transaction(async (tx) => {
-                return await lockConversationEmailUpdateConfigurationAccess({
-                    db: tx,
-                    userId: USER_ID,
-                    projectId,
-                    organizationId,
-                    now: NOW,
-                });
+            hasScopedProjectCapability({
+                db,
+                userId: USER_ID,
+                target: { kind: "project", projectSlug: "test-project" },
+                capability: "conversation_email_update",
             }),
         ).resolves.toBe(false);
         await expect(
@@ -240,7 +308,15 @@ describe("conversation Email Update creation authorization", () => {
         ).resolves.toBe(false);
     });
 
-    it("serializes capability and entitlement revocation behind creation authorization", async () => {
+    it("does not block role or entitlement revocation behind contact-integrity work", async () => {
+        expect(
+            await hasScopedProjectCapability({
+                db,
+                userId: USER_ID,
+                target: { kind: "project", projectSlug: "test-project" },
+                capability: "conversation_email_update",
+            }),
+        ).toBe(true);
         let releaseAuthorization: (() => void) | undefined;
         const holdAuthorization = new Promise<void>((resolve) => {
             releaseAuthorization = resolve;
@@ -250,17 +326,6 @@ describe("conversation Email Update creation authorization", () => {
             reportLocked = resolve;
         });
         const authorizationTransaction = db.transaction(async (tx) => {
-            const authorized =
-                await lockConversationEmailUpdateConfigurationAccess({
-                    db: tx,
-                    userId: USER_ID,
-                    projectId,
-                    organizationId,
-                    now: NOW,
-                });
-            if (!authorized) {
-                throw new Error("Expected active creation authorization");
-            }
             const contactLocked = await lockProjectParticipantContactEmail({
                 db: tx,
                 projectId,
@@ -277,17 +342,9 @@ describe("conversation Email Update creation authorization", () => {
             db.transaction(async (tx) => {
                 await tx.execute(sql`SET LOCAL lock_timeout = '100ms'`);
                 await tx
-                    .update(organizationMembershipAllProjectCapabilityTable)
-                    .set({
-                        deletedAt: NOW,
-                        revokedByUserId: USER_ID,
-                    })
-                    .where(
-                        eq(
-                            organizationMembershipAllProjectCapabilityTable.id,
-                            capabilityId,
-                        ),
-                    );
+                    .update(organizationMembershipTable)
+                    .set({ role: "moderator" })
+                    .where(eq(organizationMembershipTable.userId, USER_ID));
             }),
             db.transaction(async (tx) => {
                 await tx.execute(sql`SET LOCAL lock_timeout = '100ms'`);
@@ -308,11 +365,11 @@ describe("conversation Email Update creation authorization", () => {
         ];
 
         try {
-            await Promise.all(
-                blockedRevocations.map(async (revocation) => {
-                    await expect(revocation).rejects.toThrow();
-                }),
-            );
+            expect(
+                (await Promise.allSettled(blockedRevocations)).map(
+                    (result) => result.status,
+                ),
+            ).toEqual(["fulfilled", "fulfilled", "rejected"]);
         } finally {
             releaseAuthorization?.();
             await authorizationTransaction;

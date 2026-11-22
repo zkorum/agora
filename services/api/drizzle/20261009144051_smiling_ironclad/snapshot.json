@@ -1,0 +1,235 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "1220364e-1b39-4dcd-94e2-0f25e827316e",
+  "prevIds": [
+    "5db7c6fe-31b2-4d6f-8cee-56d5794ced0b"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "registration_pause_expires_at"
+      ],
+      "writes": [
+        "s|col|public.phone_sms_budget_policy.registration_pause_expires_at",
+        "n|col|public.phone_sms_budget_policy.registration_pause_expires_at",
+        "e|col|public.phone_sms_budget_policy.registration_pause_expires_at"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "hourly_send_limit"
+      ],
+      "writes": [
+        "s|colprop|public.phone_sms_budget_policy.hourly_send_limit.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.hourly_send_limit"
+      ],
+      "sqlHash": "99a2ec0467b0d928"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "daily_send_limit"
+      ],
+      "writes": [
+        "s|colprop|public.phone_sms_budget_policy.daily_send_limit.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.daily_send_limit"
+      ],
+      "sqlHash": "58efa5cd69463c06"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "hourly_budget_cents"
+      ],
+      "writes": [
+        "s|colprop|public.phone_sms_budget_policy.hourly_budget_cents.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.hourly_budget_cents"
+      ],
+      "sqlHash": "fde56b12fe3c104f"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "daily_budget_cents"
+      ],
+      "writes": [
+        "s|colprop|public.phone_sms_budget_policy.daily_budget_cents.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.daily_budget_cents"
+      ],
+      "sqlHash": "bc6eeea441b2d6cb"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "monthly_budget_cents"
+      ],
+      "writes": [
+        "s|colprop|public.phone_sms_budget_policy.monthly_budget_cents.default"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.monthly_budget_cents"
+      ],
+      "sqlHash": "0837f8ede879be17"
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "phone_sms_budget_policy"
+      ],
+      "writes": [
+        "s|ck|public.phone_sms_budget_policy.phone_sms_budget_pause_expiry_check",
+        "n|ck|public.phone_sms_budget_policy.phone_sms_budget_pause_expiry_check",
+        "e|ck|public.phone_sms_budget_policy.phone_sms_budget_pause_expiry_check",
+        "n|con|public.phone_sms_budget_policy.phone_sms_budget_pause_expiry_check"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.registration_pause_expires_at",
+        "n|col|public.phone_sms_budget_policy.registration_paused_at"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "phone_sms_budget_policy"
+      ],
+      "writes": [
+        "s|ck|public.phone_sms_budget_policy.phone_sms_budget_positive_limits_check"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.hourly_send_limit",
+        "n|col|public.phone_sms_budget_policy.daily_send_limit",
+        "n|col|public.phone_sms_budget_policy.estimated_cents_per_send",
+        "n|col|public.phone_sms_budget_policy.hourly_budget_cents",
+        "n|col|public.phone_sms_budget_policy.daily_budget_cents",
+        "e|col|public.phone_sms_budget_policy.hourly_send_limit",
+        "e|col|public.phone_sms_budget_policy.daily_send_limit",
+        "e|col|public.phone_sms_budget_policy.estimated_cents_per_send",
+        "e|col|public.phone_sms_budget_policy.hourly_budget_cents",
+        "e|col|public.phone_sms_budget_policy.daily_budget_cents"
+      ],
+      "sqlHash": "5f397056f0512b94"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "registration_pause_expires_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "phone_sms_budget_pause_expiry_check",
+        "value": "\"phone_sms_budget_policy\".\"registration_pause_expires_at\" IS NULL OR (\"phone_sms_budget_policy\".\"registration_paused_at\" IS NOT NULL AND \"phone_sms_budget_policy\".\"registration_pause_expires_at\" > \"phone_sms_budget_policy\".\"registration_paused_at\")",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"phone_sms_budget_policy\",\"hourly_send_limit\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"phone_sms_budget_policy\",\"daily_send_limit\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"phone_sms_budget_policy\",\"hourly_budget_cents\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"phone_sms_budget_policy\",\"daily_budget_cents\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"phone_sms_budget_policy\",\"monthly_budget_cents\"]",
+      "set": {
+        "default": "3000"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"phone_sms_budget_policy\",\"phone_sms_budget_positive_limits_check\"]",
+      "set": {
+        "value": "(\"phone_sms_budget_policy\".\"hourly_send_limit\" IS NULL OR \"phone_sms_budget_policy\".\"hourly_send_limit\" > 0) AND (\"phone_sms_budget_policy\".\"daily_send_limit\" IS NULL OR \"phone_sms_budget_policy\".\"daily_send_limit\" > 0) AND (\"phone_sms_budget_policy\".\"hourly_send_limit\" IS NULL OR \"phone_sms_budget_policy\".\"daily_send_limit\" IS NULL OR \"phone_sms_budget_policy\".\"daily_send_limit\" >= \"phone_sms_budget_policy\".\"hourly_send_limit\") AND \"phone_sms_budget_policy\".\"estimated_cents_per_send\" > 0 AND (\"phone_sms_budget_policy\".\"hourly_budget_cents\" IS NULL OR \"phone_sms_budget_policy\".\"hourly_budget_cents\" > 0) AND (\"phone_sms_budget_policy\".\"daily_budget_cents\" IS NULL OR \"phone_sms_budget_policy\".\"daily_budget_cents\" > 0) AND (\"phone_sms_budget_policy\".\"hourly_budget_cents\" IS NULL OR \"phone_sms_budget_policy\".\"daily_budget_cents\" IS NULL OR \"phone_sms_budget_policy\".\"daily_budget_cents\" >= \"phone_sms_budget_policy\".\"hourly_budget_cents\")"
+      }
+    }
+  ]
+}

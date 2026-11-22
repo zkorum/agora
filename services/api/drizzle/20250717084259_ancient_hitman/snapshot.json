@@ -1,0 +1,571 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "e5cdc9b4-f705-4bdf-abe8-89b18b8d1732",
+  "prevIds": [
+    "7344f4fe-e308-4d02-b571-35df44cce9e9"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "vote_enum_all"
+      ],
+      "writes": [
+        "s|enum|public.vote_enum_all",
+        "n|enum|public.vote_enum_all",
+        "e|enum|public.vote_enum_all",
+        "n|type|public.vote_enum_all"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "vote_enum_simple"
+      ],
+      "writes": [
+        "s|enum|public.vote_enum_simple",
+        "n|enum|public.vote_enum_simple",
+        "e|enum|public.vote_enum_simple",
+        "n|type|public.vote_enum_simple"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion"
+      ],
+      "writes": [
+        "s|ck|public.opinion.check_polis_null",
+        "n|ck|public.opinion.check_polis_null",
+        "e|ck|public.opinion.check_polis_null",
+        "n|con|public.opinion.check_polis_null"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "e|col|public.opinion.cluster_0_id",
+        "e|col|public.opinion.cluster_0_num_agrees",
+        "e|col|public.opinion.cluster_0_num_disagrees",
+        "e|col|public.opinion.cluster_1_id",
+        "e|col|public.opinion.cluster_1_num_agrees",
+        "e|col|public.opinion.cluster_1_num_disagrees",
+        "e|col|public.opinion.cluster_2_id",
+        "e|col|public.opinion.cluster_2_num_agrees",
+        "e|col|public.opinion.cluster_2_num_disagrees",
+        "e|col|public.opinion.cluster_3_id",
+        "e|col|public.opinion.cluster_3_num_agrees",
+        "e|col|public.opinion.cluster_3_num_disagrees",
+        "e|col|public.opinion.cluster_4_id",
+        "e|col|public.opinion.cluster_4_num_agrees",
+        "e|col|public.opinion.cluster_4_num_disagrees",
+        "e|col|public.opinion.cluster_5_id",
+        "e|col|public.opinion.cluster_5_num_agrees",
+        "e|col|public.opinion.cluster_5_num_disagrees"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "cluster_0_num_passes"
+      ],
+      "writes": [
+        "s|col|public.opinion.cluster_0_num_passes",
+        "n|col|public.opinion.cluster_0_num_passes",
+        "e|col|public.opinion.cluster_0_num_passes"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "cluster_1_num_passes"
+      ],
+      "writes": [
+        "s|col|public.opinion.cluster_1_num_passes",
+        "n|col|public.opinion.cluster_1_num_passes",
+        "e|col|public.opinion.cluster_1_num_passes"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "cluster_2_num_passes"
+      ],
+      "writes": [
+        "s|col|public.opinion.cluster_2_num_passes",
+        "n|col|public.opinion.cluster_2_num_passes",
+        "e|col|public.opinion.cluster_2_num_passes"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "cluster_3_num_passes"
+      ],
+      "writes": [
+        "s|col|public.opinion.cluster_3_num_passes",
+        "n|col|public.opinion.cluster_3_num_passes",
+        "e|col|public.opinion.cluster_3_num_passes"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "cluster_4_num_passes"
+      ],
+      "writes": [
+        "s|col|public.opinion.cluster_4_num_passes",
+        "n|col|public.opinion.cluster_4_num_passes",
+        "e|col|public.opinion.cluster_4_num_passes"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "cluster_5_num_passes"
+      ],
+      "writes": [
+        "s|col|public.opinion.cluster_5_num_passes",
+        "n|col|public.opinion.cluster_5_num_passes",
+        "e|col|public.opinion.cluster_5_num_passes"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "opinion_id"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster_opinion.opinion_id",
+        "n|col|public.polis_cluster_opinion.opinion_id",
+        "e|col|public.polis_cluster_opinion.opinion_id"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "polis_participant_id"
+      ],
+      "writes": [
+        "s|col|public.user.polis_participant_id",
+        "n|col|public.user.polis_participant_id",
+        "e|col|public.user.polis_participant_id"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster",
+        "math_center"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster.math_center",
+        "n|col|public.polis_cluster.math_center",
+        "e|col|public.polis_cluster.math_center"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_content",
+        "math_tick"
+      ],
+      "writes": [
+        "s|col|public.polis_content.math_tick",
+        "n|col|public.polis_content.math_tick",
+        "e|col|public.polis_content.math_tick"
+      ],
+      "reads": [
+        "n|tbl|public.polis_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "opinion_slug_id"
+      ],
+      "writes": [
+        "s|colprop|public.polis_cluster_opinion.opinion_slug_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.opinion_slug_id"
+      ],
+      "sqlHash": "42583484b9e422ff"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "agreement_type"
+      ],
+      "writes": [
+        "s|colprop|public.polis_cluster_opinion.agreement_type.type",
+        "s|colprop|public.polis_cluster_opinion.agreement_type.default"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.agreement_type",
+        "n|enum|public.vote_enum_simple"
+      ],
+      "sqlHash": "a562cc7bcccc608d"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "vote_content",
+        "vote"
+      ],
+      "writes": [
+        "s|colprop|public.vote_content.vote.type",
+        "s|colprop|public.vote_content.vote.default"
+      ],
+      "reads": [
+        "n|tbl|public.vote_content",
+        "n|sch|public",
+        "n|col|public.vote_content.vote",
+        "n|enum|public.vote_enum_all"
+      ],
+      "sqlHash": "241408f1563b69c7"
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_cluster_opinion"
+      ],
+      "writes": [
+        "s|fk|public.polis_cluster_opinion.polis_cluster_opinion_opinion_id_opinion_id_fk",
+        "n|fk|public.polis_cluster_opinion.polis_cluster_opinion_opinion_id_opinion_id_fk",
+        "e|fk|public.polis_cluster_opinion.polis_cluster_opinion_opinion_id_opinion_id_fk",
+        "n|con|public.polis_cluster_opinion.polis_cluster_opinion_opinion_id_opinion_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.opinion_id",
+        "n|col|public.opinion.id",
+        "e|uniqueness|public.opinion.id"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "vote_enum"
+      ],
+      "writes": [
+        "s|enum|public.vote_enum",
+        "n|enum|public.vote_enum",
+        "e|enum|public.vote_enum",
+        "n|type|public.vote_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "vote_enum_all",
+        "values": [
+          "agree",
+          "disagree",
+          "pass"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "vote_enum_simple",
+        "values": [
+          "agree",
+          "disagree"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "cluster_0_num_passes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "cluster_1_num_passes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "cluster_2_num_passes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "cluster_3_num_passes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "cluster_4_num_passes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "cluster_5_num_passes",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "opinion_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "polis_participant_id",
+        "type": "serial",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "polis_cluster_opinion_opinion_id_opinion_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "opinion_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "opinion",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"vote_enum\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"polis_cluster\",\"math_center\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"polis_content\",\"math_tick\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"opinion\",\"check_polis_null\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"polis_cluster_opinion\",\"opinion_slug_id\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"polis_cluster_opinion\",\"agreement_type\"]",
+      "set": {
+        "type": "vote_enum_simple"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"vote_content\",\"vote\"]",
+      "set": {
+        "type": "vote_enum_all"
+      }
+    }
+  ]
+}

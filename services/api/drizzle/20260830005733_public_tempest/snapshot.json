@@ -1,0 +1,110 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "2a744e69-8660-46c0-a98b-c325ab11a294",
+  "prevIds": [
+    "f21bab43-aa29-4f68-8623-4a508a06ef46"
+  ],
+  "footprints": [
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_email_update_delivery",
+        "conversation_email_update_delivery_materialization_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_email_update_delivery_materialization_idx",
+        "n|idx|public.conversation_email_update_delivery_materialization_idx",
+        "e|idx|public.conversation_email_update_delivery_materialization_idx",
+        "n|rel|public.conversation_email_update_delivery_materialization_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_email_update_delivery",
+        "n|sch|public",
+        "n|col|public.conversation_email_update_delivery.status",
+        "n|col|public.conversation_email_update_delivery.updated_at",
+        "n|col|public.conversation_email_update_delivery.id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "fb0595e669889fe4"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_email_update_test_attempt",
+        "conversation_email_update_test_lease_expiry_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_email_update_test_lease_expiry_idx",
+        "n|idx|public.conversation_email_update_test_lease_expiry_idx",
+        "e|idx|public.conversation_email_update_test_lease_expiry_idx",
+        "n|rel|public.conversation_email_update_test_lease_expiry_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_email_update_test_attempt",
+        "n|sch|public",
+        "n|col|public.conversation_email_update_test_attempt.lease_expires_at"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_email_update_test_attempt",
+        "name": "conversation_email_update_test_lease_expiry_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "lease_expires_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"conversation_email_update_test_attempt\".\"status\" IN ('claimed', 'attempting')",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_email_update_delivery_materialization_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "status",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    }
+  ]
+}

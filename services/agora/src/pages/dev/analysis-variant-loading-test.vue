@@ -42,6 +42,7 @@
       :show-report-button="false"
       :is-live-analysis-paused="false"
       :is-conversation-closed="false"
+      :can-edit-conversation="false"
       :is-finalizing="false"
       :navigate-to-discover-tab="noop"
       :conversation-scroll-context="conversationScrollContext"

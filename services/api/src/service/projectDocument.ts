@@ -837,6 +837,14 @@ export async function fetchProjectPageDocuments({
         })
         .from(projectDocumentTable)
         .innerJoin(
+            projectTable,
+            and(
+                eq(projectTable.id, projectDocumentTable.projectId),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+            ),
+        )
+        .innerJoin(
             projectDocumentFileTable,
             and(
                 eq(
@@ -905,7 +913,7 @@ export async function fetchProjectPageDocuments({
             db,
             userId: requesterUserId,
             projectId,
-            capability: "project_update",
+            capability: "project_view_restricted_documents",
         }));
     const ownerFiles =
         canSeeOwnerVersions && documentsById.size > 0
@@ -1016,15 +1024,16 @@ export async function accessProjectDocument({
         if (document === undefined) {
             throw httpErrors.notFound("Project document not found");
         }
-        const isFacilitator =
-            authorization.type === "facilitator" &&
-            (await hasProjectCapability({
-                db: tx,
-                userId: authorization.userId,
-                projectId: document.projectId,
-                capability: "project_update",
-            }));
-        if (request.audience === "owner" && !isFacilitator) {
+        if (
+            request.audience === "owner" &&
+            (authorization.type !== "facilitator" ||
+                !(await hasProjectCapability({
+                    db: tx,
+                    userId: authorization.userId,
+                    projectId: document.projectId,
+                    capability: "project_view_restricted_documents",
+                })))
+        ) {
             throw httpErrors.forbidden(
                 "Only project facilitators can access the facilitator version",
             );

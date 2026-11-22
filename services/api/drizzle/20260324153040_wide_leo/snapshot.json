@@ -1,0 +1,57 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "e592bb96-37c9-4ff7-94f7-3d380e745ef9",
+  "prevIds": [
+    "300905a7-7e53-416c-97f3-339367e39ab7"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_result",
+        "maxdiff_result_conversation_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_result_conversation_idx",
+        "n|idx|public.maxdiff_result_conversation_idx",
+        "e|idx|public.maxdiff_result_conversation_idx",
+        "n|rel|public.maxdiff_result_conversation_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_result",
+        "n|sch|public",
+        "n|col|public.maxdiff_result.conversation_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "maxdiff_result_conversation_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

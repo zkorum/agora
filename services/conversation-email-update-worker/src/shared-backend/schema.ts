@@ -21,14 +21,44 @@ import {
     serial,
     foreignKey,
     primaryKey,
+    type PgTableExtraConfigValue,
 } from "drizzle-orm/pg-core";
-import { gt, isNotNull, isNull, type SQL } from "drizzle-orm";
+import {
+    and,
+    or,
+    eq,
+    ne,
+    lte,
+    desc,
+    gt,
+    gte,
+    inArray,
+    arrayContains,
+    notInArray,
+    isNotNull,
+    isNull,
+    type SQL,
+} from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
+import {
+    MAX_GATHERING_FIELDS,
+    MAX_GATHERING_TEXT_LENGTH,
+} from "@/shared/gatheringLimits.js";
+import {
+    participationModeSettingsSourceValues,
+    participationModeValues,
+} from "@/shared/participationMode.js";
 import {
     ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
+import { organizationRoleValues } from "@/shared/organizationAccess.js";
+import {
+    QV_CREDIT_BUDGET,
+    QV_RULE_VERSION,
+    QV_ALGORITHM_VERSION,
+} from "@/shared/utils/qv.js";
 import {
     MAX_PROJECT_DOCUMENT_FILE_SIZE,
     PROJECT_DOCUMENT_CONTENT_TYPES,
@@ -54,13 +84,14 @@ import {
 const MAX_LENGTH_CONVERSATION_EMAIL_UPDATE_SUBJECT = 140;
 
 // Drizzle's variadic and()/or() return SQL | undefined because zero arguments are allowed.
-// These schema helpers require at least two conditions, so index/check definitions stay typed as SQL.
+// DDL cannot bind parameters. Inline schema-owned literals while requiring two
+// conditions to narrow Drizzle's optional return type without an assertion.
 function sqlAnd(first: SQL, second: SQL, ...rest: SQL[]): SQL {
-    return sql`(${sql.join([first, second, ...rest], sql` AND `)})`;
+    return sql`${and(first, second, ...rest)}`.inlineParams();
 }
 
 function sqlOr(first: SQL, second: SQL, ...rest: SQL[]): SQL {
-    return sql`(${sql.join([first, second, ...rest], sql` OR `)})`;
+    return sql`${or(first, second, ...rest)}`.inlineParams();
 }
 
 function hasNonBlankText(column: AnyPgColumn): SQL {
@@ -602,28 +633,28 @@ export const phoneCountryCodeEnum = pgEnum("phone_country_code", [
 export const voteEnum = pgEnum("vote_enum_all", ["agree", "disagree", "pass"]);
 export const voteEnumSimple = pgEnum("vote_enum_simple", ["agree", "disagree"]);
 
+// Storage-only legacy enums: retired ticket records are retained, never used for access.
 export const ticketProviderEnum = pgEnum("ticket_provider", ["zupass"]);
 
 export const eventSlugEnum = pgEnum("event_slug", ["devconnect-2025"]);
 
 export const importMethodType = pgEnum("import_method", ["url", "csv"]);
 
-export const participationModeEnum = pgEnum("participation_mode", [
-    "account_required",
-    "strong_verification",
-    "email_verification",
-    "guest",
-]);
+export const participationModeEnum = pgEnum(
+    "participation_mode",
+    participationModeValues,
+);
 
 export const conversationTypeEnum = pgEnum("conversation_type", [
+    "gathering",
     "polis",
-    "ranking",
+    "prioritizing",
 ]);
 export const polisVotingPresentationEnum = pgEnum("polis_voting_presentation", [
     "list",
     "one_at_a_time",
 ]);
-export const rankingModeEnum = pgEnum("ranking_mode", ["bws"]);
+export const rankingModeEnum = pgEnum("ranking_mode", ["bws", "pairwise"]);
 export const conversationLanguageSettingsSourceEnum = pgEnum(
     "conversation_language_settings_source",
     ["conversation_override", "project_inherited"],
@@ -669,7 +700,15 @@ export const premiumFeatureEnum = pgEnum("premium_feature", [
 ]);
 export const contentTranslationSourceKindEnum = pgEnum(
     "content_translation_source_kind",
-    ["conversation", "opinion", "survey_question", "project", "ranking_item"],
+    [
+        "conversation",
+        "opinion",
+        "survey_question",
+        "project",
+        "ranking_item",
+        "gathering_field",
+        "gathering_response",
+    ],
 );
 export const projectContentTranslationSourceKindEnum = pgEnum(
     "project_content_translation_source_kind",
@@ -699,16 +738,12 @@ export const organizationMembershipCapabilityEnum = pgEnum(
     ],
 );
 
-export const projectCapabilityValues = [
-    "project_update",
-    "project_delete",
-    "project_manage_owner_organizations",
-    "conversation_create",
-    "conversation_edit",
-    "conversation_delete",
-    "conversation_moderate",
-    "conversation_email_update",
-] as const;
+export { projectCapabilityValues } from "@/shared/organizationAccess.js";
+
+export const organizationRoleEnum = pgEnum(
+    "organization_role",
+    organizationRoleValues,
+);
 
 // Historical grant rows retain their enum labels. Only projectCapabilityValues
 // are supported by application authorization and new grants.
@@ -1071,7 +1106,7 @@ export const conversationViewSnapshotReasonEnum = pgEnum(
 // The association between users and devices/emails can change over time.
 // A user must have at least 1 validated primary email and 1 device associated with it.
 // The "at least one" conditon is not enforced directly in the SQL model yet. It is done in the application code.
-/** @service scoring-worker, shared-analysis-worker, import-worker, content-translation-worker */
+/** @service scoring-worker, shared-analysis-worker, import-worker, content-translation-worker, credit-voting-worker */
 export const userTable = pgTable(
     "user",
     {
@@ -1084,7 +1119,26 @@ export const userTable = pgTable(
         isSiteOrgAdmin: boolean("is_site_org_admin").notNull().default(false),
         isImported: boolean("is_imported").notNull().default(false),
         isDeleted: boolean("is_deleted").notNull().default(false),
-        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }), // Track when soft-delete occurred (hard-deleted after 15 days)
+        contributionRevision: integer("contribution_revision")
+            .notNull()
+            .default(0),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        // Legacy deletions remain unclassified; they must not gain recovery eligibility.
+        deletionReason: text("deletion_reason", {
+            enum: ["account_deletion", "guest_merge"],
+        }),
+        deletionRequestedAt: timestamp("deletion_requested_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        recoverableUntil: timestamp("recoverable_until", {
+            mode: "date",
+            precision: 3,
+        }),
+        purgeStartedAt: timestamp("purge_started_at", {
+            mode: "date",
+            precision: 3,
+        }),
         authRestrictedAt: timestamp("auth_restricted_at", {
             mode: "date",
             precision: 0,
@@ -1112,12 +1166,55 @@ export const userTable = pgTable(
     },
     (table) => [
         check(
+            "user_contribution_revision_check",
+            gte(table.contributionRevision, 0).inlineParams(),
+        ),
+        check(
+            "user_recovery_lifecycle_check",
+            sqlAnd(
+                sqlOr(
+                    sqlAnd(
+                        isNull(table.deletionRequestedAt),
+                        isNull(table.recoverableUntil),
+                    ),
+                    sqlAnd(
+                        eq(table.isDeleted, true),
+                        isNotNull(table.deletionReason),
+                        eq(table.deletionReason, "account_deletion"),
+                        isNotNull(table.deletionRequestedAt),
+                        isNotNull(table.recoverableUntil),
+                        // PostgreSQL enforces the exact interval on stored DB timestamps.
+                        eq(
+                            table.recoverableUntil,
+                            sql`${table.deletionRequestedAt} + interval '15 days'`,
+                        ),
+                    ),
+                ),
+                sqlOr(isNull(table.purgeStartedAt), eq(table.isDeleted, true)),
+            ),
+        ),
+        check(
             "user_auth_restriction_reason_check",
             sql`(${table.authRestrictedAt} IS NULL) = (${table.authRestrictionReason} IS NULL)`,
+        ),
+        check(
+            "user_deletion_reason_check",
+            sqlOr(
+                isNull(table.deletionReason),
+                sqlAnd(
+                    eq(table.isDeleted, true),
+                    isNotNull(table.deletedAt),
+                    inArray(table.deletionReason, [
+                        "account_deletion",
+                        "guest_merge",
+                    ]),
+                ),
+            ),
         ),
     ],
 );
 
+/** @service import-worker */
 export const organizationMembershipTable = pgTable(
     "organization_membership",
     {
@@ -1128,6 +1225,7 @@ export const organizationMembershipTable = pgTable(
         organizationId: integer("organization_id")
             .references(() => organizationTable.id)
             .notNull(),
+        role: organizationRoleEnum("role").notNull(),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -1147,6 +1245,9 @@ export const organizationMembershipTable = pgTable(
             .on(t.userId, t.organizationId)
             .where(isNull(t.deletedAt)),
         index("organization_membership_organization_idx").on(t.organizationId),
+        index("organization_membership_active_admin_idx")
+            .on(t.organizationId, t.userId)
+            .where(sqlAnd(isNull(t.deletedAt), eq(t.role, "admin"))),
     ],
 );
 
@@ -1326,11 +1427,34 @@ export const organizationTable = pgTable(
             mode: "date",
             precision: 0,
         }),
+        retiredForAccountDeletionAt: timestamp(
+            "retired_for_account_deletion_at",
+            {
+                mode: "date",
+                precision: 3,
+            },
+        ),
     },
     (table) => [
         uniqueIndex("organization_active_slug_unique")
             .on(table.slug)
             .where(sql`${table.deletedAt} IS NULL`),
+        check(
+            "organization_account_retirement_check",
+            sqlOr(
+                isNull(table.retiredForAccountDeletionAt),
+                sqlAnd(
+                    isNotNull(table.autoProvisionedForUserId),
+                    isNotNull(table.deletedAt),
+                    // Match legacy second-precision deletion timestamps without
+                    // losing the account deletion cycle's millisecond identity.
+                    eq(
+                        table.deletedAt,
+                        sql`${table.retiredForAccountDeletionAt}::timestamp(0)`,
+                    ),
+                ),
+            ),
+        ),
     ],
 );
 
@@ -1373,7 +1497,7 @@ export const organizationLocalizationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, math-updater, import-worker, content-translation-worker */
+/** @service scoring-worker, api, math-updater, import-worker, content-translation-worker, credit-voting-worker */
 export const projectTable = pgTable(
     "project",
     {
@@ -1385,9 +1509,7 @@ export const projectTable = pgTable(
         ).notNull(),
         autoProvisionedForOrganizationId: integer(
             "auto_provisioned_for_organization_id",
-        )
-            .references(() => organizationTable.id)
-            .unique(),
+        ).references(() => organizationTable.id),
         // Project creation inserts the project before its content row because project_content references project.
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => projectContentTable.id)
@@ -1400,6 +1522,9 @@ export const projectTable = pgTable(
         )
             .notNull()
             .default(false),
+        participationMode: participationModeEnum("participation_mode")
+            .notNull()
+            .default("guest"),
         conversationEmailUpdateDefaultUpdatedAt: timestamp(
             "conversation_email_update_default_updated_at",
             { mode: "date", precision: 0 },
@@ -1420,14 +1545,43 @@ export const projectTable = pgTable(
             .defaultNow()
             .notNull(),
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
+        retiredForAccountDeletionAt: timestamp(
+            "retired_for_account_deletion_at",
+            {
+                mode: "date",
+                precision: 3,
+            },
+        ),
     },
     (table) => [
         uniqueIndex("project_active_slug_unique")
             .on(table.slug)
-            .where(sql`${table.deletedAt} IS NULL`),
+            .where(isNull(table.deletedAt)),
+        uniqueIndex("project_active_default_organization_unique")
+            .on(table.autoProvisionedForOrganizationId)
+            .where(isNull(table.deletedAt)),
+        check(
+            "project_account_retirement_check",
+            sqlOr(
+                isNull(table.retiredForAccountDeletionAt),
+                sqlAnd(
+                    isNotNull(table.autoProvisionedForOrganizationId),
+                    isNotNull(table.deletedAt),
+                    // The cycle marker retains account-level precision; the
+                    // existing deleted_at column is rounded by PostgreSQL.
+                    eq(
+                        table.deletedAt,
+                        sql`${table.retiredForAccountDeletionAt}::timestamp(0)`,
+                    ),
+                ),
+            ),
+        ),
         check(
             "project_email_update_default_audit_check",
-            sql`(${table.conversationEmailUpdateDefaultUpdatedAt} IS NULL) = (${table.conversationEmailUpdateDefaultUpdatedByUserId} IS NULL)`,
+            sqlOr(
+                isNull(table.conversationEmailUpdateDefaultUpdatedByUserId),
+                isNotNull(table.conversationEmailUpdateDefaultUpdatedAt),
+            ),
         ),
     ],
 );
@@ -1823,6 +1977,9 @@ export const projectOrganizationAttributionTable = pgTable(
         uniqueIndex("project_organization_attribution_order_active_unique")
             .on(table.projectId, table.role, table.sortOrder)
             .where(isNull(table.deletedAt)),
+        index("project_organization_attribution_organization_idx")
+            .on(table.organizationId)
+            .where(isNotNull(table.organizationId)),
         uniqueIndex("project_organization_attribution_real_active_unique")
             .on(table.projectId, table.role, table.organizationId)
             .where(
@@ -1887,9 +2044,9 @@ export const projectContactTable = pgTable(
     },
     (table) => [
         check(
-            "project_contact_name_or_affiliation_check",
-            // Organization-only contacts must round-trip through the admin API's organization selector.
+            "project_contact_identity_or_email_check",
             sqlOr(
+                hasNonBlankText(table.email),
                 hasNonBlankText(table.firstName),
                 hasNonBlankText(table.lastName),
                 isNotNull(table.organizationId),
@@ -1917,6 +2074,9 @@ export const projectContactTable = pgTable(
         uniqueIndex("project_contact_project_active_unique")
             .on(table.projectId)
             .where(isNull(table.deletedAt)),
+        index("project_contact_organization_idx")
+            .on(table.organizationId)
+            .where(isNotNull(table.organizationId)),
     ],
 );
 
@@ -1975,6 +2135,7 @@ export const organizationMembershipCapabilityTable = pgTable(
 );
 
 /** @service api */
+/** @service import-worker */
 export const organizationMembershipAllProjectCapabilityTable = pgTable(
     "organization_membership_all_project_capability",
     {
@@ -2014,7 +2175,7 @@ export const organizationMembershipAllProjectCapabilityTable = pgTable(
             .where(isNull(table.deletedAt)),
         check(
             "organization_membership_all_project_capability_revocation_check",
-            sql`((${table.deletedAt} IS NULL AND ${table.revokedByUserId} IS NULL) OR (${table.deletedAt} IS NOT NULL AND ${table.revokedByUserId} IS NOT NULL))`,
+            sqlOr(isNull(table.revokedByUserId), isNotNull(table.deletedAt)),
         ),
     ],
 );
@@ -2083,6 +2244,9 @@ export const zkPassportTable = pgTable(
         nullifier: text("nullifier").notNull(), // Uniqueness enforced by partial index (only for non-deleted users)
         sex: varchar("sex", { length: 50 }).notNull(), // change to enum at some point
         isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table for partial index
+        reservedForRecovery: boolean("reserved_for_recovery")
+            .notNull()
+            .default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2097,13 +2261,25 @@ export const zkPassportTable = pgTable(
             .notNull(),
     },
     (table) => [
-        // Partial unique index: nullifier must be unique among non-deleted users only
-        // This allows deleted users' nullifiers to be reused immediately upon soft-deletion
+        // Pending account deletion reserves credentials until irreversible cleanup.
+        check(
+            "zk_passport_recovery_reservation_check",
+            sqlOr(
+                eq(table.reservedForRecovery, false),
+                eq(table.isDeleted, true),
+            ),
+        ),
         uniqueIndex("zk_passport_nullifier_active_unique")
             .on(table.nullifier)
-            .where(sql`${table.isDeleted} = false`),
+            .where(
+                sqlOr(
+                    eq(table.isDeleted, false),
+                    eq(table.reservedForRecovery, true),
+                ),
+            ),
         // Regular index for nullifier lookups
         index("zk_passport_nullifier_idx").on(table.nullifier),
+        index("zk_passport_user_idx").on(table.userId),
     ],
 );
 
@@ -2140,9 +2316,7 @@ export const eventTicketTable = pgTable(
             .notNull(),
     },
     (table) => [
-        // Index for frequent gating checks: SELECT * FROM event_ticket
-        // WHERE user_id = ? AND event_slug = ?
-        // Used by hasEventTicket() on every vote/opinion in gated conversations
+        // Legacy indexes remain with the retained, inactive ticket records.
         index("user_event_idx").on(table.userId, table.eventSlug),
         // Partial unique index: nullifier+event must be unique among non-deleted users only
         uniqueIndex("event_ticket_nullifier_event_active_unique")
@@ -2166,6 +2340,9 @@ export const phoneTable = pgTable(
         phoneHash: text("phone_hash").notNull(), // base64 encoded hash of phone + pepper
         pepperVersion: integer("pepper_version").notNull().default(0), // used pepper version - we rotate app-wide pepper one in a while
         isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table to enable partial unique index
+        reservedForRecovery: boolean("reserved_for_recovery")
+            .notNull()
+            .default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2181,12 +2358,25 @@ export const phoneTable = pgTable(
     },
     (table) => [
         check("check_two_digits", sql`${table.lastTwoDigits} BETWEEN 0 and 99`),
+        check(
+            "phone_recovery_reservation_check",
+            sqlOr(
+                eq(table.reservedForRecovery, false),
+                eq(table.isDeleted, true),
+            ),
+        ),
         // Partial unique index: only enforce uniqueness for non-deleted users
         uniqueIndex("phone_hash_active_unique")
             .on(table.phoneHash)
-            .where(sql`${table.isDeleted} = false`),
+            .where(
+                sqlOr(
+                    eq(table.isDeleted, false),
+                    eq(table.reservedForRecovery, true),
+                ),
+            ),
         // Regular index for lookups
         index("phone_hash_idx").on(table.phoneHash),
+        index("phone_user_idx").on(table.userId),
     ],
 );
 
@@ -2356,6 +2546,9 @@ export const emailTable = pgTable(
             .notNull(),
         isDeleted: boolean("is_deleted").notNull().default(false), // Denormalized from user table to enable partial unique index
         emailReachability: emailReachabilityEnum("email_reachability"), // Reacher verification result at registration time (null = not checked)
+        reservedForRecovery: boolean("reserved_for_recovery")
+            .notNull()
+            .default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2374,10 +2567,22 @@ export const emailTable = pgTable(
             "email_canonical_check",
             sql`${table.email} = lower(btrim(${table.email}))`,
         ),
-        // Partial unique index: only enforce uniqueness for non-deleted emails
+        // Reservations prevent another account claiming a recovery credential.
+        check(
+            "email_recovery_reservation_check",
+            sqlOr(
+                eq(table.reservedForRecovery, false),
+                eq(table.isDeleted, true),
+            ),
+        ),
         uniqueIndex("email_active_unique")
             .on(table.email)
-            .where(sql`${table.isDeleted} = false`),
+            .where(
+                sqlOr(
+                    eq(table.isDeleted, false),
+                    eq(table.reservedForRecovery, true),
+                ),
+            ),
         uniqueIndex("email_active_primary_user_unique")
             .on(table.userId)
             .where(
@@ -2388,6 +2593,14 @@ export const emailTable = pgTable(
         index("email_idx").on(table.email),
     ],
 );
+
+/** Retired signing keys carry no account/credential association after purge. */
+export const retiredDeviceKeyTable = pgTable("retired_device_key", {
+    didWrite: varchar("did_write", { length: 1000 }).primaryKey(),
+    retiredAt: timestamp("retired_at", { mode: "date", precision: 3 })
+        .notNull()
+        .defaultNow(),
+});
 
 export const deviceTable = pgTable(
     "device",
@@ -2591,7 +2804,7 @@ export const otpEmailDestinationStateTable = pgTable(
     ],
 );
 
-/** @service shared-analysis-worker, import-worker, content-translation-worker, scoring-worker */
+/** @service shared-analysis-worker, import-worker, content-translation-worker, scoring-worker, credit-voting-worker */
 export const conversationContentTable = pgTable(
     "conversation_content",
     {
@@ -2639,6 +2852,9 @@ export const polisConversationConfigTable = pgTable(
         aiLabelingEnabled: boolean("ai_labeling_enabled")
             .notNull()
             .default(true),
+        allowParticipantStatements: boolean("allow_participant_statements")
+            .notNull()
+            .default(true),
         analysisDataGeneration: integer("analysis_data_generation")
             .notNull()
             .default(0),
@@ -2670,6 +2886,9 @@ export const rankingConversationConfigTable = pgTable(
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         rankingMode: rankingModeEnum("ranking_mode").notNull(),
+        allowParticipantStatements: boolean("allow_participant_statements")
+            .notNull()
+            .default(false),
         currentRankingScoreId: integer("current_ranking_score_id")
             .references((): AnyPgColumn => rankingScoreTable.id)
             .unique(),
@@ -2726,7 +2945,303 @@ export const rankingConversationConfigTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker, import-worker, content-translation-worker */
+/** @service api, scoring-worker, shared-analysis-worker, import-worker, content-translation-worker, credit-voting-worker */
+export const qvConfigTable = pgTable(
+    "credit_voting_config",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        creditBudget: integer("credit_budget")
+            .notNull()
+            .default(QV_CREDIT_BUDGET),
+        allowOpposition: boolean("allow_opposition").notNull().default(true),
+        itemCount: integer("item_count").notNull().default(0),
+        statementSetRevision: integer("statement_set_revision")
+            .notNull()
+            .default(0),
+        statementsLockedAt: timestamp("statements_locked_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        createdAt: timestamp("created_at", { mode: "date", precision: 0 })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        check(
+            "credit_voting_fixed_budget_check",
+            sql`${table.creditBudget} = ${sql.raw(String(QV_CREDIT_BUDGET))}`,
+        ),
+        check(
+            "credit_voting_statement_revision_check",
+            sql`${table.statementSetRevision} >= 0`,
+        ),
+        check("credit_voting_item_count_check", sql`${table.itemCount} >= 0`),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const gatheringConfigTable = pgTable(
+    "gathering_config",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        gatheringMode: text("gathering_mode", {
+            enum: ["new", "amend"],
+        }).notNull(),
+        allowNewResponses: boolean("allow_new_responses").notNull(),
+        responseVisibility: text("response_visibility", {
+            enum: ["everyone", "facilitators"],
+        }).notNull(),
+    },
+    (table) => [
+        check(
+            "gathering_mode_check",
+            inArray(table.gatheringMode, ["new", "amend"]),
+        ),
+        check(
+            "gathering_visibility_check",
+            inArray(table.responseVisibility, ["everyone", "facilitators"]),
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const gatheringFieldTable = pgTable(
+    "gathering_field",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        configId: integer("config_id")
+            .notNull()
+            .references(() => gatheringConfigTable.id),
+        position: smallint("position").notNull(),
+        label: varchar("label", { length: 200 }).notNull(),
+        required: boolean("required").notNull(),
+        characterLimit: integer("character_limit").notNull(),
+    },
+    (table) => [
+        unique("gathering_field_config_position_unique").on(
+            table.configId,
+            table.position,
+        ),
+        unique("gathering_field_config_id_unique").on(table.configId, table.id),
+        check(
+            "gathering_field_position_check",
+            sqlAnd(
+                gte(table.position, 1),
+                lte(table.position, MAX_GATHERING_FIELDS),
+            ),
+        ),
+        check(
+            "gathering_field_limit_check",
+            sqlAnd(
+                gte(table.characterLimit, 1),
+                lte(table.characterLimit, MAX_GATHERING_TEXT_LENGTH),
+            ),
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const gatheringResponseTable = pgTable(
+    "gathering_response",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
+        conversationId: integer("conversation_id").notNull(),
+        configId: integer("config_id").notNull(),
+        authorId: uuid("author_id").references(() => userTable.id),
+        isSeed: boolean("is_seed").notNull().default(false),
+        currentContentId: integer("current_content_id"),
+        baselineContentId: integer("baseline_content_id"),
+        sourceConversationId: integer("source_conversation_id").references(
+            (): AnyPgColumn => conversationTable.id,
+            { onDelete: "set null" },
+        ),
+        sourceResponseContentId: integer(
+            "source_response_content_id",
+        ).references((): AnyPgColumn => gatheringResponseContentTable.id, {
+            onDelete: "set null",
+        }),
+        sourceConversationSlugId: varchar("source_conversation_slug_id", {
+            length: 8,
+        }),
+        sourceConversationType: text("source_conversation_type", {
+            enum: ["gathering"],
+        }),
+        moderation: text("moderation", { enum: ["hide", "move"] }),
+        accountHiddenAt: timestamp("account_hidden_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (table): PgTableExtraConfigValue[] => [
+        foreignKey({
+            columns: [table.conversationId, table.configId],
+            foreignColumns: [
+                conversationTable.id,
+                conversationTable.gatheringConfigId,
+            ],
+        }),
+        unique("gathering_response_config_id_unique").on(
+            table.configId,
+            table.id,
+        ),
+        uniqueIndex("gathering_response_author_unique")
+            .on(table.conversationId, table.authorId)
+            .where(eq(table.isSeed, false)),
+        index("gathering_response_author_idx").on(table.authorId),
+        foreignKey({
+            name: "gathering_response_current_fk",
+            columns: [table.id, table.currentContentId],
+            foreignColumns: [
+                gatheringResponseContentTable.responseId,
+                gatheringResponseContentTable.id,
+            ],
+        }),
+        foreignKey({
+            name: "gathering_response_baseline_fk",
+            columns: [table.id, table.baselineContentId],
+            foreignColumns: [
+                gatheringResponseContentTable.responseId,
+                gatheringResponseContentTable.id,
+            ],
+        }),
+        check(
+            "gathering_response_seed_author_check",
+            sqlOr(eq(table.isSeed, false), isNull(table.authorId)),
+        ),
+        check(
+            "gathering_response_author_check",
+            sqlOr(
+                eq(table.isSeed, true),
+                isNotNull(table.authorId),
+                isNotNull(table.accountHiddenAt),
+            ),
+        ),
+        check(
+            "gathering_response_deletion_check",
+            sqlOr(isNull(table.deletedAt), isNull(table.currentContentId)),
+        ),
+        check(
+            "gathering_response_moderation_check",
+            sqlOr(
+                isNull(table.moderation),
+                inArray(table.moderation, ["hide", "move"]),
+            ),
+        ),
+        check(
+            "gathering_response_provenance_check",
+            sqlOr(
+                sqlAnd(
+                    isNull(table.sourceConversationSlugId),
+                    isNull(table.sourceConversationType),
+                    isNull(table.baselineContentId),
+                    isNull(table.sourceConversationId),
+                    isNull(table.sourceResponseContentId),
+                ),
+                sqlAnd(
+                    isNotNull(table.sourceConversationSlugId),
+                    isNotNull(table.sourceConversationType),
+                    eq(table.sourceConversationType, "gathering"),
+                    isNotNull(table.baselineContentId),
+                ),
+            ),
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const gatheringResponseContentTable = pgTable(
+    "gathering_response_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        publicId: uuid("public_id").notNull().defaultRandom().unique(),
+        responseId: integer("response_id").notNull(),
+        configId: integer("config_id").notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (table): PgTableExtraConfigValue[] => [
+        foreignKey({
+            columns: [table.configId, table.responseId],
+            foreignColumns: [
+                gatheringResponseTable.configId,
+                gatheringResponseTable.id,
+            ],
+        }),
+        unique("gathering_content_response_id_unique").on(
+            table.responseId,
+            table.id,
+        ),
+        unique("gathering_content_config_id_unique").on(
+            table.configId,
+            table.id,
+        ),
+    ],
+);
+
+/** @service api, content-translation-worker */
+export const gatheringAnswerTable = pgTable(
+    "gathering_answer",
+    {
+        configId: integer("config_id").notNull(),
+        contentId: integer("content_id").notNull(),
+        fieldId: uuid("field_id").notNull(),
+        value: text("value").notNull(),
+    },
+    (table) => [
+        primaryKey({ columns: [table.contentId, table.fieldId] }),
+        foreignKey({
+            columns: [table.configId, table.contentId],
+            foreignColumns: [
+                gatheringResponseContentTable.configId,
+                gatheringResponseContentTable.id,
+            ],
+        }),
+        foreignKey({
+            columns: [table.configId, table.fieldId],
+            foreignColumns: [
+                gatheringFieldTable.configId,
+                gatheringFieldTable.id,
+            ],
+        }),
+        // PostgreSQL character length is needed here; Drizzle has no text-length helper.
+        check(
+            "gathering_answer_length_check",
+            sql`char_length(${table.value}) <= ${sql.raw(String(MAX_GATHERING_TEXT_LENGTH))}`,
+        ),
+    ],
+);
+
+/** @service api */
+export const gatheringModerationTable = pgTable(
+    "gathering_moderation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        responseId: integer("response_id")
+            .notNull()
+            .references(() => gatheringResponseTable.id),
+        action: text("action", { enum: ["hide", "move", "restore"] }).notNull(),
+        moderatorId: uuid("moderator_id").references(() => userTable.id),
+        reason: varchar("reason", { length: 1000 }).notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        check(
+            "gathering_moderation_action_check",
+            inArray(table.action, ["hide", "move", "restore"]),
+        ),
+        index("gathering_moderation_response_idx").on(table.responseId),
+    ],
+);
+
+/** @service scoring-worker, api, shared-analysis-worker, import-worker, content-translation-worker, credit-voting-worker */
 export const conversationTable = pgTable(
     "conversation",
     {
@@ -2738,12 +3253,22 @@ export const conversationTable = pgTable(
         currentContentId: integer("current_content_id")
             .references((): AnyPgColumn => conversationContentTable.id)
             .unique(), // null if conversation was deleted
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
         polisConfigId: integer("polis_config_id")
             .references(() => polisConversationConfigTable.id)
             .unique(),
         rankingConfigId: integer("ranking_config_id")
             .references(() => rankingConversationConfigTable.id)
             .unique(),
+        creditVotingConfigId: integer("credit_voting_config_id")
+            .references(() => qvConfigTable.id)
+            .unique(),
+        gatheringConfigId: integer("gathering_config_id")
+            .references((): AnyPgColumn => gatheringConfigTable.id)
+            .unique(),
+        prioritizationType: text("prioritization_type", {
+            enum: ["comparisons", "qv"],
+        }),
         dynamicTranslationEnabled: boolean("dynamic_translation_enabled")
             .notNull()
             .default(false),
@@ -2766,9 +3291,15 @@ export const conversationTable = pgTable(
         participationMode: participationModeEnum("participation_mode")
             .notNull()
             .default("account_required"), // Determines who can vote/post opinions: "account_required" requires any account, "strong_verification" requires phone or Rarimo passport, "email_verification" requires email credential specifically, "guest" allows anyone.
+        participationModeSettingsSource: text(
+            "participation_mode_settings_source",
+            { enum: participationModeSettingsSourceValues },
+        )
+            .notNull()
+            .default("conversation_override"),
         conversationType: conversationTypeEnum("conversation_type")
             .notNull()
-            .default("polis"), // "polis" = standard agree/disagree/unsure voting with clustering, "ranking" = ranked-choice prioritization family
+            .default("polis"),
         isImporting: boolean("is_importing").notNull().default(false), // if true, the conversation is being imported from CSV and should not be visible in feed until import completes
         isClosed: boolean("is_closed").notNull().default(false), // if true, the conversation was closed by owner and users cannot post opinions or vote
         voteBufferEpoch: uuid("vote_buffer_epoch").notNull().defaultRandom(),
@@ -2783,7 +3314,7 @@ export const conversationTable = pgTable(
             precision: 0,
         }),
         isEdited: boolean("is_edited").notNull().default(false), // if true, the conversation content was edited after creation. Used for "Edited" badge in UI. Use this field (not updatedAt) to determine if a conversation was edited — updatedAt can be accidentally bumped by migration scripts.
-        requiresEventTicket: eventSlugEnum("requires_event_ticket"), // if set, only users with verified ticket for this event can participate (vote/post opinions)
+        requiresEventTicket: eventSlugEnum("requires_event_ticket"), // Retired storage column; application access never consults it.
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -2807,6 +3338,20 @@ export const conversationTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "conversation_participation_mode_settings_source_check",
+            inArray(
+                table.participationModeSettingsSource,
+                participationModeSettingsSourceValues,
+            ),
+        ),
+        check(
+            "conversation_deletion_intent_check",
+            sqlOr(isNull(table.deletedAt), isNull(table.currentContentId)),
+        ),
+        index("conversation_deleted_idx")
+            .on(table.deletedAt, table.id)
+            .where(isNotNull(table.deletedAt)),
         unique("conversation_project_id_id_unique").on(
             table.projectId,
             table.id,
@@ -2844,11 +3389,106 @@ export const conversationTable = pgTable(
         ),
         check(
             "conversation_subtype_config_check",
-            sql`((${table.conversationType} = 'polis' AND ${table.polisConfigId} IS NOT NULL AND ${table.rankingConfigId} IS NULL) OR (${table.conversationType} = 'ranking' AND ${table.rankingConfigId} IS NOT NULL AND ${table.polisConfigId} IS NULL))`,
+            sqlOr(
+                sqlAnd(
+                    eq(table.conversationType, "gathering"),
+                    isNotNull(table.gatheringConfigId),
+                    isNull(table.polisConfigId),
+                    isNull(table.rankingConfigId),
+                    isNull(table.creditVotingConfigId),
+                    isNull(table.prioritizationType),
+                ),
+                sqlAnd(
+                    isNull(table.gatheringConfigId),
+                    sqlOr(
+                        sqlAnd(
+                            eq(table.conversationType, "polis"),
+                            isNotNull(table.polisConfigId),
+                            isNull(table.rankingConfigId),
+                            isNull(table.creditVotingConfigId),
+                            isNull(table.prioritizationType),
+                        ),
+                        sqlAnd(
+                            eq(table.conversationType, "prioritizing"),
+                            isNull(table.polisConfigId),
+                            isNotNull(table.prioritizationType),
+                            sqlOr(
+                                sqlAnd(
+                                    eq(table.prioritizationType, "comparisons"),
+                                    isNotNull(table.rankingConfigId),
+                                    isNull(table.creditVotingConfigId),
+                                ),
+                                sqlAnd(
+                                    eq(table.prioritizationType, "qv"),
+                                    isNotNull(table.creditVotingConfigId),
+                                    isNull(table.rankingConfigId),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        unique("conversation_gathering_config_unique").on(
+            table.id,
+            table.gatheringConfigId,
         ),
         check(
             "conversation_email_update_override_audit_check",
-            sql`(${table.conversationEmailUpdateOverrideUpdatedAt} IS NULL) = (${table.conversationEmailUpdateOverrideUpdatedByUserId} IS NULL)`,
+            sqlOr(
+                isNull(table.conversationEmailUpdateOverrideUpdatedByUserId),
+                isNotNull(table.conversationEmailUpdateOverrideUpdatedAt),
+            ),
+        ),
+    ],
+);
+
+/** @service api */
+export const conversationDraftTable = pgTable(
+    "conversation_draft",
+    {
+        id: uuid("id").defaultRandom().primaryKey(),
+        projectId: integer("project_id")
+            .notNull()
+            .references(() => projectTable.id, { onDelete: "cascade" }),
+        createdByUserId: uuid("created_by_user_id").references(
+            () => userTable.id,
+            { onDelete: "set null" },
+        ),
+        conversationType: conversationTypeEnum("conversation_type").notNull(),
+        content: jsonb("content").default({}).notNull(),
+        revision: integer("revision").default(0).notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .defaultNow()
+            .notNull(),
+        updatedAt: timestamp("updated_at", { mode: "date", precision: 3 })
+            .defaultNow()
+            .notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+        publishedAt: timestamp("published_at", { mode: "date", precision: 3 }),
+        publishedConversationId: integer("published_conversation_id")
+            .references(() => conversationTable.id, { onDelete: "set null" })
+            .unique(),
+    },
+    (table) => [
+        index("conversation_draft_project_idx").on(table.projectId),
+        index("conversation_draft_active_list_idx")
+            .on(table.projectId, table.createdAt, table.id)
+            .where(sqlAnd(isNull(table.deletedAt), isNull(table.publishedAt))),
+        index("conversation_draft_created_by_idx")
+            .on(table.createdByUserId)
+            .where(isNotNull(table.createdByUserId)),
+        check("conversation_draft_revision_check", gte(table.revision, 0)),
+        check(
+            "conversation_draft_published_link_check",
+            sqlOr(
+                isNull(table.publishedConversationId),
+                isNotNull(table.publishedAt),
+            ),
+        ),
+        check(
+            "conversation_draft_terminal_state_check",
+            sqlOr(isNull(table.deletedAt), isNull(table.publishedAt)),
         ),
     ],
 );
@@ -2936,7 +3576,7 @@ export const conversationImportSourceTable = pgTable(
     },
 );
 
-/** @service api, scoring-worker, shared-analysis-worker, content-translation-worker */
+/** @service api, scoring-worker, shared-analysis-worker, content-translation-worker, credit-voting-worker */
 export const rankingItemContentTable = pgTable(
     "ranking_item_content",
     {
@@ -2982,23 +3622,31 @@ export const rankingItemContentTable = pgTable(
     ],
 );
 
-/** @service api, scoring-worker, shared-analysis-worker, content-translation-worker */
+/** @service api, scoring-worker, shared-analysis-worker, content-translation-worker, credit-voting-worker */
 export const rankingItemTable = pgTable(
     "ranking_item",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(),
-        authorId: uuid("author_id")
-            .notNull()
-            .references(() => userTable.id),
+        authorId: uuid("author_id").references(() => userTable.id),
         conversationId: integer("conversation_id")
             .notNull()
             .references(() => conversationTable.id),
         currentContentId: integer("current_content_id"),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+        accountHiddenAt: timestamp("account_hidden_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        accountHiddenContentRetained: boolean("account_hidden_content_retained")
+            .notNull()
+            .default(false),
         isSeed: boolean("is_seed").notNull().default(false),
         lifecycleStatus: rankingItemLifecycleStatusEnum("lifecycle_status")
             .notNull()
             .default("active"),
+        moderation: text("moderation", { enum: ["move", "hide"] }),
+        position: integer("position").notNull().default(0),
         snapshotScore: real("snapshot_score"),
         snapshotRankingScoreId: integer("snapshot_ranking_score_id"),
         snapshotRank: integer("snapshot_rank"),
@@ -3017,6 +3665,29 @@ export const rankingItemTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "ranking_item_source_owner_check",
+            sqlOr(
+                isNotNull(table.authorId),
+                eq(table.isSeed, true),
+                isNotNull(table.deletedAt),
+                isNotNull(table.accountHiddenAt),
+            ),
+        ),
+        check(
+            "ranking_item_participant_moderation_check",
+            sqlOr(
+                isNull(table.moderation),
+                sqlAnd(
+                    eq(table.isSeed, false),
+                    inArray(table.moderation, ["move", "hide"]),
+                ),
+            ),
+        ),
+        check(
+            "ranking_item_deletion_intent_check",
+            sqlOr(isNull(table.deletedAt), isNull(table.currentContentId)),
+        ),
         foreignKey({
             columns: [table.snapshotRankingScoreId, table.conversationId],
             foreignColumns: [
@@ -3037,6 +3708,9 @@ export const rankingItemTable = pgTable(
             table.conversationId,
             table.lifecycleStatus,
         ),
+        index("comparison_moderation_history_idx")
+            .on(table.conversationId, table.id)
+            .where(isNotNull(table.moderation)),
         foreignKey({
             columns: [table.currentContentId, table.id],
             foreignColumns: [
@@ -3045,6 +3719,30 @@ export const rankingItemTable = pgTable(
             ],
             name: "ranking_item_current_content_owned_by_item_fk",
         }),
+    ],
+);
+
+/** @service api */
+export const comparisonItemModerationTable = pgTable(
+    "comparison_item_moderation",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        rankingItemId: integer("ranking_item_id")
+            .notNull()
+            .references(() => rankingItemTable.id),
+        moderatorId: uuid("moderator_id").references(() => userTable.id),
+        action: text("action", { enum: ["move", "hide", "restore"] }).notNull(),
+        reason: varchar("reason", { length: 1000 }).notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .defaultNow()
+            .notNull(),
+    },
+    (t) => [
+        check(
+            "comparison_item_moderation_action_check",
+            inArray(t.action, ["move", "hide", "restore"]),
+        ),
+        index("comparison_item_moderation_item_idx").on(t.rankingItemId, t.id),
     ],
 );
 
@@ -3083,7 +3781,7 @@ export const rankingItemExternalSourceTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, credit-voting-worker */
 export const surveyConfigTable = pgTable(
     "survey_config",
     {
@@ -3121,7 +3819,7 @@ export const surveyConfigTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker, credit-voting-worker */
 export const surveyQuestionTable = pgTable(
     "survey_question",
     {
@@ -3289,7 +3987,7 @@ export const projectContentTranslationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker, credit-voting-worker */
 export const surveyQuestionContentTable = pgTable(
     "survey_question_content",
     {
@@ -3370,7 +4068,7 @@ export const surveyQuestionContentTranslationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker */
+/** @service scoring-worker, api, shared-analysis-worker, content-translation-worker, credit-voting-worker */
 export const surveyQuestionOptionTable = pgTable(
     "survey_question_option",
     {
@@ -3490,7 +4188,7 @@ export const surveyQuestionOptionContentTranslationTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, credit-voting-worker */
 export const surveyResponseTable = pgTable(
     "survey_response",
     {
@@ -3535,10 +4233,11 @@ export const surveyResponseTable = pgTable(
             table.conversationId,
             table.createdAt,
         ),
+        index("survey_response_participant_idx").on(table.participantId),
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, credit-voting-worker */
 export const surveyAnswerTable = pgTable(
     "survey_answer",
     {
@@ -3599,7 +4298,7 @@ export const surveyAnswerTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api, shared-analysis-worker */
+/** @service scoring-worker, api, shared-analysis-worker, credit-voting-worker */
 export const surveyAnswerOptionTable = pgTable(
     "survey_answer_option",
     {
@@ -3659,15 +4358,21 @@ export const opinionTable = pgTable(
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
         slugId: varchar("slug_id", { length: 8 }).notNull().unique(), // used for permanent URL
-        authorId: uuid("author_id")
-            .notNull()
-            .references(() => userTable.id),
+        authorId: uuid("author_id").references(() => userTable.id),
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
         currentContentId: integer("current_content_id").references(
             (): AnyPgColumn => opinionContentTable.id,
         ), // null if opinion was deleted
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+        accountHiddenAt: timestamp("account_hidden_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        accountHiddenContentRetained: boolean("account_hidden_content_retained")
+            .notNull()
+            .default(false),
         isSeed: boolean("is_seed").notNull().default(false),
         numAgrees: integer("num_agrees").notNull().default(0),
         numDisagrees: integer("num_disagrees").notNull().default(0),
@@ -3693,6 +4398,22 @@ export const opinionTable = pgTable(
             .notNull(),
     },
     (table) => [
+        check(
+            "opinion_source_owner_check",
+            sqlOr(
+                isNotNull(table.authorId),
+                eq(table.isSeed, true),
+                isNotNull(table.deletedAt),
+                isNotNull(table.accountHiddenAt),
+            ),
+        ),
+        check(
+            "opinion_deletion_intent_check",
+            sqlOr(isNull(table.deletedAt), isNull(table.currentContentId)),
+        ),
+        index("opinion_deleted_idx")
+            .on(table.deletedAt, table.id)
+            .where(isNotNull(table.deletedAt)),
         index("opinion_authorId_idx").on(table.authorId),
         index("opinion_author_active_created_id_idx")
             .using(
@@ -3754,7 +4475,7 @@ export const opinionContentTable = pgTable(
     (table) => [
         check(
             "opinion_content_edit_attribution_check",
-            sql`${table.isEdited} = (${table.editedByUserId} IS NOT NULL)`,
+            sqlOr(isNull(table.editedByUserId), eq(table.isEdited, true)),
         ),
         check(
             "opinion_content_content_byte_length_check",
@@ -3864,6 +4585,56 @@ export const rankingItemContentTranslationTable = pgTable(
     ],
 );
 
+/** Frozen field labels have no mutable revision separate from their UUID. */
+/** @service api, content-translation-worker */
+export const gatheringFieldTranslationTable = pgTable(
+    "gathering_field_translation",
+    {
+        fieldId: uuid("field_id")
+            .notNull()
+            .references(() => gatheringFieldTable.id),
+        displayLanguageCode: displayLanguageCodeEnum(
+            "display_language_code",
+        ).notNull(),
+        translatedLabel: text("translated_label").notNull(),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+    },
+    (table) => [
+        primaryKey({ columns: [table.fieldId, table.displayLanguageCode] }),
+    ],
+);
+
+/** Complete response bundles are published atomically; field IDs remain target-owned. */
+/** @service api, content-translation-worker */
+export const gatheringAnswerTranslationTable = pgTable(
+    "gathering_answer_translation",
+    {
+        contentId: integer("content_id").notNull(),
+        fieldId: uuid("field_id").notNull(),
+        displayLanguageCode: displayLanguageCodeEnum(
+            "display_language_code",
+        ).notNull(),
+        translatedValue: text("translated_value").notNull(),
+        sourceLanguageCode: spokenLanguageCodeEnum("source_language_code"),
+    },
+    (table) => [
+        primaryKey({
+            columns: [
+                table.contentId,
+                table.fieldId,
+                table.displayLanguageCode,
+            ],
+        }),
+        foreignKey({
+            columns: [table.contentId, table.fieldId],
+            foreignColumns: [
+                gatheringAnswerTable.contentId,
+                gatheringAnswerTable.fieldId,
+            ],
+        }),
+    ],
+);
+
 /** @service api, content-translation-worker, import-worker */
 export const contentTranslationWorkTable = pgTable(
     "content_translation_work",
@@ -3891,6 +4662,12 @@ export const contentTranslationWorkTable = pgTable(
         rankingItemContentId: integer("ranking_item_content_id").references(
             () => rankingItemContentTable.id,
         ),
+        gatheringFieldId: uuid("gathering_field_id").references(
+            () => gatheringFieldTable.id,
+        ),
+        gatheringResponseContentId: integer(
+            "gathering_response_content_id",
+        ).references(() => gatheringResponseContentTable.id),
         displayLanguageCode: displayLanguageCodeEnum(
             "display_language_code",
         ).notNull(),
@@ -3978,6 +4755,35 @@ export const contentTranslationWorkTable = pgTable(
                     isNotNull(table.rankingItemContentId),
                 ),
             ),
+        uniqueIndex("content_translation_work_gathering_field_unique")
+            .on(table.gatheringFieldId, table.displayLanguageCode)
+            .where(eq(table.sourceKind, "gathering_field")),
+        uniqueIndex("content_translation_work_gathering_response_unique")
+            .on(table.gatheringResponseContentId, table.displayLanguageCode)
+            .where(eq(table.sourceKind, "gathering_response")),
+        check(
+            "content_translation_work_gathering_source_check",
+            sqlOr(
+                sqlAnd(
+                    eq(table.sourceKind, "gathering_field"),
+                    isNotNull(table.gatheringFieldId),
+                    isNull(table.gatheringResponseContentId),
+                ),
+                sqlAnd(
+                    eq(table.sourceKind, "gathering_response"),
+                    isNull(table.gatheringFieldId),
+                    isNotNull(table.gatheringResponseContentId),
+                ),
+                sqlAnd(
+                    notInArray(table.sourceKind, [
+                        "gathering_field",
+                        "gathering_response",
+                    ]),
+                    isNull(table.gatheringFieldId),
+                    isNull(table.gatheringResponseContentId),
+                ),
+            ),
+        ),
         index("content_translation_work_claim_idx")
             .on(table.priorityRank, table.updatedAt, table.id)
             .where(sql`${table.status} = 'pending'`),
@@ -4037,6 +4843,19 @@ export const contentTranslationWorkTable = pgTable(
                     isNull(table.surveyQuestionOptionContentIds),
                     isNotNull(table.rankingItemContentId),
                 ),
+                sqlAnd(
+                    inArray(table.sourceKind, [
+                        "gathering_field",
+                        "gathering_response",
+                    ]),
+                    isNotNull(table.conversationId),
+                    isNull(table.projectContentId),
+                    isNull(table.conversationContentId),
+                    isNull(table.opinionContentId),
+                    isNull(table.surveyQuestionContentId),
+                    isNull(table.surveyQuestionOptionContentIds),
+                    isNull(table.rankingItemContentId),
+                ),
             ),
         ),
         check(
@@ -4067,7 +4886,7 @@ export const contentTranslationWorkTable = pgTable(
  * Stable conversation-local identity. Account association is separately removable;
  * different detached participants must never share a placeholder account.
  */
-/** @service api, shared-analysis-worker, import-worker */
+/** @service api, shared-analysis-worker, import-worker, credit-voting-worker */
 export const conversationParticipantTable = pgTable(
     "conversation_participant",
     {
@@ -4081,11 +4900,589 @@ export const conversationParticipantTable = pgTable(
             .defaultNow(),
     },
     (table) => [
+        unique("conversation_participant_id_account_unique").on(
+            table.id,
+            table.userId,
+        ),
+        unique("conversation_participant_id_conversation_unique").on(
+            table.id,
+            table.conversationId,
+        ),
         unique("conversation_participant_account_unique").on(
             table.conversationId,
             table.userId,
         ),
         index("conversation_participant_user_idx").on(table.userId),
+    ],
+);
+
+/** Current accepted response only; frontend-local edits have no database representation. */
+/** @service api, credit-voting-worker */
+export const qvResponseTable = pgTable(
+    "qv_response",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        participantId: uuid("participant_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        revision: integer("revision").notNull().default(0),
+        currentVersionId: uuid("current_version_id"),
+        accountHiddenAt: timestamp("account_hidden_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (t): PgTableExtraConfigValue[] => [
+        unique("qv_response_participant_unique").on(t.participantId),
+        unique("qv_response_id_conversation_unique").on(t.id, t.conversationId),
+        foreignKey({
+            columns: [t.participantId, t.conversationId],
+            foreignColumns: [
+                conversationParticipantTable.id,
+                conversationParticipantTable.conversationId,
+            ],
+            name: "qv_response_participant_conversation_fk",
+        }),
+        foreignKey({
+            columns: [t.currentVersionId, t.id],
+            foreignColumns: [
+                qvResponseVersionTable.id,
+                qvResponseVersionTable.responseId,
+            ],
+            name: "qv_response_current_version_owner_fk",
+        }),
+        check("qv_response_revision_check", gte(t.revision, sql`0`)),
+        check(
+            "qv_response_deleted_pointer_check",
+            sqlOr(isNull(t.deletedAt), isNull(t.currentVersionId)),
+        ),
+        index("qv_response_conversation_active_idx")
+            .on(t.conversationId)
+            .where(
+                sqlAnd(
+                    isNotNull(t.currentVersionId),
+                    isNull(t.deletedAt),
+                    isNull(t.accountHiddenAt),
+                ),
+            ),
+    ],
+);
+
+/** Immutable accepted numerical input; only deletion markers may change. */
+/** @service api, credit-voting-worker */
+export const qvResponseVersionTable = pgTable(
+    "qv_response_version",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        responseId: uuid("response_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        statementSetRevision: integer("statement_set_revision").notNull(),
+        creditBudget: integer("credit_budget")
+            .notNull()
+            .default(QV_CREDIT_BUDGET),
+        creditPricing: varchar("credit_pricing", {
+            enum: ["quadratic"],
+            length: 16,
+        })
+            .notNull()
+            .default("quadratic"),
+        allowOpposition: boolean("allow_opposition").notNull(),
+        ruleVersion: integer("rule_version").notNull().default(QV_RULE_VERSION),
+        creditsSpent: integer("credits_spent").notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+    },
+    (t): PgTableExtraConfigValue[] => [
+        unique("qv_version_id_response_unique").on(t.id, t.responseId),
+        unique("qv_version_id_conversation_unique").on(t.id, t.conversationId),
+        foreignKey({
+            columns: [t.responseId, t.conversationId],
+            foreignColumns: [
+                qvResponseTable.id,
+                qvResponseTable.conversationId,
+            ],
+            name: "qv_version_response_conversation_fk",
+        }),
+        check("qv_version_revision_check", gte(t.statementSetRevision, sql`0`)),
+        // DDL cannot bind parameters; inline only source-controlled rule constants.
+        check(
+            "qv_version_budget_check",
+            sqlAnd(
+                eq(t.creditBudget, sql.raw(String(QV_CREDIT_BUDGET))),
+                eq(t.creditPricing, sql`'quadratic'`),
+                eq(t.ruleVersion, sql.raw(String(QV_RULE_VERSION))),
+                gte(t.creditsSpent, sql`1`),
+                lte(t.creditsSpent, t.creditBudget),
+            ),
+        ),
+        index("qv_version_response_idx").on(t.responseId),
+        index("qv_version_deleted_idx")
+            .on(t.deletedAt)
+            .where(isNotNull(t.deletedAt)),
+    ],
+);
+
+/** Sparse, version-owned allocations. */
+/** @service api, credit-voting-worker */
+export const qvAllocationTable = pgTable(
+    "qv_allocation",
+    {
+        versionId: uuid("version_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        itemId: integer("item_id").notNull(),
+        contentId: integer("content_id").notNull(),
+        votes: smallint("votes").notNull(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+    },
+    (t) => [
+        primaryKey({ columns: [t.versionId, t.itemId] }),
+        foreignKey({
+            columns: [t.versionId, t.conversationId],
+            foreignColumns: [
+                qvResponseVersionTable.id,
+                qvResponseVersionTable.conversationId,
+            ],
+            name: "qv_allocation_version_conversation_fk",
+        }),
+        foreignKey({
+            columns: [t.itemId, t.conversationId],
+            foreignColumns: [
+                rankingItemTable.id,
+                rankingItemTable.conversationId,
+            ],
+            name: "qv_allocation_item_conversation_fk",
+        }),
+        foreignKey({
+            columns: [t.contentId, t.itemId],
+            foreignColumns: [
+                rankingItemContentTable.id,
+                rankingItemContentTable.rankingItemId,
+            ],
+            name: "qv_allocation_content_owner_fk",
+        }),
+        check(
+            "qv_allocation_votes_check",
+            sqlAnd(
+                ne(t.votes, sql`0`),
+                gte(
+                    t.votes,
+                    sql.raw(String(-Math.floor(Math.sqrt(QV_CREDIT_BUDGET)))),
+                ),
+                lte(
+                    t.votes,
+                    sql.raw(String(Math.floor(Math.sqrt(QV_CREDIT_BUDGET)))),
+                ),
+            ),
+        ),
+        index("qv_allocation_deleted_idx")
+            .on(t.deletedAt)
+            .where(isNotNull(t.deletedAt)),
+    ],
+);
+
+/**
+ * One current live projection, independent of close generations and frozen results.
+ * Only Python publishes counts; readers may see zero until the initial refresh.
+ */
+/** @service api, credit-voting-worker */
+export const qvLiveStatsTable = pgTable(
+    "qv_live_stats",
+    {
+        conversationId: integer("conversation_id")
+            .primaryKey()
+            .references(() => conversationTable.id),
+        participantCount: integer("participant_count").notNull().default(0),
+        revision: bigint("revision", { mode: "number" }).notNull().default(0),
+        refreshedAt: timestamp("refreshed_at", { mode: "date", precision: 3 }),
+        retryAfter: timestamp("retry_after", { mode: "date", precision: 3 }),
+    },
+    (t) => [
+        check("qv_live_stats_count_check", gte(t.participantCount, sql`0`)),
+        check("qv_live_stats_revision_check", gte(t.revision, sql`0`)),
+        index("qv_live_stats_refresh_idx").on(t.refreshedAt, t.conversationId),
+    ],
+);
+
+/**
+ * Append-only wakeups avoid a hot conversation row in concurrent Saves. Processing
+ * and publication commit together; processed signals are later cleanup candidates.
+ */
+/** @service api, credit-voting-worker */
+export const qvStatsRefreshTable = pgTable(
+    "qv_stats_refresh",
+    {
+        id: bigint("id", { mode: "number" })
+            .primaryKey()
+            .generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+        processedAt: timestamp("processed_at", { mode: "date", precision: 3 }),
+    },
+    (t) => [
+        index("qv_stats_refresh_pending_idx")
+            .on(t.conversationId, t.id)
+            .where(isNull(t.processedAt)),
+    ],
+);
+
+/** Lifecycle generation is independent of the live statistics revision. */
+/** @service api, credit-voting-worker, content-translation-worker */
+export const qvCalculationStateTable = pgTable(
+    "qv_calculation_state",
+    {
+        conversationId: integer("conversation_id")
+            .primaryKey()
+            .references(() => conversationTable.id),
+        generation: integer("generation").notNull().default(0),
+        currentCalculationId: uuid("current_calculation_id"),
+    },
+    (t): PgTableExtraConfigValue[] => [
+        check(
+            "qv_calculation_state_generation_check",
+            gte(t.generation, sql`0`),
+        ),
+        foreignKey({
+            columns: [t.currentCalculationId, t.conversationId],
+            foreignColumns: [
+                qvCalculationTable.id,
+                qvCalculationTable.conversationId,
+            ],
+            name: "qv_current_calculation_conversation_fk",
+        }),
+    ],
+);
+
+/** Durable calculation work and publication record; never a public history. */
+/** @service api, credit-voting-worker, content-translation-worker */
+export const qvCalculationTable = pgTable(
+    "qv_calculation",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        generation: integer("generation").notNull(),
+        status: text("status", {
+            enum: ["queued", "running", "ready", "failed"],
+        })
+            .notNull()
+            .default("queued"),
+        inputSnapshotId: uuid("input_snapshot_id"),
+        leaseToken: uuid("lease_token"),
+        leaseExpiresAt: timestamp("lease_expires_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        attemptCount: integer("attempt_count").notNull().default(0),
+        nextAttemptAt: timestamp("next_attempt_at", {
+            mode: "date",
+            precision: 3,
+        })
+            .notNull()
+            .defaultNow(),
+        errorCode: text("error_code", { enum: ["transient", "invalid_input"] }),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+        readyAt: timestamp("ready_at", { mode: "date", precision: 3 }),
+    },
+    (t): PgTableExtraConfigValue[] => [
+        unique("qv_calculation_generation_unique").on(
+            t.conversationId,
+            t.generation,
+        ),
+        unique("qv_calculation_id_conversation_unique").on(
+            t.id,
+            t.conversationId,
+        ),
+        check("qv_calculation_generation_check", gte(t.generation, sql`1`)),
+        check("qv_calculation_attempt_check", gte(t.attemptCount, sql`0`)),
+        check(
+            "qv_calculation_status_check",
+            inArray(t.status, [
+                "queued",
+                "running",
+                "ready",
+                "failed",
+            ]).inlineParams(),
+        ),
+        check(
+            "qv_calculation_lease_check",
+            sqlOr(
+                sqlAnd(
+                    eq(t.status, sql`'running'`),
+                    isNotNull(t.leaseToken),
+                    isNotNull(t.leaseExpiresAt),
+                ),
+                sqlAnd(
+                    ne(t.status, sql`'running'`),
+                    isNull(t.leaseToken),
+                    isNull(t.leaseExpiresAt),
+                ),
+            ),
+        ),
+        check(
+            "qv_calculation_ready_check",
+            sqlOr(
+                sqlAnd(
+                    eq(t.status, sql`'ready'`),
+                    isNotNull(t.inputSnapshotId),
+                    isNotNull(t.readyAt),
+                ),
+                sqlAnd(ne(t.status, sql`'ready'`), isNull(t.readyAt)),
+            ),
+        ),
+        foreignKey({
+            columns: [t.inputSnapshotId, t.id],
+            foreignColumns: [
+                qvInputSnapshotTable.id,
+                qvInputSnapshotTable.calculationId,
+            ],
+            name: "qv_calculation_input_owner_fk",
+        }),
+        index("qv_calculation_claim_idx")
+            .on(t.nextAttemptAt, t.createdAt)
+            .where(inArray(t.status, ["queued", "running"]).inlineParams()),
+    ],
+);
+
+/** Complete captures commit before tallying; no FK to a private response/account. */
+/** @service api, credit-voting-worker, content-translation-worker */
+export const qvInputSnapshotTable = pgTable(
+    "qv_input_snapshot",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        calculationId: uuid("calculation_id")
+            .notNull()
+            .unique()
+            .references(() => qvCalculationTable.id),
+        creditBudget: integer("credit_budget").notNull(),
+        creditPricing: text("credit_pricing").notNull(),
+        allowOpposition: boolean("allow_opposition").notNull(),
+        statementSetRevision: integer("statement_set_revision").notNull(),
+        ruleVersion: integer("rule_version").notNull(),
+        algorithmVersion: integer("algorithm_version").notNull(),
+        participantCount: integer("participant_count").notNull(),
+        capturedAt: timestamp("captured_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [
+        unique("qv_input_snapshot_id_calculation_unique").on(
+            t.id,
+            t.calculationId,
+        ),
+        check(
+            "qv_input_snapshot_provenance_check",
+            sqlAnd(
+                eq(t.creditBudget, sql.raw(String(QV_CREDIT_BUDGET))),
+                eq(t.creditPricing, sql`'quadratic'`),
+                eq(t.ruleVersion, sql.raw(String(QV_RULE_VERSION))),
+                eq(t.algorithmVersion, sql.raw(String(QV_ALGORITHM_VERSION))),
+                gte(t.participantCount, sql`0`),
+                gte(t.statementSetRevision, sql`0`),
+            ),
+        ),
+    ],
+);
+
+/** Frozen public statement versions are independent of working-source retirement. */
+/** @service api, credit-voting-worker, content-translation-worker */
+export const qvInputItemTable = pgTable(
+    "qv_input_item",
+    {
+        snapshotId: uuid("snapshot_id")
+            .notNull()
+            .references(() => qvInputSnapshotTable.id),
+        itemSlugId: varchar("item_slug_id", { length: 8 }).notNull(),
+        sourceVersion: uuid("source_version").notNull(),
+        position: integer("position").notNull(),
+        title: text("title").notNull(),
+        body: text("body"),
+    },
+    (t) => [
+        primaryKey({ columns: [t.snapshotId, t.itemSlugId] }),
+        check("qv_input_item_position_check", gte(t.position, sql`0`)),
+    ],
+);
+
+/** Snapshot-local participants cannot be reattached to an account or become live ballots. */
+/** @service credit-voting-worker */
+export const qvInputBallotTable = pgTable(
+    "qv_input_ballot",
+    {
+        snapshotId: uuid("snapshot_id")
+            .notNull()
+            .references(() => qvInputSnapshotTable.id),
+        ballotIndex: integer("ballot_index").notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.snapshotId, t.ballotIndex] }),
+        check("qv_input_ballot_index_check", gte(t.ballotIndex, sql`0`)),
+    ],
+);
+
+/** Mutable account eligibility sits outside sealed numerical evidence.
+ * Account links are private recovery data and must be cleared at permanent purge.
+ */
+/** @service api, credit-voting-worker */
+export const qvInputBallotEligibilityTable = pgTable(
+    "qv_input_ballot_eligibility",
+    {
+        snapshotId: uuid("snapshot_id").notNull(),
+        ballotIndex: integer("ballot_index").notNull(),
+        userId: uuid("user_id").references(() => userTable.id),
+        isAccountHidden: boolean("is_account_hidden").notNull().default(false),
+    },
+    (t) => [
+        primaryKey({ columns: [t.snapshotId, t.ballotIndex] }),
+        unique("qv_input_ballot_eligibility_account_unique").on(
+            t.snapshotId,
+            t.userId,
+        ),
+        foreignKey({
+            columns: [t.snapshotId, t.ballotIndex],
+            foreignColumns: [
+                qvInputBallotTable.snapshotId,
+                qvInputBallotTable.ballotIndex,
+            ],
+            name: "qv_input_ballot_eligibility_ballot_fk",
+        }),
+        check(
+            "qv_input_ballot_eligibility_detached_check",
+            sqlOr(isNotNull(t.userId), eq(t.isAccountHidden, true)),
+        ),
+        index("qv_input_ballot_eligibility_user_idx").on(t.userId),
+    ],
+);
+
+/** @service credit-voting-worker */
+export const qvInputAllocationTable = pgTable(
+    "qv_input_allocation",
+    {
+        snapshotId: uuid("snapshot_id").notNull(),
+        ballotIndex: integer("ballot_index").notNull(),
+        itemSlugId: varchar("item_slug_id", { length: 8 }).notNull(),
+        votes: smallint("votes").notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.snapshotId, t.ballotIndex, t.itemSlugId] }),
+        foreignKey({
+            columns: [t.snapshotId, t.ballotIndex],
+            foreignColumns: [
+                qvInputBallotTable.snapshotId,
+                qvInputBallotTable.ballotIndex,
+            ],
+            name: "qv_input_allocation_ballot_fk",
+        }),
+        foreignKey({
+            columns: [t.snapshotId, t.itemSlugId],
+            foreignColumns: [
+                qvInputItemTable.snapshotId,
+                qvInputItemTable.itemSlugId,
+            ],
+            name: "qv_input_allocation_item_fk",
+        }),
+        check(
+            "qv_input_allocation_votes_check",
+            sqlAnd(
+                ne(t.votes, sql`0`),
+                gte(
+                    t.votes,
+                    sql.raw(String(-Math.floor(Math.sqrt(QV_CREDIT_BUDGET)))),
+                ),
+                lte(
+                    t.votes,
+                    sql.raw(String(Math.floor(Math.sqrt(QV_CREDIT_BUDGET)))),
+                ),
+            ),
+        ),
+    ],
+);
+
+/** One result per captured statement, including untouched zero-score statements. */
+/** @service api, credit-voting-worker */
+export const qvResultItemTable = pgTable(
+    "qv_result_item",
+    {
+        snapshotId: uuid("snapshot_id").notNull(),
+        itemSlugId: varchar("item_slug_id", { length: 8 }).notNull(),
+        supportUnits: bigint("support_units", { mode: "number" }).notNull(),
+        oppositionUnits: bigint("opposition_units", {
+            mode: "number",
+        }).notNull(),
+        netUnits: bigint("net_units", { mode: "number" }).notNull(),
+        supportingParticipantCount: integer(
+            "supporting_participant_count",
+        ).notNull(),
+        opposingParticipantCount: integer(
+            "opposing_participant_count",
+        ).notNull(),
+        rank: integer("rank").notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.snapshotId, t.itemSlugId] }),
+        foreignKey({
+            columns: [t.snapshotId, t.itemSlugId],
+            foreignColumns: [
+                qvInputItemTable.snapshotId,
+                qvInputItemTable.itemSlugId,
+            ],
+            name: "qv_result_input_item_fk",
+        }),
+        check(
+            "qv_result_item_totals_check",
+            sqlAnd(
+                gte(t.supportUnits, sql`0`),
+                gte(t.oppositionUnits, sql`0`),
+                eq(t.netUnits, sql`${t.supportUnits} - ${t.oppositionUnits}`),
+                gte(t.supportingParticipantCount, sql`0`),
+                gte(t.opposingParticipantCount, sql`0`),
+                gte(t.rank, sql`1`),
+            ),
+        ),
+    ],
+);
+
+/** Accepted command receipts, not drafts or a public history. @service api */
+export const qvResponseCommandTable = pgTable(
+    "qv_response_command",
+    {
+        responseId: uuid("response_id")
+            .notNull()
+            .references(() => qvResponseTable.id),
+        commandId: uuid("command_id").notNull(),
+        requestHash: varchar("request_hash", { length: 64 }).notNull(),
+        resultRevision: integer("result_revision").notNull(),
+        resultVersionId: uuid("result_version_id"),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+        deletedAt: timestamp("deleted_at", { mode: "date", precision: 3 }),
+    },
+    (t) => [
+        primaryKey({ columns: [t.responseId, t.commandId] }),
+        foreignKey({
+            columns: [t.resultVersionId, t.responseId],
+            foreignColumns: [
+                qvResponseVersionTable.id,
+                qvResponseVersionTable.responseId,
+            ],
+            name: "qv_command_result_owner_fk",
+        }),
+        check("qv_command_revision_check", gte(t.resultRevision, sql`0`)),
+        index("qv_command_deleted_idx")
+            .on(t.deletedAt)
+            .where(isNotNull(t.deletedAt)),
     ],
 );
 
@@ -4109,9 +5506,9 @@ export const voteTable = pgTable(
         bufferSequence: bigint("buffer_sequence", { mode: "number" })
             .notNull()
             .default(0),
-        currentContentId: integer("current_content_id").references(
-            (): AnyPgColumn => voteContentTable.id,
-        ), // not null if not deleted, else null
+        currentContentId: integer("current_content_id"), // null for inactive votes or during construction
+        withdrawnAt: timestamp("withdrawn_at", { mode: "date", precision: 3 }),
+        retiredAt: timestamp("retired_at", { mode: "date", precision: 3 }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -4126,11 +5523,31 @@ export const voteTable = pgTable(
             .notNull(),
     },
     (t) => [
+        check(
+            "vote_inactive_intent_check",
+            sqlOr(
+                sqlAnd(isNull(t.withdrawnAt), isNull(t.retiredAt)),
+                isNull(t.currentContentId),
+            ),
+        ),
+        foreignKey({
+            name: "vote_participant_account_fk",
+            columns: [t.participantId, t.authorId],
+            foreignColumns: [
+                conversationParticipantTable.id,
+                conversationParticipantTable.userId,
+            ],
+        }),
         unique().on(t.authorId, t.opinionId),
         unique("vote_participant_opinion_unique").on(
             t.participantId,
             t.opinionId,
         ),
+        foreignKey({
+            name: "vote_current_content_owner_fk",
+            columns: [t.currentContentId, t.id],
+            foreignColumns: [voteContentTable.id, voteContentTable.voteId],
+        }),
         index("vote_authorId_idx").on(t.authorId),
         index("vote_author_active_updated_id_idx")
             .using(
@@ -4146,22 +5563,28 @@ export const voteTable = pgTable(
 );
 
 /** @service shared-analysis-worker, import-worker */
-export const voteContentTable = pgTable("vote_content", {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    voteId: integer("vote_id") //
-        .notNull()
-        .references(() => voteTable.id),
-    opinionContentId: integer("opinion_content_id")
-        .references(() => opinionContentTable.id)
-        .notNull(), // exact opinion content that existed when this vote was cast. Cascade delete from opinionContent if opinionContent was deleted.
-    vote: voteEnum("vote").notNull(),
-    createdAt: timestamp("created_at", {
-        mode: "date",
-        precision: 0,
-    })
-        .defaultNow()
-        .notNull(),
-});
+export const voteContentTable = pgTable(
+    "vote_content",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        voteId: integer("vote_id")
+            .notNull()
+            .references((): AnyPgColumn => voteTable.id),
+        opinionContentId: integer("opinion_content_id")
+            .references(() => opinionContentTable.id)
+            .notNull(), // Exact statement version when cast; preserved across edits.
+        vote: voteEnum("vote").notNull(),
+        createdAt: timestamp("created_at", {
+            mode: "date",
+            precision: 0,
+        })
+            .defaultNow()
+            .notNull(),
+    },
+    (table) => [
+        unique("vote_content_id_owner_unique").on(table.id, table.voteId),
+    ],
+);
 
 // illegal = glaring violation of law (scam, terrorism, threat, etc)
 export const reportReasons = pgEnum("report_reason_enum", [
@@ -4201,9 +5624,7 @@ export const conversationReportTable = pgTable(
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .notNull(),
-        authorId: uuid("author_id")
-            .references(() => userTable.id)
-            .notNull(),
+        authorId: uuid("author_id").references(() => userTable.id),
         reportReason: reportReasons("report_reason").notNull(),
         reportExplanation: varchar("report_explanation", {
             length: MAX_LENGTH_USER_REPORT_EXPLANATION,
@@ -4225,9 +5646,7 @@ export const opinionReportTable = pgTable(
         opinionId: integer("opinion_id")
             .references(() => opinionTable.id)
             .notNull(),
-        authorId: uuid("author_id")
-            .references(() => userTable.id)
-            .notNull(),
+        authorId: uuid("author_id").references(() => userTable.id),
         reportReason: reportReasons("report_reason").notNull(),
         reportExplanation: varchar("report_explanation", {
             length: MAX_LENGTH_USER_REPORT_EXPLANATION,
@@ -4249,9 +5668,7 @@ export const conversationModerationTable = pgTable(
         conversationId: integer("conversation_id") // one moderation action per conversation
             .references(() => conversationTable.id)
             .notNull(),
-        authorId: uuid("author_id")
-            .references(() => userTable.id)
-            .notNull(),
+        authorId: uuid("author_id").references(() => userTable.id),
         moderationAction:
             conversationModerationActionEnum("moderation_action").notNull(),
         moderationReason: moderationReasonsEnum("moderation_reason").notNull(),
@@ -4560,6 +5977,7 @@ export const analysisInputSnapshotTable = pgTable(
             .references(() => conversationTable.id),
         dataGeneration: integer("data_generation").notNull(),
         inputHash: varchar("input_hash", { length: 64 }).notNull(),
+        payloadVersion: integer("payload_version").notNull().default(1),
         opinionCount: integer("opinion_count").notNull(),
         participantCount: integer("participant_count").notNull(),
         voteCount: integer("vote_count").notNull(),
@@ -4578,6 +5996,14 @@ export const analysisInputSnapshotTable = pgTable(
             t.dataGeneration,
             t.inputHash,
         ),
+        unique("analysis_input_snapshot_scope_unique").on(
+            t.id,
+            t.conversationId,
+        ),
+        check(
+            "analysis_input_snapshot_version_check",
+            inArray(t.payloadVersion, [1, 2]),
+        ),
         index("analysis_input_snapshot_conversation_idx").on(
             t.conversationId,
             t.dataGeneration,
@@ -4585,6 +6011,248 @@ export const analysisInputSnapshotTable = pgTable(
         check(
             "analysis_input_snapshot_counts_check",
             sql`${t.opinionCount} >= 0 AND ${t.participantCount} >= 0 AND ${t.voteCount} >= 0`,
+        ),
+    ],
+);
+
+/** Direct, immutable evidence reference. Projections map effective local indices
+ * to complete-baseline indices, without retaining account identity in the graph.
+ */
+/** @service api, shared-analysis-worker */
+export const analysisInputBaselineTable = pgTable(
+    "analysis_input_baseline",
+    {
+        inputSnapshotId: integer("input_snapshot_id").primaryKey(),
+        baselineInputSnapshotId: integer(
+            "baseline_input_snapshot_id",
+        ).notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        participantIndices: integer("participant_indices").array().notNull(),
+        opinionIndices: integer("opinion_indices").array().notNull(),
+        // Broader pre-survey source totals captured with the eligible matrix.
+        sourceVoteCount: integer("source_vote_count").notNull(),
+        sourceParticipantCount: integer("source_participant_count").notNull(),
+    },
+    (t): PgTableExtraConfigValue[] => [
+        foreignKey({
+            columns: [t.baselineInputSnapshotId],
+            foreignColumns: [analysisInputBaselineTable.inputSnapshotId],
+            name: "analysis_baseline_certificate_fk",
+        }),
+        foreignKey({
+            columns: [t.inputSnapshotId, t.conversationId],
+            foreignColumns: [
+                analysisInputSnapshotTable.id,
+                analysisInputSnapshotTable.conversationId,
+            ],
+            name: "analysis_baseline_input_scope_fk",
+        }),
+        foreignKey({
+            columns: [t.baselineInputSnapshotId, t.conversationId],
+            foreignColumns: [
+                analysisInputSnapshotTable.id,
+                analysisInputSnapshotTable.conversationId,
+            ],
+            name: "analysis_baseline_source_scope_fk",
+        }),
+        index("analysis_input_baseline_source_idx").on(
+            t.baselineInputSnapshotId,
+        ),
+        check(
+            "analysis_input_baseline_source_counts_check",
+            sqlAnd(
+                gte(t.sourceVoteCount, 0),
+                gte(t.sourceParticipantCount, 0),
+                lte(t.sourceParticipantCount, t.sourceVoteCount),
+            ),
+        ),
+    ],
+);
+
+/** @service api, shared-analysis-worker */
+export const analysisInputParticipantEligibilityTable = pgTable(
+    "analysis_input_participant_eligibility",
+    {
+        inputSnapshotId: integer("input_snapshot_id")
+            .notNull()
+            .references(() => analysisInputSnapshotTable.id),
+        participantIndex: integer("participant_index").notNull(),
+        userId: uuid("user_id").references(() => userTable.id),
+        isAccountHidden: boolean("is_account_hidden").notNull().default(false),
+    },
+    (t) => [
+        primaryKey({ columns: [t.inputSnapshotId, t.participantIndex] }),
+        unique("analysis_input_participant_eligibility_account_unique").on(
+            t.inputSnapshotId,
+            t.userId,
+        ),
+        check(
+            "analysis_input_participant_eligibility_index_check",
+            gte(t.participantIndex, 0),
+        ),
+        check(
+            "analysis_input_participant_eligibility_detached_check",
+            sqlOr(isNotNull(t.userId), eq(t.isAccountHidden, true)),
+        ),
+        index("analysis_input_participant_eligibility_user_idx").on(t.userId),
+    ],
+);
+
+export const analysisInputModeEnum = pgEnum("analysis_input_mode", [
+    "closing",
+    "live",
+]);
+
+/** @service api, shared-analysis-worker, scoring-worker, credit-voting-worker */
+export const conversationAnalysisCloseTable = pgTable(
+    "conversation_analysis_close",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        // Reopening rotates this epoch; historical closes do not follow it.
+        closeEpoch: uuid("close_epoch").notNull(),
+        sourceRevision: bigint("source_revision", { mode: "number" }).notNull(),
+        selectedInputMode: analysisInputModeEnum("selected_input_mode")
+            .notNull()
+            .default("closing"),
+        // Native revisions are scoped to this close. Null means its original result.
+        requestedResultRevision: bigint("requested_result_revision", {
+            mode: "number",
+        }),
+        servedInputMode: analysisInputModeEnum("served_input_mode")
+            .notNull()
+            .default("closing"),
+        servedResultRevision: bigint("served_result_revision", {
+            mode: "number",
+        }),
+        selectionRevision: bigint("selection_revision", { mode: "number" })
+            .notNull()
+            .default(0),
+        // First native result revision that can include the latest input change.
+        minimumClosingResultRevision: bigint(
+            "minimum_closing_result_revision",
+            { mode: "number" },
+        )
+            .notNull()
+            .default(0),
+        finalizedAt: timestamp("finalized_at", {
+            mode: "date",
+            precision: 0,
+        }).notNull(),
+    },
+    (t) => [
+        unique("conversation_analysis_close_epoch_unique").on(
+            t.conversationId,
+            t.closeEpoch,
+        ),
+        unique("conversation_analysis_close_scope_unique").on(
+            t.id,
+            t.conversationId,
+        ),
+        check(
+            "conversation_analysis_close_revision_check",
+            sqlAnd(
+                gte(t.sourceRevision, 0),
+                gte(t.selectionRevision, 0),
+                gte(t.minimumClosingResultRevision, 0),
+                sqlOr(
+                    isNull(t.requestedResultRevision),
+                    gt(t.requestedResultRevision, 0),
+                ),
+                sqlOr(
+                    isNull(t.servedResultRevision),
+                    gt(t.servedResultRevision, 0),
+                ),
+                sqlOr(
+                    eq(t.servedInputMode, "closing"),
+                    isNotNull(t.servedResultRevision),
+                ),
+            ),
+        ),
+    ],
+);
+
+/** @service api, shared-analysis-worker */
+export const polisAnalysisCloseTable = pgTable(
+    "polis_analysis_close",
+    {
+        closeId: integer("close_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        opinionGroupSpecId: integer("opinion_group_spec_id").notNull(),
+        // The stable checkpoint ID and original survey provenance never move.
+        originalViewSnapshotId: integer("original_view_snapshot_id").notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.closeId, t.opinionGroupSpecId] }),
+        foreignKey({
+            name: "polis_analysis_close_scope_fk",
+            columns: [t.closeId, t.conversationId],
+            foreignColumns: [
+                conversationAnalysisCloseTable.id,
+                conversationAnalysisCloseTable.conversationId,
+            ],
+        }),
+        foreignKey({
+            name: "polis_analysis_close_original_view_fk",
+            columns: [
+                t.originalViewSnapshotId,
+                t.conversationId,
+                t.opinionGroupSpecId,
+            ],
+            foreignColumns: [
+                conversationViewSnapshotTable.id,
+                conversationViewSnapshotTable.conversationId,
+                conversationViewSnapshotTable.opinionGroupSpecId,
+            ],
+        }),
+        index("polis_analysis_close_original_view_idx").on(
+            t.originalViewSnapshotId,
+        ),
+    ],
+);
+
+/** @service api, shared-analysis-worker */
+export const polisAnalysisCloseGenerationTable = pgTable(
+    "polis_analysis_close_generation",
+    {
+        conversationId: integer("conversation_id").notNull(),
+        dataGeneration: integer("data_generation").notNull(),
+        closeId: integer("close_id").notNull(),
+        inputSnapshotId: integer("input_snapshot_id"),
+        // An accepted generation remains published after it is superseded.
+        publishedAt: timestamp("published_at", { mode: "date" }),
+    },
+    (t) => [
+        primaryKey({ columns: [t.conversationId, t.dataGeneration] }),
+        foreignKey({
+            name: "polis_analysis_close_generation_scope_fk",
+            columns: [t.closeId, t.conversationId],
+            foreignColumns: [
+                conversationAnalysisCloseTable.id,
+                conversationAnalysisCloseTable.conversationId,
+            ],
+        }),
+        index("polis_analysis_close_generation_close_idx").on(t.closeId),
+        index("polis_analysis_close_generation_published_idx")
+            .on(t.closeId, t.dataGeneration.desc())
+            .where(isNotNull(t.publishedAt)),
+        foreignKey({
+            name: "polis_analysis_close_generation_capture_fk",
+            columns: [t.inputSnapshotId, t.conversationId],
+            foreignColumns: [
+                analysisInputSnapshotTable.id,
+                analysisInputSnapshotTable.conversationId,
+            ],
+        }),
+        check(
+            "polis_analysis_close_generation_published_capture",
+            sqlOr(isNull(t.publishedAt), isNotNull(t.inputSnapshotId)),
+        ),
+        check(
+            "polis_analysis_close_generation_positive",
+            gte(t.dataGeneration, 1),
         ),
     ],
 );
@@ -4600,6 +6268,9 @@ export const analysisWorkStateTable = pgTable(
         opinionGroupSpecId: integer("opinion_group_spec_id")
             .notNull()
             .references(() => opinionGroupSpecTable.id),
+        usesClosingInputs: boolean("uses_closing_inputs")
+            .notNull()
+            .default(false),
         lastCompletedDataGeneration: integer("last_completed_data_generation")
             .notNull()
             .default(0),
@@ -4641,9 +6312,10 @@ export const analysisWorkStateTable = pgTable(
             .notNull(),
     },
     (t) => [
-        unique("analysis_work_state_conversation_spec_unique").on(
+        unique("analysis_work_state_input_spec_unique").on(
             t.conversationId,
             t.opinionGroupSpecId,
+            t.usesClosingInputs,
         ),
         index("analysis_work_state_lease_expiry_idx")
             .on(t.leaseExpiresAt)
@@ -4798,6 +6470,10 @@ export const surveyAggregateSnapshotTable = pgTable(
             .references(() => surveyConfigTable.id),
         surveyConfigRevision: integer("survey_config_revision").notNull(),
         suppressionThreshold: integer("suppression_threshold").notNull(),
+        // Regrouped Closing results reuse the original question/option catalogue.
+        sourceSurveyAggregateSnapshotId: integer(
+            "source_survey_aggregate_snapshot_id",
+        ),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -4805,12 +6481,70 @@ export const surveyAggregateSnapshotTable = pgTable(
             .defaultNow()
             .notNull(),
     },
-    (t) => [
+    (t): PgTableExtraConfigValue[] => [
         unique("survey_aggregate_snapshot_checkpoint_unique").on(
             t.analysisSnapshotId,
         ),
         index("survey_aggregate_snapshot_conversation_idx").on(
             t.conversationId,
+        ),
+        foreignKey({
+            name: "survey_aggregate_snapshot_source_fk",
+            columns: [t.sourceSurveyAggregateSnapshotId],
+            foreignColumns: [surveyAggregateSnapshotTable.id],
+        }),
+        index("survey_aggregate_snapshot_source_idx")
+            .on(t.sourceSurveyAggregateSnapshotId)
+            .where(isNotNull(t.sourceSurveyAggregateSnapshotId)),
+    ],
+);
+
+/** @service api, shared-analysis-worker */
+export const analysisSurveyChoiceCaptureTable = pgTable(
+    "analysis_survey_choice_capture",
+    {
+        surveyAggregateSnapshotId: integer("survey_aggregate_snapshot_id")
+            .primaryKey()
+            .references(() => surveyAggregateSnapshotTable.id),
+        baselineInputSnapshotId: integer("baseline_input_snapshot_id")
+            .notNull()
+            .references(() => analysisInputBaselineTable.inputSnapshotId),
+    },
+    (t) => [
+        index("analysis_survey_choice_capture_input_idx").on(
+            t.baselineInputSnapshotId,
+        ),
+    ],
+);
+
+/** @service api, shared-analysis-worker */
+export const analysisSurveyChoiceTable = pgTable(
+    "analysis_survey_choice",
+    {
+        surveyAggregateSnapshotId: integer("survey_aggregate_snapshot_id")
+            .notNull()
+            .references(
+                () =>
+                    analysisSurveyChoiceCaptureTable.surveyAggregateSnapshotId,
+            ),
+        participantIndex: integer("participant_index").notNull(),
+        questionSlugId: varchar("question_slug_id", { length: 8 }).notNull(),
+        optionSlugIds: text("option_slug_ids").array().notNull(),
+    },
+    (t) => [
+        primaryKey({
+            columns: [
+                t.surveyAggregateSnapshotId,
+                t.participantIndex,
+                t.questionSlugId,
+            ],
+        }),
+        check(
+            "analysis_survey_choice_bounds",
+            sqlAnd(
+                gte(t.participantIndex, 0),
+                sql`cardinality(${t.optionSlugIds}) > 0`,
+            ),
         ),
     ],
 );
@@ -5340,6 +7074,7 @@ export const conversationViewSnapshotTable = pgTable(
         analysisSnapshotId: integer("analysis_snapshot_id").references(
             () => analysisSnapshotTable.id,
         ),
+        closeReplacementGeneration: integer("close_replacement_generation"),
         surveyAggregateSnapshotId: integer(
             "survey_aggregate_snapshot_id",
         ).references(() => surveyAggregateSnapshotTable.id),
@@ -5370,6 +7105,24 @@ export const conversationViewSnapshotTable = pgTable(
             .notNull(),
     },
     (t) => [
+        unique("conversation_view_snapshot_scope_unique").on(
+            t.id,
+            t.conversationId,
+            t.opinionGroupSpecId,
+        ),
+        foreignKey({
+            name: "conversation_view_snapshot_close_generation_fk",
+            columns: [t.conversationId, t.closeReplacementGeneration],
+            foreignColumns: [
+                polisAnalysisCloseGenerationTable.conversationId,
+                polisAnalysisCloseGenerationTable.dataGeneration,
+            ],
+        }),
+        unique("conversation_view_snapshot_close_generation_spec_unique").on(
+            t.conversationId,
+            t.closeReplacementGeneration,
+            t.opinionGroupSpecId,
+        ),
         index("conversation_view_snapshot_latest_idx").using(
             "btree",
             t.conversationId,
@@ -5407,7 +7160,7 @@ export const conversationViewSnapshotTable = pgTable(
     ],
 );
 
-/** @service api, shared-analysis-worker, content-translation-worker, scoring-worker */
+/** @service api, shared-analysis-worker, content-translation-worker, scoring-worker, credit-voting-worker */
 export const realtimeEventOutboxTable = pgTable(
     "realtime_event_outbox",
     {
@@ -5415,6 +7168,7 @@ export const realtimeEventOutboxTable = pgTable(
         eventType: varchar("event_type", { length: 100 }).notNull(),
         payload: jsonb("payload").notNull(),
         deliveryId: integer("delivery_id").unique(),
+        deliveredAt: timestamp("delivered_at", { mode: "date", precision: 3 }),
         createdAt: timestamp("created_at", {
             mode: "date",
             precision: 0,
@@ -5434,7 +7188,17 @@ export const realtimeEventOutboxTable = pgTable(
                 t.deliveryId,
             )
             .where(
-                sql`${t.eventType} IN ('conversation_analysis_updated', 'conversation_settings_updated', 'conversation_survey_updated', 'opinion_updated', 'conversation_comment_stats_updated', 'opinion_vote_counts_updated')`,
+                inArray(t.eventType, [
+                    "conversation_analysis_updated",
+                    "conversation_settings_updated",
+                    "conversation_survey_updated",
+                    "opinion_updated",
+                    "opinion_source_changed",
+                    "conversation_comment_stats_updated",
+                    "conversation_qv_stats_updated",
+                    "conversation_qv_calculation_updated",
+                    "opinion_vote_counts_updated",
+                ]).inlineParams(),
             ),
         index("realtime_event_outbox_ranking_replay_idx")
             .using(
@@ -5442,7 +7206,12 @@ export const realtimeEventOutboxTable = pgTable(
                 sql`(${t.payload}->>'conversationSlugId')`,
                 t.deliveryId,
             )
-            .where(sql`${t.eventType} = 'conversation_ranking_stats_updated'`),
+            .where(
+                eq(
+                    t.eventType,
+                    "conversation_ranking_stats_updated",
+                ).inlineParams(),
+            ),
     ],
 );
 
@@ -5452,20 +7221,26 @@ export const realtimeEventDispatchStateTable = pgTable(
     {
         id: integer("id").primaryKey(),
         lastDeliveryId: integer("last_delivery_id").notNull().default(0),
+        replayFloorDeliveryId: integer("replay_floor_delivery_id")
+            .notNull()
+            .default(0),
     },
     (t) => [
         check(
             "realtime_event_dispatch_state_singleton_check",
-            sql`${t.id} = 1`,
+            eq(t.id, 1).inlineParams(),
         ),
         check(
             "realtime_event_dispatch_state_sequence_check",
-            sql`${t.lastDeliveryId} >= 0`,
+            sqlAnd(
+                gte(t.replayFloorDeliveryId, 0),
+                gte(t.lastDeliveryId, t.replayFloorDeliveryId),
+            ),
         ),
     ],
 );
 
-/** @service api, content-translation-worker */
+/** @service api, content-translation-worker, credit-voting-worker */
 export const realtimeEventOutboxTopicTable = pgTable(
     "realtime_event_outbox_topic",
     {
@@ -5605,9 +7380,7 @@ export const opinionGroupUserTable = pgTable(
         groupId: integer("group_id")
             .notNull()
             .references(() => opinionGroupTable.id),
-        userId: uuid("user_id")
-            .notNull()
-            .references(() => userTable.id),
+        userId: uuid("user_id").references(() => userTable.id),
         participantId: uuid("participant_id").references(
             () => conversationParticipantTable.id,
         ),
@@ -5619,6 +7392,18 @@ export const opinionGroupUserTable = pgTable(
             .notNull(),
     },
     (t) => [
+        check(
+            "opinion_group_user_identity_check",
+            sqlOr(isNotNull(t.userId), isNotNull(t.participantId)),
+        ),
+        foreignKey({
+            name: "opinion_group_participant_account_fk",
+            columns: [t.participantId, t.userId],
+            foreignColumns: [
+                conversationParticipantTable.id,
+                conversationParticipantTable.userId,
+            ],
+        }),
         unique("opinion_group_user_candidate_unique").on(
             t.candidateId,
             t.userId,
@@ -5706,6 +7491,7 @@ export const conversationExportGenerationTable = pgTable(
             mode: "date",
             precision: 0,
         }).notNull(),
+        sourceDataGeneration: integer("source_data_generation"),
         attempts: integer("attempts").notNull().default(0),
         nextAttemptAt: timestamp("next_attempt_at", {
             mode: "date",
@@ -5855,6 +7641,81 @@ export const conversationExportArtifactTable = pgTable(
     ],
 );
 
+/** Exact per-upload addresses survive failures and stale generation attempts. */
+export const conversationExportObjectTable = pgTable(
+    "conversation_export_object",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        artifactId: integer("artifact_id")
+            .notNull()
+            .references(() => conversationExportArtifactTable.id),
+        generationAttempt: integer("generation_attempt").notNull(),
+        bucketName: text("bucket_name").notNull(),
+        region: text("region").notNull(),
+        s3Key: text("s3_key").notNull(),
+        uploadExpiresAt: timestamp("upload_expires_at", {
+            mode: "date",
+            precision: 3,
+        }).notNull(),
+        uploadFinishedAt: timestamp("upload_finished_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        cleanupRequestedAt: timestamp("cleanup_requested_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        objectDeletedAt: timestamp("object_deleted_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        deleteAttempts: integer("delete_attempts").notNull().default(0),
+        lastDeleteAttemptAt: timestamp("last_delete_attempt_at", {
+            mode: "date",
+            precision: 3,
+        }),
+        leaseToken: uuid("lease_token"),
+        leaseExpiresAt: timestamp("lease_expires_at", {
+            mode: "date",
+            precision: 3,
+        }),
+    },
+    (table) => [
+        unique("conversation_export_object_address_unique").on(
+            table.bucketName,
+            table.s3Key,
+        ),
+        index("conversation_export_object_artifact_idx").on(table.artifactId),
+        index("conversation_export_object_cleanup_idx")
+            .on(table.cleanupRequestedAt, table.id)
+            .where(isNull(table.objectDeletedAt)),
+        check(
+            "conversation_export_object_lease_check",
+            sqlOr(
+                sqlAnd(isNull(table.leaseToken), isNull(table.leaseExpiresAt)),
+                sqlAnd(
+                    isNotNull(table.leaseToken),
+                    isNotNull(table.leaseExpiresAt),
+                ),
+            ),
+        ),
+        check(
+            "conversation_export_object_attempts_check",
+            sqlAnd(
+                gte(table.deleteAttempts, 0),
+                gte(table.generationAttempt, 0),
+            ),
+        ),
+        check(
+            "conversation_export_object_deleted_check",
+            sqlOr(
+                isNull(table.objectDeletedAt),
+                isNotNull(table.cleanupRequestedAt),
+            ),
+        ),
+    ],
+);
+
 export const conversationExportRequestFileTable = pgTable(
     "conversation_export_request_file",
     {
@@ -5894,9 +7755,11 @@ export const conversationImportTable = pgTable(
         conversationId: integer("conversation_id")
             .references(() => conversationTable.id)
             .unique(), // null until import completes successfully; unique constraint allows multiple NULLs
-        userId: uuid("user_id") // User who requested the import
-            .references(() => userTable.id)
-            .notNull(),
+        userId: uuid("user_id").references(() => userTable.id),
+        requesterPurgedAt: timestamp("requester_purged_at", {
+            mode: "date",
+            precision: 3,
+        }),
         status: importStatusEnum("status").notNull().default("processing"),
         failureReason: importFailureReasonEnum("failure_reason"), // populated if status="failed"
         csvFileMetadata: jsonb("csv_file_metadata"), // Optional metadata (file sizes, row counts for transparency)
@@ -5914,6 +7777,17 @@ export const conversationImportTable = pgTable(
             .notNull(),
     },
     (t) => [
+        check(
+            "conversation_import_requester_check",
+            sqlOr(
+                sqlAnd(isNotNull(t.userId), isNull(t.requesterPurgedAt)),
+                sqlAnd(
+                    isNull(t.userId),
+                    isNotNull(t.requesterPurgedAt),
+                    isNotNull(t.conversationId),
+                ),
+            ),
+        ),
         index("conversation_import_status_idx").on(t.status),
         index("conversation_import_created_idx").on(t.createdAt),
         index("conversation_import_user_idx").on(t.userId),
@@ -5923,26 +7797,25 @@ export const conversationImportTable = pgTable(
     ],
 );
 
-// MaxDiff (Best-Worst Scaling) results per user per conversation.
-// Stores both the final ranking and the individual comparisons made,
-// so the adaptive MaxDiff session can be resumed from saved state.
+// One resumable response per participant and comparison conversation (BWS or pairwise).
+// Answer rows are canonical; JSON history is retained for session serialization.
 /** @service scoring-worker, api, shared-analysis-worker */
-export const maxdiffResultTable = pgTable(
-    "maxdiff_result",
+export const comparisonResponseTable = pgTable(
+    "comparison_response",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        participantId: uuid("participant_id")
-            .notNull()
-            .references(() => userTable.id),
+        // Historical name: this is the private account link, not a local index.
+        participantId: uuid("participant_id").references(() => userTable.id),
         conversationId: integer("conversation_id")
             .notNull()
             .references(() => conversationTable.id),
         // Final ordered ranking as JSON array of opinionSlugIds (best→worst).
         // Null while the session is in progress.
         ranking: jsonb("ranking"), // string[] | null
-        // Individual comparisons made during the MaxDiff session.
+        // Serialized answer history, synchronized with comparison_answer.
         // Each entry: { best: slugId, worst: slugId, set: slugId[] }
-        comparisons: jsonb("comparisons").notNull(), // MaxDiffComparison[]
+        comparisons: jsonb("comparisons").notNull(), // ComparisonAnswer[]
+        detachedAt: timestamp("detached_at", { mode: "date", precision: 3 }),
         isComplete: boolean("is_complete").notNull().default(false),
         createdAt: timestamp("created_at", {
             mode: "date",
@@ -5959,14 +7832,18 @@ export const maxdiffResultTable = pgTable(
     },
     (t) => [
         unique().on(t.participantId, t.conversationId),
-        // Composite for aggregated results query: filters conversationId + isComplete
-        index("maxdiff_result_complete_idx").on(t.conversationId, t.isComplete),
-        // For JSONB aggregate query in computeGlobalUncertainty (routing)
-        index("maxdiff_result_conversation_idx").on(t.conversationId),
+        index("comparison_response_conversation_idx").on(t.conversationId),
+        check(
+            "comparison_response_account_binding_check",
+            sqlOr(
+                sqlAnd(isNotNull(t.participantId), isNull(t.detachedAt)),
+                sqlAnd(isNull(t.participantId), isNotNull(t.detachedAt)),
+            ),
+        ),
     ],
 );
 
-// Computed Solidago scores for MaxDiff conversations.
+// Computed Solidago scores for comparison conversations.
 // Multiple rows per conversation are kept over time,
 // ranking_conversation_config.currentRankingScoreId points to the latest.
 // Populated by the scoring worker's Valkey-driven queue loop.
@@ -5987,9 +7864,6 @@ export const rankingScoreTable = pgTable(
         // Kept as backup; canonical data is in ranking_score_entity.participant_count.
         participantCounts: jsonb("participant_counts").notNull(),
         // --- Input context: what parameters produced these scores ---
-        // Snapshot of group sources used for COCM voting rights (if any).
-        // Null if no group weighting was applied.
-        groupSourcesSnapshot: jsonb("group_sources_snapshot"),
         // Snapshot of user trust weights used (if any).
         // Null if all users had equal trust.
         userWeightsSnapshot: jsonb("user_weights_snapshot"),
@@ -6012,6 +7886,18 @@ export const rankingScoreTable = pgTable(
             .notNull(),
     },
     (table) => [
+        index("ranking_score_conversation_idx").on(
+            table.conversationId,
+            table.id,
+        ),
+        index("ranking_score_unclassified_context_idx")
+            .on(table.id)
+            .where(
+                sqlAnd(
+                    isNotNull(table.userWeightsSnapshot),
+                    ne(table.userWeightsSnapshot, sql`'null'::jsonb`),
+                ),
+            ),
         unique("ranking_score_id_conversation_unique").on(
             table.id,
             table.conversationId,
@@ -6019,7 +7905,246 @@ export const rankingScoreTable = pgTable(
     ],
 );
 
+/** Numerical evidence owned by an existing score/checkpoint, never a live ballot.
+ * No account, source response, answer or personal-score FK belongs in this graph.
+ */
 /** @service scoring-worker, api */
+export const rankingInputSnapshotTable = pgTable(
+    "ranking_input_snapshot",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        statsSnapshotId: integer("stats_snapshot_id").unique(),
+        conversationId: integer("conversation_id")
+            .notNull()
+            .references(() => conversationTable.id),
+        comparisonMethod: rankingModeEnum("comparison_method").notNull(),
+        scoringInputRevision: bigint("scoring_input_revision", {
+            mode: "number",
+        }).notNull(),
+        algorithmVersion: integer("algorithm_version").notNull(),
+        solidagoVersion: varchar("solidago_version", { length: 100 }).notNull(),
+        pipelineConfig: jsonb("pipeline_config").notNull(),
+        participantCount: integer("participant_count").notNull(),
+        itemCount: integer("item_count").notNull(),
+        answerCount: integer("answer_count").notNull(),
+        sealedAt: timestamp("sealed_at", { mode: "date", precision: 3 }),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [
+        index("ranking_input_snapshot_conversation_idx").on(
+            t.conversationId,
+            t.statsSnapshotId,
+        ),
+        index("ranking_input_snapshot_prepared_idx")
+            .on(t.conversationId, t.scoringInputRevision, t.createdAt, t.id)
+            .where(sqlAnd(isNull(t.statsSnapshotId), isNotNull(t.sealedAt))),
+        foreignKey({
+            columns: [t.statsSnapshotId, t.conversationId],
+            foreignColumns: [
+                rankingConversationStatsSnapshotTable.id,
+                rankingConversationStatsSnapshotTable.conversationId,
+            ],
+            name: "ranking_input_stats_conversation_fk",
+        }),
+        unique("ranking_input_id_conversation_unique").on(
+            t.id,
+            t.conversationId,
+        ),
+        check(
+            "ranking_input_snapshot_bounds_check",
+            sqlAnd(
+                gte(t.participantCount, 0),
+                gte(t.scoringInputRevision, 0),
+                gte(t.algorithmVersion, 1),
+                gte(t.itemCount, 0),
+                gte(t.answerCount, 0),
+            ),
+        ),
+        check(
+            "ranking_input_published_sealed_check",
+            sqlOr(isNull(t.statsSnapshotId), isNotNull(t.sealedAt)),
+        ),
+    ],
+);
+
+/** @service scoring-worker, api */
+export const rankingInputParticipantTable = pgTable(
+    "ranking_input_participant",
+    {
+        inputSnapshotId: uuid("input_snapshot_id")
+            .notNull()
+            .references(() => rankingInputSnapshotTable.id),
+        participantIndex: integer("participant_index").notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.inputSnapshotId, t.participantIndex] }),
+        check(
+            "ranking_input_participant_index_check",
+            gte(t.participantIndex, 0).inlineParams(),
+        ),
+    ],
+);
+
+/** @service api, scoring-worker */
+export const rankingInputParticipantEligibilityTable = pgTable(
+    "ranking_input_participant_eligibility",
+    {
+        inputSnapshotId: uuid("input_snapshot_id").notNull(),
+        participantIndex: integer("participant_index").notNull(),
+        userId: uuid("user_id").references(() => userTable.id),
+        isAccountHidden: boolean("is_account_hidden").notNull().default(false),
+    },
+    (t) => [
+        primaryKey({ columns: [t.inputSnapshotId, t.participantIndex] }),
+        unique("ranking_input_participant_eligibility_account_unique").on(
+            t.inputSnapshotId,
+            t.userId,
+        ),
+        foreignKey({
+            columns: [t.inputSnapshotId, t.participantIndex],
+            foreignColumns: [
+                rankingInputParticipantTable.inputSnapshotId,
+                rankingInputParticipantTable.participantIndex,
+            ],
+            name: "ranking_input_participant_eligibility_participant_fk",
+        }),
+        check(
+            "ranking_input_participant_eligibility_detached_check",
+            sqlOr(isNotNull(t.userId), eq(t.isAccountHidden, true)),
+        ),
+        index("ranking_input_participant_eligibility_user_idx").on(t.userId),
+    ],
+);
+
+/** The ordered effective entity catalogue used by this computation. */
+/** @service scoring-worker, api */
+export const rankingInputItemTable = pgTable(
+    "ranking_input_item",
+    {
+        inputSnapshotId: uuid("input_snapshot_id")
+            .notNull()
+            .references(() => rankingInputSnapshotTable.id),
+        itemSlugId: varchar("item_slug_id", { length: 8 }).notNull(),
+        position: integer("position").notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.inputSnapshotId, t.itemSlugId] }),
+        unique("ranking_input_item_position_unique").on(
+            t.inputSnapshotId,
+            t.position,
+        ),
+        check(
+            "ranking_input_item_position_check",
+            gte(t.position, 0).inlineParams(),
+        ),
+    ],
+);
+
+/** Preserve accepted candidate order and its effective subset after source filtering. */
+/** @service scoring-worker, api */
+export const rankingInputAnswerTable = pgTable(
+    "ranking_input_answer",
+    {
+        inputSnapshotId: uuid("input_snapshot_id").notNull(),
+        participantIndex: integer("participant_index").notNull(),
+        position: integer("position").notNull(),
+        bestSlugId: varchar("best_slug_id", { length: 8 }).notNull(),
+        worstSlugId: varchar("worst_slug_id", { length: 8 }).notNull(),
+        candidateSet: text("candidate_set").array().notNull(),
+        effectiveCandidateSet: text("effective_candidate_set")
+            .array()
+            .notNull(),
+    },
+    (t) => [
+        primaryKey({
+            columns: [t.inputSnapshotId, t.participantIndex, t.position],
+        }),
+        foreignKey({
+            columns: [t.inputSnapshotId, t.participantIndex],
+            foreignColumns: [
+                rankingInputParticipantTable.inputSnapshotId,
+                rankingInputParticipantTable.participantIndex,
+            ],
+            name: "ranking_input_answer_participant_fk",
+        }),
+        foreignKey({
+            columns: [t.inputSnapshotId, t.bestSlugId],
+            foreignColumns: [
+                rankingInputItemTable.inputSnapshotId,
+                rankingInputItemTable.itemSlugId,
+            ],
+            name: "ranking_input_answer_best_item_fk",
+        }),
+        foreignKey({
+            columns: [t.inputSnapshotId, t.worstSlugId],
+            foreignColumns: [
+                rankingInputItemTable.inputSnapshotId,
+                rankingInputItemTable.itemSlugId,
+            ],
+            name: "ranking_input_answer_worst_item_fk",
+        }),
+        check(
+            "ranking_input_answer_choices_check",
+            sqlAnd(gte(t.position, 0), ne(t.bestSlugId, t.worstSlugId)),
+        ),
+        // PostgreSQL arrays have no typed cardinality/correlated-array construction helper.
+        check(
+            "ranking_input_answer_candidates_check",
+            sqlAnd(
+                sql`cardinality(${t.candidateSet}) BETWEEN 2 AND 4`,
+                sql`cardinality(${t.effectiveCandidateSet}) BETWEEN 2 AND 4`,
+                arrayContains(t.candidateSet, t.effectiveCandidateSet),
+                arrayContains(
+                    t.effectiveCandidateSet,
+                    sql`ARRAY[${t.bestSlugId}::text, ${t.worstSlugId}::text]`,
+                ),
+            ),
+        ),
+    ],
+);
+
+/** Complete live-eligible input before item lifecycle filtering, captured together
+ * with the effective input. Identical datasets share one graph via a self-reference.
+ * This certificate is immutable; legacy publications are not backfilled from live data.
+ */
+/** @service scoring-worker, api */
+export const comparisonInputBaselineTable = pgTable(
+    "comparison_input_baseline",
+    {
+        inputSnapshotId: uuid("input_snapshot_id").primaryKey(),
+        baselineInputSnapshotId: uuid("baseline_input_snapshot_id").notNull(),
+        conversationId: integer("conversation_id").notNull(),
+        createdAt: timestamp("created_at", { mode: "date", precision: 3 })
+            .notNull()
+            .defaultNow(),
+    },
+    (t) => [
+        foreignKey({
+            columns: [t.inputSnapshotId, t.conversationId],
+            foreignColumns: [
+                rankingInputSnapshotTable.id,
+                rankingInputSnapshotTable.conversationId,
+            ],
+            name: "comparison_baseline_input_conversation_fk",
+        }),
+        foreignKey({
+            columns: [t.baselineInputSnapshotId, t.conversationId],
+            foreignColumns: [
+                rankingInputSnapshotTable.id,
+                rankingInputSnapshotTable.conversationId,
+            ],
+            name: "comparison_baseline_source_conversation_fk",
+        }),
+        index("comparison_input_baseline_source_idx").on(
+            t.baselineInputSnapshotId,
+            t.conversationId,
+        ),
+    ],
+);
+
+/** @service scoring-worker, api, content-translation-worker */
 export const rankingConversationStatsSnapshotTable = pgTable(
     "ranking_conversation_stats_snapshot",
     {
@@ -6029,6 +8154,9 @@ export const rankingConversationStatsSnapshotTable = pgTable(
             .references(() => conversationTable.id),
         // Null for legacy checkpoints without a recorded raw-score provenance.
         rankingScoreId: integer("ranking_score_id"),
+        // Closure can reuse sealed evidence without moving its original binding.
+        reusedInputSnapshotId: uuid("reused_input_snapshot_id"),
+        derivedFromCloseId: integer("derived_from_close_id"),
         itemCount: integer("item_count").notNull(),
         totalItemCount: integer("total_item_count").notNull(),
         voteCount: integer("vote_count").notNull(),
@@ -6047,7 +8175,7 @@ export const rankingConversationStatsSnapshotTable = pgTable(
             .notNull(),
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
-    (table) => [
+    (table): PgTableExtraConfigValue[] => [
         foreignKey({
             columns: [table.rankingScoreId, table.conversationId],
             foreignColumns: [
@@ -6056,6 +8184,45 @@ export const rankingConversationStatsSnapshotTable = pgTable(
             ],
             name: "ranking_stats_snapshot_score_conversation_fk",
         }),
+        foreignKey({
+            columns: [table.reusedInputSnapshotId, table.conversationId],
+            foreignColumns: [
+                rankingInputSnapshotTable.id,
+                rankingInputSnapshotTable.conversationId,
+            ],
+            name: "ranking_stats_reused_input_conversation_fk",
+        }),
+        foreignKey({
+            name: "ranking_stats_derived_close_fk",
+            columns: [table.derivedFromCloseId, table.conversationId],
+            foreignColumns: [
+                conversationAnalysisCloseTable.id,
+                conversationAnalysisCloseTable.conversationId,
+            ],
+        }),
+        index("ranking_stats_reused_input_idx")
+            .on(table.reusedInputSnapshotId)
+            .where(isNotNull(table.reusedInputSnapshotId)),
+        uniqueIndex("comparison_closing_result_revision_unique")
+            .on(table.derivedFromCloseId, table.scoringInputRevision)
+            .where(isNotNull(table.derivedFromCloseId)),
+        check(
+            "comparison_derived_closing_result_check",
+            sqlOr(
+                isNull(table.derivedFromCloseId),
+                sqlAnd(
+                    eq(table.isClosed, true),
+                    isNull(table.reusedInputSnapshotId),
+                ),
+            ),
+        ),
+        check(
+            "ranking_stats_reused_input_closed_check",
+            sqlOr(
+                isNull(table.reusedInputSnapshotId),
+                eq(table.isClosed, true),
+            ),
+        ),
         unique("ranking_stats_snapshot_id_conversation_unique").on(
             table.id,
             table.conversationId,
@@ -6078,7 +8245,7 @@ export const rankingConversationStatsSnapshotTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api */
+/** @service scoring-worker, api, content-translation-worker */
 export const rankingConversationStatsItemTable = pgTable(
     "ranking_conversation_stats_item",
     {
@@ -6086,9 +8253,12 @@ export const rankingConversationStatsItemTable = pgTable(
         statsSnapshotId: integer("stats_snapshot_id").notNull(),
         conversationId: integer("conversation_id").notNull(),
         rankingItemId: integer("ranking_item_id").notNull(),
-        rankingItemContentId: integer("ranking_item_content_id").notNull(),
+        rankingItemContentId: integer("ranking_item_content_id"),
         lifecycleStatus:
             rankingItemLifecycleStatusEnum("lifecycle_status").notNull(),
+        excludedByModeration: boolean("excluded_by_moderation")
+            .default(false)
+            .notNull(),
         score: real("score"),
         rank: integer("rank"),
         participantCount: integer("participant_count").notNull(),
@@ -6120,6 +8290,13 @@ export const rankingConversationStatsItemTable = pgTable(
             ],
             name: "ranking_stats_item_content_item_fk",
         }),
+        check(
+            "ranking_stats_item_redacted_source_check",
+            sqlOr(
+                isNotNull(table.rankingItemContentId),
+                isNull(table.externalUrl),
+            ),
+        ),
         uniqueIndex("ranking_stats_item_snapshot_item_unique").on(
             table.statsSnapshotId,
             table.rankingItemId,
@@ -6138,7 +8315,7 @@ export const rankingConversationStatsItemTable = pgTable(
     ],
 );
 
-/** @service scoring-worker, api */
+/** @service scoring-worker, api, content-translation-worker */
 export const rankingConversationStatsCheckpointTable = pgTable(
     "ranking_conversation_stats_checkpoint",
     {
@@ -6183,6 +8360,62 @@ export const rankingConversationStatsCheckpointTable = pgTable(
     ],
 );
 
+/** @service api, scoring-worker */
+export const comparisonAnalysisCloseTable = pgTable(
+    "comparison_analysis_close",
+    {
+        closeId: integer("close_id").primaryKey(),
+        conversationId: integer("conversation_id").notNull(),
+        originalStatsSnapshotId: integer("original_stats_snapshot_id")
+            .notNull()
+            .unique(),
+        closingStatsSnapshotId: integer("closing_stats_snapshot_id").notNull(),
+        liveStatsSnapshotId: integer("live_stats_snapshot_id").notNull(),
+        servedStatsSnapshotId: integer("served_stats_snapshot_id").notNull(),
+        processedClosingRevision: bigint("processed_closing_revision", {
+            mode: "number",
+        })
+            .notNull()
+            .default(0),
+        failedClosingRevision: bigint("failed_closing_revision", {
+            mode: "number",
+        }),
+        failedLiveRevision: bigint("failed_live_revision", { mode: "number" }),
+    },
+    (t) => [
+        foreignKey({
+            name: "comparison_analysis_close_scope_fk",
+            columns: [t.closeId, t.conversationId],
+            foreignColumns: [
+                conversationAnalysisCloseTable.id,
+                conversationAnalysisCloseTable.conversationId,
+            ],
+        }),
+        foreignKey({
+            name: "comparison_analysis_close_original_stats_fk",
+            columns: [t.originalStatsSnapshotId, t.conversationId],
+            foreignColumns: [
+                rankingConversationStatsSnapshotTable.id,
+                rankingConversationStatsSnapshotTable.conversationId,
+            ],
+        }),
+        ...[
+            t.closingStatsSnapshotId,
+            t.liveStatsSnapshotId,
+            t.servedStatsSnapshotId,
+        ].map((column) =>
+            foreignKey({
+                name: `comparison_close_${column.name}_fk`,
+                columns: [column, t.conversationId],
+                foreignColumns: [
+                    rankingConversationStatsSnapshotTable.id,
+                    rankingConversationStatsSnapshotTable.conversationId,
+                ],
+            }),
+        ),
+    ],
+);
+
 // Canonical raw entity-level scores for one ranking_score computation.
 // The JSONB `scores` column on ranking_score is kept as a backup blob.
 // The API reads the worker's stored display scores alongside these raw values.
@@ -6214,17 +8447,14 @@ export const rankingScoreEntityTable = pgTable(
     ],
 );
 
-// Normalized comparisons from maxdiff_result.comparisons JSONB.
-// Each row represents one BWS comparison made by a user.
-// The JSONB `comparisons` column on maxdiff_result is kept as a backup blob.
+// A factual answered task: two candidates for pairwise, up to four for BWS.
+// Withdrawn/replaced answers remain available as soft-deleted history.
 /** @service scoring-worker, api */
-export const maxdiffComparisonTable = pgTable(
-    "maxdiff_comparison",
+export const comparisonAnswerTable = pgTable(
+    "comparison_answer",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        maxdiffResultId: integer("maxdiff_result_id")
-            .notNull()
-            .references(() => maxdiffResultTable.id),
+        comparisonResponseId: integer("comparison_response_id").notNull(),
         position: integer("position").notNull(), // 0-based order within the session
         bestSlugId: varchar("best_slug_id", { length: 8 }).notNull(),
         worstSlugId: varchar("worst_slug_id", { length: 8 }).notNull(),
@@ -6235,25 +8465,47 @@ export const maxdiffComparisonTable = pgTable(
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (t) => [
-        index("maxdiff_comparison_result_idx").on(t.maxdiffResultId),
+        foreignKey({
+            name: "comparison_answer_response_fk",
+            columns: [t.comparisonResponseId],
+            foreignColumns: [comparisonResponseTable.id],
+        }),
+        index("comparison_answer_response_idx").on(t.comparisonResponseId),
         // Only one active comparison can exist per session position.
         // Soft-deleted historical rows remain allowed for audit/history.
-        uniqueIndex("maxdiff_comparison_active_result_position_unique")
-            .on(t.maxdiffResultId, t.position)
-            .where(sql`${t.deletedAt} IS NULL`),
+        uniqueIndex("comparison_answer_active_response_position_unique")
+            .on(t.comparisonResponseId, t.position)
+            .where(isNull(t.deletedAt)),
+        check(
+            "comparison_answer_position_check",
+            gte(t.position, 0).inlineParams(),
+        ),
+        check(
+            "comparison_answer_distinct_choices_check",
+            ne(t.bestSlugId, t.worstSlugId),
+        ),
+        // PostgreSQL array cardinality and correlated construction need expressions.
+        check(
+            "comparison_answer_candidates_check",
+            sqlAnd(
+                sql`cardinality(${t.candidateSet}) BETWEEN 2 AND 4`,
+                arrayContains(
+                    t.candidateSet,
+                    sql`ARRAY[${t.bestSlugId}::text, ${t.worstSlugId}::text]`,
+                ),
+            ),
+        ),
     ],
 );
 
 // Per-user Solidago scores, written by the scoring worker alongside global scores.
 // One set of scores per user per conversation, upserted each scoring run.
 /** @service scoring-worker, api */
-export const maxdiffUserEntityScoreTable = pgTable(
-    "maxdiff_user_entity_score",
+export const comparisonUserEntityScoreTable = pgTable(
+    "comparison_user_entity_score",
     {
         id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-        maxdiffResultId: integer("maxdiff_result_id")
-            .notNull()
-            .references(() => maxdiffResultTable.id),
+        comparisonResponseId: integer("comparison_response_id").notNull(),
         entitySlugId: varchar("entity_slug_id", { length: 8 }).notNull(),
         score: real("score").notNull(),
         displayScore: real("display_score"),
@@ -6262,17 +8514,28 @@ export const maxdiffUserEntityScoreTable = pgTable(
         deletedAt: timestamp("deleted_at", { mode: "date", precision: 0 }),
     },
     (t) => [
-        unique().on(t.maxdiffResultId, t.entitySlugId),
-        check(
-            "maxdiff_user_entity_score_display_score_check",
-            sql`${t.displayScore} IS NULL OR (${t.displayScore} >= 0 AND ${t.displayScore} <= 1)`,
+        foreignKey({
+            name: "comparison_user_entity_score_response_fk",
+            columns: [t.comparisonResponseId],
+            foreignColumns: [comparisonResponseTable.id],
+        }),
+        unique("comparison_user_entity_score_response_entity_unique").on(
+            t.comparisonResponseId,
+            t.entitySlugId,
         ),
-        index("maxdiff_user_entity_score_result_score_idx")
-            .using("btree", t.maxdiffResultId, sql`${t.score} DESC`)
-            .where(sql`${t.deletedAt} IS NULL`),
-        index("maxdiff_user_entity_score_deleted_idx")
+        check(
+            "comparison_user_entity_score_display_score_check",
+            sqlOr(
+                isNull(t.displayScore),
+                sqlAnd(gte(t.displayScore, 0), lte(t.displayScore, 1)),
+            ),
+        ),
+        index("comparison_user_entity_score_response_score_idx")
+            .on(t.comparisonResponseId, desc(t.score))
+            .where(isNull(t.deletedAt)),
+        index("comparison_user_entity_score_deleted_idx")
             .on(t.deletedAt, t.id)
-            .where(sql`${t.deletedAt} IS NOT NULL`),
+            .where(isNotNull(t.deletedAt)),
     ],
 );
 
@@ -6402,7 +8665,7 @@ export const conversationEmailUpdateUserComplaintSuppressionTable = pgTable(
         ),
         check(
             "conversation_email_update_user_complaint_lift_audit_check",
-            sql`(${table.liftedAt} IS NULL) = (${table.liftedByUserId} IS NULL)`,
+            sqlOr(isNull(table.liftedByUserId), isNotNull(table.liftedAt)),
         ),
     ],
 );
@@ -6454,7 +8717,7 @@ export const conversationEmailUpdateEmailSuppressionTable = pgTable(
         ),
         check(
             "conversation_email_update_email_suppression_lift_audit_check",
-            sql`(${table.liftedAt} IS NULL) = (${table.liftedByUserId} IS NULL)`,
+            sqlOr(isNull(table.liftedByUserId), isNotNull(table.liftedAt)),
         ),
     ],
 );
@@ -6480,9 +8743,9 @@ export const conversationEmailUpdateScopeSafetyBlockTable = pgTable(
             () => userTable.id,
         ),
         reason: conversationEmailUpdateSafetyReasonEnum("reason").notNull(),
-        createdByUserId: uuid("created_by_user_id")
-            .notNull()
-            .references(() => userTable.id),
+        createdByUserId: uuid("created_by_user_id").references(
+            () => userTable.id,
+        ),
         createdAt: timestamp("created_at", { mode: "date", precision: 0 })
             .defaultNow()
             .notNull(),
@@ -6524,7 +8787,7 @@ export const conversationEmailUpdateScopeSafetyBlockTable = pgTable(
         ),
         check(
             "conversation_email_update_safety_lift_audit_check",
-            sql`(${table.liftedAt} IS NULL) = (${table.liftedByUserId} IS NULL)`,
+            sqlOr(isNull(table.liftedByUserId), isNotNull(table.liftedAt)),
         ),
     ],
 );
@@ -6537,9 +8800,9 @@ export const conversationEmailUpdateTable = pgTable(
         publicId: uuid("public_id").defaultRandom().notNull().unique(),
         projectId: integer("project_id").notNull(),
         scopeKind: conversationEmailUpdateScopeKindEnum("scope_kind").notNull(),
-        createdByUserId: uuid("created_by_user_id")
-            .notNull()
-            .references(() => userTable.id),
+        createdByUserId: uuid("created_by_user_id").references(
+            () => userTable.id,
+        ),
         authorizingOrganizationId: integer(
             "authorizing_organization_id",
         ).notNull(),
@@ -6590,7 +8853,48 @@ export const conversationEmailUpdateTable = pgTable(
         ),
         check(
             "conversation_email_update_review_fields_check",
-            sql`num_nonnulls(${table.reviewExpiresAt}, ${table.templateVersion}, ${table.participantPreferenceScopeSnapshot}, ${table.brandingSnapshot}, ${table.reviewTestEmailCredentialId}, ${table.reviewTestEmailSnapshot}) IN (0, 6) AND (${table.cancelledAt} IS NULL OR ${table.reviewExpiresAt} IS NOT NULL)`,
+            sqlAnd(
+                sqlOr(
+                    sqlAnd(
+                        isNull(table.reviewExpiresAt),
+                        isNull(table.templateVersion),
+                        isNull(table.participantPreferenceScopeSnapshot),
+                        isNull(table.brandingSnapshot),
+                    ),
+                    sqlAnd(
+                        isNotNull(table.reviewExpiresAt),
+                        isNotNull(table.templateVersion),
+                        isNotNull(table.participantPreferenceScopeSnapshot),
+                        isNotNull(table.brandingSnapshot),
+                    ),
+                ),
+                sqlOr(
+                    isNull(table.cancelledAt),
+                    isNotNull(table.reviewExpiresAt),
+                ),
+                sqlOr(
+                    sqlAnd(
+                        isNull(table.reviewExpiresAt),
+                        isNull(table.reviewTestEmailCredentialId),
+                        isNull(table.reviewTestEmailSnapshot),
+                    ),
+                    sqlAnd(
+                        isNotNull(table.reviewExpiresAt),
+                        sqlOr(
+                            sqlAnd(
+                                isNotNull(table.createdByUserId),
+                                isNotNull(table.reviewTestEmailCredentialId),
+                                isNotNull(table.reviewTestEmailSnapshot),
+                            ),
+                            sqlAnd(
+                                isNull(table.createdByUserId),
+                                isNull(table.reviewTestEmailCredentialId),
+                                isNull(table.reviewTestEmailSnapshot),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
         ),
         check(
             "conversation_email_update_review_expiry_check",
@@ -6697,15 +9001,19 @@ export const conversationEmailUpdateTestAttemptTable = pgTable(
         updateId: integer("update_id")
             .notNull()
             .references(() => conversationEmailUpdateTable.id),
-        requestedByUserId: uuid("requested_by_user_id")
-            .notNull()
-            .references(() => userTable.id),
+        requestedByUserId: uuid("requested_by_user_id").references(
+            () => userTable.id,
+        ),
         destinationEmailCredentialId: integer(
             "destination_email_credential_id",
-        ).notNull(),
+        ),
         destinationEmailSnapshot: varchar("destination_email_snapshot", {
             length: 254,
-        }).notNull(),
+        }),
+        senderPurgedAt: timestamp("sender_purged_at", {
+            mode: "date",
+            precision: 3,
+        }),
         status: conversationEmailUpdateTestAttemptStatusEnum(
             "status",
         ).notNull(),
@@ -6730,6 +9038,28 @@ export const conversationEmailUpdateTestAttemptTable = pgTable(
         finishedAt: timestamp("finished_at", { mode: "date", precision: 0 }),
     },
     (table) => [
+        check(
+            "email_update_test_sender_provenance_check",
+            sqlOr(
+                sqlAnd(
+                    isNull(table.senderPurgedAt),
+                    isNotNull(table.requestedByUserId),
+                    isNotNull(table.destinationEmailCredentialId),
+                    isNotNull(table.destinationEmailSnapshot),
+                ),
+                sqlAnd(
+                    isNotNull(table.senderPurgedAt),
+                    isNull(table.requestedByUserId),
+                    isNull(table.destinationEmailCredentialId),
+                    isNull(table.destinationEmailSnapshot),
+                    notInArray(table.status, [
+                        "pending",
+                        "claimed",
+                        "attempting",
+                    ]),
+                ),
+            ),
+        ),
         unique("conversation_email_update_test_update_id_id_unique").on(
             table.updateId,
             table.id,
@@ -6789,9 +9119,9 @@ export const conversationEmailUpdateDeliveryTable = pgTable(
         acceptedTestAttemptId: integer("accepted_test_attempt_id")
             .notNull()
             .unique(),
-        acceptedByUserId: uuid("accepted_by_user_id")
-            .notNull()
-            .references(() => userTable.id),
+        acceptedByUserId: uuid("accepted_by_user_id").references(
+            () => userTable.id,
+        ),
         status: conversationEmailUpdateDeliveryStatusEnum("status").notNull(),
         participantPreferenceScope:
             conversationEmailUpdateParticipantPreferenceScopeEnum(

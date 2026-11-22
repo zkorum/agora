@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import * as m from "$lib/paraglide/messages.js";
+  import * as m from "#lib/paraglide/messages.js";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -30,7 +30,7 @@
     "
   >
     <enhanced:img
-      src="$lib/assets/citizens-illustration.png"
+      src="#lib/assets/citizens-illustration.png"
       alt=""
       loading="lazy"
       sizes="min(1376px, 100vw)"

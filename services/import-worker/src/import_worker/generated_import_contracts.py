@@ -17,10 +17,6 @@ class ParticipationMode(StrEnum):
     guest = "guest"
 
 
-class RequiresEventTicket(StrEnum):
-    devconnect_2025 = "devconnect-2025"
-
-
 class PreferredOpinionGroupCount(RootModel[int]):
     root: int = Field(..., ge=2, le=6)
 
@@ -70,7 +66,6 @@ class ImportFormData(BaseModel):
     )
     participation_mode: ParticipationMode = Field(..., alias="participationMode")
     is_indexed: bool = Field(..., alias="isIndexed")
-    requires_event_ticket: RequiresEventTicket | None = Field(None, alias="requiresEventTicket")
     ai_labeling_enabled: bool = Field(True, alias="aiLabelingEnabled")
     preferred_opinion_group_count: PreferredOpinionGroupCount | None = Field(
         None, alias="preferredOpinionGroupCount"

@@ -1,0 +1,43 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c3a6626f-5744-439b-99c2-e686c5d0fd62",
+  "prevIds": [
+    "42fb5156-f0f9-4755-a043-ab684efe78a0"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_answer_option"
+      ],
+      "writes": [
+        "s|ck|public.survey_answer_option.survey_answer_option_text_pair_check",
+        "n|ck|public.survey_answer_option.survey_answer_option_text_pair_check",
+        "e|ck|public.survey_answer_option.survey_answer_option_text_pair_check",
+        "n|con|public.survey_answer_option.survey_answer_option_text_pair_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_answer_option",
+        "n|sch|public",
+        "n|col|public.survey_answer_option.text_value_html",
+        "n|col|public.survey_answer_option.text_value_plain_text"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_answer_option",
+        "name": "survey_answer_option_text_pair_check",
+        "value": "(\"survey_answer_option\".\"text_value_html\" IS NULL) = (\"survey_answer_option\".\"text_value_plain_text\" IS NULL)",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ coordinate mapping. This module provides a bidirectional mapper that
 keeps the int-mapping concern contained in the scoring worker boundary.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
@@ -34,7 +35,7 @@ class EntityIdMapper:
     Duplicates in the input are silently deduplicated (first occurrence wins).
     """
 
-    def __init__(self, *, entity_ids: list[str]) -> None:
+    def __init__(self, *, entity_ids: Sequence[str]) -> None:
         # Deduplicate while preserving order
         seen: set[str] = set()
         unique: list[str] = []

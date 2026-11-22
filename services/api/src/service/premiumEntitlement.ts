@@ -31,6 +31,7 @@ import {
     userTable,
 } from "@/shared-backend/schema.js";
 import type { Valkey } from "@/shared-backend/valkey.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
 import type {
     CreatePremiumFeatureEntitlementRequest,
@@ -39,7 +40,7 @@ import type {
     UpdatePremiumFeatureEntitlementRequest,
 } from "@/shared/types/dto.js";
 import {
-    type EventSlug,
+    zodPremiumFeature,
     type GrantablePremiumFeature,
     type PremiumFeature,
     type ConversationMultilingualSetting,
@@ -67,10 +68,9 @@ const PREMIUM_DYNAMIC_TRANSLATION_FEATURE: GrantablePremiumFeature =
     "dynamic_translation";
 const premiumFeatureSortValues = {
     survey: 0,
-    event_ticket: 1,
-    analysis_variants: 2,
-    dynamic_translation: 3,
-    conversation_email_update: 4,
+    analysis_variants: 1,
+    dynamic_translation: 2,
+    conversation_email_update: 3,
 } satisfies Record<PremiumFeature, number>;
 
 export type PremiumEntitlementSubject =
@@ -81,7 +81,6 @@ type PremiumAccessMode = "creation" | "edit";
 
 interface ConversationPremiumFeatureContext {
     conversationId: number;
-    requiresEventTicket: EventSlug | null;
 }
 
 interface ConversationEntitlementContext {
@@ -94,9 +93,6 @@ export interface ConversationEditPermissions {
     canEditConversationContent: boolean;
     canEditSurvey: boolean;
     canDeleteSurvey: boolean;
-    canAddEventTicket: boolean;
-    canChangeEventTicket: boolean;
-    canRemoveEventTicket: boolean;
     canUseAnalysisVariantsPreference: boolean;
     canUseDynamicTranslation: boolean;
     restrictedPremiumFeatures: PremiumFeature[];
@@ -221,7 +217,7 @@ async function getCandidateEntitlements({
     }
 
     if (subject.organizationId !== undefined) {
-        return await db
+        const rows = await db
             .select({
                 feature: premiumFeatureEntitlementTable.feature,
                 expiresAt: premiumFeatureEntitlementTable.expiresAt,
@@ -239,9 +235,13 @@ async function getCandidateEntitlements({
                 ),
             )
             .orderBy(desc(premiumFeatureEntitlementTable.expiresAt));
+        return rows.map((row) => ({
+            ...row,
+            feature: zodPremiumFeature.parse(row.feature),
+        }));
     }
 
-    return await db
+    const rows = await db
         .select({
             feature: premiumFeatureEntitlementTable.feature,
             expiresAt: premiumFeatureEntitlementTable.expiresAt,
@@ -278,6 +278,10 @@ async function getCandidateEntitlements({
             ),
         )
         .orderBy(desc(premiumFeatureEntitlementTable.expiresAt));
+    return rows.map((row) => ({
+        ...row,
+        feature: zodPremiumFeature.parse(row.feature),
+    }));
 }
 
 export async function hasPremiumFeatureAccess({
@@ -576,10 +580,6 @@ export async function getPremiumFeaturesInConversation({
 }): Promise<PremiumFeature[]> {
     const features: PremiumFeature[] = [];
 
-    if (conversation.requiresEventTicket !== null) {
-        features.push("event_ticket");
-    }
-
     const surveyRows = await db
         .select({ id: surveyConfigTable.id })
         .from(surveyConfigTable)
@@ -665,21 +665,15 @@ export async function getPremiumFeaturesInConversation({
 }
 
 export function getPremiumFeaturesFromCreateRequest({
-    requiresEventTicket,
     hasSurvey,
     preferredOpinionGroupCount,
     multilingualSetting,
 }: {
-    requiresEventTicket?: EventSlug;
     hasSurvey: boolean;
     preferredOpinionGroupCount?: number | null;
     multilingualSetting?: ConversationMultilingualSetting;
 }): GrantablePremiumFeature[] {
     const features: GrantablePremiumFeature[] = [];
-
-    if (requiresEventTicket !== undefined) {
-        features.push("event_ticket");
-    }
 
     if (hasSurvey) {
         features.push("survey");
@@ -773,12 +767,6 @@ async function clearPreferredOpinionGroupCountForSubject({
         .where(inArray(polisConversationConfigTable.id, polisConfigIds));
 }
 
-export function getConversationContentEditPremiumFeatures(
-    features: readonly PremiumFeature[],
-): PremiumFeature[] {
-    return features.filter((feature) => feature !== "event_ticket");
-}
-
 export async function buildConversationEditPermissions({
     db,
     conversation,
@@ -798,12 +786,10 @@ export async function buildConversationEditPermissions({
         db,
         conversation,
     });
-    const contentEditPremiumFeatures =
-        getConversationContentEditPremiumFeatures(premiumFeatures);
     const restrictedConversationFeatures = await getRestrictedPremiumFeatures({
         db,
         subject,
-        features: contentEditPremiumFeatures,
+        features: premiumFeatures,
         mode: "edit",
         now,
     });
@@ -834,9 +820,6 @@ export async function buildConversationEditPermissions({
         canEditConversationContent: restrictedConversationFeatures.length === 0,
         canEditSurvey: restrictedSurveyFeatures.length === 0,
         canDeleteSurvey: true,
-        canAddEventTicket: false,
-        canChangeEventTicket: conversation.requiresEventTicket !== null,
-        canRemoveEventTicket: true,
         canUseAnalysisVariantsPreference:
             restrictedAnalysisPreference.length === 0,
         canUseDynamicTranslation: restrictedDynamicTranslation.length === 0,
@@ -844,7 +827,7 @@ export async function buildConversationEditPermissions({
         premiumEditAccessEndsAt: await getPremiumEditAccessEndsAt({
             db,
             subject,
-            features: contentEditPremiumFeatures,
+            features: premiumFeatures,
             now,
         }),
     };
@@ -957,7 +940,7 @@ function toEntitlementItem(row: {
     username: string | null;
     organizationId: number;
     organizationName: string | null;
-    feature: PremiumFeature;
+    feature: (typeof premiumFeatureEntitlementTable.$inferSelect)["feature"];
     startsAt: Date;
     expiresAt: Date | null;
     revokedAt: Date | null;
@@ -971,7 +954,7 @@ function toEntitlementItem(row: {
         username: toUnionUndefined(row.username),
         organizationId: toUnionUndefined(row.organizationId),
         organizationName: toUnionUndefined(row.organizationName),
-        feature: row.feature,
+        feature: zodPremiumFeature.parse(row.feature),
         startsAt: row.startsAt,
         expiresAt: toUnionUndefined(row.expiresAt),
         revokedAt: toUnionUndefined(row.revokedAt),
@@ -1012,6 +995,12 @@ export async function listPremiumFeatureEntitlements({
         .leftJoin(
             userTable,
             eq(userTable.id, organizationTable.autoProvisionedForUserId),
+        )
+        .where(
+            inArray(
+                premiumFeatureEntitlementTable.feature,
+                zodPremiumFeature.options,
+            ),
         )
         .orderBy(desc(premiumFeatureEntitlementTable.updatedAt));
 
@@ -1106,6 +1095,16 @@ export async function createPremiumFeatureEntitlement({
     });
 }
 
+function supportedEntitlementId(entitlementId: number) {
+    return and(
+        eq(premiumFeatureEntitlementTable.id, entitlementId),
+        inArray(
+            premiumFeatureEntitlementTable.feature,
+            zodPremiumFeature.options,
+        ),
+    );
+}
+
 export async function updatePremiumFeatureEntitlement({
     db,
     data,
@@ -1119,23 +1118,22 @@ export async function updatePremiumFeatureEntitlement({
     now: Date;
     valkey: Valkey | undefined;
 }): Promise<void> {
-    const existingRows = await db
+    const existingRows = await getPrimaryDatabase(db)
         .select({
             organizationId: premiumFeatureEntitlementTable.organizationId,
             feature: premiumFeatureEntitlementTable.feature,
             revokedAt: premiumFeatureEntitlementTable.revokedAt,
         })
         .from(premiumFeatureEntitlementTable)
-        .where(eq(premiumFeatureEntitlementTable.id, data.entitlementId))
+        .where(supportedEntitlementId(data.entitlementId))
         .limit(1);
     const existingEntitlement = existingRows.at(0);
-    const subject =
-        existingEntitlement === undefined
-            ? undefined
-            : { organizationId: existingEntitlement.organizationId };
+    if (existingEntitlement === undefined) {
+        throw httpErrors.notFound("Premium entitlement not found");
+    }
+    const subject = { organizationId: existingEntitlement.organizationId };
     const hadPremiumAnalysisAccess =
-        existingEntitlement?.feature === PREMIUM_ANALYSIS_FEATURE &&
-        subject !== undefined
+        existingEntitlement.feature === PREMIUM_ANALYSIS_FEATURE
             ? await hasPremiumFeatureAccess({
                   db,
                   subject,
@@ -1162,27 +1160,30 @@ export async function updatePremiumFeatureEntitlement({
 
     const finalRevokedAt =
         data.revokedAt === undefined
-            ? existingEntitlement?.revokedAt
+            ? existingEntitlement.revokedAt
             : updateValues.revokedAt;
-    if (existingEntitlement !== undefined && finalRevokedAt == null) {
+    if (finalRevokedAt == null) {
         await assertNoOverlappingPremiumFeatureEntitlements({
             db,
             organizationId: existingEntitlement.organizationId,
-            features: [existingEntitlement.feature],
+            features: [zodPremiumFeature.parse(existingEntitlement.feature)],
             startsAt,
             expiresAt,
             excludedEntitlementId: data.entitlementId,
         });
     }
 
-    await db
+    const updatedRows = await db
         .update(premiumFeatureEntitlementTable)
         .set(updateValues)
-        .where(eq(premiumFeatureEntitlementTable.id, data.entitlementId));
+        .where(supportedEntitlementId(data.entitlementId))
+        .returning({ id: premiumFeatureEntitlementTable.id });
+    if (updatedRows.length === 0) {
+        throw httpErrors.notFound("Premium entitlement not found");
+    }
 
     if (
-        existingEntitlement?.feature !== PREMIUM_ANALYSIS_FEATURE ||
-        subject === undefined ||
+        existingEntitlement.feature !== PREMIUM_ANALYSIS_FEATURE ||
         hadPremiumAnalysisAccess
     ) {
         return;
@@ -1221,12 +1222,16 @@ export async function revokePremiumFeatureEntitlement({
     adminUserId: string;
     now: Date;
 }): Promise<void> {
-    await db
+    const revokedRows = await db
         .update(premiumFeatureEntitlementTable)
         .set({
             revokedAt: now,
             updatedByUserId: adminUserId,
             updatedAt: now,
         })
-        .where(eq(premiumFeatureEntitlementTable.id, entitlementId));
+        .where(supportedEntitlementId(entitlementId))
+        .returning({ id: premiumFeatureEntitlementTable.id });
+    if (revokedRows.length === 0) {
+        throw httpErrors.notFound("Premium entitlement not found");
+    }
 }

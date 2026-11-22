@@ -57,7 +57,7 @@ export function buildVoteSourceQuery({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .leftJoin(
             opinionModerationTable,
             and(

@@ -20,11 +20,14 @@ export type BackendAuthStatusApplication =
 export async function applyBackendAuthStatus({
   loginStatus,
   didWrite,
+  isCurrent = () => true,
 }: {
   loginStatus: DeviceLoginStatus;
   didWrite: string;
+  isCurrent?: () => boolean;
 }): Promise<BackendAuthStatusApplication> {
   const authStore = useAuthenticationStore();
+  if (!isCurrent()) return { type: "ignored" };
   if (getBackendAuthStatusAction(loginStatus) === "reset-did") {
     const wasReset = await resetLocalAuthStateIfDidMatches({
       didWrite,
@@ -37,13 +40,18 @@ export async function applyBackendAuthStatus({
   const statusUpdate = await runIfCurrentDid({
     didWrite,
     operation: () => {
-      if (!authStore.isKnown && loginStatus.isKnown && !loginStatus.isRegistered) {
+      if (!isCurrent()) return undefined;
+      if (
+        !authStore.isKnown &&
+        loginStatus.isKnown &&
+        !loginStatus.isRegistered
+      ) {
         seedNewGuestQueries({ queryClient, userId: loginStatus.userId });
       }
       return authStore.setLoginStatus(loginStatus);
     },
   });
-  return statusUpdate.matched
+  return statusUpdate.matched && statusUpdate.result !== undefined
     ? { type: "updated", transition: statusUpdate.result }
     : { type: "ignored" };
 }

@@ -48,7 +48,7 @@ describe("conversation project capabilities", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await db.execute(
             sql.raw(
                 readDbFixtureSql(
@@ -138,8 +138,8 @@ describe("conversation project capabilities", () => {
         const memberships = await db
             .insert(organizationMembershipTable)
             .values([
-                { userId, organizationId: memberOrg.id },
-                { userId, organizationId: privateOrg.id },
+                { userId, organizationId: memberOrg.id, role: "admin" },
+                { userId, organizationId: privateOrg.id, role: "manager" },
             ])
             .returning({ id: organizationMembershipTable.id });
         const [member, privateMember] = memberships;
@@ -198,16 +198,11 @@ describe("conversation project capabilities", () => {
         ).toBe(false);
     });
 
-    it("ignores revoked grants and inactive memberships", async () => {
+    it("uses changed roles and ignores inactive memberships", async () => {
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
-            .where(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_delete",
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "manager" })
+            .where(eq(organizationMembershipTable.id, memberId));
 
         const capabilities = await getProjectCapabilitiesById({
             db,
@@ -237,6 +232,10 @@ describe("conversation project capabilities", () => {
     });
 
     it("ignores historical capabilities instead of treating integration grants as editor access", async () => {
+        await db
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.id, memberId));
         await db
             .update(organizationMembershipAllProjectCapabilityTable)
             .set({ deletedAt: new Date(), revokedByUserId: userId })
@@ -274,9 +273,7 @@ describe("conversation project capabilities", () => {
             projectIds: [sharedProjectId],
             requestedCapabilities: ["conversation_edit", "conversation_delete"],
         });
-        expect([...(capabilities.get(sharedProjectId) ?? [])]).toEqual([
-            "conversation_delete",
-        ]);
+        expect([...(capabilities.get(sharedProjectId) ?? [])]).toEqual([]);
         expect(
             await getProjectIdsWithCapability({
                 db,

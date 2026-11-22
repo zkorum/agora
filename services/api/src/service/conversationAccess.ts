@@ -19,13 +19,13 @@ export async function getConversationViewAccessLevelForConversation({
         return "public";
     }
 
-    const canUpdateConversation = await hasProjectCapability({
+    const canViewRestrictedSurvey = await hasProjectCapability({
         db,
         userId,
         projectId,
-        capability: "conversation_edit",
+        capability: "conversation_view_restricted_survey",
     });
-    return canUpdateConversation ? "owner" : "public";
+    return canViewRestrictedSurvey ? "owner" : "public";
 }
 
 export async function getConversationViewAccessLevel({

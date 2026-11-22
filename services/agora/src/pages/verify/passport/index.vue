@@ -23,7 +23,7 @@
           </template>
 
           <template #body>
-            <RarimoVerificationForm />
+            <RarimoVerificationForm :recover-account="false" />
 
             <div class="alternativeLogins">
               <ZKButton

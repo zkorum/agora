@@ -52,9 +52,9 @@ export async function getExportReadinessForConversation({
         }
 
         const conversationRecord = conversation[0];
-        if (conversationRecord.conversationType === "ranking") {
+        if (conversationRecord.conversationType !== "polis") {
             throw httpErrors.badRequest(
-                "Conversation export is not supported for prioritization conversations",
+                "Conversation export is only supported for Polis conversations",
             );
         }
 

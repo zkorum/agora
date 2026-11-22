@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    DEFAULT_QV_CREDIT_BUDGET,
+    QV_CREDIT_BUDGET,
     DEFAULT_QV_CONFIG,
-    MAX_QV_CREDIT_BUDGET,
     parseQvBallot,
     qvCreditsToChangeVote,
 } from "../src/utils/qv.ts";
@@ -57,7 +56,7 @@ test("the full ballot cannot overspend or hide duplicate items", () => {
     );
 });
 
-test("limits derive from the supplied budget and reject non-integer votes", () => {
+test("limits derive from the fixed budget and reject non-integer votes", () => {
     assert.deepEqual(
         parseQvBallot({
             config: DEFAULT_QV_CONFIG,
@@ -71,8 +70,8 @@ test("limits derive from the supplied budget and reject non-integer votes", () =
     );
     assert.deepEqual(
         parseQvBallot({
-            config: { creditBudget: 9, allowNegativeVotes: true },
-            allocations: [{ itemId: "a", votes: 4 }],
+            config: DEFAULT_QV_CONFIG,
+            allocations: [{ itemId: "a", votes: 11 }],
         }),
         { valid: false, reason: "invalid_votes" },
     );
@@ -83,20 +82,10 @@ test("limits derive from the supplied budget and reject non-integer votes", () =
         }),
         { valid: false, reason: "invalid_votes" },
     );
-    assert.deepEqual(
-        parseQvBallot({
-            config: { creditBudget: 0, allowNegativeVotes: true },
-            allocations: [],
-        }),
-        {
-            valid: false,
-            reason: "invalid_budget",
-        },
-    );
 });
 
 test("support-only QV rejects opposition while allowing positive votes", () => {
-    const config = { creditBudget: 16, allowNegativeVotes: false };
+    const config = { allowOpposition: false };
     assert.deepEqual(
         parseQvBallot({
             config,
@@ -117,36 +106,37 @@ test("support-only QV rejects opposition while allowing positive votes", () => {
     );
 });
 
-test("a configurable budget uses the same quadratic rule within its bounds", () => {
-    assert.equal(DEFAULT_QV_CREDIT_BUDGET, 100);
+test("the fixed budget cannot be exceeded across multiple statements", () => {
+    assert.equal(QV_CREDIT_BUDGET, 100);
     assert.deepEqual(
         parseQvBallot({
             config: {
-                creditBudget: MAX_QV_CREDIT_BUDGET,
-                allowNegativeVotes: false,
+                allowOpposition: false,
             },
             allocations: [
-                { itemId: "a", votes: 30 },
-                { itemId: "b", votes: 10 },
+                { itemId: "a", votes: 6 },
+                { itemId: "b", votes: 8 },
             ],
         }),
         {
             valid: true,
             allocations: [
-                { itemId: "a", votes: 30 },
-                { itemId: "b", votes: 10 },
+                { itemId: "a", votes: 6 },
+                { itemId: "b", votes: 8 },
             ],
-            creditsUsed: 1000,
+            creditsUsed: 100,
         },
     );
     assert.deepEqual(
         parseQvBallot({
             config: {
-                creditBudget: MAX_QV_CREDIT_BUDGET + 1,
-                allowNegativeVotes: true,
+                allowOpposition: true,
             },
-            allocations: [],
+            allocations: [
+                { itemId: "a", votes: 10 },
+                { itemId: "b", votes: 1 },
+            ],
         }),
-        { valid: false, reason: "invalid_budget" },
+        { valid: false, reason: "over_budget" },
     );
 });

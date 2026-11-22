@@ -1,5 +1,8 @@
 import {
     conversationTable,
+    userTable,
+    deviceTable,
+    retiredDeviceKeyTable,
     opinionTable,
     voteContentTable,
     voteTable,
@@ -17,7 +20,7 @@ import type {
     OpinionIdPerStatementId,
     UserIdPerParticipantId,
 } from "@/utils/dataStructure.js";
-import { and, eq, inArray, isNotNull, sql, SQL } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, sql, SQL } from "drizzle-orm";
 import { buildVoteSourceQuery } from "./voteQueries.js";
 import type { VoteBufferInput } from "./voteBufferTypes.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -349,73 +352,117 @@ export async function castVoteForOpinionSlugId({
             opinionSlugId: opinionSlugId,
             db: db,
         });
-    const participationCheck = await checkConversationParticipation({
-        db: db,
-        conversationSlugId,
-        didWrite,
-        userAgent,
-        now,
-        currentDisplayLanguage,
-    });
-    if (!participationCheck.success) {
-        return participationCheck;
-    }
+    const accepted = await getPrimaryDatabase(db).transaction(
+        async (
+            tx,
+        ): Promise<
+            | Extract<CastVoteResponse, { success: false }>
+            | { success: true; participantId: string }
+        > => {
+            const conversationRows = await tx
+                .select({
+                    conversationType: conversationTable.conversationType,
+                })
+                .from(conversationTable)
+                .where(eq(conversationTable.id, conversationId))
+                .for("share");
+            if (conversationRows.at(0)?.conversationType !== "polis")
+                return { success: false, reason: "statement_changed" };
+            const participationCheck = await checkConversationParticipation({
+                db: tx,
+                conversationSlugId,
+                didWrite,
+                userAgent,
+                now,
+                currentDisplayLanguage,
+            });
+            if (!participationCheck.success) return participationCheck;
+            const accounts = await tx
+                .select({
+                    contributionRevision: userTable.contributionRevision,
+                })
+                .from(deviceTable)
+                .innerJoin(userTable, eq(userTable.id, deviceTable.userId))
+                .leftJoin(
+                    retiredDeviceKeyTable,
+                    eq(retiredDeviceKeyTable.didWrite, deviceTable.didWrite),
+                )
+                .where(
+                    and(
+                        eq(deviceTable.didWrite, didWrite),
+                        eq(userTable.id, participationCheck.participantId),
+                        eq(userTable.isDeleted, false),
+                        isNull(retiredDeviceKeyTable.didWrite),
+                    ),
+                );
+            const account = accounts.at(0);
+            if (account === undefined)
+                return { success: false, reason: "statement_changed" };
+            const contentRows = await buildVoteSourceQuery({
+                db: tx,
+                opinionSlugId,
+                participantId: participationCheck.participantId,
+            });
+            const content = contentRows.at(0);
+            if (content?.isClosed)
+                return {
+                    success: false,
+                    reason: "conversation_closed",
+                    participationStatus: {
+                        status: "blocked",
+                        reason: "conversation_closed",
+                    },
+                };
+            if (
+                content === undefined ||
+                (votingAction !== "cancel" &&
+                    sourceVersion !== content.sourceVersion)
+            )
+                return { success: false, reason: "statement_changed" };
 
-    const contentRows = await buildVoteSourceQuery({
-        db: getPrimaryDatabase(db),
-        opinionSlugId,
-        participantId: participationCheck.participantId,
-    });
-    const content = contentRows.at(0);
-    if (content?.isClosed)
-        return {
-            success: false,
-            reason: "conversation_closed",
-            participationStatus: {
-                status: "blocked",
-                reason: "conversation_closed",
-            },
-        };
-    if (
-        content === undefined ||
-        (votingAction !== "cancel" && sourceVersion !== content.sourceVersion)
-    )
-        return { success: false, reason: "statement_changed" };
+            const admission = await voteBuffer.add({
+                vote: {
+                    userId: participationCheck.participantId,
+                    contributionRevision: account.contributionRevision,
+                    opinionId: content.commentId,
+                    opinionContentId: content.contentId,
+                    conversationId,
+                    vote: votingAction,
+                    timestamp: now,
+                    scope: {
+                        epoch: content.epoch,
+                        minimumSequence:
+                            content.previousEpoch === content.epoch
+                                ? (content.sequence ?? 0)
+                                : 0,
+                    },
+                    clientAction,
+                },
+            });
+            if (admission === "conversation_closed")
+                return {
+                    success: false,
+                    reason: "conversation_closed",
+                    participationStatus: {
+                        status: "blocked",
+                        reason: "conversation_closed",
+                    },
+                };
 
-    const admission = await voteBuffer.add({
-        vote: {
-            userId: participationCheck.participantId,
-            opinionId: content.commentId,
-            opinionContentId: content.contentId,
-            conversationId,
-            vote: votingAction,
-            timestamp: now,
-            scope: {
-                epoch: content.epoch,
-                minimumSequence:
-                    content.previousEpoch === content.epoch
-                        ? (content.sequence ?? 0)
-                        : 0,
-            },
-            clientAction,
+            return {
+                success: true,
+                participantId: participationCheck.participantId,
+            };
         },
-    });
-    if (admission === "conversation_closed")
-        return {
-            success: false,
-            reason: "conversation_closed",
-            participationStatus: {
-                status: "blocked",
-                reason: "conversation_closed",
-            },
-        };
+    );
+    if (!accepted.success) return accepted;
 
     // Only run clustering check if frontend requests it
     let userIsClustered: boolean | undefined;
     if (returnIsUserClustered) {
         userIsClustered = await checkUserIsClustered({
             db,
-            userId: participationCheck.participantId,
+            userId: accepted.participantId,
             conversationId,
         });
     }

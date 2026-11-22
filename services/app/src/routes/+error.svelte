@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { localizeHref } from "#lib/paraglide/runtime.js";
+  import { afterNavigate, goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { localizeHref } from "$lib/paraglide/runtime";
   import Text from "$ui/shared/text.svelte";
 
-  // Redirect 404s to root
-  $effect(() => {
+  afterNavigate(() => {
     if (page.status === 404) {
-      void goto(localizeHref("/"), { replaceState: true });
+      void goto(localizeHref("/"), { replace: true });
     }
   });
 </script>

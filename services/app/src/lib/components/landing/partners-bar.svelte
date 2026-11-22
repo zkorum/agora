@@ -1,19 +1,19 @@
 <script lang="ts">
-  import imgBlockchainHR from "$lib/assets/partners/blockchain-for-human-rights.png?enhanced";
-  import imgBpifrance from "$lib/assets/partners/bpifrance.png?enhanced";
-  import imgDevconnect from "$lib/assets/partners/devconnect.jpg?enhanced";
-  import imgEu from "$lib/assets/partners/eu.png?enhanced";
-  import imgFrance2030 from "$lib/assets/partners/france2030.png?enhanced";
-  import imgFrenchTech from "$lib/assets/partners/ft_blanc.png?enhanced";
-  import imgGcc from "$lib/assets/partners/gcc.png?enhanced";
-  import imgNgi from "$lib/assets/partners/ngi.png?enhanced";
-  import imgRarimo from "$lib/assets/partners/rarimo.png?enhanced";
-  import imgSaveMyIdentity from "$lib/assets/partners/save-my-identity.png?enhanced";
-  import imgStationf from "$lib/assets/partners/stationf.png?enhanced";
-  import imgTechSocialCohesion from "$lib/assets/partners/techandsocialcohesion.png?enhanced";
-  import imgUnesco from "$lib/assets/partners/unesco.png?enhanced";
-  import imgVillededemain from "$lib/assets/partners/villededemain.png?enhanced";
-  import * as m from "$lib/paraglide/messages.js";
+  import imgBlockchainHR from "#lib/assets/partners/blockchain-for-human-rights.png?enhanced";
+  import imgBpifrance from "#lib/assets/partners/bpifrance.png?enhanced";
+  import imgDevconnect from "#lib/assets/partners/devconnect.jpg?enhanced";
+  import imgEu from "#lib/assets/partners/eu.png?enhanced";
+  import imgFrance2030 from "#lib/assets/partners/france2030.png?enhanced";
+  import imgFrenchTech from "#lib/assets/partners/ft_blanc.png?enhanced";
+  import imgGcc from "#lib/assets/partners/gcc.png?enhanced";
+  import imgNgi from "#lib/assets/partners/ngi.png?enhanced";
+  import imgRarimo from "#lib/assets/partners/rarimo.png?enhanced";
+  import imgSaveMyIdentity from "#lib/assets/partners/save-my-identity.png?enhanced";
+  import imgStationf from "#lib/assets/partners/stationf.png?enhanced";
+  import imgTechSocialCohesion from "#lib/assets/partners/techandsocialcohesion.png?enhanced";
+  import imgUnesco from "#lib/assets/partners/unesco.png?enhanced";
+  import imgVillededemain from "#lib/assets/partners/villededemain.png?enhanced";
+  import * as m from "#lib/paraglide/messages.js";
   import Text from "$ui/shared/text.svelte";
 
   const partners = [

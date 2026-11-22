@@ -121,12 +121,17 @@
       </ZKCard>
 
       <OrganizationNoProjectEmailUpdates
+        v-if="selectedOrganization.permissions.canConfigureEmailUpdates"
         :key="selectedOrganization.slug"
         :organization-slug="selectedOrganization.slug"
         :organization-name="selectedOrganization.name"
       />
 
-      <ZKCard padding="1rem" class="cardBackground">
+      <ZKCard
+        v-if="selectedOrganization.permissions.canManageMembers"
+        padding="1rem"
+        class="cardBackground"
+      >
         <form class="section" @submit.prevent="submitAddMember">
           <AdminSectionHeader
             :title="t('addMemberTitle')"
@@ -141,6 +146,15 @@
               data-1p-ignore
               @update:model-value="setMemberUsername"
             />
+            <q-select
+              :model-value="memberRole"
+              :options="roleOptions"
+              :label="roleText.roleLabel"
+              outlined
+              emit-value
+              map-options
+              @update:model-value="setMemberRole"
+            />
           </div>
           <ZKButton
             button-type="largeButton"
@@ -153,7 +167,11 @@
         </form>
       </ZKCard>
 
-      <ZKCard padding="1rem" class="cardBackground">
+      <ZKCard
+        v-if="selectedOrganization.permissions.canManageMembers"
+        padding="1rem"
+        class="cardBackground"
+      >
         <div class="section memberListSection">
           <AdminSectionHeader
             :title="t('memberListTitle')"
@@ -178,7 +196,14 @@
             >
               <div class="member-summary">
                 <div class="summary-title">{{ member.username }}</div>
+                <div>{{ roleText[member.role] }}</div>
               </div>
+              <q-btn
+                flat
+                no-caps
+                :label="roleText.editRole"
+                @click="selectMemberRole(member)"
+              />
               <q-btn
                 flat
                 color="negative"
@@ -226,7 +251,10 @@
           />
         </form>
 
-        <div class="dangerZoneRow">
+        <div
+          v-if="selectedOrganization.permissions.canDelete"
+          class="dangerZoneRow"
+        >
           <div class="dangerZoneContent">
             <div class="dangerZoneRowTitle">{{ t("deleteDangerTitle") }}</div>
             <div class="dangerZoneDescription">
@@ -303,6 +331,12 @@ import {
   type SelectOption,
 } from "src/pages/settings/account/administrator/organization/organizationAdminForm";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type { OrganizationManagementPermissions } from "src/shared/organizationAccess";
+import {
+  type OrganizationRole,
+  organizationRoleValues,
+  zodOrganizationRole,
+} from "src/shared/organizationAccess";
 import {
   type AdminOrganizationOption,
   type AdminOrganizationProperties,
@@ -314,13 +348,19 @@ import { useBackendAdministratorOrganizationApi } from "src/utils/api/administra
 import { isOptionalHttpsUrl } from "src/utils/url";
 import { computed, reactive, ref, watch } from "vue";
 
+import { organizationRoleTranslations } from "./organizationRoles.i18n";
+
 type EditTextField = "displayName" | "description" | "imagePath" | "websiteUrl";
 type ZKSelectModel = string | string[] | null;
 
 const props = defineProps<{
   organizationList: AdminOrganizationOption[];
   selectedOrganizationSlug: string | undefined;
-  selectedOrganization: AdminOrganizationProperties | undefined;
+  selectedOrganization:
+    | (AdminOrganizationProperties & {
+        permissions: OrganizationManagementPermissions;
+      })
+    | undefined;
   isLoadingOrganizations: boolean;
 }>();
 
@@ -348,6 +388,24 @@ const selectedLanguageCode = ref<SupportedDisplayLanguageCodes>(
 );
 const selectedOrganizationSlugDraft = ref("");
 const memberUsername = ref("");
+const memberRole = ref<OrganizationRole>("moderator");
+const roleText = computed(
+  () => organizationRoleTranslations[languageStore.displayLanguage]
+);
+const roleOptions = computed(() =>
+  organizationRoleValues.map((value) => ({
+    value,
+    label: roleText.value[value],
+  }))
+);
+function setMemberRole(value: unknown): void {
+  const parsed = zodOrganizationRole.safeParse(value);
+  if (parsed.success) memberRole.value = parsed.data;
+}
+function selectMemberRole(member: OrganizationMember): void {
+  memberUsername.value = member.username;
+  memberRole.value = member.role;
+}
 const organizationMembers = ref<OrganizationMember[]>([]);
 const hasLoadedMembers = ref(false);
 const removingMemberUsername = ref<string | undefined>(undefined);
@@ -638,11 +696,13 @@ async function submitAddMember(): Promise<void> {
   const success = await addUserOrganizationMapping({
     username: memberUsername.value,
     organizationName: organization.slug,
+    role: memberRole.value,
   });
   isAddingMember.value = false;
 
   if (success) {
     memberUsername.value = "";
+    emit("saved");
     if (hasLoadedMembers.value) {
       await fetchMembers();
     }

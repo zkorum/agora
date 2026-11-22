@@ -33,8 +33,6 @@
     xs: "text-xs tracking-xs",
   };
 
-  const titleSizes = new Set<TextSize>(["3xl", "2xl", "xl"]);
-
   /* Title sizes: default line-height is bundled via --font-size-*--line-height,
    * so no extra leading class is needed. */
 
@@ -77,9 +75,10 @@
 
     // Title sizes: line-height is bundled with text-*, no extra class needed.
     // Body sizes: "normal" is bundled too; only "tight" and "none" need a class.
-    const leadingClass = titleSizes.has(size)
-      ? ""
-      : bodyLeadingClasses[size as "lg" | "base" | "sm" | "xs"][leading];
+    const leadingClass =
+      size === "3xl" || size === "2xl" || size === "xl"
+        ? ""
+        : bodyLeadingClasses[size][leading];
 
     return [sizeClass, weightClass, leadingClass, className]
       .filter(Boolean)

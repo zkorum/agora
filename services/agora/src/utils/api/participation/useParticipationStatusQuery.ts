@@ -7,7 +7,6 @@ import {
 } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useConversationOnboardingStore } from "src/stores/conversationOnboarding";
-import { useUserStore } from "src/stores/user";
 import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 
@@ -23,7 +22,6 @@ export function useParticipationStatusCache() {
   const queryClient = useQueryClient();
   const { userId, isLoggedIn, hasStrongVerification, hasEmailVerification } =
     storeToRefs(useAuthenticationStore());
-  const { verifiedEventTickets } = storeToRefs(useUserStore());
   const viewerScope = useViewerQueryScope();
   const onboarding = useConversationOnboardingStore();
 
@@ -36,7 +34,6 @@ export function useParticipationStatusCache() {
         isLoggedIn: isLoggedIn.value,
         hasStrongVerification: hasStrongVerification.value,
         hasEmailVerification: hasEmailVerification.value,
-        verifiedEventTickets: [...verifiedEventTickets.value].sort(),
         skipEmailUpdateConsent:
           onboarding.hasSkippedEmailUpdateConsent(conversationSlugId),
       },

@@ -5,6 +5,8 @@ import {
     projectOrganizationOwnershipTable,
     projectTable,
     rankingConversationConfigTable,
+    qvConfigTable,
+    qvLiveStatsTable,
     userMutePreferenceTable,
     userTable,
 } from "@/shared-backend/schema.js";
@@ -28,10 +30,15 @@ import {
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
+    getReplicaDatabase,
+    type ReplicaDatabase,
+} from "@/shared-backend/db.js";
+import {
     conversationDisplayCount,
     latestConversationDisplaySnapshot,
 } from "./conversationDisplayCounts.js";
 import { conversationEngagementScore } from "./recommendationSystem.js";
+import { projectListedForDiscovery } from "./conversationDiscovery.js";
 
 interface FeedCandidate {
     conversationId: number;
@@ -52,7 +59,7 @@ function feedVisibilityConditions({
     db,
     viewerId,
 }: {
-    db: PostgresJsDatabase;
+    db: ReplicaDatabase;
     viewerId: string | undefined;
 }) {
     const owner = db
@@ -80,7 +87,7 @@ function feedVisibilityConditions({
                     conversationTable.projectId,
                 ),
                 isNull(projectOrganizationOwnershipTable.deletedAt),
-                isNull(projectTable.deletedAt),
+                projectListedForDiscovery(),
                 isNull(organizationTable.deletedAt),
                 or(
                     isNull(organizationTable.autoProvisionedForUserId),
@@ -146,8 +153,9 @@ export async function selectFeedCandidates({
     purpose: "page" | "head";
 }): Promise<FeedSelection> {
     const limit = purpose === "page" ? FEED_PAGE_SIZE + 1 : FEED_HEAD_SIZE;
-    const visibility = feedVisibilityConditions({ db, viewerId });
-    const snapshot = latestConversationDisplaySnapshot(db);
+    const reader = getReplicaDatabase(db);
+    const visibility = feedVisibilityConditions({ db: reader, viewerId });
+    const snapshot = latestConversationDisplaySnapshot(reader);
     if (request.sortAlgorithm === "new") {
         const cursor = request.cursor;
         const afterCreatedCursor =
@@ -160,15 +168,24 @@ export async function selectFeedCandidates({
                           lt(conversationTable.id, cursor.conversationId),
                       ),
                   );
-        const rows = await db
+        const rows = await reader
             .select({
                 conversationId: conversationTable.id,
                 slugId: conversationTable.slugId,
                 createdAt: conversationTable.createdAt,
             })
             .from(conversationTable)
-            .innerJoinLateral(snapshot, sql`true`)
-            .where(and(visibility, afterCreatedCursor))
+            .leftJoinLateral(snapshot, sql`true`)
+            .where(
+                and(
+                    visibility,
+                    afterCreatedCursor,
+                    or(
+                        eq(conversationTable.conversationType, "gathering"),
+                        isNotNull(snapshot.conversationViewSnapshotId),
+                    ),
+                ),
+            )
             .orderBy(
                 desc(conversationTable.createdAt),
                 desc(conversationTable.id),
@@ -184,6 +201,7 @@ export async function selectFeedCandidates({
         opinionCount: conversationDisplayCount({
             rankingCount: rankingConversationConfigTable.itemCount,
             snapshotCount: snapshot.opinionCount,
+            qvCount: qvConfigTable.itemCount,
         }),
         voteCount: conversationDisplayCount({
             rankingCount: rankingConversationConfigTable.voteCount,
@@ -192,10 +210,14 @@ export async function selectFeedCandidates({
         participantCount: conversationDisplayCount({
             rankingCount: rankingConversationConfigTable.participantCount,
             snapshotCount: snapshot.participantCount,
+            qvCount:
+                sql<number>`coalesce(${qvLiveStatsTable.participantCount}, 0)`.mapWith(
+                    Number,
+                ),
         }),
         rankedAt,
     });
-    const ranked = db
+    const ranked = reader
         .select({
             conversationId: conversationTable.id,
             slugId: conversationTable.slugId,
@@ -203,7 +225,7 @@ export async function selectFeedCandidates({
             score: score.as("engagement_score"),
         })
         .from(conversationTable)
-        .innerJoinLateral(snapshot, sql`true`)
+        .leftJoinLateral(snapshot, sql`true`)
         .leftJoin(
             rankingConversationConfigTable,
             eq(
@@ -211,10 +233,26 @@ export async function selectFeedCandidates({
                 conversationTable.rankingConfigId,
             ),
         )
-        .where(visibility)
+        .leftJoin(
+            qvLiveStatsTable,
+            eq(qvLiveStatsTable.conversationId, conversationTable.id),
+        )
+        .leftJoin(
+            qvConfigTable,
+            eq(qvConfigTable.id, conversationTable.creditVotingConfigId),
+        )
+        .where(
+            and(
+                visibility,
+                or(
+                    eq(conversationTable.conversationType, "gathering"),
+                    isNotNull(snapshot.conversationViewSnapshotId),
+                ),
+            ),
+        )
         .as("ranked_feed");
     const cursor = request.cursor;
-    const rows = await db
+    const rows = await reader
         .select()
         .from(ranked)
         .where(

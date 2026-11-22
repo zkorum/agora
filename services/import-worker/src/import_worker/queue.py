@@ -53,6 +53,21 @@ def _decode_item(item: bytes | str) -> str:
     return item
 
 
+def _normalize_legacy_import_payload(raw: JsonValue) -> JsonValue:
+    if not isinstance(raw, dict):
+        return raw
+    form_data = raw.get("formData")
+    if not isinstance(form_data, dict) or "requiresEventTicket" not in form_data:
+        return raw
+    # Keep old queued imports while validating every other setting strictly.
+    return {
+        **raw,
+        "formData": {
+            key: value for key, value in form_data.items() if key != "requiresEventTicket"
+        },
+    }
+
+
 def pop_import_requests(vk: ImportValkeyClient, *, count: int) -> PoppedImportBatch:
     raw_items = vk.lpop(IMPORT_BUFFER_KEY, count=count)
     if raw_items is None:
@@ -72,7 +87,11 @@ def pop_import_requests(vk: ImportValkeyClient, *, count: int) -> PoppedImportBa
             continue
 
         try:
-            requests.append(IMPORT_REQUEST_ADAPTER.validate_python(parsed_json))
+            requests.append(
+                IMPORT_REQUEST_ADAPTER.validate_python(
+                    _normalize_legacy_import_payload(parsed_json)
+                )
+            )
         except ValidationError as error:
             # Rendered Pydantic errors include input values, including CSV text.
             error_types = sorted(

@@ -105,9 +105,6 @@ const emit = defineEmits<{
   deleted: [opinionSlugId: string];
   editOpinion: [request: OpinionEditRequest];
   mutedComment: [];
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
-  ];
 }>();
 
 const { t } = useComponentI18n<CommentGroupTranslations>(

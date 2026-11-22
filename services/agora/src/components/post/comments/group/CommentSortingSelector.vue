@@ -22,10 +22,10 @@
             <ZKGradientButton
               :label="optionItem.name"
               :label-color="
-                filterValue === optionItem.value ? '#FFFFFF' : '#6B4EFF'
+                effectiveFilter === optionItem.value ? '#FFFFFF' : '#6B4EFF'
               "
               :gradient-background="
-                filterValue === optionItem.value
+                effectiveFilter === optionItem.value
                   ? 'linear-gradient(114.81deg, #6B4EFF 76.45%, #4F92F6 100.1%)'
                   : 'linear-gradient(114.81deg, #e7e4f7 76.45%, #E8F1FF 100.1%)'
               "
@@ -42,13 +42,11 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
 import ZKGradientButton from "src/components/ui-library/ZKGradientButton.vue";
+import { useOpinionFilterAccess } from "src/composables/opinion/useOpinionFilterAccess";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { useAuthenticationStore } from "src/stores/authentication";
-import { useUserStore } from "src/stores/user";
 import { formatAmount } from "src/utils/common";
 import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { computed, ref } from "vue";
@@ -68,8 +66,7 @@ const emit = defineEmits<{
   (e: "changedAlgorithm", value: CommentFilterOptions): void;
 }>();
 
-const { profileData } = storeToRefs(useUserStore());
-const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
+const { isFilterAvailable, resolveFilter } = useOpinionFilterAccess();
 
 const showDialog = ref(false);
 
@@ -97,54 +94,46 @@ const hiddenLabel = computed(() => {
     : base;
 });
 
-const currentOptionList = computed((): OptionItem[] => {
-  const options: OptionItem[] = [
-    {
-      name: t("discover"),
-      description: t("discoverDescription"),
-      value: "discover",
-    },
-    { name: t("new"), description: t("newDescription"), value: "new" },
-    {
-      name: moderationHistoryLabel.value,
-      description: t("moderationHistoryDescription"),
-      value: "moderated",
-    },
-  ];
-
-  if (isGuestOrLoggedIn.value) {
-    options.push({
-      name: t("myVotes"),
-      description: t("myVotesDescription"),
-      value: "my_votes",
-    });
-    options.push({
-      name: t("myStatements"),
-      description: t("myStatementsDescription"),
-      value: "my_statements",
-    });
-  }
-
-  if (profileData.value.isSiteModerator) {
-    options.push({
-      name: hiddenLabel.value,
-      description: t("hiddenDescription"),
-      value: "hidden",
-    });
-  }
-
-  return options;
-});
-
-const currentFilterAlgorithm = computed(() => {
-  for (const optionItem of currentOptionList.value) {
-    if (optionItem.value === props.filterValue) {
-      return optionItem.name;
-    }
-  }
-
-  return "UNKNOWN";
-});
+const optionsByFilter = computed(
+  () =>
+    ({
+      discover: {
+        name: t("discover"),
+        description: t("discoverDescription"),
+        value: "discover",
+      },
+      new: { name: t("new"), description: t("newDescription"), value: "new" },
+      moderated: {
+        name: moderationHistoryLabel.value,
+        description: t("moderationHistoryDescription"),
+        value: "moderated",
+      },
+      my_votes: {
+        name: t("myVotes"),
+        description: t("myVotesDescription"),
+        value: "my_votes",
+      },
+      my_statements: {
+        name: t("myStatements"),
+        description: t("myStatementsDescription"),
+        value: "my_statements",
+      },
+      hidden: {
+        name: hiddenLabel.value,
+        description: t("hiddenDescription"),
+        value: "hidden",
+      },
+    }) satisfies Record<CommentFilterOptions, OptionItem>
+);
+const currentOptionList = computed(() =>
+  Object.values(optionsByFilter.value).filter((option) =>
+    isFilterAvailable(option.value)
+  )
+);
+const effectiveFilter = computed(() => resolveFilter(props.filterValue));
+const currentFilterAlgorithm = computed(
+  () => optionsByFilter.value[effectiveFilter.value].name
+);
 
 function selectedAlgorithm(filterValue: CommentFilterOptions) {
   showDialog.value = false;

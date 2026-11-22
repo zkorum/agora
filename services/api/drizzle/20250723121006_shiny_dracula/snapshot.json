@@ -1,0 +1,135 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "fac7b8ae-b818-428d-a289-0058e200536d",
+  "prevIds": [
+    "e5cdc9b4-f705-4bdf-abe8-89b18b8d1732"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_cluster_opinion"
+      ],
+      "writes": [
+        "s|fk|public.polis_cluster_opinion.polis_cluster_opinion_opinion_slug_id_opinion_slug_id_fk",
+        "n|fk|public.polis_cluster_opinion.polis_cluster_opinion_opinion_slug_id_opinion_slug_id_fk",
+        "e|fk|public.polis_cluster_opinion.polis_cluster_opinion_opinion_slug_id_opinion_slug_id_fk",
+        "n|con|public.polis_cluster_opinion.polis_cluster_opinion_opinion_slug_id_opinion_slug_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "e|col|public.polis_cluster_opinion.opinion_slug_id"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "opinion_slug_id"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster_opinion.opinion_slug_id",
+        "n|col|public.polis_cluster_opinion.opinion_slug_id",
+        "e|col|public.polis_cluster_opinion.opinion_slug_id"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "opinion_id"
+      ],
+      "writes": [
+        "s|colprop|public.polis_cluster_opinion.opinion_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.opinion_id"
+      ],
+      "sqlHash": "0bae9e57359ccb77"
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion"
+      ],
+      "writes": [
+        "s|ck|public.opinion.check_polis_null",
+        "n|ck|public.opinion.check_polis_null",
+        "e|ck|public.opinion.check_polis_null",
+        "n|con|public.opinion.check_polis_null"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.cluster_0_id",
+        "n|col|public.opinion.cluster_0_num_agrees",
+        "n|col|public.opinion.cluster_0_num_disagrees",
+        "n|col|public.opinion.cluster_0_num_passes",
+        "n|col|public.opinion.cluster_1_id",
+        "n|col|public.opinion.cluster_1_num_agrees",
+        "n|col|public.opinion.cluster_1_num_disagrees",
+        "n|col|public.opinion.cluster_1_num_passes",
+        "n|col|public.opinion.cluster_2_id",
+        "n|col|public.opinion.cluster_2_num_agrees",
+        "n|col|public.opinion.cluster_2_num_disagrees",
+        "n|col|public.opinion.cluster_2_num_passes",
+        "n|col|public.opinion.cluster_3_id",
+        "n|col|public.opinion.cluster_3_num_agrees",
+        "n|col|public.opinion.cluster_3_num_disagrees",
+        "n|col|public.opinion.cluster_3_num_passes",
+        "n|col|public.opinion.cluster_4_id",
+        "n|col|public.opinion.cluster_4_num_agrees",
+        "n|col|public.opinion.cluster_4_num_disagrees",
+        "n|col|public.opinion.cluster_4_num_passes",
+        "n|col|public.opinion.cluster_5_id",
+        "n|col|public.opinion.cluster_5_num_agrees",
+        "n|col|public.opinion.cluster_5_num_disagrees",
+        "n|col|public.opinion.cluster_5_num_passes"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "check_polis_null",
+        "value": "((\"opinion\".\"cluster_0_id\" IS NOT NULL AND \"opinion\".\"cluster_0_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_0_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_0_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_0_id\" IS NULL AND \"opinion\".\"cluster_0_num_agrees\" IS NULL AND \"opinion\".\"cluster_0_num_disagrees\" IS NULL AND \"opinion\".\"cluster_0_num_passes\" IS NULL))\n                AND\n                ((\"opinion\".\"cluster_1_id\" IS NOT NULL AND \"opinion\".\"cluster_1_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_1_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_1_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_1_id\" IS NULL AND \"opinion\".\"cluster_1_num_agrees\" IS NULL AND \"opinion\".\"cluster_1_num_disagrees\" IS NULL AND \"opinion\".\"cluster_1_num_passes\" IS NULL))\n                AND\n                ((\"opinion\".\"cluster_2_id\" IS NOT NULL AND \"opinion\".\"cluster_2_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_2_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_2_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_2_id\" IS NULL AND \"opinion\".\"cluster_2_num_agrees\" IS NULL AND \"opinion\".\"cluster_2_num_disagrees\" IS NULL AND \"opinion\".\"cluster_2_num_passes\" IS NULL))\n                AND\n                ((\"opinion\".\"cluster_3_id\" IS NOT NULL AND \"opinion\".\"cluster_3_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_3_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_3_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_3_id\" IS NULL AND \"opinion\".\"cluster_3_num_agrees\" IS NULL AND \"opinion\".\"cluster_3_num_disagrees\" IS NULL AND \"opinion\".\"cluster_3_num_passes\" IS NULL))\n                AND\n                ((\"opinion\".\"cluster_4_id\" IS NOT NULL AND \"opinion\".\"cluster_4_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_4_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_4_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_4_id\" IS NULL AND \"opinion\".\"cluster_4_num_agrees\" IS NULL AND \"opinion\".\"cluster_4_num_disagrees\" IS NULL AND \"opinion\".\"cluster_4_num_passes\" IS NULL))\n                AND\n                ((\"opinion\".\"cluster_5_id\" IS NOT NULL AND \"opinion\".\"cluster_5_num_agrees\" IS NOT NULL AND \"opinion\".\"cluster_5_num_disagrees\" IS NOT NULL AND \"opinion\".\"cluster_5_num_passes\" IS NOT NULL) OR (\"opinion\".\"cluster_5_id\" IS NULL AND \"opinion\".\"cluster_5_num_agrees\" IS NULL AND \"opinion\".\"cluster_5_num_disagrees\" IS NULL AND \"opinion\".\"cluster_5_num_passes\" IS NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"polis_cluster_opinion\",\"opinion_slug_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"polis_cluster_opinion\",\"polis_cluster_opinion_opinion_slug_id_opinion_slug_id_fk\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"polis_cluster_opinion\",\"opinion_id\"]",
+      "set": {
+        "notNull": true
+      }
+    }
+  ]
+}

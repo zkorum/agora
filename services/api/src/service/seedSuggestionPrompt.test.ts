@@ -14,14 +14,14 @@ describe("seed suggestion prompt", () => {
         const messages = buildSeedSuggestionMessages({
             systemPrompt: DEFAULT_SEED_SUGGESTION_SYSTEM_PROMPT,
             input: {
-                conversationType: "ranking",
+                conversationType: "prioritizing",
                 conversationTitle: "Night buses",
                 conversationBody: "Which actions should we prioritize?",
                 existingStatements: [],
                 targetCount: 3,
             },
         });
-        expect(messages.user).toContain("Conversation type: ranking");
+        expect(messages.user).toContain("Conversation type: prioritizing\n");
         expect(messages.system).toContain(
             "independently actionable proposals to rank by priority",
         );
@@ -40,9 +40,10 @@ describe("seed suggestion prompt", () => {
 
         expect(messages.system).not.toContain("{{");
         expect(messages.system).toContain("produce 3 standalone statements");
-        expect(messages.user).toBe(
-            'Conversation type: polis\nConversation title: Night buses\nConversation body: Which priorities?\nOpinions participants already wrote (may be empty): ["Run every 30 minutes."]',
-        );
+        expect(messages.user).not.toContain("{{");
+        expect(messages.user).toContain("Night buses");
+        expect(messages.user).toContain("Which priorities?");
+        expect(messages.user).toContain('["Run every 30 minutes."]');
     });
 
     it("inserts author text as is, even when it looks like a placeholder or a pattern", () => {

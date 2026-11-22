@@ -11,8 +11,6 @@ export interface RealtimeSSETranslations {
   participationAccountRequired: string;
   participationEmailVerificationRequired: string;
   participationStrongVerificationRequired: string;
-  eventTicketRequired: string;
-  eventTicketNotRequired: string;
   llmTurnedOnByFacilitator: string;
   llmTurnedOffByFacilitator: string;
   facilitatorGroupCountPreferenceChanged: string;
@@ -35,8 +33,6 @@ export const realtimeSSETranslations: Record<
       "Participation now requires email verification",
     participationStrongVerificationRequired:
       "Participation now requires strong verification",
-    eventTicketRequired: "An event ticket is now required",
-    eventTicketNotRequired: "An event ticket is no longer required",
     llmTurnedOnByFacilitator: "LLM was turned on by the facilitator",
     llmTurnedOffByFacilitator: "LLM was turned off by the facilitator",
     facilitatorGroupCountPreferenceChanged:
@@ -54,8 +50,6 @@ export const realtimeSSETranslations: Record<
     participationEmailVerificationRequired:
       "تتطلب المشاركة الآن التحقق من البريد الإلكتروني",
     participationStrongVerificationRequired: "تتطلب المشاركة الآن تحققًا قويًا",
-    eventTicketRequired: "أصبحت تذكرة الحدث مطلوبة الآن",
-    eventTicketNotRequired: "لم تعد تذكرة الحدث مطلوبة",
     llmTurnedOnByFacilitator: "تم تشغيل LLM بواسطة الميسر",
     llmTurnedOffByFacilitator: "تم إيقاف LLM بواسطة الميسر",
     facilitatorGroupCountPreferenceChanged:
@@ -75,8 +69,6 @@ export const realtimeSSETranslations: Record<
       "La participación ahora requiere verificación por correo electrónico",
     participationStrongVerificationRequired:
       "La participación ahora requiere verificación fuerte",
-    eventTicketRequired: "Ahora se requiere una entrada del evento",
-    eventTicketNotRequired: "Ya no se requiere una entrada del evento",
     llmTurnedOnByFacilitator: "El facilitador activó el LLM",
     llmTurnedOffByFacilitator: "El facilitador desactivó el LLM",
     facilitatorGroupCountPreferenceChanged:
@@ -95,8 +87,6 @@ export const realtimeSSETranslations: Record<
       "مشارکت اکنون به تأیید ایمیل نیاز دارد",
     participationStrongVerificationRequired:
       "مشارکت اکنون به تأیید قوی نیاز دارد",
-    eventTicketRequired: "اکنون بلیط رویداد الزامی است",
-    eventTicketNotRequired: "بلیط رویداد دیگر الزامی نیست",
     llmTurnedOnByFacilitator: "LLM توسط تسهیل‌گر فعال شد",
     llmTurnedOffByFacilitator: "LLM توسط تسهیل‌گر غیرفعال شد",
     facilitatorGroupCountPreferenceChanged:
@@ -117,8 +107,6 @@ export const realtimeSSETranslations: Record<
       "La participation nécessite maintenant une vérification par e-mail",
     participationStrongVerificationRequired:
       "La participation nécessite maintenant une vérification forte",
-    eventTicketRequired: "Un billet d'événement est maintenant requis",
-    eventTicketNotRequired: "Un billet d'événement n'est plus requis",
     llmTurnedOnByFacilitator: "Le LLM a été activé par le facilitateur",
     llmTurnedOffByFacilitator: "Le LLM a été désactivé par le facilitateur",
     facilitatorGroupCountPreferenceChanged:
@@ -135,8 +123,6 @@ export const realtimeSSETranslations: Record<
     participationAccountRequired: "现在参与需要账户",
     participationEmailVerificationRequired: "现在参与需要电子邮件验证",
     participationStrongVerificationRequired: "现在参与需要强验证",
-    eventTicketRequired: "现在需要活动门票",
-    eventTicketNotRequired: "现在不再需要活动门票",
     llmTurnedOnByFacilitator: "主持人已开启 LLM",
     llmTurnedOffByFacilitator: "主持人已关闭 LLM",
     facilitatorGroupCountPreferenceChanged: "主持人的分组数量偏好已更改",
@@ -152,8 +138,6 @@ export const realtimeSSETranslations: Record<
     participationAccountRequired: "現在參與需要帳戶",
     participationEmailVerificationRequired: "現在參與需要電子郵件驗證",
     participationStrongVerificationRequired: "現在參與需要強驗證",
-    eventTicketRequired: "現在需要活動門票",
-    eventTicketNotRequired: "現在不再需要活動門票",
     llmTurnedOnByFacilitator: "主持人已開啟 LLM",
     llmTurnedOffByFacilitator: "主持人已關閉 LLM",
     facilitatorGroupCountPreferenceChanged: "主持人的分組數量偏好已變更",
@@ -169,8 +153,6 @@ export const realtimeSSETranslations: Record<
     participationAccountRequired: "ההשתתפות דורשת כעת חשבון",
     participationEmailVerificationRequired: "ההשתתפות דורשת כעת אימות אימייל",
     participationStrongVerificationRequired: "ההשתתפות דורשת כעת אימות חזק",
-    eventTicketRequired: "כעת נדרש כרטיס אירוע",
-    eventTicketNotRequired: "כרטיס אירוע אינו נדרש עוד",
     llmTurnedOnByFacilitator: "ה-LLM הופעל על ידי המנחה",
     llmTurnedOffByFacilitator: "ה-LLM כובה על ידי המנחה",
     facilitatorGroupCountPreferenceChanged: "העדפת המנחה למספר הקבוצות השתנתה",
@@ -188,8 +170,6 @@ export const realtimeSSETranslations: Record<
       "参加にはメール認証が必要になりました",
     participationStrongVerificationRequired:
       "参加には強い認証が必要になりました",
-    eventTicketRequired: "イベントチケットが必要になりました",
-    eventTicketNotRequired: "イベントチケットは不要になりました",
     llmTurnedOnByFacilitator: "ファシリテーターが LLM をオンにしました",
     llmTurnedOffByFacilitator: "ファシリテーターが LLM をオフにしました",
     facilitatorGroupCountPreferenceChanged:
@@ -208,8 +188,6 @@ export const realtimeSSETranslations: Record<
       "Катышуу үчүн эми email текшерүүсү талап кылынат",
     participationStrongVerificationRequired:
       "Катышуу үчүн эми күчтүү текшерүү талап кылынат",
-    eventTicketRequired: "Эми иш-чара билети талап кылынат",
-    eventTicketNotRequired: "Иш-чара билети эми талап кылынбайт",
     llmTurnedOnByFacilitator: "LLM фасилитатор тарабынан иштетилди",
     llmTurnedOffByFacilitator: "LLM фасилитатор тарабынан өчүрүлдү",
     facilitatorGroupCountPreferenceChanged:
@@ -228,8 +206,6 @@ export const realtimeSSETranslations: Record<
       "Для участия теперь нужна проверка e-mail",
     participationStrongVerificationRequired:
       "Для участия теперь нужна строгая проверка",
-    eventTicketRequired: "Теперь требуется билет события",
-    eventTicketNotRequired: "Билет события больше не требуется",
     llmTurnedOnByFacilitator: "LLM включена фасилитатором",
     llmTurnedOffByFacilitator: "LLM выключена фасилитатором",
     facilitatorGroupCountPreferenceChanged:

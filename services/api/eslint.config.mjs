@@ -3,6 +3,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import { noReplicaRowLocks } from "./eslint/replica-routing.mjs";
 // import json from "@eslint/json";
 // import markdown from "@eslint/markdown";
 
@@ -19,10 +20,36 @@ export default tseslint.config(
                 tsconfigRootDir: import.meta.dirname,
             },
         },
+        plugins: {
+            "agora-db": {
+                rules: { "no-replica-row-locks": noReplicaRowLocks },
+            },
+        },
         rules: {
+            "agora-db/no-replica-row-locks": "error",
             "@typescript-eslint/no-unnecessary-condition": [
                 "error",
                 { allowConstantLoopConditions: "only-allowed-literals" },
+            ],
+        },
+    },
+    {
+        files: ["src/**/*.ts"],
+        ignores: ["src/shared-backend/db.ts", "**/*.test.ts"],
+        rules: {
+            "no-restricted-syntax": [
+                "error",
+                {
+                    selector: "MemberExpression[property.name='$replica']",
+                    message:
+                        "Use getReplicaDatabase(db) so transactions and explicit primary handles retain their connection and readers have a query-only type.",
+                },
+                {
+                    selector:
+                        "MemberExpression[computed=true][property.value='$replica']",
+                    message:
+                        "Use getReplicaDatabase(db) instead of accessing $replica directly.",
+                },
             ],
         },
     },
@@ -60,11 +87,11 @@ export default tseslint.config(
             "src/generated/email/",
             "src/shared-backend/email/",
             "eslint.config.mjs",
+            "eslint/**/*.mjs",
             "jest.config.js",
             "scripts/**/*.mjs",
             "tests/**/*",
             "drizzle.config.ts",
-            "esm-loader-lodash-fix.mjs",
             "vite.config.ts",
         ],
     },

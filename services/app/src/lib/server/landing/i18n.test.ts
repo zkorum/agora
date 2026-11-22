@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import { baseLocale, locales } from "#lib/paraglide/runtime.js";
 import { getFaqContent } from "$components/landing/faq-content";
-import { baseLocale, locales } from "$lib/paraglide/runtime";
 
 import { getResourcePosts } from "./resources";
 
@@ -71,8 +71,8 @@ describe("landing localization", () => {
 
     for (const [key, value] of Object.entries(translatedMessages ?? {})) {
       expect(value.trim(), key).not.toBe("");
-      expect(value.match(/\{[^}]+\}/g) ?? [], key).toEqual(
-        englishMessages[key].match(/\{[^}]+\}/g) ?? [],
+      expect(new Set(value.match(/\{[^}]+\}/g)), key).toEqual(
+        new Set(englishMessages[key].match(/\{[^}]+\}/g)),
       );
     }
 

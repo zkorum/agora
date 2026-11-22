@@ -226,6 +226,7 @@ function optionButtonClicked() {
       shareOpinionCallback,
       edit,
       canDelete: props.commentItem.management?.canDelete === true,
+      canModerate: props.commentItem.management?.canModerate === true,
     },
   });
 }

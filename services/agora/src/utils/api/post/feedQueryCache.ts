@@ -36,7 +36,13 @@ function updateProjectAssignment({
     sameViewer && freshConversation !== undefined
       ? freshConversation.interaction.conversationCapabilities
       : transferred
-        ? { canEdit: false, canDelete: false }
+        ? {
+            canEdit: false,
+            canDelete: false,
+            canModerate: false,
+            canClose: false,
+            canReopen: false,
+          }
         : conversation.interaction.conversationCapabilities;
   return {
     ...item,

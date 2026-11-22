@@ -1,0 +1,94 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "29beacb3-30dd-4a15-8df7-8975c2195392",
+  "prevIds": [
+    "c3d69b51-57cb-4170-ba36-7f28fef753ab"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_priority"
+      ],
+      "writes": [
+        "s|colprop|public.opinion.polis_priority.notNull",
+        "s|colprop|public.opinion.polis_priority.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.polis_priority"
+      ],
+      "sqlHash": "9b859a8df9d7d103"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_ga_consensus_pa"
+      ],
+      "writes": [
+        "s|colprop|public.opinion.polis_ga_consensus_pa.notNull",
+        "s|colprop|public.opinion.polis_ga_consensus_pa.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.polis_ga_consensus_pa"
+      ],
+      "sqlHash": "0ed222f98265e21d"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_divisiveness"
+      ],
+      "writes": [
+        "s|colprop|public.opinion.polis_divisiveness.notNull",
+        "s|colprop|public.opinion.polis_divisiveness.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.polis_divisiveness"
+      ],
+      "sqlHash": "fff7aeb5995ed8ca"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion\",\"polis_priority\"]",
+      "set": {
+        "notNull": true,
+        "default": "0"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion\",\"polis_ga_consensus_pa\"]",
+      "set": {
+        "notNull": true,
+        "default": "0"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion\",\"polis_divisiveness\"]",
+      "set": {
+        "notNull": true,
+        "default": "0"
+      }
+    }
+  ]
+}

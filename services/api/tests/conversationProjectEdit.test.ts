@@ -48,8 +48,20 @@ import {
     projectContactTable,
 } from "../src/shared-backend/schema.js";
 import { getConversationProjectOptions } from "../src/service/conversationProject.js";
+import { createContentTranslationAvailabilityService } from "../src/service/contentTranslationAvailability.js";
+import { createComparisonGitHubAccess } from "../src/service/comparisonGitHubAccess.js";
+import { createConversationWriteService } from "../src/service/conversationWrite.js";
+import { RealtimeSSEManager } from "../src/service/realtimeSSE.js";
 import { getOrCreatePersonalOrganization } from "../src/service/projectAccess.js";
-import { updateConversation } from "../src/service/postEdit.js";
+import {
+    getConversationForEdit,
+    updateConversation,
+} from "../src/service/postEdit.js";
+import { getEffectiveConversationParticipationMode } from "../src/service/conversationParticipationMode.js";
+import {
+    requireConversationCapabilityBySlug,
+    requireConversationDestination,
+} from "../src/service/organizationAuthorization.js";
 import { createEagerContentTranslationWorkForKnownConversation } from "../src/service/contentTranslation.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
@@ -82,7 +94,7 @@ describe("conversation project editing", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await db.execute(
             sql.raw(readDbFixtureSql("conversation-project-edit.sql")),
         );
@@ -110,7 +122,7 @@ describe("conversation project editing", () => {
         );
         const scopeConstraint = readFileSync(
             new URL(
-                "../drizzle/0101_special_lady_deathstrike.sql",
+                "../database/flyway/V0101__special_lady_deathstrike.sql",
                 import.meta.url,
             ),
             "utf8",
@@ -155,7 +167,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing organization fixture");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: organization.id, userId })
+            .values({ organizationId: organization.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing membership fixture");
@@ -256,11 +268,204 @@ describe("conversation project editing", () => {
         });
     }
 
-    it("moves atomically and publishes the committed assignment", async () => {
-        const response = await updateConversation({
+    it.each([true, false])(
+        "round-trips indexing intent %s when editing under an unlisted project",
+        async (isIndexed) => {
+            await db
+                .update(projectTable)
+                .set({ directoryVisibility: "unlisted" })
+                .where(eq(projectTable.id, sourceProjectId));
+            await db
+                .update(conversationTable)
+                .set({ isIndexed })
+                .where(eq(conversationTable.id, conversationId));
+
+            const edit = await getConversationForEdit({
+                db,
+                userId,
+                conversationSlugId: "conv1234",
+            });
+            if (!edit.success) throw new Error("Conversation is not editable");
+            expect(edit.isIndexed).toBe(isIndexed);
+            const data = Dto.updateConversationRequest.parse({
+                ...request(),
+                projectChange: undefined,
+                participationMode: "email_verification",
+                isIndexed: edit.isIndexed,
+            });
+            await expect(
+                updateConversation({ db, userId, data }),
+            ).resolves.toMatchObject({ success: true });
+            await expect(
+                getConversationForEdit({
+                    db,
+                    userId,
+                    conversationSlugId: "conv1234",
+                }),
+            ).resolves.toMatchObject({
+                participationMode: "email_verification",
+                isIndexed,
+            });
+        },
+    );
+
+    it.each([
+        {
+            name: "preserves inheritance for unrelated legacy edits",
+            currentSource: "project_inherited",
+            requestedMode: "email_verification",
+            requestedSource: undefined,
+            move: false,
+            expectedSource: "project_inherited",
+            expectedStoredMode: "guest",
+            expectedMode: "email_verification",
+        },
+        {
+            name: "creates an override when a legacy client changes the mode",
+            currentSource: "project_inherited",
+            requestedMode: "account_required",
+            requestedSource: undefined,
+            move: false,
+            expectedSource: "conversation_override",
+            expectedStoredMode: "account_required",
+            expectedMode: "account_required",
+        },
+        {
+            name: "allows explicit detachment when the effective value is unchanged",
+            currentSource: "project_inherited",
+            requestedMode: "email_verification",
+            requestedSource: "conversation_override",
+            move: false,
+            expectedSource: "conversation_override",
+            expectedStoredMode: "email_verification",
+            expectedMode: "email_verification",
+        },
+        {
+            name: "allows explicit restoration of inheritance",
+            currentSource: "conversation_override",
+            requestedMode: "guest",
+            requestedSource: "project_inherited",
+            move: false,
+            expectedSource: "project_inherited",
+            expectedStoredMode: "guest",
+            expectedMode: "email_verification",
+        },
+        {
+            name: "follows the destination project when moving an inherited conversation",
+            currentSource: "project_inherited",
+            requestedMode: "email_verification",
+            requestedSource: undefined,
+            move: true,
+            expectedSource: "project_inherited",
+            expectedStoredMode: "guest",
+            expectedMode: "strong_verification",
+        },
+        {
+            name: "preserves an explicit override when moving projects",
+            currentSource: "conversation_override",
+            requestedMode: "guest",
+            requestedSource: undefined,
+            move: true,
+            expectedSource: "conversation_override",
+            expectedStoredMode: "guest",
+            expectedMode: "guest",
+        },
+    ] as const)("$name", async (scenario) => {
+        await db
+            .update(projectTable)
+            .set({
+                participationMode: "email_verification",
+            })
+            .where(eq(projectTable.id, sourceProjectId));
+        await db
+            .update(projectTable)
+            .set({
+                participationMode: "strong_verification",
+            })
+            .where(eq(projectTable.id, destinationProjectId));
+        await db
+            .update(conversationTable)
+            .set({
+                participationMode: "guest",
+                participationModeSettingsSource: scenario.currentSource,
+            })
+            .where(eq(conversationTable.id, conversationId));
+        const baseRequest = request();
+        const data = Dto.updateConversationRequest.parse({
+            ...baseRequest,
+            isIndexed: false,
+            participationMode: scenario.requestedMode,
+            participationModeSettingsSource: scenario.requestedSource,
+            projectChange: scenario.move
+                ? baseRequest.projectChange
+                : undefined,
+        });
+        expect(await updateConversation({ db, userId, data })).toMatchObject({
+            success: true,
+        });
+        expect(
+            await db
+                .select({
+                    source: conversationTable.participationModeSettingsSource,
+                    storedMode: conversationTable.participationMode,
+                    mode: getEffectiveConversationParticipationMode(
+                        projectTable.participationMode,
+                    ),
+                })
+                .from(conversationTable)
+                .innerJoin(
+                    projectTable,
+                    eq(projectTable.id, conversationTable.projectId),
+                )
+                .where(eq(conversationTable.id, conversationId)),
+        ).toEqual([
+            {
+                source: scenario.expectedSource,
+                storedMode: scenario.expectedStoredMode,
+                mode: scenario.expectedMode,
+            },
+        ]);
+        expect(
+            await db
+                .select({
+                    payload: realtimeEventOutboxTable.payload,
+                })
+                .from(realtimeEventOutboxTable)
+                .where(
+                    eq(
+                        realtimeEventOutboxTable.eventType,
+                        "conversation_settings_updated",
+                    ),
+                ),
+        ).toMatchObject([
+            {
+                payload: {
+                    settings: { participationMode: scenario.expectedMode },
+                },
+            },
+        ]);
+    });
+
+    it("moves atomically and publishes the assignment even if a translation wakeup fails", async () => {
+        vi.mocked(
+            createEagerContentTranslationWorkForKnownConversation,
+        ).mockResolvedValueOnce([42]);
+        const enqueueTranslationWork = vi
+            .fn<(workIds: number[]) => Promise<void>>()
+            .mockRejectedValue(new Error("Queue unavailable"));
+        const service = createConversationWriteService({
             db,
+            googleCloudCredentials: undefined,
+            valkeyRef: { current: undefined },
+            realtimeSSEManager: new RealtimeSSEManager(),
+            voteBuffer: undefined,
+            assertComparisonGitHubAllowed: () => {},
+            enqueueTranslationWork,
+        });
+        const response = await service.update({
             userId,
-            data: request(),
+            request: request(),
+            displayLanguage: "en",
         });
         expect(response).toMatchObject({
             success: true,
@@ -283,6 +488,109 @@ describe("conversation project editing", () => {
         expect(
             (await db.select().from(realtimeEventOutboxTable)).at(0)?.eventType,
         ).toBe("conversation_settings_updated");
+        expect(enqueueTranslationWork).toHaveBeenCalledExactlyOnceWith([42]);
+        expect(response).not.toHaveProperty("eagerContentTranslationWorkIds");
+    });
+
+    it("uses a conversation's target language for its own project but not another project", async () => {
+        await db.update(projectTable).set({ dynamicTranslationEnabled: true });
+        await db
+            .update(conversationTable)
+            .set({ dynamicTranslationEnabled: true })
+            .where(eq(conversationTable.id, conversationId));
+        await db.insert(conversationTranslationTargetLanguageTable).values({
+            conversationId,
+            languageCode: "fr",
+        });
+        const { getContentTranslationAvailabilityForProject } =
+            createContentTranslationAvailabilityService(db);
+        const preferences = {
+            targetLanguageCode: "fr",
+            conversationSlugId: "conv1234",
+        } as const;
+
+        await expect(
+            getContentTranslationAvailabilityForProject({
+                ...preferences,
+                projectSlug: "source",
+            }),
+        ).resolves.toEqual({
+            isAllowed: true,
+            multilingualSetting: {
+                dynamicTranslationEnabled: true,
+                additionalLanguageCodes: ["fr"],
+            },
+        });
+        await expect(
+            getContentTranslationAvailabilityForProject({
+                ...preferences,
+                projectSlug: "destination",
+            }),
+        ).rejects.toMatchObject({ statusCode: 404 });
+
+        await db
+            .update(conversationTable)
+            .set({ deletedAt: new Date(), currentContentId: null })
+            .where(eq(conversationTable.id, conversationId));
+        await expect(
+            getContentTranslationAvailabilityForProject({
+                ...preferences,
+                projectSlug: "source",
+            }),
+        ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it("allows an eligible co-owner and stops allowing sync once that ownership is revoked", async () => {
+        const { assertComparisonGitHubAllowedForConversation } =
+            createComparisonGitHubAccess({
+                db,
+                isOrgOnly: true,
+                allowedOrgs: "eligible",
+                allowedUsers: "",
+            });
+        const request = { conversationSlugId: "conv1234", userId };
+        await expect(
+            assertComparisonGitHubAllowedForConversation(request),
+        ).rejects.toMatchObject({ statusCode: 403 });
+
+        const [eligibleOwner] = await db
+            .insert(organizationTable)
+            .values({
+                slug: "eligible",
+                displayName: "Eligible co-owner",
+                defaultLanguageCode: "en",
+                directoryVisibility: "listed",
+                isFullImagePath: false,
+            })
+            .returning({ id: organizationTable.id });
+        if (eligibleOwner === undefined)
+            throw new Error("Missing eligible owner");
+        await db.insert(projectOrganizationOwnershipTable).values({
+            organizationId: eligibleOwner.id,
+            projectId: sourceProjectId,
+        });
+        await expect(
+            assertComparisonGitHubAllowedForConversation(request),
+        ).resolves.toBeUndefined();
+
+        await db
+            .update(projectOrganizationOwnershipTable)
+            .set({ deletedAt: new Date() })
+            .where(
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        sourceProjectId,
+                    ),
+                    eq(
+                        projectOrganizationOwnershipTable.organizationId,
+                        eligibleOwner.id,
+                    ),
+                ),
+            );
+        await expect(
+            assertComparisonGitHubAllowedForConversation(request),
+        ).rejects.toMatchObject({ statusCode: 403 });
     });
 
     it("rejects a stale assignment without applying other edits", async () => {
@@ -390,31 +698,45 @@ describe("conversation project editing", () => {
     );
 
     it("requires destination creation permission even when the source is editable", async () => {
+        const [destinationOwner] = await db
+            .insert(organizationTable)
+            .values({
+                slug: "destination-only",
+                displayName: "Destination",
+                defaultLanguageCode: "en",
+                directoryVisibility: "listed",
+                isFullImagePath: false,
+            })
+            .returning({ id: organizationTable.id });
+        if (destinationOwner === undefined)
+            throw new Error("Missing destination owner");
+        await db.insert(organizationMembershipTable).values({
+            organizationId: destinationOwner.id,
+            userId,
+            role: "moderator",
+        });
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
+            .update(projectOrganizationOwnershipTable)
+            .set({ organizationId: destinationOwner.id })
             .where(
-                and(
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                        membershipId,
-                    ),
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.capability,
-                        "conversation_create",
-                    ),
+                eq(
+                    projectOrganizationOwnershipTable.projectId,
+                    destinationProjectId,
                 ),
             );
-        expect(
-            await updateConversation({
+        await requireConversationCapabilityBySlug({
+            db,
+            userId,
+            conversationSlugId: request().conversationSlugId,
+            capability: "conversation_edit",
+        });
+        await expect(
+            requireConversationDestination({
                 db,
                 userId,
-                data: request(),
+                target: { kind: "project", projectSlug: "destination" },
             }),
-        ).toMatchObject({
-            success: false,
-            reason: "missing_project_capability",
-        });
+        ).rejects.toMatchObject({ statusCode: 403 });
     });
 
     it("keeps the assignment when a survey/details save omits a move", async () => {
@@ -471,7 +793,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing additional owner fixture");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: owner.id, userId })
+            .values({ organizationId: owner.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing additional membership fixture");
@@ -592,23 +914,22 @@ describe("conversation project editing", () => {
 
     it("does not provision a personal scope for an unauthorized source editor", async () => {
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
-            .where(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_edit",
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.id, membershipId));
         const data = request();
         data.projectChange = {
             expectedProjectSlug: "source",
             target: { kind: "no_project" },
         };
-        expect(await updateConversation({ db, userId, data })).toEqual({
-            success: false,
-            reason: "not_author",
-        });
+        await expect(
+            requireConversationCapabilityBySlug({
+                db,
+                userId,
+                conversationSlugId: data.conversationSlugId,
+                capability: "conversation_edit",
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
         expect(await db.select().from(organizationTable)).toHaveLength(1);
     });
 
@@ -664,7 +985,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing personal scope");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: organization.id, userId })
+            .values({ organizationId: organization.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing personal membership");
@@ -712,7 +1033,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing other personal organization");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: personal.id, userId })
+            .values({ organizationId: personal.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing other personal membership");
@@ -741,10 +1062,16 @@ describe("conversation project editing", () => {
             expectedProjectSlug: "source",
             target: { kind: "no_project", organizationSlug: "other-personal" },
         };
-        expect(await updateConversation({ db, userId, data })).toEqual({
-            success: false,
-            reason: "project_not_available",
-        });
+        await expect(
+            requireConversationDestination({
+                db,
+                userId,
+                target: {
+                    kind: "no_project",
+                    organizationSlug: "other-personal",
+                },
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
         expect(
             (await db.select().from(conversationTable)).at(0)?.projectId,
         ).toBe(sourceProjectId);
@@ -752,14 +1079,9 @@ describe("conversation project editing", () => {
 
     it("does not provision destination defaults for an unauthorized source editor", async () => {
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: userId })
-            .where(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_edit",
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.id, membershipId));
         const [organization] = await db
             .insert(organizationTable)
             .values({
@@ -774,7 +1096,7 @@ describe("conversation project editing", () => {
             throw new Error("Missing organization fixture");
         const [membership] = await db
             .insert(organizationMembershipTable)
-            .values({ organizationId: organization.id, userId })
+            .values({ organizationId: organization.id, userId, role: "admin" })
             .returning({ id: organizationMembershipTable.id });
         if (membership === undefined)
             throw new Error("Missing membership fixture");
@@ -795,13 +1117,14 @@ describe("conversation project editing", () => {
             expectedProjectSlug: "source",
             target: { kind: "no_project", organizationSlug: "other-owner" },
         };
-        expect(
-            await updateConversation({
+        await expect(
+            requireConversationCapabilityBySlug({
                 db,
                 userId,
-                data,
+                conversationSlugId: data.conversationSlugId,
+                capability: "conversation_edit",
             }),
-        ).toMatchObject({ success: false, reason: "not_author" });
+        ).rejects.toMatchObject({ statusCode: 403 });
         expect(
             await db
                 .select()
@@ -945,7 +1268,8 @@ describe("conversation project editing", () => {
                 });
             }
             const queries: string[] = [];
-            const tracedDb = drizzle(client, {
+            const tracedDb = drizzle({
+                client,
                 logger: {
                     logQuery: (query) => {
                         queries.push(query);

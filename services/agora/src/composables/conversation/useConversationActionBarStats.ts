@@ -4,12 +4,12 @@ import type {
 } from "src/shared/types/dto";
 import type { ExtendedConversationDisplayData } from "src/shared/types/zod";
 import { parseCheckpointQuery } from "src/utils/analysis/analysisRoute";
+import { useAnalysisCheckpointsQuery } from "src/utils/api/comment/useCommentQueries";
 import {
   pickCommentStatsForActionBar,
-  useAnalysisCheckpointsQuery,
   useCommentStatsQuery,
-} from "src/utils/api/comment/useCommentQueries";
-import { useRankingStatsCheckpointsQuery } from "src/utils/api/maxdiff/useMaxDiffQueries";
+} from "src/utils/api/comment/useCommentStatsQuery";
+import { useRankingStatsCheckpointsQuery } from "src/utils/api/comparison/useComparisonQueries";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 import type { LocationQuery } from "vue-router";
@@ -58,8 +58,8 @@ export function useConversationActionBarStats({
   const shouldLoadRankingCheckpointStats = computed(() => {
     const conversation = toValue(conversationData);
     return (
-      conversation?.metadata.conversationType === "ranking" &&
-      conversation.metadata.rankingMode === "bws" &&
+      conversation?.metadata.conversationType === "prioritizing" &&
+      conversation.metadata.prioritizationType === "comparisons" &&
       toValue(currentTab) === "analysis" &&
       checkpointViewSnapshotId.value !== undefined &&
       conversationSlugId.value !== ""
@@ -67,14 +67,11 @@ export function useConversationActionBarStats({
   });
   const shouldLoadCommentStats = computed(() => {
     const conversation = toValue(conversationData);
-    const isMaxDiffConversation =
-      conversation?.metadata.conversationType === "ranking" &&
-      conversation.metadata.rankingMode === "bws";
     return (
       toValue(currentTab) === "comment" &&
       toValue(enableCommentStats) &&
       conversationSlugId.value !== "" &&
-      !isMaxDiffConversation
+      conversation?.metadata.conversationType === "polis"
     );
   });
 
@@ -88,7 +85,8 @@ export function useConversationActionBarStats({
       const checkpointId = checkpointViewSnapshotId.value;
       const conversation = toValue(conversationData);
       const liveSnapshotId =
-        conversation?.metadata.conversationType === "ranking"
+        conversation?.metadata.conversationType === "prioritizing" &&
+        conversation.metadata.prioritizationType === "comparisons"
           ? conversation.metadata.rankingStatsSnapshotId
           : undefined;
       if (checkpointId === undefined) {
@@ -106,22 +104,22 @@ export function useConversationActionBarStats({
     enabled: shouldLoadCommentStats,
   });
 
-  const selectedAnalysisCheckpoint = computed<
-    AnalysisCheckpoint | undefined
-  >(() => {
-    if (!shouldLoadPolisCheckpointStats.value) {
-      return undefined;
-    }
+  const selectedAnalysisCheckpoint = computed<AnalysisCheckpoint | undefined>(
+    () => {
+      if (!shouldLoadPolisCheckpointStats.value) {
+        return undefined;
+      }
 
-    const checkpointId = checkpointViewSnapshotId.value;
-    if (checkpointId === undefined) {
-      return undefined;
-    }
+      const checkpointId = checkpointViewSnapshotId.value;
+      if (checkpointId === undefined) {
+        return undefined;
+      }
 
-    return analysisCheckpointsQuery.data.value?.find(
-      (checkpoint) => checkpoint.conversationViewSnapshotId === checkpointId
-    );
-  });
+      return analysisCheckpointsQuery.data.value?.find(
+        (checkpoint) => checkpoint.conversationViewSnapshotId === checkpointId
+      );
+    }
+  );
   const selectedRankingCheckpoint = computed<
     RankingStatsCheckpointsResponse[number] | undefined
   >(() => {

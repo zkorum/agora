@@ -6,7 +6,6 @@ export interface RequirementBannerCopyState {
   hasSurvey: boolean;
   isOptional: boolean;
   needsAuth: boolean;
-  needsTicket: boolean;
   surveyGateStatus: SurveyGateStatus;
   canParticipate: boolean;
 }
@@ -21,34 +20,22 @@ export function resolveRequirementBannerCopy({
   hasSurvey,
   isOptional,
   needsAuth,
-  needsTicket,
   surveyGateStatus,
   canParticipate,
 }: RequirementBannerCopyState): RequirementBannerCopyKeys {
-  if (!hasSurvey) {
-    if (needsAuth || needsTicket) {
-      return {
-        titleKey: "ticketRequiredTitle",
-        messageKey: "ticketRequiredMessage",
-        buttonKey: "continueLabel",
-      };
-    }
-
+  if (needsAuth) {
     return {
-      titleKey: "ticketVerifiedTitle",
-      messageKey: "ticketVerifiedMessage",
+      titleKey: "requiredAccessTitle",
+      messageKey: "requiredAccessMessage",
       buttonKey: "continueLabel",
     };
   }
 
-  if (needsAuth || needsTicket) {
+  if (!hasSurvey) {
     return {
-      titleKey: "requiredAccessTitle",
-      messageKey:
-        needsAuth || !needsTicket
-          ? "requiredAccessMessage"
-          : "verifyTicketMessage",
-      buttonKey: "continueLabel",
+      titleKey: "surveyUnavailableTitle",
+      messageKey: "surveyUnavailableTitle",
+      buttonKey: "openSurveyLabel",
     };
   }
 
@@ -64,7 +51,8 @@ export function resolveRequirementBannerCopy({
         : canParticipate
           ? "openViaOnboardingMessage"
           : "requiredSurveyMessage",
-      buttonKey: isOptional || canParticipate ? "openSurveyLabel" : "startSurveyLabel",
+      buttonKey:
+        isOptional || canParticipate ? "openSurveyLabel" : "startSurveyLabel",
     };
   }
 

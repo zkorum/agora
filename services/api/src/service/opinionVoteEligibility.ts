@@ -9,6 +9,7 @@ import {
     voteTable,
 } from "@/shared-backend/schema.js";
 import { getEligibleParticipantIdsForAnalysis } from "@/shared-backend/surveyAnalysis.js";
+import { alias } from "drizzle-orm/pg-core";
 
 export async function getAnalysisEligibleOpinionVotes({
     db,
@@ -21,6 +22,7 @@ export async function getAnalysisEligibleOpinionVotes({
 }) {
     // Current participant eligibility determines validity. Editing preserves old
     // vote-content links rather than invalidating votes on previous wording.
+    const voter = alias(userTable, "eligible_voter");
     const activeVotes = db
         .select({
             opinionId: opinionTable.id,
@@ -29,7 +31,11 @@ export async function getAnalysisEligibleOpinionVotes({
         })
         .from(voteTable)
         .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .innerJoin(
+            voter,
+            and(eq(voter.id, voteTable.authorId), eq(voter.isDeleted, false)),
+        )
         .innerJoin(
             voteContentTable,
             eq(voteContentTable.id, voteTable.currentContentId),

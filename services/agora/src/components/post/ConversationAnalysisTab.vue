@@ -21,6 +21,9 @@
       :report-route-override="props.reportRouteOverride"
       :is-live-analysis-paused="isLiveAnalysisPaused"
       :is-conversation-closed="conversationData.metadata.isClosed"
+      :can-edit-conversation="
+        conversationData.interaction.conversationCapabilities.canEdit
+      "
       :is-finalizing="conversationData.metadata.isFinalizing === true"
       :navigate-to-discover-tab="props.navigateToDiscoverTab"
       :conversation-scroll-context="props.conversationScrollContext"
@@ -117,7 +120,7 @@ const voteCount = computed(() => props.conversationData?.metadata.voteCount);
 const aiLabelingEnabled = computed(
   () => props.conversationData?.metadata.aiLabelingEnabled
 );
-const hasSurvey = computed(
+const hasCurrentSurvey = computed(
   () => props.conversationData?.interaction.surveyGate?.hasSurvey === true
 );
 const analysisView = computed(() =>
@@ -125,6 +128,12 @@ const analysisView = computed(() =>
 );
 const checkpointViewSnapshotId = computed(() =>
   parseCheckpointQuery({ query: route.query })
+);
+const canLoadCapturedSurvey = computed(
+  () =>
+    checkpointViewSnapshotId.value !== undefined ||
+    (props.conversationData?.metadata.isClosed === true &&
+      props.conversationData.metadata.isFinalizing !== true)
 );
 const isAnalysisQueryEnabled = computed(
   () =>
@@ -148,16 +157,30 @@ const analysisCheckpointsQuery = useAnalysisCheckpointsQuery({
   enabled: isAnalysisQueryEnabled,
 });
 
+const isSurveyQueryEnabled = computed(
+  () =>
+    isAnalysisQueryEnabled.value &&
+    (hasCurrentSurvey.value || canLoadCapturedSurvey.value)
+);
 const surveyResultsQuery = useSurveyResultsAggregatedQuery({
   conversationSlugId,
   analysisView,
   checkpointViewSnapshotId,
-  enabled: computed(() => hasSurvey.value && !isLiveAnalysisPaused.value),
+  enabled: isSurveyQueryEnabled,
 });
+const hasSurvey = computed(
+  () =>
+    hasCurrentSurvey.value ||
+    (canLoadCapturedSurvey.value &&
+      (surveyResultsQuery.data.value?.hasSurvey === true ||
+        (route.query.tab === "Survey" &&
+          (surveyResultsQuery.isPending.value ||
+            surveyResultsQuery.isError.value))))
+);
 
 const isSurveyResultsLoading = computed(
   () =>
-    hasSurvey.value &&
+    isSurveyQueryEnabled.value &&
     (surveyResultsQuery.isPending.value ||
       surveyResultsQuery.isRefetching.value) &&
     surveyResultsQuery.data.value === undefined
@@ -187,7 +210,7 @@ async function handleChildRefresh(): Promise<void> {
     analysisPageRef.value?.refreshLatestAnalysis() ??
     Promise.all([analysisQuery.refetch(), analysisCheckpointsQuery.refetch()]);
 
-  if (hasSurvey.value) {
+  if (isSurveyQueryEnabled.value) {
     await Promise.all([analysisRefresh, surveyResultsQuery.refetch()]);
     return;
   }

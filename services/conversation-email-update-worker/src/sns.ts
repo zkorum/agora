@@ -372,46 +372,56 @@ export async function applySnsInboxItem({
                             : undefined,
                 });
                 if (
-                    suppressions.emailReason !== undefined ||
-                    suppressions.suppressUserForComplaint
+                    correlatedTest.requestedByUserId !== null &&
+                    correlatedTest.destinationEmailSnapshot !== null
                 ) {
-                    await tx
-                        .select({ id: userTable.id })
-                        .from(userTable)
-                        .where(
-                            eq(userTable.id, correlatedTest.requestedByUserId),
-                        )
-                        .for("update");
-                }
-                if (suppressions.emailReason !== undefined) {
-                    await tx
-                        .insert(conversationEmailUpdateEmailSuppressionTable)
-                        .values({
-                            canonicalEmail:
-                                correlatedTest.destinationEmailSnapshot,
-                            emailCredentialId:
-                                correlatedTest.destinationEmailCredentialId,
-                            reason: suppressions.emailReason,
-                            sourceSnsTopicArn: envelope.TopicArn,
-                            sourceSnsMessageId: envelope.MessageId,
-                            sourceSesMessageId: event.mail.messageId,
-                            sourceEventOccurredAt: occurredAt,
-                        })
-                        .onConflictDoNothing();
-                }
-                if (suppressions.suppressUserForComplaint) {
-                    await tx
-                        .insert(
-                            conversationEmailUpdateUserComplaintSuppressionTable,
-                        )
-                        .values({
-                            userId: correlatedTest.requestedByUserId,
-                            sourceSnsTopicArn: envelope.TopicArn,
-                            sourceSnsMessageId: envelope.MessageId,
-                            sourceSesMessageId: event.mail.messageId,
-                            sourceEventOccurredAt: occurredAt,
-                        })
-                        .onConflictDoNothing();
+                    if (
+                        suppressions.emailReason !== undefined ||
+                        suppressions.suppressUserForComplaint
+                    ) {
+                        await tx
+                            .select({ id: userTable.id })
+                            .from(userTable)
+                            .where(
+                                eq(
+                                    userTable.id,
+                                    correlatedTest.requestedByUserId,
+                                ),
+                            )
+                            .for("update");
+                    }
+                    if (suppressions.emailReason !== undefined) {
+                        await tx
+                            .insert(
+                                conversationEmailUpdateEmailSuppressionTable,
+                            )
+                            .values({
+                                canonicalEmail:
+                                    correlatedTest.destinationEmailSnapshot,
+                                emailCredentialId:
+                                    correlatedTest.destinationEmailCredentialId,
+                                reason: suppressions.emailReason,
+                                sourceSnsTopicArn: envelope.TopicArn,
+                                sourceSnsMessageId: envelope.MessageId,
+                                sourceSesMessageId: event.mail.messageId,
+                                sourceEventOccurredAt: occurredAt,
+                            })
+                            .onConflictDoNothing();
+                    }
+                    if (suppressions.suppressUserForComplaint) {
+                        await tx
+                            .insert(
+                                conversationEmailUpdateUserComplaintSuppressionTable,
+                            )
+                            .values({
+                                userId: correlatedTest.requestedByUserId,
+                                sourceSnsTopicArn: envelope.TopicArn,
+                                sourceSnsMessageId: envelope.MessageId,
+                                sourceSesMessageId: event.mail.messageId,
+                                sourceEventOccurredAt: occurredAt,
+                            })
+                            .onConflictDoNothing();
+                    }
                 }
 
                 const completedAt = sql<Date>`now()`;

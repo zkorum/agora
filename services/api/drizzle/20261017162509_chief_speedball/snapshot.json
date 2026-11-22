@@ -1,0 +1,76 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c03a90b2-594a-413a-b6c3-37a087249588",
+  "prevIds": [
+    "4c82df42-eba5-4801-8440-9ffeb0df67c2"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_answer_option",
+        "text_value_html"
+      ],
+      "writes": [
+        "s|col|public.survey_answer_option.text_value_html",
+        "n|col|public.survey_answer_option.text_value_html",
+        "e|col|public.survey_answer_option.text_value_html"
+      ],
+      "reads": [
+        "n|tbl|public.survey_answer_option",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_answer_option"
+      ],
+      "writes": [
+        "s|ck|public.survey_answer_option.survey_answer_option_html_byte_length_check",
+        "n|ck|public.survey_answer_option.survey_answer_option_html_byte_length_check",
+        "e|ck|public.survey_answer_option.survey_answer_option_html_byte_length_check",
+        "n|con|public.survey_answer_option.survey_answer_option_html_byte_length_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_answer_option",
+        "n|sch|public",
+        "n|col|public.survey_answer_option.text_value_html"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_answer_option",
+        "name": "text_value_html",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_answer_option",
+        "name": "survey_answer_option_html_byte_length_check",
+        "value": "octet_length(\"survey_answer_option\".\"text_value_html\") <= 3000",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

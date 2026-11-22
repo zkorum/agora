@@ -5,6 +5,7 @@ dist/
 static/
 test-results/
 playwright-report/
+storybook-static/
 pnpm-lock.yaml
 project.inlang/*
 !project.inlang/settings.json

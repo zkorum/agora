@@ -25,7 +25,6 @@ import type {
 import { Dto } from "src/shared/types/dto";
 import type {
   ConversationMultilingualSetting,
-  EventSlug,
   FeedSortAlgorithm,
   ParticipationMode,
   PreferredOpinionGroupCount,
@@ -222,7 +221,6 @@ export function useBackendPostApi() {
     isIndexed: boolean;
     participationMode: ParticipationMode;
     multilingualSetting: ConversationMultilingualSetting;
-    requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
   }
@@ -241,7 +239,6 @@ export function useBackendPostApi() {
     isIndexed: boolean;
     participationMode: ParticipationMode;
     multilingualSetting: ConversationMultilingualSetting;
-    requiresEventTicket?: EventSlug;
     aiLabelingEnabled: boolean;
     preferredOpinionGroupCount: PreferredOpinionGroupCount;
   }
@@ -266,7 +263,6 @@ export function useBackendPostApi() {
       "multilingualSetting",
       JSON.stringify(params.multilingualSetting)
     );
-    formData.append("requiresEventTicket", params.requiresEventTicket || "");
     formData.append("aiLabelingEnabled", String(params.aiLabelingEnabled));
     formData.append(
       "preferredOpinionGroupCount",
@@ -310,7 +306,6 @@ export function useBackendPostApi() {
     isIndexed,
     participationMode,
     multilingualSetting,
-    requiresEventTicket,
     aiLabelingEnabled,
     preferredOpinionGroupCount,
   }: ImportConversationProps): Promise<ImportConversationApiResponse> {
@@ -323,7 +318,6 @@ export function useBackendPostApi() {
         isIndexed,
         participationMode,
         multilingualSetting,
-        requiresEventTicket,
         aiLabelingEnabled,
         preferredOpinionGroupCount,
       } satisfies z.input<typeof Dto.importConversationRequest>);

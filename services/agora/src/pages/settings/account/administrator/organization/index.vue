@@ -5,22 +5,46 @@
 
   <div class="container">
     <q-tabs
+      v-if="
+        managementAccess.data.value?.permissions.canCreateOrganizations ||
+        managementAccess.data.value?.permissions.canManageOrganizations
+      "
       v-model="activeTab"
       class="adminTabs"
       align="justify"
       active-color="primary"
       indicator-color="primary"
     >
-      <q-tab name="create" :label="t('createTab')" />
-      <q-tab name="manage" :label="t('manageTab')" />
+      <q-tab
+        v-if="managementAccess.data.value?.permissions.canCreateOrganizations"
+        name="create"
+        :label="t('createTab')"
+      />
+      <q-tab
+        v-if="managementAccess.data.value?.permissions.canManageOrganizations"
+        name="manage"
+        :label="t('manageTab')"
+      />
     </q-tabs>
 
-    <ZKCard v-if="activeTab === 'create'" padding="1rem" class="cardBackground">
+    <ZKCard
+      v-if="
+        activeTab === 'create' &&
+        managementAccess.data.value?.permissions.canCreateOrganizations
+      "
+      padding="1rem"
+      class="cardBackground"
+    >
       <OrganizationCreatePanel @created="organizationCreated" />
     </ZKCard>
 
-    <template v-else>
+    <template
+      v-else-if="
+        managementAccess.data.value?.permissions.canManageOrganizations
+      "
+    >
       <OrganizationManagePanel
+        :key="viewerScope.userId"
         v-model:selected-organization-slug="selectedOrganizationSlug"
         :organization-list="organizationList"
         :selected-organization="selectedOrganization"
@@ -39,11 +63,14 @@ import { StandardMenuBar } from "src/components/navigation/header/variants";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type { OrganizationManagementPermissions } from "src/shared/organizationAccess";
 import type {
   AdminOrganizationOption,
   AdminOrganizationProperties,
 } from "src/shared/types/dto";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
+import { useManagementAccess } from "src/utils/api/useManagementAccess";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import { ref, watch } from "vue";
 
 import {
@@ -52,6 +79,8 @@ import {
 } from "./index.i18n";
 
 const { isActive } = usePageLayout({ reducedWidth: true });
+const managementAccess = useManagementAccess();
+const viewerScope = useViewerQueryScope();
 const { t } = useComponentI18n<AdministratorOrganizationTranslations>(
   administratorOrganizationTranslations
 );
@@ -59,40 +88,78 @@ const { getOrganizationDetails, getOrganizationOptions } =
   useBackendAdministratorOrganizationApi();
 
 const organizationList = ref<AdminOrganizationOption[]>([]);
-const selectedOrganization = ref<AdminOrganizationProperties | undefined>(
-  undefined
-);
+const selectedOrganization = ref<
+  | (AdminOrganizationProperties & {
+      permissions: OrganizationManagementPermissions;
+    })
+  | undefined
+>(undefined);
 const selectedOrganizationSlug = ref<string | undefined>(undefined);
-const activeTab = ref<"create" | "manage">("create");
+const activeTab = ref<"create" | "manage">("manage");
 const isLoadingOrganizations = ref(false);
 let latestOrganizationDetailsRequest = 0;
+let latestOrganizationOptionsRequest = 0;
 
-watch(activeTab, async (tab) => {
-  if (
-    tab === "manage" &&
-    organizationList.value.length === 0 &&
-    !isLoadingOrganizations.value
-  ) {
-    await refreshOrganizations();
-  }
-});
+watch(
+  viewerScope,
+  () => {
+    latestOrganizationDetailsRequest += 1;
+    latestOrganizationOptionsRequest += 1;
+    selectedOrganization.value = undefined;
+    selectedOrganizationSlug.value = undefined;
+    organizationList.value = [];
+    isLoadingOrganizations.value = false;
+  },
+  { flush: "sync" }
+);
+
+watch(
+  [activeTab, isActive, managementAccess.dataUpdatedAt],
+  async ([tab, active]) => {
+    const canManage =
+      managementAccess.data.value?.permissions.canManageOrganizations === true;
+    const canCreate =
+      managementAccess.data.value?.permissions.canCreateOrganizations === true;
+    if (tab === "create" && !canCreate && canManage) activeTab.value = "manage";
+    if (tab === "manage" && !canManage && canCreate) activeTab.value = "create";
+    if (!canManage) {
+      latestOrganizationDetailsRequest += 1;
+      latestOrganizationOptionsRequest += 1;
+      selectedOrganization.value = undefined;
+      organizationList.value = [];
+      isLoadingOrganizations.value = false;
+      return;
+    }
+    if (active && tab === "manage") {
+      await refreshOrganizations({ preserveDraft: true });
+    }
+  },
+  { immediate: true }
+);
 
 watch(selectedOrganizationSlug, async (organizationSlug) => {
-  await refreshSelectedOrganizationDetails(organizationSlug);
+  await refreshSelectedOrganizationDetails({ organizationSlug });
 });
 
 async function refreshOrganizations({
   preferredOrganizationSlug,
   refreshSelectedDetails = true,
+  preserveDraft = false,
 }: {
   preferredOrganizationSlug?: string;
   refreshSelectedDetails?: boolean;
+  preserveDraft?: boolean;
 } = {}): Promise<void> {
+  const requestId = ++latestOrganizationOptionsRequest;
   isLoadingOrganizations.value = true;
   try {
-    organizationList.value = await getOrganizationOptions();
+    const organizations = await getOrganizationOptions();
+    if (requestId !== latestOrganizationOptionsRequest) return;
+    organizationList.value = organizations;
   } finally {
-    isLoadingOrganizations.value = false;
+    if (requestId === latestOrganizationOptionsRequest) {
+      isLoadingOrganizations.value = false;
+    }
   }
   const hasPreferredOrganization = organizationList.value.some(
     (organization) => organization.slug === preferredOrganizationSlug
@@ -111,18 +178,29 @@ async function refreshOrganizations({
       return;
     }
 
-    await refreshSelectedOrganizationDetails(nextOrganizationSlug);
+    await refreshSelectedOrganizationDetails({
+      organizationSlug: nextOrganizationSlug,
+      preserveDraft,
+    });
     return;
   }
 
   selectedOrganizationSlug.value = nextOrganizationSlug;
 }
 
-async function refreshSelectedOrganizationDetails(
-  organizationSlug: string | undefined
-): Promise<void> {
+async function refreshSelectedOrganizationDetails({
+  organizationSlug,
+  preserveDraft = false,
+}: {
+  organizationSlug: string | undefined;
+  preserveDraft?: boolean;
+}): Promise<void> {
   latestOrganizationDetailsRequest += 1;
   const requestId = latestOrganizationDetailsRequest;
+
+  if (selectedOrganization.value?.slug !== organizationSlug) {
+    selectedOrganization.value = undefined;
+  }
 
   if (organizationSlug === undefined) {
     selectedOrganization.value = undefined;
@@ -131,7 +209,15 @@ async function refreshSelectedOrganizationDetails(
 
   const organization = await getOrganizationDetails({ organizationSlug });
   if (requestId === latestOrganizationDetailsRequest) {
-    selectedOrganization.value = organization;
+    if (
+      preserveDraft &&
+      organization !== undefined &&
+      selectedOrganization.value?.slug === organization.slug
+    ) {
+      selectedOrganization.value.permissions = organization.permissions;
+    } else {
+      selectedOrganization.value = organization;
+    }
   }
 }
 

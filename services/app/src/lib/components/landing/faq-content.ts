@@ -1,5 +1,5 @@
-import type { locales } from "$lib/paraglide/runtime";
-import { toLocale } from "$lib/paraglide/runtime";
+import type { locales } from "#lib/paraglide/runtime.js";
+import { toLocale } from "#lib/paraglide/runtime.js";
 
 import { getComparisonFaq } from "./faq-comparison-content";
 

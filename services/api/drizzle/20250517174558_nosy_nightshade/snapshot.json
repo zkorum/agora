@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c9cfb331-cc7f-4d94-b09b-43a0a4074802",
+  "prevIds": [
+    "113a422e-da27-4cb8-9a00-c319cffbdba7"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster",
+        "ai_label"
+      ],
+      "writes": [
+        "s|colprop|public.polis_cluster.ai_label.type",
+        "s|colprop|public.polis_cluster.ai_label.default"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster",
+        "n|sch|public",
+        "n|col|public.polis_cluster.ai_label"
+      ],
+      "sqlHash": "702e5be2e354fdfa"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster",
+        "ai_summary"
+      ],
+      "writes": [
+        "s|colprop|public.polis_cluster.ai_summary.type",
+        "s|colprop|public.polis_cluster.ai_summary.default"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster",
+        "n|sch|public",
+        "n|col|public.polis_cluster.ai_summary"
+      ],
+      "sqlHash": "2df7cd7f2a2babf6"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"polis_cluster\",\"ai_label\"]",
+      "set": {
+        "type": "varchar(100)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"polis_cluster\",\"ai_summary\"]",
+      "set": {
+        "type": "varchar(1000)"
+      }
+    }
+  ]
+}

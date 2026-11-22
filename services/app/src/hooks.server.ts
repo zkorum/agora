@@ -1,43 +1,46 @@
-import type { Handle, HandleServerError } from "@sveltejs/kit";
+import { captureException } from "@sentry/sveltekit";
+import type {
+  CaughtError,
+  Handle,
+  HandleServerError,
+} from "@sveltejs/kit/hooks";
 
-import { baseLocale, locales } from "$lib/paraglide/runtime";
-import { paraglideMiddleware } from "$lib/paraglide/server";
-import { sentryEnabled } from "$lib/sentry-enabled";
+import { baseLocale, locales } from "#lib/paraglide/runtime.js";
+import { paraglideMiddleware } from "#lib/paraglide/server.js";
+import { sentryEnabled } from "#lib/sentry-enabled.js";
+import { building, dev } from "$app/env";
 
 export const handle: Handle = ({ event, resolve }) =>
   paraglideMiddleware(
     event.request,
     ({ request: localizedRequest, locale }) => {
-      event.request = localizedRequest;
-      return resolve(event, {
-        transformPageChunk: ({ html }) =>
-          html
-            .replace("%lang%", locale)
-            .replace("%locales%", locales.join(","))
-            .replace("%baseLocale%", baseLocale)
-            .replace(
-              "%dir%",
-              ["ar", "fa", "he"].includes(locale) ? "rtl" : "ltr",
-            ),
-      });
+      return resolve(
+        { ...event, request: localizedRequest },
+        {
+          preload: (asset) =>
+            asset.type !== "font" ||
+            asset.filename ===
+              "src/lib/assets/fonts/albert-sans/AlbertSans-Variable.woff2",
+          transformPageChunk: ({ html }) =>
+            html
+              .replace("%lang%", locale)
+              .replace("%locales%", locales.join(","))
+              .replace("%baseLocale%", baseLocale)
+              .replace(
+                "%dir%",
+                ["ar", "fa", "he"].includes(locale) ? "rtl" : "ltr",
+              ),
+        },
+      );
     },
   );
 
-export const handleError: HandleServerError = async ({
-  error,
-  event: _event,
-  status,
-  message,
-}) => {
-  if (sentryEnabled) {
-    const Sentry = await import("@sentry/sveltekit");
-    Sentry.captureException(error);
+export const handleError = (({ kind, error }: CaughtError) => {
+  if (kind !== "unknown") return;
+
+  if (sentryEnabled && !building && !dev) {
+    captureException(error);
   } else {
     console.error("[Server Error]", error);
   }
-
-  return {
-    message,
-    status,
-  };
-};
+}) satisfies HandleServerError;

@@ -6,6 +6,7 @@ import type {
 } from "@/shared/languages.js";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
+import { getReplicaDatabase } from "@/shared-backend/db.js";
 import { useCommonPost } from "./common.js";
 import { fetchConversationFeedDisplayContentBySlugId } from "./conversationFeedDisplayContent.js";
 import type {
@@ -59,7 +60,7 @@ export async function getPostSlugIdLastCursor({
     let lastCursor;
 
     if (lastSlugId) {
-        const selectResponse = await db
+        const selectResponse = await getReplicaDatabase(db)
             .select({
                 conversationId: conversationTable.id,
                 createdAt: conversationTable.createdAt,

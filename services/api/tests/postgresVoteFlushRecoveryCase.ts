@@ -136,7 +136,7 @@ export async function assertPostgresVoteFlushRecovery({
     });
     const valkeyRef: { current: GlideClient | undefined } = { current: valkey };
     const buffer = createBuffer({
-        db: drizzle(writer),
+        db: drizzle({ client: writer }),
         valkeyRef,
         flushIntervalMs: 60_000,
         valkeyBatchLimit: 100,
@@ -149,7 +149,7 @@ export async function assertPostgresVoteFlushRecovery({
         for (let index = 0; index < 9; index++) {
             reservations.push(await writer.reserve());
         }
-        await drizzle(writer)
+        await drizzle({ client: writer })
             .select({ id: conversationTable.id })
             .from(conversationTable)
             .limit(1);
@@ -203,6 +203,7 @@ export async function assertPostgresVoteFlushRecovery({
         await buffer.add({
             vote: {
                 userId: authorId,
+                contributionRevision: 0,
                 opinionId,
                 opinionContentId,
                 conversationId,
@@ -236,6 +237,7 @@ export async function assertPostgresVoteFlushRecovery({
         await buffer.add({
             vote: {
                 userId: authorId,
+                contributionRevision: 0,
                 opinionId,
                 opinionContentId,
                 conversationId,

@@ -32,6 +32,7 @@ import {
 import type { generatePresignedUrl } from "../src/service/s3.js";
 import type { AccessProjectDocumentRequest } from "../src/shared/types/dto.js";
 import { readDbFixtureSql } from "./dbFixture.js";
+import { setProjectDirectoryVisibility } from "../src/service/projectDirectoryVisibility.js";
 
 const signUrl = vi.hoisted(() => vi.fn<typeof generatePresignedUrl>());
 vi.mock("../src/service/s3.js", () => ({
@@ -83,7 +84,7 @@ describe("project document version authorization", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await db.execute(sql.raw(readDbFixtureSql("project-documents.sql")));
     }, 120_000);
 
@@ -93,7 +94,7 @@ describe("project document version authorization", () => {
     }, 120_000);
 
     beforeEach(async () => {
-        await db.execute(sql`TRUNCATE maxdiff_comparison, maxdiff_result, vote,
+        await db.execute(sql`TRUNCATE comparison_answer, comparison_response, vote,
             opinion_moderation, opinion, conversation, project_document_localization,
             project_document_file, project_document, project_organization_ownership,
             organization_membership_all_project_capability, organization_membership,
@@ -125,7 +126,7 @@ describe("project document version authorization", () => {
         const membership = firstRow(
             await db
                 .insert(organizationMembershipTable)
-                .values({ userId: OWNER, organizationId: organization.id })
+                .values({ userId: OWNER, organizationId: organization.id, role: "admin" })
                 .returning(),
         );
         await db
@@ -254,7 +255,7 @@ describe("project document version authorization", () => {
         expect(migration).toBe(
             readFileSync(
                 new URL(
-                    "../drizzle/0114_equal_golden_guardian.sql",
+                    "../drizzle/20261114165054_equal_golden_guardian/migration.sql",
                     import.meta.url,
                 ),
                 "utf8",
@@ -442,11 +443,11 @@ describe("project document version authorization", () => {
         });
         const fresh = await accessProjectDocument({
             db,
+            authorization: { type: "public" },
             request: request({
                 audience: "participant",
                 documentId: uploaded.document.documentId,
             }),
-            authorization: { type: "public" },
         });
         expect(fresh.htmlScriptsEnabled).toBe(true);
         expect(signUrl).toHaveBeenLastCalledWith(
@@ -505,7 +506,7 @@ describe("project document version authorization", () => {
         },
     );
 
-    it("makes the participant version public but protects the facilitator version", async () => {
+    it("makes the participant version public and refuses to sign restricted files without the capability", async () => {
         expect(
             (
                 await accessProjectDocument({
@@ -520,7 +521,7 @@ describe("project document version authorization", () => {
             accessProjectDocument({
                 db,
                 request: request({ audience: "owner" }),
-                authorization: { type: "public" },
+                authorization: { type: "facilitator", userId: STRANGER },
             }),
         ).rejects.toMatchObject({ statusCode: 403 });
         expect(signUrl).not.toHaveBeenCalled();
@@ -528,10 +529,7 @@ describe("project document version authorization", () => {
             accessProjectDocument({
                 db,
                 request: request({ audience: "owner" }),
-                authorization: {
-                    type: "facilitator",
-                    userId: PARTICIPANT,
-                },
+                authorization: { type: "facilitator", userId: PARTICIPANT },
             }),
         ).rejects.toMatchObject({ statusCode: 403 });
         expect(signUrl).not.toHaveBeenCalled();
@@ -547,15 +545,9 @@ describe("project document version authorization", () => {
         ).resolves.toMatchObject({ audience: "participant" });
     });
 
-    it.each([
-        ["participant", { type: "public" }],
-        ["owner", { type: "facilitator", userId: OWNER }],
-    ] satisfies [
-        AccessProjectDocumentRequest["audience"],
-        Parameters<typeof accessProjectDocument>[0]["authorization"],
-    ][])(
+    it.each(["participant", "owner"] satisfies AccessProjectDocumentRequest["audience"][])(
         "prevents cross-project %s document access",
-        async (audience, authorization) => {
+        async (audience) => {
             await db.insert(projectTable).values({
                 slug: "another-project",
                 title: "Another project",
@@ -565,11 +557,11 @@ describe("project document version authorization", () => {
             await expect(
                 accessProjectDocument({
                     db,
+                    authorization: { type: "facilitator", userId: OWNER },
                     request: {
                         ...request({ audience }),
                         projectSlug: "another-project",
                     },
-                    authorization,
                 }),
             ).rejects.toMatchObject({ statusCode: 404 });
             expect(signUrl).not.toHaveBeenCalled();
@@ -596,10 +588,14 @@ describe("project document version authorization", () => {
         {
             state: "an unlisted project",
             hide: async () =>
-                await db
-                    .update(projectTable)
-                    .set({ directoryVisibility: "unlisted" })
-                    .where(eq(projectTable.id, projectId)),
+                await setProjectDirectoryVisibility({
+                    db,
+                    userId: OWNER,
+                    request: {
+                        projectSlug: "test-project",
+                        directoryVisibility: "unlisted",
+                    },
+                }),
         },
         {
             state: "an unpublished project",
@@ -667,15 +663,36 @@ describe("project document version authorization", () => {
         expect(signUrl).not.toHaveBeenCalled();
     });
 
+    it("cannot unlist a project without its update capability", async () => {
+        await expect(
+            setProjectDirectoryVisibility({
+                db,
+                userId: STRANGER,
+                request: {
+                    projectSlug: "test-project",
+                    directoryVisibility: "unlisted",
+                },
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
+        await expect(
+            fetchProjectPageDocuments({
+                db,
+                projectId,
+                displayLanguageCode: "en",
+                requesterUserId: undefined,
+            }),
+        ).resolves.toHaveLength(2);
+    });
+
     it("never substitutes a participant file when the requested facilitator version is missing", async () => {
         await expect(
             accessProjectDocument({
                 db,
+                authorization: { type: "facilitator", userId: OWNER },
                 request: request({
                     audience: "owner",
                     documentId: PARTICIPANT_ONLY_DOCUMENT,
                 }),
-                authorization: { type: "facilitator", userId: OWNER },
             }),
         ).rejects.toMatchObject({ statusCode: 404 });
         expect(signUrl).not.toHaveBeenCalled();
@@ -723,18 +740,12 @@ describe("project document version authorization", () => {
         },
     );
 
-    it("rechecks facilitator access before signing after a capability is revoked", async () => {
+    it("rejects a demoted member before signing a restricted file", async () => {
+        await db.insert(organizationMembershipTable).values({ organizationId: firstRow(await db.select({ id: organizationTable.id }).from(organizationTable)).id, userId: STRANGER, role: "admin" });
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: OWNER })
-            .where(
-                and(
-                    eq(
-                        organizationMembershipAllProjectCapabilityTable.capability,
-                        "project_update",
-                    ),
-                ),
-            );
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.userId, OWNER));
         await expect(
             accessProjectDocument({
                 db,

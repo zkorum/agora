@@ -1,14 +1,13 @@
 import { defineStore } from "pinia";
 import type {
   ConversationProjectAssignment,
-  EventSlug,
   ExtendedConversation,
   ExtendedOpinion,
   OrganizationProperties,
 } from "src/shared/types/zod";
 import { getConversationProjectContextFromAssignment } from "src/shared/utils/conversationProject";
 import { useBackendUserApi } from "src/utils/api/user";
-import { computed, reactive, ref } from "vue";
+import { ref } from "vue";
 
 import { useAuthenticationStore } from "./authentication";
 
@@ -29,7 +28,6 @@ export const useUserStore = defineStore("user", () => {
     postsLoadFailed: boolean;
     commentsLoadFailed: boolean;
     organizationList: OrganizationProperties[];
-    verifiedEventTickets: EventSlug[];
   }
 
   function createEmptyProfile(): UserProfile {
@@ -45,7 +43,6 @@ export const useUserStore = defineStore("user", () => {
       postsLoadFailed: false,
       commentsLoadFailed: false,
       organizationList: [],
-      verifiedEventTickets: [],
     };
   }
 
@@ -111,7 +108,6 @@ export const useUserStore = defineStore("user", () => {
       isSiteOrgAdmin: userProfile.isSiteOrgAdmin,
       dataLoaded: true,
       organizationList: userProfile.organizationList,
-      verifiedEventTickets: userProfile.verifiedEventTickets,
     };
   }
 
@@ -210,73 +206,6 @@ export const useUserStore = defineStore("user", () => {
     }
   }
 
-  // Computed property to get verified tickets as a Set for efficient lookups
-  const verifiedEventTickets = computed(() => {
-    return new Set(profileData.value.verifiedEventTickets);
-  });
-
-  // Check if a specific event ticket is verified
-  function isTicketVerified(eventSlug: EventSlug): boolean {
-    return verifiedEventTickets.value.has(eventSlug);
-  }
-
-  // Add a verified event ticket (used after successful verification)
-  function addVerifiedTicket(eventSlug?: EventSlug): void {
-    if (eventSlug === undefined) {
-      console.warn("Attempt to add an undefined ticket to the store");
-      return;
-    }
-    if (!profileData.value.verifiedEventTickets.includes(eventSlug)) {
-      profileData.value.verifiedEventTickets.push(eventSlug);
-    }
-  }
-
-  // Track transient verification states (verifying, error) in reactive state
-  // These are per-session UI states that don't need persistence
-  type TransientStateInfo =
-    | { state: "verifying" }
-    | { state: "error"; errorMessage: string };
-
-  // Use a reactive Map for transient states
-  const ticketVerificationStates = reactive(
-    new Map<EventSlug, TransientStateInfo>()
-  );
-
-  function setTicketVerifying(eventSlug: EventSlug): void {
-    ticketVerificationStates.set(eventSlug, { state: "verifying" });
-  }
-
-  function setTicketError(eventSlug: EventSlug, errorMessage: string): void {
-    ticketVerificationStates.set(eventSlug, { state: "error", errorMessage });
-  }
-
-  function clearTicketState(eventSlug: EventSlug): void {
-    ticketVerificationStates.delete(eventSlug);
-  }
-
-  // Get the current verification state for an event
-  // Returns: 'verified' | 'verifying' | 'error' | 'not_verified'
-  function getTicketVerificationState(
-    eventSlug: EventSlug
-  ):
-    | { state: "verified" }
-    | { state: "verifying" }
-    | { state: "error"; errorMessage: string }
-    | { state: "not_verified" } {
-    // Check if ticket is verified (from backend)
-    if (isTicketVerified(eventSlug)) {
-      return { state: "verified" };
-    }
-
-    // Check for transient states (verifying or error)
-    const transientState = ticketVerificationStates.get(eventSlug);
-    if (transientState) {
-      return transientState;
-    }
-
-    return { state: "not_verified" };
-  }
-
   return {
     applyProjectAssignment,
     loadUserProfile,
@@ -287,13 +216,5 @@ export const useUserStore = defineStore("user", () => {
     loadMoreUserComments,
     clearProfileData,
     profileData,
-    verifiedEventTickets,
-    isTicketVerified,
-    addVerifiedTicket,
-    ticketVerificationStates,
-    setTicketVerifying,
-    setTicketError,
-    clearTicketState,
-    getTicketVerificationState,
   };
 });

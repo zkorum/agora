@@ -8,6 +8,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    server: {
+      deps: {
+        // Polyfill tests must re-evaluate feature detection after resetting modules.
+        inline: [/@formatjs\//],
+      },
+    },
     exclude: [...configDefaults.exclude, "scripts/*.test.mjs"],
   },
   resolve: {

@@ -1,0 +1,6050 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c9a03d39-7728-4439-ba23-a49050693f75",
+  "prevIds": [
+    "e7ec5c0a-95ba-40db-a5f1-02aa2195cae9"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "content_translation_source_kind"
+      ],
+      "writes": [
+        "s|enum|public.content_translation_source_kind",
+        "n|enum|public.content_translation_source_kind",
+        "e|enum|public.content_translation_source_kind",
+        "n|type|public.content_translation_source_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "content_translation_work_status"
+      ],
+      "writes": [
+        "s|enum|public.content_translation_work_status",
+        "n|enum|public.content_translation_work_status",
+        "e|enum|public.content_translation_work_status",
+        "n|type|public.content_translation_work_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "conversation_language_setting_mode"
+      ],
+      "writes": [
+        "s|enum|public.conversation_language_setting_mode",
+        "n|enum|public.conversation_language_setting_mode",
+        "e|enum|public.conversation_language_setting_mode",
+        "n|type|public.conversation_language_setting_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "directory_visibility"
+      ],
+      "writes": [
+        "s|enum|public.directory_visibility",
+        "n|enum|public.directory_visibility",
+        "e|enum|public.directory_visibility",
+        "n|type|public.directory_visibility"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "display_language_code"
+      ],
+      "writes": [
+        "s|enum|public.display_language_code",
+        "n|enum|public.display_language_code",
+        "e|enum|public.display_language_code",
+        "n|type|public.display_language_code"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "language_detection_provider"
+      ],
+      "writes": [
+        "s|enum|public.language_detection_provider",
+        "n|enum|public.language_detection_provider",
+        "e|enum|public.language_detection_provider",
+        "n|type|public.language_detection_provider"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "organization_membership_all_project_capability_enum"
+      ],
+      "writes": [
+        "s|enum|public.organization_membership_all_project_capability_enum",
+        "n|enum|public.organization_membership_all_project_capability_enum",
+        "e|enum|public.organization_membership_all_project_capability_enum",
+        "n|type|public.organization_membership_all_project_capability_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "organization_membership_capability_enum"
+      ],
+      "writes": [
+        "s|enum|public.organization_membership_capability_enum",
+        "n|enum|public.organization_membership_capability_enum",
+        "e|enum|public.organization_membership_capability_enum",
+        "n|type|public.organization_membership_capability_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "spoken_language_code"
+      ],
+      "writes": [
+        "s|enum|public.spoken_language_code",
+        "n|enum|public.spoken_language_code",
+        "e|enum|public.spoken_language_code",
+        "n|type|public.spoken_language_code"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "premium_feature"
+      ],
+      "writes": [
+        "s|enum|public.premium_feature"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|tbl|public.content_translation_work",
+        "n|tbl|public.content_translation_work",
+        "e|tbl|public.content_translation_work",
+        "n|rel|public.content_translation_work",
+        "n|type|public.content_translation_work",
+        "n|rel|public.content_translation_work_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.content_translation_source_kind",
+        "n|enum|public.content_translation_work_status"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content_translation"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_content_translation",
+        "n|tbl|public.conversation_content_translation",
+        "e|tbl|public.conversation_content_translation",
+        "n|rel|public.conversation_content_translation",
+        "n|type|public.conversation_content_translation",
+        "n|rel|public.conversation_content_translation_pkey",
+        "n|rel|public.conversation_content_translation_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_language_setting"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_language_setting",
+        "n|tbl|public.conversation_language_setting",
+        "e|tbl|public.conversation_language_setting",
+        "n|rel|public.conversation_language_setting",
+        "n|type|public.conversation_language_setting",
+        "n|rel|public.conversation_language_setting_pkey",
+        "n|rel|public.conversation_language_setting_conversation_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.conversation_language_setting_mode",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_setting"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_translation_setting",
+        "n|tbl|public.conversation_translation_setting",
+        "e|tbl|public.conversation_translation_setting",
+        "n|rel|public.conversation_translation_setting",
+        "n|type|public.conversation_translation_setting",
+        "n|rel|public.conversation_translation_setting_pkey",
+        "n|rel|public.conversation_translation_setting_conversation_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_target_language"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_translation_target_language",
+        "n|tbl|public.conversation_translation_target_language",
+        "e|tbl|public.conversation_translation_target_language",
+        "n|rel|public.conversation_translation_target_language",
+        "n|type|public.conversation_translation_target_language",
+        "n|rel|public.conversation_translation_target_language_pkey",
+        "n|rel|public.conversation_translation_target_language_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content_translation"
+      ],
+      "writes": [
+        "s|tbl|public.opinion_content_translation",
+        "n|tbl|public.opinion_content_translation",
+        "e|tbl|public.opinion_content_translation",
+        "n|rel|public.opinion_content_translation",
+        "n|type|public.opinion_content_translation",
+        "n|rel|public.opinion_content_translation_pkey",
+        "n|rel|public.opinion_content_translation_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership_all_project_capability"
+      ],
+      "writes": [
+        "s|tbl|public.organization_membership_all_project_capability",
+        "n|tbl|public.organization_membership_all_project_capability",
+        "e|tbl|public.organization_membership_all_project_capability",
+        "n|rel|public.organization_membership_all_project_capability",
+        "n|type|public.organization_membership_all_project_capability",
+        "n|rel|public.organization_membership_all_project_capability_pkey",
+        "n|rel|public.organization_membership_all_project_capability_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.organization_membership_all_project_capability_enum"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership_capability"
+      ],
+      "writes": [
+        "s|tbl|public.organization_membership_capability",
+        "n|tbl|public.organization_membership_capability",
+        "e|tbl|public.organization_membership_capability",
+        "n|rel|public.organization_membership_capability",
+        "n|type|public.organization_membership_capability",
+        "n|rel|public.organization_membership_capability_pkey",
+        "n|rel|public.organization_membership_capability_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.organization_membership_capability_enum"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership"
+      ],
+      "writes": [
+        "s|tbl|public.organization_membership",
+        "n|tbl|public.organization_membership",
+        "e|tbl|public.organization_membership",
+        "n|rel|public.organization_membership",
+        "n|type|public.organization_membership",
+        "n|rel|public.organization_membership_pkey",
+        "n|rel|public.organization_membership_user_organization_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_ownership"
+      ],
+      "writes": [
+        "s|tbl|public.project_organization_ownership",
+        "n|tbl|public.project_organization_ownership",
+        "e|tbl|public.project_organization_ownership",
+        "n|rel|public.project_organization_ownership",
+        "n|type|public.project_organization_ownership",
+        "n|rel|public.project_organization_ownership_pkey",
+        "n|rel|public.project_organization_ownership_project_org_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|tbl|public.project",
+        "n|tbl|public.project",
+        "e|tbl|public.project",
+        "n|rel|public.project",
+        "n|type|public.project",
+        "n|rel|public.project_pkey",
+        "n|rel|public.project_slug_unique",
+        "n|rel|public.project_auto_provisioned_for_organization_id_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.directory_visibility"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "realtime_event_outbox_topic"
+      ],
+      "writes": [
+        "s|tbl|public.realtime_event_outbox_topic",
+        "n|tbl|public.realtime_event_outbox_topic",
+        "e|tbl|public.realtime_event_outbox_topic",
+        "n|rel|public.realtime_event_outbox_topic",
+        "n|type|public.realtime_event_outbox_topic",
+        "n|rel|public.realtime_event_outbox_topic_pkey",
+        "n|rel|public.realtime_event_outbox_topic_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization"
+      ],
+      "writes": [
+        "s|uq|public.organization.organization_website_url_unique",
+        "n|uq|public.organization.organization_website_url_unique",
+        "e|uq|public.organization.organization_website_url_unique",
+        "n|con|public.organization.organization_website_url_unique",
+        "n|rel|public.organization_website_url_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "e|col|public.organization.website_url"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.organization.website_url"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "public_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.public_id",
+        "n|col|public.conversation_content.public_id",
+        "e|col|public.conversation_content.public_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "body_plain_text"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.body_plain_text",
+        "n|col|public.conversation_content.body_plain_text",
+        "e|col|public.conversation_content.body_plain_text"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "source_language_code"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.source_language_code",
+        "n|col|public.conversation_content.source_language_code",
+        "e|col|public.conversation_content.source_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "source_raw_language_code"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.source_raw_language_code",
+        "n|col|public.conversation_content.source_raw_language_code",
+        "e|col|public.conversation_content.source_raw_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "source_language_provider"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.source_language_provider",
+        "n|col|public.conversation_content.source_language_provider",
+        "e|col|public.conversation_content.source_language_provider"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "source_language_confidence"
+      ],
+      "writes": [
+        "s|col|public.conversation_content.source_language_confidence",
+        "n|col|public.conversation_content.source_language_confidence",
+        "e|col|public.conversation_content.source_language_confidence"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "project_id"
+      ],
+      "writes": [
+        "s|col|public.conversation.project_id",
+        "n|col|public.conversation.project_id",
+        "e|col|public.conversation.project_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "public_id"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.public_id",
+        "n|col|public.opinion_content.public_id",
+        "e|col|public.opinion_content.public_id"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "content_plain_text"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.content_plain_text",
+        "n|col|public.opinion_content.content_plain_text",
+        "e|col|public.opinion_content.content_plain_text"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "source_language_code"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.source_language_code",
+        "n|col|public.opinion_content.source_language_code",
+        "e|col|public.opinion_content.source_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "source_raw_language_code"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.source_raw_language_code",
+        "n|col|public.opinion_content.source_raw_language_code",
+        "e|col|public.opinion_content.source_raw_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "source_language_provider"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.source_language_provider",
+        "n|col|public.opinion_content.source_language_provider",
+        "e|col|public.opinion_content.source_language_provider"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "source_language_confidence"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.source_language_confidence",
+        "n|col|public.opinion_content.source_language_confidence",
+        "e|col|public.opinion_content.source_language_confidence"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "slug"
+      ],
+      "writes": [
+        "s|col|public.organization.slug",
+        "n|col|public.organization.slug",
+        "e|col|public.organization.slug"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "display_name"
+      ],
+      "writes": [
+        "s|col|public.organization.display_name",
+        "n|col|public.organization.display_name",
+        "e|col|public.organization.display_name"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "directory_visibility"
+      ],
+      "writes": [
+        "s|col|public.organization.directory_visibility",
+        "n|col|public.organization.directory_visibility",
+        "e|col|public.organization.directory_visibility"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|enum|public.directory_visibility"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "auto_provisioned_for_user_id"
+      ],
+      "writes": [
+        "s|col|public.organization.auto_provisioned_for_user_id",
+        "n|col|public.organization.auto_provisioned_for_user_id",
+        "e|col|public.organization.auto_provisioned_for_user_id"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content",
+        "public_id"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content.public_id",
+        "n|col|public.survey_question_content.public_id",
+        "e|col|public.survey_question_content.public_id"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content",
+        "source_raw_language_code"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content.source_raw_language_code",
+        "n|col|public.survey_question_content.source_raw_language_code",
+        "e|col|public.survey_question_content.source_raw_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content",
+        "source_language_provider"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content.source_language_provider",
+        "n|col|public.survey_question_content.source_language_provider",
+        "e|col|public.survey_question_content.source_language_provider"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content",
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content_translation",
+        "source_language_code"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content_translation.source_language_code",
+        "n|col|public.survey_question_content_translation.source_language_code",
+        "e|col|public.survey_question_content_translation.source_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content_translation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content_translation",
+        "source_raw_language_code"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content_translation.source_raw_language_code",
+        "n|col|public.survey_question_content_translation.source_raw_language_code",
+        "e|col|public.survey_question_content_translation.source_raw_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content_translation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content_translation",
+        "source_language_provider"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content_translation.source_language_provider",
+        "n|col|public.survey_question_content_translation.source_language_provider",
+        "e|col|public.survey_question_content_translation.source_language_provider"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content_translation",
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content_translation",
+        "source_language_confidence"
+      ],
+      "writes": [
+        "s|col|public.survey_question_content_translation.source_language_confidence",
+        "n|col|public.survey_question_content_translation.source_language_confidence",
+        "e|col|public.survey_question_content_translation.source_language_confidence"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content_translation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content",
+        "public_id"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content.public_id",
+        "n|col|public.survey_question_option_content.public_id",
+        "e|col|public.survey_question_option_content.public_id"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content",
+        "source_raw_language_code"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content.source_raw_language_code",
+        "n|col|public.survey_question_option_content.source_raw_language_code",
+        "e|col|public.survey_question_option_content.source_raw_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content",
+        "source_language_provider"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content.source_language_provider",
+        "n|col|public.survey_question_option_content.source_language_provider",
+        "e|col|public.survey_question_option_content.source_language_provider"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content",
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content_translation",
+        "source_language_code"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content_translation.source_language_code",
+        "n|col|public.survey_question_option_content_translation.source_language_code",
+        "e|col|public.survey_question_option_content_translation.source_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content_translation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content_translation",
+        "source_raw_language_code"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content_translation.source_raw_language_code",
+        "n|col|public.survey_question_option_content_translation.source_raw_language_code",
+        "e|col|public.survey_question_option_content_translation.source_raw_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content_translation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content_translation",
+        "source_language_provider"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content_translation.source_language_provider",
+        "n|col|public.survey_question_option_content_translation.source_language_provider",
+        "e|col|public.survey_question_option_content_translation.source_language_provider"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content_translation",
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content_translation",
+        "source_language_confidence"
+      ],
+      "writes": [
+        "s|col|public.survey_question_option_content_translation.source_language_confidence",
+        "n|col|public.survey_question_option_content_translation.source_language_confidence",
+        "e|col|public.survey_question_option_content_translation.source_language_confidence"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content_translation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "first_name"
+      ],
+      "writes": [
+        "s|col|public.user.first_name",
+        "n|col|public.user.first_name",
+        "e|col|public.user.first_name"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "author_id"
+      ],
+      "writes": [
+        "s|colprop|public.conversation.author_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.author_id"
+      ],
+      "sqlHash": "fb86fd78380307a1"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "name"
+      ],
+      "writes": [
+        "s|colprop|public.organization.name.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.name"
+      ],
+      "sqlHash": "5239bedb65abef0e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "image_path"
+      ],
+      "writes": [
+        "s|colprop|public.organization.image_path.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.image_path"
+      ],
+      "sqlHash": "06aacd31549978c4"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user_display_language",
+        "language_code"
+      ],
+      "writes": [
+        "s|colprop|public.user_display_language.language_code.type",
+        "s|colprop|public.user_display_language.language_code.default"
+      ],
+      "reads": [
+        "n|tbl|public.user_display_language",
+        "n|sch|public",
+        "n|col|public.user_display_language.language_code"
+      ],
+      "sqlHash": "294b8b0b5f0c81a7"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user_spoken_languages",
+        "language_code"
+      ],
+      "writes": [
+        "s|colprop|public.user_spoken_languages.language_code.type",
+        "s|colprop|public.user_spoken_languages.language_code.default"
+      ],
+      "reads": [
+        "n|tbl|public.user_spoken_languages",
+        "n|sch|public",
+        "n|col|public.user_spoken_languages.language_code"
+      ],
+      "sqlHash": "cfd10bbe9a4b5c6a"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content",
+        "source_language_code"
+      ],
+      "writes": [
+        "s|colprop|public.survey_question_content.source_language_code.type",
+        "s|colprop|public.survey_question_content.source_language_code.default"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content",
+        "n|sch|public",
+        "n|col|public.survey_question_content.source_language_code"
+      ],
+      "sqlHash": "a439b0cce30831bc"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_content_translation",
+        "display_language_code"
+      ],
+      "writes": [
+        "s|colprop|public.survey_question_content_translation.display_language_code.type",
+        "s|colprop|public.survey_question_content_translation.display_language_code.default"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content_translation",
+        "n|sch|public",
+        "n|col|public.survey_question_content_translation.display_language_code"
+      ],
+      "sqlHash": "9f142f9ba17808ef"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content",
+        "source_language_code"
+      ],
+      "writes": [
+        "s|colprop|public.survey_question_option_content.source_language_code.type",
+        "s|colprop|public.survey_question_option_content.source_language_code.default"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content",
+        "n|sch|public",
+        "n|col|public.survey_question_option_content.source_language_code"
+      ],
+      "sqlHash": "cbf9a3ecf03d1d66"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "survey_question_option_content_translation",
+        "display_language_code"
+      ],
+      "writes": [
+        "s|colprop|public.survey_question_option_content_translation.display_language_code.type",
+        "s|colprop|public.survey_question_option_content_translation.display_language_code.default"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content_translation",
+        "n|sch|public",
+        "n|col|public.survey_question_option_content_translation.display_language_code"
+      ],
+      "sqlHash": "a7e472adc0165b01"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_description",
+        "locale"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_group_description.locale.type",
+        "s|colprop|public.opinion_group_description.locale.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_description",
+        "n|sch|public",
+        "n|col|public.opinion_group_description.locale"
+      ],
+      "sqlHash": "79717d59fb76afa5"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_description_translation",
+        "locale"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_group_description_translation.locale.type",
+        "s|colprop|public.opinion_group_description_translation.locale.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_description_translation",
+        "n|sch|public",
+        "n|col|public.opinion_group_description_translation.locale"
+      ],
+      "sqlHash": "8a0634e11a7ec887"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_description_translation_work",
+        "locale"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_group_description_translation_work.locale.type",
+        "s|colprop|public.opinion_group_description_translation_work.locale.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_description_translation_work",
+        "n|sch|public",
+        "n|col|public.opinion_group_description_translation_work.locale"
+      ],
+      "sqlHash": "eb0fe8a1ad26a589"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_candidate_description_locale_request",
+        "locale"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_group_candidate_description_locale_request.locale.type",
+        "s|colprop|public.opinion_group_candidate_description_locale_request.locale.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_candidate_description_locale_request",
+        "n|sch|public",
+        "n|col|public.opinion_group_candidate_description_locale_request.locale"
+      ],
+      "sqlHash": "fc51522ab6df7622"
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content"
+      ],
+      "writes": [
+        "s|uq|public.conversation_content.conversation_content_public_id_unique",
+        "n|uq|public.conversation_content.conversation_content_public_id_unique",
+        "e|uq|public.conversation_content.conversation_content_public_id_unique",
+        "n|con|public.conversation_content.conversation_content_public_id_unique",
+        "n|rel|public.conversation_content_public_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.conversation_content.public_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content"
+      ],
+      "writes": [
+        "s|uq|public.opinion_content.opinion_content_public_id_unique",
+        "n|uq|public.opinion_content.opinion_content_public_id_unique",
+        "e|uq|public.opinion_content.opinion_content_public_id_unique",
+        "n|con|public.opinion_content.opinion_content_public_id_unique",
+        "n|rel|public.opinion_content_public_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content.public_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization"
+      ],
+      "writes": [
+        "s|uq|public.organization.organization_slug_unique",
+        "n|uq|public.organization.organization_slug_unique",
+        "e|uq|public.organization.organization_slug_unique",
+        "n|con|public.organization.organization_slug_unique",
+        "n|rel|public.organization_slug_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.slug"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization"
+      ],
+      "writes": [
+        "s|uq|public.organization.organization_auto_provisioned_for_user_id_unique",
+        "n|uq|public.organization.organization_auto_provisioned_for_user_id_unique",
+        "e|uq|public.organization.organization_auto_provisioned_for_user_id_unique",
+        "n|con|public.organization.organization_auto_provisioned_for_user_id_unique",
+        "n|rel|public.organization_auto_provisioned_for_user_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.auto_provisioned_for_user_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_question_content"
+      ],
+      "writes": [
+        "s|uq|public.survey_question_content.survey_question_content_public_id_unique",
+        "n|uq|public.survey_question_content.survey_question_content_public_id_unique",
+        "e|uq|public.survey_question_content.survey_question_content_public_id_unique",
+        "n|con|public.survey_question_content.survey_question_content_public_id_unique",
+        "n|rel|public.survey_question_content_public_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content",
+        "n|sch|public",
+        "n|col|public.survey_question_content.public_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_question_option_content"
+      ],
+      "writes": [
+        "s|uq|public.survey_question_option_content.survey_question_option_content_public_id_unique",
+        "n|uq|public.survey_question_option_content.survey_question_option_content_public_id_unique",
+        "e|uq|public.survey_question_option_content.survey_question_option_content_public_id_unique",
+        "n|con|public.survey_question_option_content.survey_question_option_content_public_id_unique",
+        "n|rel|public.survey_question_option_content_public_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content",
+        "n|sch|public",
+        "n|col|public.survey_question_option_content.public_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "content_translation_work",
+        "content_translation_work_conversation_unique"
+      ],
+      "writes": [
+        "s|idx|public.content_translation_work_conversation_unique",
+        "n|idx|public.content_translation_work_conversation_unique",
+        "e|idx|public.content_translation_work_conversation_unique",
+        "n|rel|public.content_translation_work_conversation_unique"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.conversation_content_id",
+        "n|col|public.content_translation_work.display_language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "content_translation_work",
+        "content_translation_work_opinion_unique"
+      ],
+      "writes": [
+        "s|idx|public.content_translation_work_opinion_unique",
+        "n|idx|public.content_translation_work_opinion_unique",
+        "e|idx|public.content_translation_work_opinion_unique",
+        "n|rel|public.content_translation_work_opinion_unique"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.opinion_content_id",
+        "n|col|public.content_translation_work.display_language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "content_translation_work",
+        "content_translation_work_survey_question_unique"
+      ],
+      "writes": [
+        "s|idx|public.content_translation_work_survey_question_unique",
+        "n|idx|public.content_translation_work_survey_question_unique",
+        "e|idx|public.content_translation_work_survey_question_unique",
+        "n|rel|public.content_translation_work_survey_question_unique"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.survey_question_content_id",
+        "n|col|public.content_translation_work.survey_question_option_content_ids",
+        "n|col|public.content_translation_work.display_language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "content_translation_work",
+        "content_translation_work_claim_idx"
+      ],
+      "writes": [
+        "s|idx|public.content_translation_work_claim_idx",
+        "n|idx|public.content_translation_work_claim_idx",
+        "e|idx|public.content_translation_work_claim_idx",
+        "n|rel|public.content_translation_work_claim_idx"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.priority_rank",
+        "n|col|public.content_translation_work.updated_at",
+        "n|col|public.content_translation_work.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "content_translation_work",
+        "content_translation_work_lease_expiry_idx"
+      ],
+      "writes": [
+        "s|idx|public.content_translation_work_lease_expiry_idx",
+        "n|idx|public.content_translation_work_lease_expiry_idx",
+        "e|idx|public.content_translation_work_lease_expiry_idx",
+        "n|rel|public.content_translation_work_lease_expiry_idx"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.lease_expires_at",
+        "n|col|public.content_translation_work.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_project_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_project_id_idx",
+        "n|idx|public.conversation_project_id_idx",
+        "e|idx|public.conversation_project_id_idx",
+        "n|rel|public.conversation_project_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.project_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_project_timeline_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_project_timeline_idx",
+        "n|idx|public.conversation_project_timeline_idx",
+        "e|idx|public.conversation_project_timeline_idx",
+        "n|rel|public.conversation_project_timeline_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.project_id",
+        "n|col|public.conversation.is_importing"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "organization_membership",
+        "organization_membership_organization_idx"
+      ],
+      "writes": [
+        "s|idx|public.organization_membership_organization_idx",
+        "n|idx|public.organization_membership_organization_idx",
+        "e|idx|public.organization_membership_organization_idx",
+        "n|rel|public.organization_membership_organization_idx"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "n|col|public.organization_membership.organization_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_organization_ownership",
+        "project_organization_ownership_organization_idx"
+      ],
+      "writes": [
+        "s|idx|public.project_organization_ownership_organization_idx",
+        "n|idx|public.project_organization_ownership_organization_idx",
+        "e|idx|public.project_organization_ownership_organization_idx",
+        "n|rel|public.project_organization_ownership_organization_idx"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_ownership",
+        "n|sch|public",
+        "n|col|public.project_organization_ownership.organization_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "realtime_event_outbox_topic",
+        "realtime_event_outbox_topic_replay_idx"
+      ],
+      "writes": [
+        "s|idx|public.realtime_event_outbox_topic_replay_idx",
+        "n|idx|public.realtime_event_outbox_topic_replay_idx",
+        "e|idx|public.realtime_event_outbox_topic_replay_idx",
+        "n|rel|public.realtime_event_outbox_topic_replay_idx"
+      ],
+      "reads": [
+        "n|tbl|public.realtime_event_outbox_topic",
+        "n|sch|public",
+        "n|col|public.realtime_event_outbox_topic.topic",
+        "n|col|public.realtime_event_outbox_topic.event_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_display_language",
+        "user_display_language_active_user_unique"
+      ],
+      "writes": [
+        "s|idx|public.user_display_language_active_user_unique",
+        "n|idx|public.user_display_language_active_user_unique",
+        "e|idx|public.user_display_language_active_user_unique",
+        "n|rel|public.user_display_language_active_user_unique"
+      ],
+      "reads": [
+        "n|tbl|public.user_display_language",
+        "n|sch|public",
+        "n|col|public.user_display_language.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_organization_mapping",
+        "user_idx_organization"
+      ],
+      "writes": [
+        "s|idx|public.user_idx_organization",
+        "n|idx|public.user_idx_organization",
+        "e|idx|public.user_idx_organization",
+        "n|rel|public.user_idx_organization"
+      ],
+      "reads": [
+        "n|tbl|public.user_organization_mapping",
+        "n|sch|public",
+        "n|col|public.user_organization_mapping.user_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|fk|public.content_translation_work.content_translation_work_conversation_id_conversation_id_fk",
+        "n|fk|public.content_translation_work.content_translation_work_conversation_id_conversation_id_fk",
+        "e|fk|public.content_translation_work.content_translation_work_conversation_id_conversation_id_fk",
+        "n|con|public.content_translation_work.content_translation_work_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.content_translation_work.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|fk|public.content_translation_work.content_translation_work_conversation_content_id_conversation_c",
+        "n|fk|public.content_translation_work.content_translation_work_conversation_content_id_conversation_c",
+        "e|fk|public.content_translation_work.content_translation_work_conversation_content_id_conversation_c",
+        "n|con|public.content_translation_work.content_translation_work_conversation_content_id_conversation_c"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.content_translation_work.conversation_content_id",
+        "n|col|public.conversation_content.id",
+        "e|uniqueness|public.conversation_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|fk|public.content_translation_work.content_translation_work_opinion_content_id_opinion_content_id_",
+        "n|fk|public.content_translation_work.content_translation_work_opinion_content_id_opinion_content_id_",
+        "e|fk|public.content_translation_work.content_translation_work_opinion_content_id_opinion_content_id_",
+        "n|con|public.content_translation_work.content_translation_work_opinion_content_id_opinion_content_id_"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.content_translation_work.opinion_content_id",
+        "n|col|public.opinion_content.id",
+        "e|uniqueness|public.opinion_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|fk|public.content_translation_work.content_translation_work_survey_question_content_id_survey_ques",
+        "n|fk|public.content_translation_work.content_translation_work_survey_question_content_id_survey_ques",
+        "e|fk|public.content_translation_work.content_translation_work_survey_question_content_id_survey_ques",
+        "n|con|public.content_translation_work.content_translation_work_survey_question_content_id_survey_ques"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|tbl|public.survey_question_content",
+        "n|sch|public",
+        "n|col|public.content_translation_work.survey_question_content_id",
+        "n|col|public.survey_question_content.id",
+        "e|uniqueness|public.survey_question_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content_translation"
+      ],
+      "writes": [
+        "s|fk|public.conversation_content_translation.conversation_content_translation_conversation_content_id_conver",
+        "n|fk|public.conversation_content_translation.conversation_content_translation_conversation_content_id_conver",
+        "e|fk|public.conversation_content_translation.conversation_content_translation_conversation_content_id_conver",
+        "n|con|public.conversation_content_translation.conversation_content_translation_conversation_content_id_conver"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content_translation",
+        "n|sch|public",
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.conversation_content_translation.conversation_content_id",
+        "n|col|public.conversation_content.id",
+        "e|uniqueness|public.conversation_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_language_setting"
+      ],
+      "writes": [
+        "s|fk|public.conversation_language_setting.conversation_language_setting_conversation_id_conversation_id_f",
+        "n|fk|public.conversation_language_setting.conversation_language_setting_conversation_id_conversation_id_f",
+        "e|fk|public.conversation_language_setting.conversation_language_setting_conversation_id_conversation_id_f",
+        "n|con|public.conversation_language_setting.conversation_language_setting_conversation_id_conversation_id_f"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_language_setting",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_language_setting.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|fk|public.conversation.conversation_project_id_project_id_fk",
+        "n|fk|public.conversation.conversation_project_id_project_id_fk",
+        "e|fk|public.conversation.conversation_project_id_project_id_fk",
+        "n|con|public.conversation.conversation_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.conversation.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_setting"
+      ],
+      "writes": [
+        "s|fk|public.conversation_translation_setting.conversation_translation_setting_conversation_id_conversation_i",
+        "n|fk|public.conversation_translation_setting.conversation_translation_setting_conversation_id_conversation_i",
+        "e|fk|public.conversation_translation_setting.conversation_translation_setting_conversation_id_conversation_i",
+        "n|con|public.conversation_translation_setting.conversation_translation_setting_conversation_id_conversation_i"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_setting",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_translation_setting.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_target_language"
+      ],
+      "writes": [
+        "s|fk|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id",
+        "n|fk|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id",
+        "e|fk|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id",
+        "n|con|public.conversation_translation_target_language.conversation_translation_target_language_translation_setting_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "n|tbl|public.conversation_translation_setting",
+        "n|sch|public",
+        "n|col|public.conversation_translation_target_language.translation_setting_id",
+        "n|col|public.conversation_translation_setting.id",
+        "e|uniqueness|public.conversation_translation_setting.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content_translation"
+      ],
+      "writes": [
+        "s|fk|public.opinion_content_translation.opinion_content_translation_opinion_content_id_opinion_content_",
+        "n|fk|public.opinion_content_translation.opinion_content_translation_opinion_content_id_opinion_content_",
+        "e|fk|public.opinion_content_translation.opinion_content_translation_opinion_content_id_opinion_content_",
+        "n|con|public.opinion_content_translation.opinion_content_translation_opinion_content_id_opinion_content_"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content_translation",
+        "n|sch|public",
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content_translation.opinion_content_id",
+        "n|col|public.opinion_content.id",
+        "e|uniqueness|public.opinion_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership_all_project_capability"
+      ],
+      "writes": [
+        "s|fk|public.organization_membership_all_project_capability.organization_membership_all_project_capability_organization_mem",
+        "n|fk|public.organization_membership_all_project_capability.organization_membership_all_project_capability_organization_mem",
+        "e|fk|public.organization_membership_all_project_capability.organization_membership_all_project_capability_organization_mem",
+        "n|con|public.organization_membership_all_project_capability.organization_membership_all_project_capability_organization_mem"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership_all_project_capability",
+        "n|sch|public",
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "n|col|public.organization_membership_all_project_capability.organization_membership_id",
+        "n|col|public.organization_membership.id",
+        "e|uniqueness|public.organization_membership.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership_capability"
+      ],
+      "writes": [
+        "s|fk|public.organization_membership_capability.organization_membership_capability_organization_membership_id_o",
+        "n|fk|public.organization_membership_capability.organization_membership_capability_organization_membership_id_o",
+        "e|fk|public.organization_membership_capability.organization_membership_capability_organization_membership_id_o",
+        "n|con|public.organization_membership_capability.organization_membership_capability_organization_membership_id_o"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership_capability",
+        "n|sch|public",
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "n|col|public.organization_membership_capability.organization_membership_id",
+        "n|col|public.organization_membership.id",
+        "e|uniqueness|public.organization_membership.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership"
+      ],
+      "writes": [
+        "s|fk|public.organization_membership.organization_membership_user_id_user_id_fk",
+        "n|fk|public.organization_membership.organization_membership_user_id_user_id_fk",
+        "e|fk|public.organization_membership.organization_membership_user_id_user_id_fk",
+        "n|con|public.organization_membership.organization_membership_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.organization_membership.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership"
+      ],
+      "writes": [
+        "s|fk|public.organization_membership.organization_membership_organization_id_organization_id_fk",
+        "n|fk|public.organization_membership.organization_membership_organization_id_organization_id_fk",
+        "e|fk|public.organization_membership.organization_membership_organization_id_organization_id_fk",
+        "n|con|public.organization_membership.organization_membership_organization_id_organization_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization_membership.organization_id",
+        "n|col|public.organization.id",
+        "e|uniqueness|public.organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization"
+      ],
+      "writes": [
+        "s|fk|public.organization.organization_auto_provisioned_for_user_id_user_id_fk",
+        "n|fk|public.organization.organization_auto_provisioned_for_user_id_user_id_fk",
+        "e|fk|public.organization.organization_auto_provisioned_for_user_id_user_id_fk",
+        "n|con|public.organization.organization_auto_provisioned_for_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.organization.auto_provisioned_for_user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_ownership"
+      ],
+      "writes": [
+        "s|fk|public.project_organization_ownership.project_organization_ownership_project_id_project_id_fk",
+        "n|fk|public.project_organization_ownership.project_organization_ownership_project_id_project_id_fk",
+        "e|fk|public.project_organization_ownership.project_organization_ownership_project_id_project_id_fk",
+        "n|con|public.project_organization_ownership.project_organization_ownership_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_ownership",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_organization_ownership.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_ownership"
+      ],
+      "writes": [
+        "s|fk|public.project_organization_ownership.project_organization_ownership_organization_id_organization_id_",
+        "n|fk|public.project_organization_ownership.project_organization_ownership_organization_id_organization_id_",
+        "e|fk|public.project_organization_ownership.project_organization_ownership_organization_id_organization_id_",
+        "n|con|public.project_organization_ownership.project_organization_ownership_organization_id_organization_id_"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_ownership",
+        "n|sch|public",
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.project_organization_ownership.organization_id",
+        "n|col|public.organization.id",
+        "e|uniqueness|public.organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|fk|public.project.project_auto_provisioned_for_organization_id_organization_id_fk",
+        "n|fk|public.project.project_auto_provisioned_for_organization_id_organization_id_fk",
+        "e|fk|public.project.project_auto_provisioned_for_organization_id_organization_id_fk",
+        "n|con|public.project.project_auto_provisioned_for_organization_id_organization_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.project.auto_provisioned_for_organization_id",
+        "n|col|public.organization.id",
+        "e|uniqueness|public.organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "realtime_event_outbox_topic"
+      ],
+      "writes": [
+        "s|fk|public.realtime_event_outbox_topic.realtime_event_outbox_topic_event_id_realtime_event_outbox_id_f",
+        "n|fk|public.realtime_event_outbox_topic.realtime_event_outbox_topic_event_id_realtime_event_outbox_id_f",
+        "e|fk|public.realtime_event_outbox_topic.realtime_event_outbox_topic_event_id_realtime_event_outbox_id_f",
+        "n|con|public.realtime_event_outbox_topic.realtime_event_outbox_topic_event_id_realtime_event_outbox_id_f"
+      ],
+      "reads": [
+        "n|tbl|public.realtime_event_outbox_topic",
+        "n|sch|public",
+        "n|tbl|public.realtime_event_outbox",
+        "n|sch|public",
+        "n|col|public.realtime_event_outbox_topic.event_id",
+        "n|col|public.realtime_event_outbox.id",
+        "e|uniqueness|public.realtime_event_outbox.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_content"
+      ],
+      "writes": [
+        "s|ck|public.conversation_content.conversation_content_source_metadata_check",
+        "n|ck|public.conversation_content.conversation_content_source_metadata_check",
+        "e|ck|public.conversation_content.conversation_content_source_metadata_check",
+        "n|con|public.conversation_content.conversation_content_source_metadata_check"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.conversation_content.source_language_provider",
+        "n|col|public.conversation_content.source_raw_language_code"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content"
+      ],
+      "writes": [
+        "s|ck|public.opinion_content.opinion_content_source_metadata_check",
+        "n|ck|public.opinion_content.opinion_content_source_metadata_check",
+        "e|ck|public.opinion_content.opinion_content_source_metadata_check",
+        "n|con|public.opinion_content.opinion_content_source_metadata_check"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content.source_language_provider",
+        "n|col|public.opinion_content.source_raw_language_code"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_question_content"
+      ],
+      "writes": [
+        "s|ck|public.survey_question_content.survey_question_content_source_metadata_check",
+        "n|ck|public.survey_question_content.survey_question_content_source_metadata_check",
+        "e|ck|public.survey_question_content.survey_question_content_source_metadata_check",
+        "n|con|public.survey_question_content.survey_question_content_source_metadata_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content",
+        "n|sch|public",
+        "n|col|public.survey_question_content.source_language_provider",
+        "n|col|public.survey_question_content.source_raw_language_code"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_question_content_translation"
+      ],
+      "writes": [
+        "s|ck|public.survey_question_content_translation.survey_question_content_translation_source_metadata_check",
+        "n|ck|public.survey_question_content_translation.survey_question_content_translation_source_metadata_check",
+        "e|ck|public.survey_question_content_translation.survey_question_content_translation_source_metadata_check",
+        "n|con|public.survey_question_content_translation.survey_question_content_translation_source_metadata_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_content_translation",
+        "n|sch|public",
+        "n|col|public.survey_question_content_translation.source_language_provider",
+        "n|col|public.survey_question_content_translation.source_raw_language_code"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_question_option_content"
+      ],
+      "writes": [
+        "s|ck|public.survey_question_option_content.survey_question_option_content_source_metadata_check",
+        "n|ck|public.survey_question_option_content.survey_question_option_content_source_metadata_check",
+        "e|ck|public.survey_question_option_content.survey_question_option_content_source_metadata_check",
+        "n|con|public.survey_question_option_content.survey_question_option_content_source_metadata_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content",
+        "n|sch|public",
+        "n|col|public.survey_question_option_content.source_language_provider",
+        "n|col|public.survey_question_option_content.source_raw_language_code"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "survey_question_option_content_translation"
+      ],
+      "writes": [
+        "s|ck|public.survey_question_option_content_translation.survey_question_option_content_translation_source_metadata_check",
+        "n|ck|public.survey_question_option_content_translation.survey_question_option_content_translation_source_metadata_check",
+        "e|ck|public.survey_question_option_content_translation.survey_question_option_content_translation_source_metadata_check",
+        "n|con|public.survey_question_option_content_translation.survey_question_option_content_translation_source_metadata_check"
+      ],
+      "reads": [
+        "n|tbl|public.survey_question_option_content_translation",
+        "n|sch|public",
+        "n|col|public.survey_question_option_content_translation.source_language_provider",
+        "n|col|public.survey_question_option_content_translation.source_raw_language_code"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "content_translation_work",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_content_translation",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_language_setting",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_translation_setting",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_translation_target_language",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "opinion_content_translation",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "organization_membership_all_project_capability",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "organization_membership_capability",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "organization_membership",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_organization_ownership",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "realtime_event_outbox_topic",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "content_translation_source_kind",
+        "values": [
+          "conversation",
+          "opinion",
+          "survey_question"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "content_translation_work_status",
+        "values": [
+          "pending",
+          "running",
+          "completed",
+          "failed"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_language_setting_mode",
+        "values": [
+          "auto",
+          "manual"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "directory_visibility",
+        "values": [
+          "listed",
+          "unlisted"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "display_language_code",
+        "values": [
+          "en",
+          "es",
+          "fr",
+          "zh-Hant",
+          "zh-Hans",
+          "ja",
+          "ar",
+          "fa",
+          "he",
+          "ky",
+          "ru"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "language_detection_provider",
+        "values": [
+          "lingua",
+          "google_translate"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "organization_membership_all_project_capability_enum",
+        "values": [
+          "project_update",
+          "project_delete",
+          "project_manage_owner_organizations",
+          "conversation_create",
+          "conversation_update",
+          "conversation_delete",
+          "conversation_view_private_results",
+          "conversation_export_owner_data",
+          "conversation_moderate",
+          "conversation_manage_integrations"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "organization_membership_capability_enum",
+        "values": [
+          "organization_manage_members",
+          "organization_manage_profile",
+          "project_create"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "spoken_language_code",
+        "values": [
+          "af",
+          "ak",
+          "am",
+          "ar",
+          "as",
+          "ay",
+          "az",
+          "be",
+          "bg",
+          "bho",
+          "bm",
+          "bn",
+          "bs",
+          "ca",
+          "ceb",
+          "ckb",
+          "co",
+          "cs",
+          "cy",
+          "da",
+          "de",
+          "doi",
+          "dv",
+          "ee",
+          "el",
+          "en",
+          "eo",
+          "es",
+          "et",
+          "eu",
+          "fa",
+          "fi",
+          "fil",
+          "fr",
+          "fy",
+          "ga",
+          "gd",
+          "gl",
+          "gn",
+          "gom",
+          "gu",
+          "ha",
+          "haw",
+          "he",
+          "hi",
+          "hmn",
+          "hr",
+          "ht",
+          "hu",
+          "hy",
+          "id",
+          "ig",
+          "ilo",
+          "is",
+          "it",
+          "ja",
+          "jv",
+          "ka",
+          "kk",
+          "km",
+          "kn",
+          "ko",
+          "kri",
+          "ku",
+          "ky",
+          "la",
+          "lb",
+          "lg",
+          "ln",
+          "lo",
+          "lt",
+          "lus",
+          "lv",
+          "mai",
+          "mg",
+          "mi",
+          "mk",
+          "ml",
+          "mn",
+          "mni-Mtei",
+          "mr",
+          "ms",
+          "mt",
+          "my",
+          "nb",
+          "ne",
+          "nl",
+          "nn",
+          "no",
+          "nso",
+          "ny",
+          "om",
+          "or",
+          "pa",
+          "pl",
+          "ps",
+          "pt",
+          "qu",
+          "ro",
+          "ru",
+          "rw",
+          "sa",
+          "sd",
+          "si",
+          "sk",
+          "sl",
+          "sm",
+          "sn",
+          "so",
+          "sq",
+          "sr",
+          "st",
+          "su",
+          "sv",
+          "sw",
+          "ta",
+          "te",
+          "tg",
+          "th",
+          "ti",
+          "tk",
+          "tn",
+          "tr",
+          "ts",
+          "tt",
+          "ug",
+          "uk",
+          "ur",
+          "uz",
+          "vi",
+          "xh",
+          "yi",
+          "yo",
+          "zh-Hans",
+          "zh-Hant",
+          "zu"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "content_translation_work_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "source_kind",
+        "type": "content_translation_source_kind",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "conversation_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "opinion_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "survey_question_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "survey_question_option_content_ids",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 1,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "display_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "status",
+        "type": "content_translation_work_status",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'pending'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "priority_rank",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "2",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "attempt_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "lease_owner",
+        "type": "varchar(100)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "lease_token",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "lease_expires_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "last_error_code",
+        "type": "varchar(100)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "last_error_message",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "requested_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "completed_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "failed_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "public_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "body_plain_text",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_content_translation_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "conversation_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "display_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "translated_title",
+        "type": "varchar(140)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "translated_body",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_language_setting_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "mode",
+        "type": "conversation_language_setting_mode",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "detected_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "detected_source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "detected_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "detected_raw_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "detection_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "detected_from_corpus_hash",
+        "type": "varchar(64)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "auto_detection_retryable",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_translation_setting_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "dynamic_translation_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_translation_target_language_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "translation_setting_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "public_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "content_plain_text",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "opinion_content_translation_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "opinion_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "display_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "translated_content",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "organization_membership_all_project_capability_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "organization_membership_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "capability",
+        "type": "organization_membership_all_project_capability_enum",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "organization_membership_capability_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "organization_membership_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "capability",
+        "type": "organization_membership_capability_enum",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "organization_membership_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "slug",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "display_name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "directory_visibility",
+        "type": "directory_visibility",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "auto_provisioned_for_user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_organization_ownership_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "slug",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "display_name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "directory_visibility",
+        "type": "directory_visibility",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "auto_provisioned_for_organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "realtime_event_outbox_topic_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "event_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "topic",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content",
+        "name": "public_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content_translation",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content_translation",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content_translation",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content_translation",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content",
+        "name": "public_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content_translation",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content_translation",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content_translation",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content_translation",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "first_name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_conversation_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "display_language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "(\"content_translation_work\".\"source_kind\" = 'conversation' AND \"content_translation_work\".\"conversation_content_id\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_opinion_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "opinion_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "display_language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "(\"content_translation_work\".\"source_kind\" = 'opinion' AND \"content_translation_work\".\"opinion_content_id\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_survey_question_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "survey_question_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "survey_question_option_content_ids",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "display_language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "(\"content_translation_work\".\"source_kind\" = 'survey_question' AND \"content_translation_work\".\"survey_question_content_id\" is not null AND \"content_translation_work\".\"survey_question_option_content_ids\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_claim_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "priority_rank",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"content_translation_work\".\"status\" = 'pending'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_lease_expiry_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "lease_expires_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"content_translation_work\".\"status\" = 'running'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_project_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_project_timeline_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "is_importing",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"conversation\".\"current_content_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_membership_organization_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_organization_ownership_organization_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "realtime_event_outbox_topic_replay_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "topic",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "event_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_active_user_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"user_display_language\".\"is_deleted\" = false",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_organization_mapping",
+        "name": "user_idx_organization",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_conversation_content_id_conversation_c",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_opinion_content_id_opinion_content_id_",
+        "nameExplicit": false,
+        "columns": [
+          "opinion_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "opinion_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_survey_question_content_id_survey_ques",
+        "nameExplicit": false,
+        "columns": [
+          "survey_question_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "survey_question_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "conversation_content_translation_conversation_content_id_conver",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "conversation_language_setting_conversation_id_conversation_id_f",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "conversation_translation_setting_conversation_id_conversation_i",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_translation_target_language_translation_setting_id",
+        "nameExplicit": false,
+        "columns": [
+          "translation_setting_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_translation_setting",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "opinion_content_translation_opinion_content_id_opinion_content_",
+        "nameExplicit": false,
+        "columns": [
+          "opinion_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "opinion_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "organization_membership_all_project_capability_organization_mem",
+        "nameExplicit": false,
+        "columns": [
+          "organization_membership_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization_membership",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "organization_membership_capability_organization_membership_id_o",
+        "nameExplicit": false,
+        "columns": [
+          "organization_membership_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization_membership",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_membership_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_membership_organization_id_organization_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "organization_auto_provisioned_for_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "auto_provisioned_for_user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_organization_ownership_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_organization_ownership_organization_id_organization_id_",
+        "nameExplicit": false,
+        "columns": [
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_auto_provisioned_for_organization_id_organization_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "auto_provisioned_for_organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "realtime_event_outbox_topic_event_id_realtime_event_outbox_id_f",
+        "nameExplicit": false,
+        "columns": [
+          "event_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "realtime_event_outbox",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "conversation_content_translation_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "conversation_language_setting_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "conversation_translation_setting_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_translation_target_language_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "opinion_content_translation_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "organization_membership_all_project_capability_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "organization_membership_capability_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_membership_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_organization_ownership_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "realtime_event_outbox_topic_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "conversation_content_public_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "public_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "conversation_content_translation_unique",
+        "nameExplicit": true,
+        "columns": [
+          "conversation_content_id",
+          "display_language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "conversation_language_setting_conversation_unique",
+        "nameExplicit": true,
+        "columns": [
+          "conversation_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_setting",
+        "name": "conversation_translation_setting_conversation_unique",
+        "nameExplicit": true,
+        "columns": [
+          "conversation_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_translation_target_language_unique",
+        "nameExplicit": true,
+        "columns": [
+          "translation_setting_id",
+          "language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "opinion_content_public_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "public_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "opinion_content_translation_unique",
+        "nameExplicit": true,
+        "columns": [
+          "opinion_content_id",
+          "display_language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_all_project_capability",
+        "name": "organization_membership_all_project_capability_unique",
+        "nameExplicit": true,
+        "columns": [
+          "organization_membership_id",
+          "capability"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership_capability",
+        "name": "organization_membership_capability_unique",
+        "nameExplicit": true,
+        "columns": [
+          "organization_membership_id",
+          "capability"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_membership_user_organization_unique",
+        "nameExplicit": true,
+        "columns": [
+          "user_id",
+          "organization_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "organization_slug_unique",
+        "nameExplicit": false,
+        "columns": [
+          "slug"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "organization_auto_provisioned_for_user_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "auto_provisioned_for_user_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_organization_ownership_project_org_unique",
+        "nameExplicit": true,
+        "columns": [
+          "project_id",
+          "organization_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_slug_unique",
+        "nameExplicit": false,
+        "columns": [
+          "slug"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_auto_provisioned_for_organization_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "auto_provisioned_for_organization_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "realtime_event_outbox_topic",
+        "name": "realtime_event_outbox_topic_unique",
+        "nameExplicit": true,
+        "columns": [
+          "event_id",
+          "topic"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content",
+        "name": "survey_question_content_public_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "public_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content",
+        "name": "survey_question_option_content_public_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "public_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_source_check",
+        "value": "((\"content_translation_work\".\"source_kind\" = 'conversation' AND \"content_translation_work\".\"conversation_content_id\" is not null AND \"content_translation_work\".\"opinion_content_id\" is null AND \"content_translation_work\".\"survey_question_content_id\" is null AND \"content_translation_work\".\"survey_question_option_content_ids\" is null) OR (\"content_translation_work\".\"source_kind\" = 'opinion' AND \"content_translation_work\".\"conversation_content_id\" is null AND \"content_translation_work\".\"opinion_content_id\" is not null AND \"content_translation_work\".\"survey_question_content_id\" is null AND \"content_translation_work\".\"survey_question_option_content_ids\" is null) OR (\"content_translation_work\".\"source_kind\" = 'survey_question' AND \"content_translation_work\".\"conversation_content_id\" is null AND \"content_translation_work\".\"opinion_content_id\" is null AND \"content_translation_work\".\"survey_question_content_id\" is not null AND \"content_translation_work\".\"survey_question_option_content_ids\" is not null))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_running_lease_check",
+        "value": "((\"content_translation_work\".\"status\" <> 'running' AND \"content_translation_work\".\"lease_owner\" is null AND \"content_translation_work\".\"lease_token\" is null AND \"content_translation_work\".\"lease_expires_at\" is null) OR (\"content_translation_work\".\"status\" = 'running' AND \"content_translation_work\".\"lease_owner\" is not null AND \"content_translation_work\".\"lease_token\" is not null AND \"content_translation_work\".\"lease_expires_at\" is not null))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_priority_rank_check",
+        "value": "\"content_translation_work\".\"priority_rank\" >= 0 AND \"content_translation_work\".\"priority_rank\" <= 2",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content",
+        "name": "conversation_content_source_metadata_check",
+        "value": "((\"conversation_content\".\"source_language_provider\" IS NULL AND \"conversation_content\".\"source_raw_language_code\" IS NULL) OR (\"conversation_content\".\"source_language_provider\" IS NOT NULL AND \"conversation_content\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_content_translation",
+        "name": "conversation_content_translation_source_metadata_check",
+        "value": "((\"conversation_content_translation\".\"source_language_provider\" IS NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"conversation_content_translation\".\"source_language_provider\" IS NOT NULL AND \"conversation_content_translation\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "conversation_language_setting_manual_language_check",
+        "value": "(\"conversation_language_setting\".\"mode\" <> 'manual') OR (\"conversation_language_setting\".\"language_code\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "conversation_language_setting_detected_raw_provider_check",
+        "value": "((\"conversation_language_setting\".\"detected_raw_language_provider\" IS NULL AND \"conversation_language_setting\".\"detected_raw_language_code\" IS NULL) OR (\"conversation_language_setting\".\"detected_raw_language_provider\" IS NOT NULL AND \"conversation_language_setting\".\"detected_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "opinion_content_source_metadata_check",
+        "value": "((\"opinion_content\".\"source_language_provider\" IS NULL AND \"opinion_content\".\"source_raw_language_code\" IS NULL) OR (\"opinion_content\".\"source_language_provider\" IS NOT NULL AND \"opinion_content\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content_translation",
+        "name": "opinion_content_translation_source_metadata_check",
+        "value": "((\"opinion_content_translation\".\"source_language_provider\" IS NULL AND \"opinion_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"opinion_content_translation\".\"source_language_provider\" IS NOT NULL AND \"opinion_content_translation\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content",
+        "name": "survey_question_content_source_metadata_check",
+        "value": "((\"survey_question_content\".\"source_language_provider\" IS NULL AND \"survey_question_content\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_content\".\"source_language_provider\" IS NOT NULL AND \"survey_question_content\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_content_translation",
+        "name": "survey_question_content_translation_source_metadata_check",
+        "value": "((\"survey_question_content_translation\".\"source_language_provider\" IS NULL AND \"survey_question_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_content_translation\".\"source_language_provider\" IS NOT NULL AND \"survey_question_content_translation\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content",
+        "name": "survey_question_option_content_source_metadata_check",
+        "value": "((\"survey_question_option_content\".\"source_language_provider\" IS NULL AND \"survey_question_option_content\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_option_content\".\"source_language_provider\" IS NOT NULL AND \"survey_question_option_content\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "survey_question_option_content_translation",
+        "name": "survey_question_option_content_translation_source_metadata_check",
+        "value": "((\"survey_question_option_content_translation\".\"source_language_provider\" IS NULL AND \"survey_question_option_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"survey_question_option_content_translation\".\"source_language_provider\" IS NOT NULL AND \"survey_question_option_content_translation\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"organization\",\"organization_website_url_unique\"]"
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"premium_feature\"]",
+      "set": {
+        "values": [
+          "survey",
+          "event_ticket",
+          "analysis_variants",
+          "dynamic_translation"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation\",\"author_id\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organization\",\"name\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organization\",\"image_path\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"user_display_language\",\"language_code\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"user_spoken_languages\",\"language_code\"]",
+      "set": {
+        "type": "spoken_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"survey_question_content\",\"source_language_code\"]",
+      "set": {
+        "type": "spoken_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"survey_question_content_translation\",\"display_language_code\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"survey_question_option_content\",\"source_language_code\"]",
+      "set": {
+        "type": "spoken_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"survey_question_option_content_translation\",\"display_language_code\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_group_description\",\"locale\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_translation\",\"locale\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_translation_work\",\"locale\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_group_candidate_description_locale_request\",\"locale\"]",
+      "set": {
+        "type": "display_language_code"
+      }
+    }
+  ]
+}

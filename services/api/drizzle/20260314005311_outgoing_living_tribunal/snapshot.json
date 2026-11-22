@@ -1,0 +1,795 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c3e0767f-f836-4635-87b2-11678182b60e",
+  "prevIds": [
+    "a03b8946-7e00-4e12-a374-d9293b2fb042"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "conversation_type"
+      ],
+      "writes": [
+        "s|enum|public.conversation_type",
+        "n|enum|public.conversation_type",
+        "e|enum|public.conversation_type",
+        "n|type|public.conversation_type"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_result"
+      ],
+      "writes": [
+        "s|tbl|public.maxdiff_result",
+        "n|tbl|public.maxdiff_result",
+        "e|tbl|public.maxdiff_result",
+        "n|rel|public.maxdiff_result",
+        "n|type|public.maxdiff_result",
+        "n|rel|public.maxdiff_result_pkey",
+        "n|rel|public.maxdiff_result_participant_id_conversation_id_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_createdAt_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_createdAt_idx",
+        "n|idx|public.conversation_createdAt_idx",
+        "e|idx|public.conversation_createdAt_idx",
+        "n|rel|public.conversation_createdAt_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.created_at"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_authorId_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_authorId_idx",
+        "n|idx|public.conversation_authorId_idx",
+        "e|idx|public.conversation_authorId_idx",
+        "n|rel|public.conversation_authorId_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conversation",
+        "n|sch|public",
+        "e|col|public.conversation.author_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_conversationId_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_conversationId_idx",
+        "n|idx|public.opinion_conversationId_idx",
+        "e|idx|public.opinion_conversationId_idx",
+        "n|rel|public.opinion_conversationId_idx"
+      ],
+      "reads": [
+        "e|tbl|public.opinion",
+        "n|sch|public",
+        "e|col|public.opinion.conversation_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote",
+        "vote_opinionId_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_opinionId_idx",
+        "n|idx|public.vote_opinionId_idx",
+        "e|idx|public.vote_opinionId_idx",
+        "n|rel|public.vote_opinionId_idx"
+      ],
+      "reads": [
+        "e|tbl|public.vote",
+        "n|sch|public",
+        "e|col|public.vote.opinion_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "polis_cluster_translation",
+        "polis_cluster_translation_lookup_idx"
+      ],
+      "writes": [
+        "s|idx|public.polis_cluster_translation_lookup_idx",
+        "n|idx|public.polis_cluster_translation_lookup_idx",
+        "e|idx|public.polis_cluster_translation_lookup_idx",
+        "n|rel|public.polis_cluster_translation_lookup_idx"
+      ],
+      "reads": [
+        "e|tbl|public.polis_cluster_translation",
+        "n|sch|public",
+        "e|col|public.polis_cluster_translation.polis_cluster_id",
+        "e|col|public.polis_cluster_translation.language_code"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "conversation_type"
+      ],
+      "writes": [
+        "s|col|public.conversation.conversation_type",
+        "n|col|public.conversation.conversation_type",
+        "e|col|public.conversation.conversation_type"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|enum|public.conversation_type"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_feed_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_feed_idx",
+        "n|idx|public.conversation_feed_idx",
+        "e|idx|public.conversation_feed_idx",
+        "n|rel|public.conversation_feed_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.created_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_type_importing_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_type_importing_idx",
+        "n|idx|public.conversation_type_importing_idx",
+        "e|idx|public.conversation_type_importing_idx",
+        "n|rel|public.conversation_type_importing_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.is_importing",
+        "n|col|public.conversation.conversation_type"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_author_timeline_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_author_timeline_idx",
+        "n|idx|public.conversation_author_timeline_idx",
+        "e|idx|public.conversation_author_timeline_idx",
+        "n|rel|public.conversation_author_timeline_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.author_id",
+        "n|col|public.conversation.is_importing",
+        "n|col|public.conversation.created_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_result",
+        "maxdiff_result_complete_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_result_complete_idx",
+        "n|idx|public.maxdiff_result_complete_idx",
+        "e|idx|public.maxdiff_result_complete_idx",
+        "n|rel|public.maxdiff_result_complete_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_result",
+        "n|sch|public",
+        "n|col|public.maxdiff_result.conversation_id",
+        "n|col|public.maxdiff_result.is_complete"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_conversation_active_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_conversation_active_idx",
+        "n|idx|public.opinion_conversation_active_idx",
+        "e|idx|public.opinion_conversation_active_idx",
+        "n|rel|public.opinion_conversation_active_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.conversation_id",
+        "n|col|public.opinion.current_content_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote",
+        "vote_opinion_active_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_opinion_active_idx",
+        "n|idx|public.vote_opinion_active_idx",
+        "e|idx|public.vote_opinion_active_idx",
+        "n|rel|public.vote_opinion_active_idx"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public",
+        "n|col|public.vote.opinion_id",
+        "n|col|public.vote.current_content_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_result"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_result.maxdiff_result_participant_id_user_id_fk",
+        "n|fk|public.maxdiff_result.maxdiff_result_participant_id_user_id_fk",
+        "e|fk|public.maxdiff_result.maxdiff_result_participant_id_user_id_fk",
+        "n|con|public.maxdiff_result.maxdiff_result_participant_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_result",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.maxdiff_result.participant_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_result"
+      ],
+      "writes": [
+        "s|fk|public.maxdiff_result.maxdiff_result_conversation_id_conversation_id_fk",
+        "n|fk|public.maxdiff_result.maxdiff_result_conversation_id_conversation_id_fk",
+        "e|fk|public.maxdiff_result.maxdiff_result_conversation_id_conversation_id_fk",
+        "n|con|public.maxdiff_result.maxdiff_result_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_result",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.maxdiff_result.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "maxdiff_result",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_type",
+        "values": [
+          "polis",
+          "maxdiff"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_type",
+        "type": "conversation_type",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'polis'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "maxdiff_result_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "participant_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "ranking",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "comparisons",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "is_complete",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_feed_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"conversation\".\"is_indexed\" = true AND \"conversation\".\"is_importing\" = false",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_type_importing_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "is_importing",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "conversation_type",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_author_timeline_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "is_importing",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "maxdiff_result_complete_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "is_complete",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "opinion_conversation_active_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "current_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "vote_opinion_active_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "opinion_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "current_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "maxdiff_result_participant_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "participant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "maxdiff_result_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "maxdiff_result_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_result",
+        "name": "maxdiff_result_participant_id_conversation_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "participant_id",
+          "conversation_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_createdAt_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"polis_cluster_translation_lookup_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"opinion_conversationId_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"vote_opinionId_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_authorId_idx\"]"
+    }
+  ]
+}

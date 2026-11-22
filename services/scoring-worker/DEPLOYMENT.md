@@ -114,7 +114,7 @@ Output contains four counters:
 ```json
 {
   "ranking_score_entity": 123,
-  "maxdiff_user_entity_score": 456,
+  "comparison_user_entity_score": 456,
   "current_snapshots_linked": 7,
   "current_snapshots_skipped": 0
 }
@@ -155,7 +155,7 @@ SELECT count(*) AS missing_community
 FROM ranking_score_entity WHERE display_score IS NULL;
 
 SELECT count(*) AS missing_personal
-FROM maxdiff_user_entity_score WHERE display_score IS NULL;
+FROM comparison_user_entity_score WHERE display_score IS NULL;
 ```
 
 Expect V0090 (or a later already-applied release), success, and zero missing

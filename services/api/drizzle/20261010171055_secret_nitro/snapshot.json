@@ -1,0 +1,329 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4c82df42-eba5-4801-8440-9ffeb0df67c2",
+  "prevIds": [
+    "ed839503-838a-40fe-971b-46e838a73a20"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "maxdiff_user_entity_score",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.maxdiff_user_entity_score.deleted_at",
+        "n|col|public.maxdiff_user_entity_score.deleted_at",
+        "e|col|public.maxdiff_user_entity_score.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_user_entity_score",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_conversation_stats_item",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.ranking_conversation_stats_item.deleted_at",
+        "n|col|public.ranking_conversation_stats_item.deleted_at",
+        "e|col|public.ranking_conversation_stats_item.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_item",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_conversation_stats_snapshot",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.ranking_conversation_stats_snapshot.deleted_at",
+        "n|col|public.ranking_conversation_stats_snapshot.deleted_at",
+        "e|col|public.ranking_conversation_stats_snapshot.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_snapshot",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_user_entity_score",
+        "maxdiff_user_entity_score_result_score_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_user_entity_score_result_score_idx",
+        "n|idx|public.maxdiff_user_entity_score_result_score_idx",
+        "e|idx|public.maxdiff_user_entity_score_result_score_idx",
+        "n|rel|public.maxdiff_user_entity_score_result_score_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_user_entity_score",
+        "n|sch|public",
+        "n|col|public.maxdiff_user_entity_score.maxdiff_result_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "42cb3bea2c5374fb"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ranking_conversation_stats_snapshot",
+        "ranking_conversation_stats_snapshot_latest_idx"
+      ],
+      "writes": [
+        "s|idx|public.ranking_conversation_stats_snapshot_latest_idx",
+        "n|idx|public.ranking_conversation_stats_snapshot_latest_idx",
+        "e|idx|public.ranking_conversation_stats_snapshot_latest_idx",
+        "n|rel|public.ranking_conversation_stats_snapshot_latest_idx"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_snapshot",
+        "n|sch|public",
+        "n|col|public.ranking_conversation_stats_snapshot.conversation_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "807f6d800f7d16f0"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_user_entity_score",
+        "maxdiff_user_entity_score_deleted_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_user_entity_score_deleted_idx",
+        "n|idx|public.maxdiff_user_entity_score_deleted_idx",
+        "e|idx|public.maxdiff_user_entity_score_deleted_idx",
+        "n|rel|public.maxdiff_user_entity_score_deleted_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_user_entity_score",
+        "n|sch|public",
+        "n|col|public.maxdiff_user_entity_score.deleted_at",
+        "n|col|public.maxdiff_user_entity_score.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ranking_conversation_stats_item",
+        "ranking_stats_item_deleted_idx"
+      ],
+      "writes": [
+        "s|idx|public.ranking_stats_item_deleted_idx",
+        "n|idx|public.ranking_stats_item_deleted_idx",
+        "e|idx|public.ranking_stats_item_deleted_idx",
+        "n|rel|public.ranking_stats_item_deleted_idx"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_item",
+        "n|sch|public",
+        "n|col|public.ranking_conversation_stats_item.deleted_at",
+        "n|col|public.ranking_conversation_stats_item.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ranking_conversation_stats_snapshot",
+        "ranking_stats_snapshot_deleted_idx"
+      ],
+      "writes": [
+        "s|idx|public.ranking_stats_snapshot_deleted_idx",
+        "n|idx|public.ranking_stats_snapshot_deleted_idx",
+        "e|idx|public.ranking_stats_snapshot_deleted_idx",
+        "n|rel|public.ranking_stats_snapshot_deleted_idx"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_snapshot",
+        "n|sch|public",
+        "n|col|public.ranking_conversation_stats_snapshot.deleted_at",
+        "n|col|public.ranking_conversation_stats_snapshot.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_user_entity_score",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_stats_item",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_stats_snapshot",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_user_entity_score",
+        "name": "maxdiff_user_entity_score_deleted_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "deleted_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"maxdiff_user_entity_score\".\"deleted_at\" IS NOT NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_stats_item",
+        "name": "ranking_stats_item_deleted_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "deleted_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"ranking_conversation_stats_item\".\"deleted_at\" IS NOT NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_stats_snapshot",
+        "name": "ranking_stats_snapshot_deleted_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "deleted_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"ranking_conversation_stats_snapshot\".\"deleted_at\" IS NOT NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"maxdiff_user_entity_score_result_score_idx\"]",
+      "set": {
+        "where": "\"maxdiff_user_entity_score\".\"deleted_at\" IS NULL"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"ranking_conversation_stats_snapshot_latest_idx\"]",
+      "set": {
+        "where": "\"ranking_conversation_stats_snapshot\".\"deleted_at\" IS NULL"
+      }
+    }
+  ]
+}

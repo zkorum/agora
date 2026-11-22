@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c3d69b51-57cb-4170-ba36-7f28fef753ab",
+  "prevIds": [
+    "7c0b43f5-b1e8-4315-914d-c25595f98dc4"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_divisiveness"
+      ],
+      "writes": [
+        "s|col|public.opinion.polis_divisiveness",
+        "n|col|public.opinion.polis_divisiveness",
+        "e|col|public.opinion.polis_divisiveness"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "polis_divisiveness",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

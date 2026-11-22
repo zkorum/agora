@@ -72,6 +72,7 @@
 <script setup lang="ts">
 import Button from "primevue/button";
 import Card from "primevue/card";
+import type { ConversationLanguageProject } from "src/components/newConversation/conversationProjectLanguage";
 import ConversationProjectLanguageSettings from "src/components/newConversation/ConversationProjectLanguageSettings.vue";
 import type { ConversationProjectSelectOption } from "src/components/newConversation/conversationProjectSelect";
 import ConversationProjectSelect from "src/components/newConversation/ConversationProjectSelect.vue";
@@ -134,8 +135,8 @@ const visibleProjectsScenario: DevProject[] = [
     },
   },
   {
-    slug: "archived-project",
-    title: "Archived Project",
+    slug: "deleted-project",
+    title: "Deleted Project",
     directoryVisible: true,
     deletedAt: "2026-06-01T00:00:00.000Z",
     defaultLanguageCode: "en",
@@ -190,12 +191,13 @@ const selectedProject = computed(() =>
     (project) => project.slug === selectedProjectSlug.value
   )
 );
-const languageProject = computed(() =>
+const languageProject = computed<ConversationLanguageProject | undefined>(() =>
   selectedProject.value === undefined
     ? undefined
     : {
         projectSlug: selectedProject.value.slug,
         projectTitle: selectedProject.value.title,
+        participationMode: "guest",
         defaultLanguageCode: selectedProject.value.defaultLanguageCode,
         languageSettings: selectedProject.value.languageSettings,
       }

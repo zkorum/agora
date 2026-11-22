@@ -84,7 +84,7 @@ describe("onboarding preference write and snapshot transaction", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await db.execute(sql.raw(readDbFixtureSql("survey-option-text.sql")));
     }, 120_000);
     afterAll(async () => {

@@ -47,7 +47,7 @@ describe("new guest cache transition", () => {
     queryClient.setQueryData(["userVotes", "conversation", undefined], votes);
     queryClient.setQueryData(
       [
-        "maxdiff-load",
+        "comparison-load",
         "conversation",
         { kind: "viewer", userId: "another-user" },
       ],
@@ -64,7 +64,7 @@ describe("new guest cache transition", () => {
     ).toBeUndefined();
     expect(
       queryClient.getQueryData([
-        "maxdiff-load",
+        "comparison-load",
         "conversation",
         { kind: "viewer", userId: "guest" },
       ])

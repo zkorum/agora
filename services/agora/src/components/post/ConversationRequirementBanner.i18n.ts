@@ -11,12 +11,7 @@ export interface ConversationRequirementBannerTranslations {
   optionalSurveyTitle: string;
   requiredSurveyTitle: string;
   surveyUnavailableTitle: string;
-  ticketRequiredTitle: string;
-  ticketVerifiedTitle: string;
   openViaOnboardingMessage: string;
-  verifyTicketMessage: string;
-  ticketRequiredMessage: string;
-  ticketVerifiedMessage: string;
   surveyUpToDateMessage: string;
   surveyChangedMessage: string;
   surveyWithdrawnMessage: string;
@@ -49,16 +44,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "Optional survey",
     requiredSurveyTitle: "Survey required",
     surveyUnavailableTitle: "Survey unavailable",
-    ticketRequiredTitle: "Ticket verification required",
-    ticketVerifiedTitle: "Ticket verified",
     openViaOnboardingMessage:
       "Continue through onboarding to open this conversation survey.",
-    verifyTicketMessage:
-      "Verify your event ticket first, then continue to the survey.",
-    ticketRequiredMessage:
-      "Verify your event ticket before participating in this conversation.",
-    ticketVerifiedMessage:
-      "Your event ticket is verified for this conversation.",
     surveyUpToDateMessage:
       "Your answers are up to date for this conversation.",
     surveyChangedMessage:
@@ -93,16 +80,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "استبيان اختياري",
     requiredSurveyTitle: "الاستبيان مطلوب",
     surveyUnavailableTitle: "الاستبيان غير متاح",
-    ticketRequiredTitle: "يلزم التحقق من التذكرة",
-    ticketVerifiedTitle: "تم التحقق من التذكرة",
     openViaOnboardingMessage:
       "تابع عبر مسار الانضمام لفتح استبيان هذه المحادثة.",
-    verifyTicketMessage:
-      "تحقق من تذكرة الحدث أولاً ثم تابع إلى الاستبيان.",
-    ticketRequiredMessage:
-      "تحقق من تذكرة الحدث قبل المشاركة في هذه المحادثة.",
-    ticketVerifiedMessage:
-      "تم التحقق من تذكرة الحدث الخاصة بك لهذه المحادثة.",
     surveyUpToDateMessage:
       "إجاباتك محدثة لهذه المحادثة.",
     surveyChangedMessage:
@@ -137,16 +116,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "Encuesta opcional",
     requiredSurveyTitle: "Encuesta obligatoria",
     surveyUnavailableTitle: "Encuesta no disponible",
-    ticketRequiredTitle: "Se requiere verificación del boleto",
-    ticketVerifiedTitle: "Boleto verificado",
     openViaOnboardingMessage:
       "Continúe por el flujo de acceso para abrir la encuesta de esta conversación.",
-    verifyTicketMessage:
-      "Verifique primero su boleto del evento y luego continúe a la encuesta.",
-    ticketRequiredMessage:
-      "Verifique su boleto del evento antes de participar en esta conversación.",
-    ticketVerifiedMessage:
-      "Su boleto del evento está verificado para esta conversación.",
     surveyUpToDateMessage:
       "Sus respuestas están actualizadas para esta conversación.",
     surveyChangedMessage:
@@ -181,16 +152,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "نظرسنجی اختیاری",
     requiredSurveyTitle: "نظرسنجی الزامی است",
     surveyUnavailableTitle: "نظرسنجی در دسترس نیست",
-    ticketRequiredTitle: "تأیید بلیت لازم است",
-    ticketVerifiedTitle: "بلیت تأیید شد",
     openViaOnboardingMessage:
       "برای باز کردن نظرسنجی این گفتگو از مسیر ورود ادامه دهید.",
-    verifyTicketMessage:
-      "ابتدا بلیت رویداد خود را تأیید کنید و سپس به نظرسنجی ادامه دهید.",
-    ticketRequiredMessage:
-      "پیش از مشارکت در این گفتگو، بلیت رویداد خود را تأیید کنید.",
-    ticketVerifiedMessage:
-      "بلیت رویداد شما برای این گفتگو تأیید شده است.",
     surveyUpToDateMessage:
       "پاسخ‌های شما برای این گفتگو به‌روز هستند.",
     surveyChangedMessage:
@@ -225,16 +188,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "Questionnaire facultatif",
     requiredSurveyTitle: "Questionnaire requis",
     surveyUnavailableTitle: "Questionnaire indisponible",
-    ticketRequiredTitle: "Vérification du billet requise",
-    ticketVerifiedTitle: "Billet vérifié",
     openViaOnboardingMessage:
       "Passez par le parcours d'accès pour ouvrir le questionnaire de cette conversation.",
-    verifyTicketMessage:
-      "Vérifiez d'abord votre billet d'événement, puis continuez vers le questionnaire.",
-    ticketRequiredMessage:
-      "Vérifiez votre billet d'événement avant de participer à cette conversation.",
-    ticketVerifiedMessage:
-      "Votre billet d'événement est vérifié pour cette conversation.",
     surveyUpToDateMessage:
       "Vos réponses sont à jour pour cette conversation.",
     surveyChangedMessage:
@@ -269,16 +224,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "סקר אופציונלי",
     requiredSurveyTitle: "הסקר נדרש",
     surveyUnavailableTitle: "הסקר לא זמין",
-    ticketRequiredTitle: "נדרש אימות כרטיס",
-    ticketVerifiedTitle: "הכרטיס אומת",
     openViaOnboardingMessage:
       "המשיכו דרך תהליך ההצטרפות כדי לפתוח את הסקר של השיחה הזו.",
-    verifyTicketMessage:
-      "אמתו קודם את כרטיס האירוע ואז המשיכו לסקר.",
-    ticketRequiredMessage:
-      "אמתו את כרטיס האירוע לפני שתשתתפו בשיחה הזו.",
-    ticketVerifiedMessage:
-      "כרטיס האירוע שלכם אומת עבור השיחה הזו.",
     surveyUpToDateMessage:
       "התשובות שלכם מעודכנות לשיחה הזו.",
     surveyChangedMessage:
@@ -313,16 +260,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "任意のアンケート",
     requiredSurveyTitle: "必須アンケート",
     surveyUnavailableTitle: "アンケートは利用できません",
-    ticketRequiredTitle: "チケット確認が必要です",
-    ticketVerifiedTitle: "チケット確認済み",
     openViaOnboardingMessage:
       "この会話のアンケートを開くにはオンボーディングを続けてください。",
-    verifyTicketMessage:
-      "先にイベントチケットを確認してからアンケートに進んでください。",
-    ticketRequiredMessage:
-      "この会話に参加する前にイベントチケットを確認してください。",
-    ticketVerifiedMessage:
-      "この会話ではイベントチケットが確認済みです。",
     surveyUpToDateMessage:
       "この会話に対するあなたの回答は最新です。",
     surveyChangedMessage:
@@ -357,16 +296,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "Ыктыярдуу сурамжылоо",
     requiredSurveyTitle: "Сурамжылоо милдеттүү",
     surveyUnavailableTitle: "Сурамжылоо жеткиликсиз",
-    ticketRequiredTitle: "Билетти текшерүү талап кылынат",
-    ticketVerifiedTitle: "Билет текшерилди",
     openViaOnboardingMessage:
       "Бул сүйлөшүүнүн сурамжылоосун ачуу үчүн кирүү агымын улантыңыз.",
-    verifyTicketMessage:
-      "Алгач иш-чара билетиңизди текшерип, андан кийин сурамжылоого өтүңүз.",
-    ticketRequiredMessage:
-      "Бул сүйлөшүүгө катышуудан мурун иш-чара билетиңизди текшериңиз.",
-    ticketVerifiedMessage:
-      "Бул сүйлөшүү үчүн иш-чара билетиңиз текшерилди.",
     surveyUpToDateMessage:
       "Бул сүйлөшүү үчүн жоопторуңуз актуалдуу.",
     surveyChangedMessage:
@@ -401,16 +332,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "Необязательный опрос",
     requiredSurveyTitle: "Опрос обязателен",
     surveyUnavailableTitle: "Опрос недоступен",
-    ticketRequiredTitle: "Требуется проверка билета",
-    ticketVerifiedTitle: "Билет подтверждён",
     openViaOnboardingMessage:
       "Продолжите через поток доступа, чтобы открыть опрос этой беседы.",
-    verifyTicketMessage:
-      "Сначала подтвердите билет на событие, затем переходите к опросу.",
-    ticketRequiredMessage:
-      "Подтвердите билет на событие перед участием в этой беседе.",
-    ticketVerifiedMessage:
-      "Ваш билет на событие подтверждён для этой беседы.",
     surveyUpToDateMessage:
       "Ваши ответы для этой беседы актуальны.",
     surveyChangedMessage:
@@ -445,16 +368,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "可选问卷",
     requiredSurveyTitle: "必须完成问卷",
     surveyUnavailableTitle: "问卷不可用",
-    ticketRequiredTitle: "需要验证门票",
-    ticketVerifiedTitle: "门票已验证",
     openViaOnboardingMessage:
       "请先继续完成引导流程，然后打开此对话的问卷。",
-    verifyTicketMessage:
-      "请先验证活动门票，然后继续填写问卷。",
-    ticketRequiredMessage:
-      "参与这场对话前，请先验证你的活动门票。",
-    ticketVerifiedMessage:
-      "你的活动门票已为这场对话完成验证。",
     surveyUpToDateMessage: "你对这场对话的回答已经是最新的。",
     surveyChangedMessage:
       "此问卷已更改。请更新你的回答以继续参与。",
@@ -486,16 +401,8 @@ export const conversationRequirementBannerTranslations: Record<
     optionalSurveyTitle: "可選問卷",
     requiredSurveyTitle: "必須完成問卷",
     surveyUnavailableTitle: "問卷不可用",
-    ticketRequiredTitle: "需要驗證門票",
-    ticketVerifiedTitle: "門票已驗證",
     openViaOnboardingMessage:
       "請先繼續完成引導流程，然後開啟此對話的問卷。",
-    verifyTicketMessage:
-      "請先驗證活動門票，再繼續填寫問卷。",
-    ticketRequiredMessage:
-      "參與這場對話前，請先驗證你的活動門票。",
-    ticketVerifiedMessage:
-      "你的活動門票已為這場對話完成驗證。",
     surveyUpToDateMessage: "你對這場對話的回答已是最新。",
     surveyChangedMessage:
       "此問卷已變更。請更新你的回答以繼續參與。",

@@ -1,0 +1,79 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "e882a927-4b74-49b3-baae-5a221079d83c",
+  "prevIds": [
+    "a80e2cc6-d151-4842-a6f4-55ff8930e9fb"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_participant_display_language"
+      ],
+      "writes": [
+        "s|tbl|public.project_participant_display_language",
+        "n|tbl|public.project_participant_display_language",
+        "e|tbl|public.project_participant_display_language",
+        "n|rel|public.project_participant_display_language",
+        "n|type|public.project_participant_display_language"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"project_participant_display_language\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_participant_display_language\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_participant_display_language\",\"project_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_participant_display_language\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_participant_display_language\",\"language_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_participant_display_language\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project_participant_display_language\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"project_participant_display_language_user_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"project_participant_display_language\",\"project_participant_display_language_project_id_project_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"project_participant_display_language\",\"project_participant_display_language_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"project_participant_display_language\",\"project_participant_display_language_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"project_participant_display_language\",\"project_participant_display_language_unique\"]"
+    }
+  ]
+}

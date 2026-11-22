@@ -1,5 +1,15 @@
 <template>
   <div class="analysis-opinion-text">
+    <span
+      v-if="
+        visibleContent !== undefined &&
+        opinionItem.username === undefined &&
+        !opinionItem.isSeed
+      "
+      class="redacted-placeholder"
+    >
+      {{ t("deletedAccount") }}
+    </span>
     <span v-if="redactedPlaceholder !== undefined" class="redacted-placeholder">
       {{ redactedPlaceholder }}
     </span>

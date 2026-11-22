@@ -216,6 +216,29 @@ test(
       );
 
       await t.test(
+        "direct project links enforce crawler policy without gating access",
+        async () => {
+          for (const slug of ["listed", "unlisted", "badstatus", "forbidden"]) {
+            const path = `/project/${slug}`;
+            assertShell({
+              response: await fetchShell({
+                baseUrl,
+                path,
+                headers: { "X-Project-Indexing": "index" },
+              }),
+              policy: slug === "listed" ? "index" : "noindex",
+              path,
+            });
+          }
+          const internal = await fetchShell({
+            baseUrl,
+            path: "/_project-indexing",
+          });
+          assert.equal(internal.status, 404);
+        }
+      );
+
+      await t.test(
         "HEAD and authentication failures return only the static shell",
         async () => {
           for (const slug of [

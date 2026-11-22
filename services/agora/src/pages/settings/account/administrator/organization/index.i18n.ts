@@ -88,7 +88,8 @@ const en: AdministratorOrganizationTranslations = {
   deleteButton: "Delete organization",
   confirmDeleteButton: "Confirm delete",
   cancelButton: "Cancel",
-  deleteConfirmMessage: "This will delete this organization.",
+  deleteConfirmMessage:
+    "Transfer projects owned only by this organization before deleting it. Projects with other owners will remain available. This action cannot be undone.",
   addMemberTitle: "Memberships",
   membershipDescription: "Add one username to the selected organization.",
   usernameLabel: "Username",
@@ -109,7 +110,8 @@ const en: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "Changing this slug can break public links that were already visited or shared.",
   deleteDangerTitle: "Delete this organization",
-  deleteDangerDescription: "Delete this organization.",
+  deleteDangerDescription:
+    "Transfer solely owned projects first. Projects with other owners will be preserved.",
 };
 
 const ar: AdministratorOrganizationTranslations = {
@@ -149,7 +151,8 @@ const ar: AdministratorOrganizationTranslations = {
   deleteButton: "حذف المنظمة",
   confirmDeleteButton: "تأكيد الحذف",
   cancelButton: "إلغاء",
-  deleteConfirmMessage: "سيؤدي هذا إلى حذف هذه المنظمة.",
+  deleteConfirmMessage:
+    "انقل ملكية المشاريع التي تملكها هذه المنظمة وحدها قبل حذفها. ستبقى المشاريع التي لها مالكون آخرون متاحة. لا يمكن التراجع عن هذا الإجراء.",
   addMemberTitle: "العضويات",
   membershipDescription: "أضف اسم مستخدم واحدًا إلى المنظمة المحددة.",
   usernameLabel: "اسم المستخدم",
@@ -170,7 +173,8 @@ const ar: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "قد يؤدي تغيير هذا المعرّف المختصر إلى تعطيل الروابط العامة التي تمت زيارتها أو مشاركتها بالفعل.",
   deleteDangerTitle: "حذف هذه المنظمة",
-  deleteDangerDescription: "احذف هذه المنظمة.",
+  deleteDangerDescription:
+    "انقل أولاً المشاريع المملوكة حصرياً لهذه المنظمة. ستُحفظ المشاريع التي لها مالكون آخرون.",
 };
 
 const es: AdministratorOrganizationTranslations = {
@@ -211,7 +215,8 @@ const es: AdministratorOrganizationTranslations = {
   deleteButton: "Eliminar organización",
   confirmDeleteButton: "Confirmar eliminación",
   cancelButton: "Cancelar",
-  deleteConfirmMessage: "Esto eliminará esta organización.",
+  deleteConfirmMessage:
+    "Transfiera los proyectos que pertenecen únicamente a esta organización antes de eliminarla. Los proyectos con otros propietarios seguirán disponibles. Esta acción no se puede deshacer.",
   addMemberTitle: "Membresías",
   membershipDescription:
     "Añada un nombre de usuario a la organización seleccionada.",
@@ -233,7 +238,8 @@ const es: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "Cambiar este slug puede inutilizar enlaces públicos que ya se hayan visitado o compartido.",
   deleteDangerTitle: "Eliminar esta organización",
-  deleteDangerDescription: "Elimine esta organización.",
+  deleteDangerDescription:
+    "Transfiera primero los proyectos de propiedad exclusiva. Los proyectos con otros propietarios se conservarán.",
 };
 
 const fa: AdministratorOrganizationTranslations = {
@@ -273,7 +279,8 @@ const fa: AdministratorOrganizationTranslations = {
   deleteButton: "حذف سازمان",
   confirmDeleteButton: "تأیید حذف",
   cancelButton: "لغو",
-  deleteConfirmMessage: "این کار این سازمان را حذف می‌کند.",
+  deleteConfirmMessage:
+    "پیش از حذف سازمان، مالکیت پروژه‌هایی را که تنها متعلق به این سازمان هستند منتقل کنید. پروژه‌های دارای مالکان دیگر در دسترس می‌مانند. این کار قابل بازگشت نیست.",
   addMemberTitle: "عضویت‌ها",
   membershipDescription: "یک نام کاربری به سازمان انتخاب‌شده اضافه کنید.",
   usernameLabel: "نام کاربری",
@@ -294,7 +301,8 @@ const fa: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "تغییر این نامک ممکن است پیوندهای عمومی را که قبلاً بازدید یا هم‌رسانی شده‌اند از کار بیندازد.",
   deleteDangerTitle: "حذف این سازمان",
-  deleteDangerDescription: "این سازمان را حذف کنید.",
+  deleteDangerDescription:
+    "ابتدا پروژه‌های با مالکیت انحصاری را منتقل کنید. پروژه‌های دارای مالکان دیگر حفظ می‌شوند.",
 };
 
 const fr: AdministratorOrganizationTranslations = {
@@ -335,7 +343,8 @@ const fr: AdministratorOrganizationTranslations = {
   deleteButton: "Supprimer l’organisation",
   confirmDeleteButton: "Confirmer la suppression",
   cancelButton: "Annuler",
-  deleteConfirmMessage: "Cette action supprimera cette organisation.",
+  deleteConfirmMessage:
+    "Transférez les projets détenus uniquement par cette organisation avant de la supprimer. Les projets ayant d’autres propriétaires resteront accessibles. Cette action est irréversible.",
   addMemberTitle: "Adhésions",
   membershipDescription:
     "Ajoutez un nom d’utilisateur à l’organisation sélectionnée.",
@@ -357,7 +366,8 @@ const fr: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "La modification de ce slug peut rompre des liens publics déjà consultés ou partagés.",
   deleteDangerTitle: "Supprimer cette organisation",
-  deleteDangerDescription: "Supprimez cette organisation.",
+  deleteDangerDescription:
+    "Transférez d’abord les projets détenus exclusivement. Les projets ayant d’autres propriétaires seront conservés.",
 };
 
 const he: AdministratorOrganizationTranslations = {
@@ -396,7 +406,8 @@ const he: AdministratorOrganizationTranslations = {
   deleteButton: "מחיקת הארגון",
   confirmDeleteButton: "אישור המחיקה",
   cancelButton: "ביטול",
-  deleteConfirmMessage: "פעולה זו תמחק את הארגון.",
+  deleteConfirmMessage:
+    "לפני מחיקת הארגון יש להעביר את הבעלות על פרויקטים שבבעלותו הבלעדית. פרויקטים עם בעלים נוספים יישארו זמינים. לא ניתן לבטל פעולה זו.",
   addMemberTitle: "חברויות",
   membershipDescription: "יש להוסיף שם משתמש אחד לארגון שנבחר.",
   usernameLabel: "שם משתמש",
@@ -417,7 +428,8 @@ const he: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "שינוי מזהה ה-URL הזה עלול לשבור קישורים ציבוריים שכבר נפתחו או שותפו.",
   deleteDangerTitle: "מחיקת הארגון הזה",
-  deleteDangerDescription: "יש למחוק את הארגון הזה.",
+  deleteDangerDescription:
+    "יש להעביר תחילה פרויקטים בבעלות בלעדית. פרויקטים עם בעלים נוספים יישמרו.",
 };
 
 const ja: AdministratorOrganizationTranslations = {
@@ -457,7 +469,8 @@ const ja: AdministratorOrganizationTranslations = {
   deleteButton: "組織を削除",
   confirmDeleteButton: "削除を確定",
   cancelButton: "キャンセル",
-  deleteConfirmMessage: "この組織が削除されます。",
+  deleteConfirmMessage:
+    "この組織のみが所有するプロジェクトは、組織を削除する前に所有権を移譲してください。他の所有者がいるプロジェクトは引き続き利用できます。この操作は取り消せません。",
   addMemberTitle: "メンバーシップ",
   membershipDescription: "選択した組織にユーザー名を1件追加します。",
   usernameLabel: "ユーザー名",
@@ -478,7 +491,8 @@ const ja: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "このスラッグを変更すると、すでにアクセスまたは共有された公開リンクが機能しなくなる可能性があります。",
   deleteDangerTitle: "この組織を削除",
-  deleteDangerDescription: "この組織を削除します。",
+  deleteDangerDescription:
+    "単独所有のプロジェクトを先に移譲してください。他の所有者がいるプロジェクトは保持されます。",
 };
 
 const ky: AdministratorOrganizationTranslations = {
@@ -519,7 +533,8 @@ const ky: AdministratorOrganizationTranslations = {
   deleteButton: "Уюмду өчүрүү",
   confirmDeleteButton: "Өчүрүүнү ырастоо",
   cancelButton: "Жокко чыгаруу",
-  deleteConfirmMessage: "Бул аракет бул уюмду өчүрөт.",
+  deleteConfirmMessage:
+    "Уюмду өчүрүүдөн мурун ага гана таандык долбоорлорду башка ээсине өткөрүңүз. Башка ээлери бар долбоорлор жеткиликтүү бойдон калат. Бул аракетти артка кайтаруу мүмкүн эмес.",
   addMemberTitle: "Мүчөлүктөр",
   membershipDescription: "Тандалган уюмга бир колдонуучунун атын кошуңуз.",
   usernameLabel: "Колдонуучунун аты",
@@ -540,7 +555,8 @@ const ky: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "Бул слагды өзгөртүү мурда ачылган же бөлүшүлгөн жалпыга ачык шилтемелерди иштен чыгарышы мүмкүн.",
   deleteDangerTitle: "Бул уюмду өчүрүү",
-  deleteDangerDescription: "Бул уюмду өчүрүү.",
+  deleteDangerDescription:
+    "Адегенде жалгыз ушул уюмга таандык долбоорлорду өткөрүңүз. Башка ээлери бар долбоорлор сакталат.",
 };
 
 const ru: AdministratorOrganizationTranslations = {
@@ -581,7 +597,8 @@ const ru: AdministratorOrganizationTranslations = {
   deleteButton: "Удалить организацию",
   confirmDeleteButton: "Подтвердить удаление",
   cancelButton: "Отмена",
-  deleteConfirmMessage: "Организация будет удалена.",
+  deleteConfirmMessage:
+    "Перед удалением организации передайте проекты, принадлежащие только ей, другому владельцу. Проекты с другими владельцами останутся доступны. Это действие нельзя отменить.",
   addMemberTitle: "Членство",
   membershipDescription:
     "Добавьте одно имя пользователя в выбранную организацию.",
@@ -603,7 +620,8 @@ const ru: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "Изменение этого слага может нарушить работу общедоступных ссылок, по которым уже переходили или которыми делились.",
   deleteDangerTitle: "Удалить эту организацию",
-  deleteDangerDescription: "Удалить эту организацию.",
+  deleteDangerDescription:
+    "Сначала передайте проекты в единоличном владении. Проекты с другими владельцами сохранятся.",
 };
 
 const zhHans: AdministratorOrganizationTranslations = {
@@ -641,7 +659,8 @@ const zhHans: AdministratorOrganizationTranslations = {
   deleteButton: "删除组织",
   confirmDeleteButton: "确认删除",
   cancelButton: "取消",
-  deleteConfirmMessage: "此操作将删除该组织。",
+  deleteConfirmMessage:
+    "删除组织前，请先转移仅由该组织拥有的项目。拥有其他所有者的项目将继续可用。此操作无法撤销。",
   addMemberTitle: "成员关系",
   membershipDescription: "向所选组织添加一个用户名。",
   usernameLabel: "用户名",
@@ -661,7 +680,7 @@ const zhHans: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "更改此 URL 标识符可能会导致已访问或已分享的公开链接失效。",
   deleteDangerTitle: "删除此组织",
-  deleteDangerDescription: "删除此组织。",
+  deleteDangerDescription: "请先转移独有项目。拥有其他所有者的项目将被保留。",
 };
 
 const zhHant: AdministratorOrganizationTranslations = {
@@ -699,7 +718,8 @@ const zhHant: AdministratorOrganizationTranslations = {
   deleteButton: "刪除組織",
   confirmDeleteButton: "確認刪除",
   cancelButton: "取消",
-  deleteConfirmMessage: "此操作將刪除這個組織。",
+  deleteConfirmMessage:
+    "刪除組織前，請先移轉僅由該組織擁有的專案。擁有其他擁有者的專案將繼續可用。此操作無法復原。",
   addMemberTitle: "成員資格",
   membershipDescription: "將一個使用者名稱新增至所選組織。",
   usernameLabel: "使用者名稱",
@@ -719,7 +739,7 @@ const zhHant: AdministratorOrganizationTranslations = {
   changeSlugDangerDescription:
     "變更此 URL 識別字可能會使已造訪或分享的公開連結失效。",
   deleteDangerTitle: "刪除這個組織",
-  deleteDangerDescription: "刪除這個組織。",
+  deleteDangerDescription: "請先移轉獨有專案。擁有其他擁有者的專案將被保留。",
 };
 
 export const administratorOrganizationTranslations: Record<

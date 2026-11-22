@@ -3,7 +3,7 @@
 Batch architecture:
     1. ZPOPMIN batch (filter out backed-off conversations)
     2. Acquire PostgreSQL advisory locks per conversation
-    3. Batch SELECT scoring inputs from primary
+    3. Capture scoring inputs and persist private prepared evidence on primary
     4. Parallel Solidago via ThreadPoolExecutor (no DB during scoring)
     5. Recheck inputs, then persist scores and immutable stats snapshots
 
@@ -29,23 +29,22 @@ import valkey as valkey_lib
 from pydantic import ValidationError
 from sqlalchemy import create_engine, text
 
+from scoring_worker.closing import record_failed_live_result, refresh_pending_closing_results
 from scoring_worker.config import Settings
 from scoring_worker.db import (
-    ComparisonRow,
     PublicationCallback,
     ScoredEntity,
     ScoringPublication,
     UserScoreEntry,
     acquire_conversation_locks,
-    fetch_processable_scoring_conversation_ids,
-    fetch_scoring_inputs,
     persist_scoring_batch,
+    prepare_scoring_inputs,
     reconcile_unscored_conversations,
 )
-from scoring_worker.observations import comparison_rows_to_maxdiff_observations
+from scoring_worker.observations import build_participant_counts
 from scoring_worker.scoring import (
     ConversationScoringOutput,
-    score_comparisons,
+    score_comparison_observations,
     warmup,
 )
 from scoring_worker.telemetry import emit_performance_event
@@ -57,6 +56,8 @@ from scoring_worker.valkey_client import (
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
+
+    from scoring_worker.prepared_inputs import PreparedConversationInputs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -74,40 +75,20 @@ def _handle_signal(signum: int, frame: object) -> None:
     _running = False
 
 
-def build_participant_counts(
-    comparisons: list[ComparisonRow],
-    *,
-    entity_ids: list[str],
-) -> dict[str, int]:
-    """Count distinct users per entity from comparisons."""
-    user_entities: dict[str, set[int]] = {}
-    observations = comparison_rows_to_maxdiff_observations(
-        entity_ids=entity_ids,
-        comparisons=comparisons,
-    )
-    for observation in observations:
-        for slug_id in observation.candidate_set:
-            if slug_id not in user_entities:
-                user_entities[slug_id] = set()
-            user_entities[slug_id].add(observation.user_id)
-    return {sid: len(users) for sid, users in user_entities.items()}
-
-
 def _score_one(
     *,
-    entity_ids: list[str],
-    comparisons: list[ComparisonRow],
-    participant_count: int,
+    inputs: PreparedConversationInputs,
     performance_enabled: bool = False,
     conversation_slug_id: str | None = None,
     batch_id: str | None = None,
-    input_revision: int | None = None,
 ) -> ConversationScoringOutput | None:
     """Score a single conversation (called in thread pool)."""
     started = time.perf_counter()
     outcome = "failure"
     try:
-        result = score_comparisons(entity_ids=entity_ids, comparisons=comparisons)
+        result = score_comparison_observations(
+            entity_ids=inputs.entity_ids, observations=inputs.observations, recipe=inputs.recipe
+        )
         outcome = "success" if result is not None else "skip"
         return result
     finally:
@@ -120,10 +101,10 @@ def _score_one(
                 duration_ms=(time.perf_counter() - started) * 1000,
                 metadata={
                     "batchId": batch_id,
-                    "inputRevision": input_revision,
-                    "itemCount": len(entity_ids),
-                    "comparisonCount": len(comparisons),
-                    "participantCount": participant_count,
+                    "inputRevision": inputs.revision,
+                    "itemCount": len(inputs.entity_ids),
+                    "comparisonCount": len(inputs.tasks),
+                    "participantCount": len(inputs.participants),
                 },
             )
 
@@ -418,31 +399,17 @@ def _run_worker_once() -> None:
             raise
 
         try:
-            # Step 2: Capture one coherent MVCC snapshot, then release it.
-            processable_ids = fetch_processable_scoring_conversation_ids(
-                processing_connection, conversation_ids=conv_ids
-            )
-            to_process = [item for item in to_process if item.conversation_id in processable_ids]
-            conv_ids = [item.conversation_id for item in to_process]
-            if not to_process:
-                continue
-            inputs = fetch_scoring_inputs(
+            # Step 2: Capture one MVCC snapshot, release it and persist private
+            # prepared evidence without taking lifecycle/config write locks.
+            refresh_pending_closing_results(processing_connection, conversation_ids=conv_ids)
+            inputs = prepare_scoring_inputs(
                 processing_connection,
                 conversation_ids=conv_ids,
             )
-            scoring_input_revisions = inputs.revisions
-            ranking_items = inputs.ranking_items
-            active_items = {
-                conversation_id: [
-                    item.slug_id
-                    for item in items
-                    if item.lifecycle_status.value in {"active", "in_progress"}
-                ]
-                for conversation_id, items in ranking_items.items()
-            }
-            comparisons_result = inputs.comparisons
-            comparisons = comparisons_result.comparisons
-            user_idx_to_result_id = comparisons_result.user_idx_to_result_id
+            to_process = [item for item in to_process if item.conversation_id in inputs]
+            if not to_process:
+                continue
+            scoring_input_revisions = {cid: prepared.revision for cid, prepared in inputs.items()}
             input_fetch_ms = (time.perf_counter() - batch_started) * 1000
 
             # Separate: conversations with enough data vs those to clear
@@ -450,8 +417,8 @@ def _run_worker_once() -> None:
             to_clear: set[int] = set()
             for item in to_process:
                 cid = item.conversation_id
-                items = active_items.get(cid, [])
-                comps = comparisons.get(cid, [])
+                items = inputs[cid].entity_ids
+                comps = inputs[cid].tasks
                 if len(items) < 2 or not comps:
                     to_clear.add(cid)
                     log.info(
@@ -474,15 +441,10 @@ def _run_worker_once() -> None:
                     future_to_item = {
                         pool.submit(
                             _score_one,
-                            entity_ids=active_items[item.conversation_id],
-                            comparisons=comparisons[item.conversation_id],
-                            participant_count=len(
-                                user_idx_to_result_id.get(item.conversation_id, {})
-                            ),
+                            inputs=inputs[item.conversation_id],
                             performance_enabled=settings.performance_enabled,
                             conversation_slug_id=item.slug_id,
                             batch_id=batch_id,
-                            input_revision=scoring_input_revisions.get(item.conversation_id),
                         ): item
                         for item in to_score
                     }
@@ -493,8 +455,7 @@ def _run_worker_once() -> None:
                             output = future.result()
                             if output is not None:
                                 pc = build_participant_counts(
-                                    comparisons[item.conversation_id],
-                                    entity_ids=active_items[item.conversation_id],
+                                    inputs[item.conversation_id].observations
                                 )
                                 scored = [
                                     ScoredEntity(
@@ -516,15 +477,13 @@ def _run_worker_once() -> None:
                                 )
 
                                 # Map per-user scores to DB entries
-                                idx_map = user_idx_to_result_id.get(item.conversation_id, {})
+                                participants = inputs[item.conversation_id].participants
                                 for user_idx, user_results in output.user_scores.items():
-                                    result_id = idx_map.get(user_idx)
-                                    if result_id is None:
-                                        continue
+                                    result_id = participants[user_idx].response_id
                                     for r in user_results:
                                         all_user_score_entries.append(
                                             UserScoreEntry(
-                                                maxdiff_result_id=result_id,
+                                                comparison_response_id=result_id,
                                                 entity_slug_id=r.entity_id,
                                                 score=r.score,
                                                 display_score=r.display_score,
@@ -534,7 +493,15 @@ def _run_worker_once() -> None:
                                         )
                             else:
                                 to_clear.add(item.conversation_id)
-                        except Exception:
+                        except Exception as error:
+                            if isinstance(
+                                error, (ValueError, ArithmeticError)
+                            ) and record_failed_live_result(
+                                processing_connection,
+                                conversation_id=item.conversation_id,
+                                revision=inputs[item.conversation_id].revision,
+                            ):
+                                continue
                             log.exception(
                                 "[Worker] %s: Solidago failed",
                                 item.slug_id,
@@ -609,9 +576,11 @@ def _run_worker_once() -> None:
                 backoff_until[item.conversation_id] = time.monotonic() + settings.backoff_seconds
                 mark_dirty(vk, member=item.member, weight=item.weight)
 
-        except Exception:
+        except Exception as error:
             # Entire batch failed (likely DB connection issue)
-            log.exception("[Worker] Batch failed, re-adding all")
+            # PostgreSQL exception details can contain private input rows even
+            # when SQLAlchemy hides bind parameters. Keep the diagnostic content-free.
+            log.error("[Worker] Batch failed, re-adding all errorType=%s", type(error).__name__)
             for item in to_process:
                 mark_dirty(vk, member=item.member, weight=item.weight)
             time.sleep(5)

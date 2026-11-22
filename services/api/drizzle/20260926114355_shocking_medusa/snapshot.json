@@ -1,0 +1,253 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "d863b1d5-b72a-499f-bbb2-9adf9b0ad401",
+  "prevIds": [
+    "68f99428-016e-4779-8a76-2594c0673321"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "blocked_phone_number"
+      ],
+      "writes": [
+        "s|tbl|public.blocked_phone_number",
+        "n|tbl|public.blocked_phone_number",
+        "e|tbl|public.blocked_phone_number",
+        "n|rel|public.blocked_phone_number",
+        "n|type|public.blocked_phone_number",
+        "n|rel|public.blocked_phone_number_phone_hash_pepper_version_pk"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "auth_restricted_at"
+      ],
+      "writes": [
+        "s|col|public.user.auth_restricted_at",
+        "n|col|public.user.auth_restricted_at",
+        "e|col|public.user.auth_restricted_at"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "auth_restriction_reason"
+      ],
+      "writes": [
+        "s|col|public.user.auth_restriction_reason",
+        "n|col|public.user.auth_restriction_reason",
+        "e|col|public.user.auth_restriction_reason"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "user"
+      ],
+      "writes": [
+        "s|ck|public.user.user_auth_restriction_reason_check",
+        "n|ck|public.user.user_auth_restriction_reason_check",
+        "e|ck|public.user.user_auth_restriction_reason_check",
+        "n|con|public.user.user_auth_restriction_reason_check"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.user.auth_restricted_at",
+        "n|col|public.user.auth_restriction_reason"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "blocked_phone_number",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "phone_hash",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "pepper_version",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "reason",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "blocked_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "revoked_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "auth_restricted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "auth_restriction_reason",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "blocked_phone_number_phone_hash_pepper_version_pk",
+        "columns": [
+          "phone_hash",
+          "pepper_version"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "blocked_phone_pepper_version_nonnegative_check",
+        "value": "\"blocked_phone_number\".\"pepper_version\" >= 0",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "blocked_phone_number",
+        "name": "blocked_phone_reason_nonempty_check",
+        "value": "length(btrim(\"blocked_phone_number\".\"reason\")) > 0",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "user_auth_restriction_reason_check",
+        "value": "(\"user\".\"auth_restricted_at\" IS NULL) = (\"user\".\"auth_restriction_reason\" IS NULL)",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

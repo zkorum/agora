@@ -1,5 +1,5 @@
 <script lang="ts">
-  import * as m from "$lib/paraglide/messages.js";
+  import * as m from "#lib/paraglide/messages.js";
   import GradientButton from "$ui/shared/gradient-button.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -12,7 +12,7 @@
     "
   >
     <enhanced:img
-      src="$lib/assets/hero-bg-base.png"
+      src="#lib/assets/hero-bg-base.png"
       alt=""
       sizes="min(1376px, 100vw)"
       fetchpriority="high"
@@ -22,7 +22,7 @@
       class="absolute top-0 left-0 h-289.75 w-434.75 scale-y-[-1] rotate-180"
     >
       <enhanced:img
-        src="$lib/assets/hero-overlay.png"
+        src="#lib/assets/hero-overlay.png"
         alt=""
         class="size-full object-cover"
       />

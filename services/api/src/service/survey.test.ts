@@ -317,7 +317,7 @@ describe("withdrawSurveyResponse", () => {
 
         checkConversationParticipationMock.mockResolvedValue({
             success: false,
-            reason: "event_ticket_required",
+            reason: "account_required",
         });
 
         const result = await withdrawSurveyResponse({
@@ -333,7 +333,7 @@ describe("withdrawSurveyResponse", () => {
 
         expect(result).toEqual({
             success: false,
-            reason: "event_ticket_required",
+            reason: "account_required",
         });
         expect(checkConversationParticipationMock).toHaveBeenCalledWith({
             db,
@@ -343,6 +343,7 @@ describe("withdrawSurveyResponse", () => {
             now: new Date("2026-01-02T00:00:00.000Z"),
             currentDisplayLanguage: "es",
             requireCompletedSurvey: false,
+            skipClosedCheck: true,
         });
         expect(transactionMock).not.toHaveBeenCalled();
     });

@@ -3,6 +3,7 @@ import { storeToRefs } from "pinia";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import type { ContentTranslationSubject } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 
@@ -83,14 +84,20 @@ export function useContentTranslationQuery({
 }) {
   const { requestContentTranslation } = useBackendContentTranslationApi();
   const { ensureParticipationAuthState } = useBackendAuthApi();
+  const viewerScope = useViewerQueryScope();
 
   return useQuery<ContentTranslationResponse>({
-    queryKey: computed(() =>
-      getContentTranslationQueryKey({
-        subject: toValue(subject),
+    queryKey: computed(() => {
+      const currentSubject = toValue(subject);
+      const key = getContentTranslationQueryKey({
+        subject: currentSubject,
         targetLanguageCode: toValue(targetLanguageCode),
-      })
-    ),
+      });
+      return currentSubject.kind === "gathering_field" ||
+        currentSubject.kind === "gathering_response"
+        ? [...key, viewerScope.value]
+        : key;
+    }),
     queryFn: async () => {
       const response = await requestContentTranslation({
         subject: toValue(subject),

@@ -25,6 +25,7 @@ class ContentRevision:
         ContentTranslationSourceKind.conversation,
         ContentTranslationSourceKind.opinion,
         ContentTranslationSourceKind.ranking_item,
+        ContentTranslationSourceKind.gathering_response,
     ]
     content_id: int
 
@@ -39,7 +40,15 @@ class SurveyRevision:
     )
 
 
-type SourceRevision = ContentRevision | SurveyRevision
+@dataclass(frozen=True)
+class GatheringFieldRevision:
+    content_id: uuid.UUID
+    kind: Literal[ContentTranslationSourceKind.gathering_field] = field(
+        default=ContentTranslationSourceKind.gathering_field, init=False
+    )
+
+
+type SourceRevision = ContentRevision | SurveyRevision | GatheringFieldRevision
 
 
 @dataclass(frozen=True)
@@ -159,8 +168,36 @@ class ProjectSource:
     source_language_confidence: float | None
 
 
+@dataclass(frozen=True)
+class GatheringFieldSource:
+    conversation_slug_id: str
+    content_id: uuid.UUID
+    text: str
+
+
+@dataclass(frozen=True)
+class GatheringAnswerSource:
+    field_id: uuid.UUID
+    value: str
+
+
+@dataclass(frozen=True)
+class GatheringResponseSource:
+    conversation_slug_id: str
+    response_slug_id: str
+    content_id: int
+    public_id: uuid.UUID
+    answers: tuple[GatheringAnswerSource, ...]
+
+
 type TranslationSource = (
-    ConversationSource | ProjectSource | OpinionSource | RankingItemSource | SurveyQuestionSource
+    ConversationSource
+    | ProjectSource
+    | OpinionSource
+    | RankingItemSource
+    | SurveyQuestionSource
+    | GatheringFieldSource
+    | GatheringResponseSource
 )
 
 
@@ -230,10 +267,36 @@ class SurveyTranslationBundle:
     translations: tuple[SurveyTranslation, ...]
 
 
+@dataclass(frozen=True)
+class GatheringFieldTranslationBundle:
+    source: GatheringFieldSource
+    translations: tuple[LocalizedTranslationResult, ...]
+
+
+@dataclass(frozen=True)
+class GatheringAnswerTranslation:
+    field_id: uuid.UUID
+    result: ContentTranslationResult
+
+
+@dataclass(frozen=True)
+class GatheringResponseTranslation:
+    language: DisplayLanguageCode
+    answers: tuple[GatheringAnswerTranslation, ...]
+
+
+@dataclass(frozen=True)
+class GatheringResponseTranslationBundle:
+    source: GatheringResponseSource
+    translations: tuple[GatheringResponseTranslation, ...]
+
+
 type TranslationBundle = (
     ConversationTranslationBundle
     | ProjectTranslationBundle
     | OpinionTranslationBundle
     | RankingItemTranslationBundle
     | SurveyTranslationBundle
+    | GatheringFieldTranslationBundle
+    | GatheringResponseTranslationBundle
 )

@@ -20,7 +20,9 @@ def test_semantic_event_uses_existing_marker(caplog: pytest.LogCaptureFixture) -
             duration_ms=12,
             metadata={"batchId": "batch", "inputRevision": 8},
         )
-    event = json.loads(caplog.records[0].getMessage().removeprefix("AGORA_LOAD_EVENT "))
+    message = caplog.records[0].getMessage()
+    assert message.startswith("AGORA_LOAD_EVENT ")
+    event = json.loads(message.removeprefix("AGORA_LOAD_EVENT "))
     assert event["scenario"] == "solidago-ranking"
     assert event["conversationSlugId"] == "fixture"
     assert event["metadata"]["inputRevision"] == 8

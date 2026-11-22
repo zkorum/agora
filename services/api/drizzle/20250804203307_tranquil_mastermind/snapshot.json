@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "1aa2cda0-1838-4301-b8e6-db84fbb7ba28",
+  "prevIds": [
+    "6784f251-b053-4ee3-8f4a-7a9412f28c1d"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_ga_consensus_pd"
+      ],
+      "writes": [
+        "s|col|public.opinion.polis_ga_consensus_pd",
+        "n|col|public.opinion.polis_ga_consensus_pd",
+        "e|col|public.opinion.polis_ga_consensus_pd"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "polis_ga_consensus_pd",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

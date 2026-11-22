@@ -1,0 +1,4 @@
+# WARNING: GENERATED FROM services/shared/src/utils/qv.ts. DO NOT EDIT.
+QV_CREDIT_BUDGET: int = 100
+QV_RULE_VERSION: int = 1
+QV_ALGORITHM_VERSION: int = 1

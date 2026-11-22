@@ -99,7 +99,6 @@ export type FetchConversationMetadataResponse =
     | {
           success: true;
           participationMode: ParticipationMode;
-          requiresEventTicket: string | undefined;
           hasSurvey: boolean;
           responseTime: number;
       }
@@ -136,7 +135,6 @@ function parseParticipationMode(value: unknown): ParticipationMode | undefined {
 function parseConversationMetadataResponse(body: unknown):
     | {
           participationMode: ParticipationMode;
-          requiresEventTicket?: string;
           hasSurvey: boolean;
       }
     | undefined {
@@ -173,14 +171,9 @@ function parseConversationMetadataResponse(body: unknown):
         return undefined;
     }
 
-    const requiresEventTicket = metadataRecord.requiresEventTicket;
     return {
         participationMode,
         hasSurvey: surveyGate.hasSurvey,
-        requiresEventTicket:
-            typeof requiresEventTicket === "string"
-                ? requiresEventTicket
-                : undefined,
     };
 }
 
@@ -500,7 +493,6 @@ export function fetchConversationMetadata({
         return {
             success: true,
             participationMode: parsedMetadata.participationMode,
-            requiresEventTicket: parsedMetadata.requiresEventTicket,
             hasSurvey: parsedMetadata.hasSurvey,
             responseTime,
         };

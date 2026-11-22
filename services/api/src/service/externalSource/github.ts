@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
 import { eq, and, sql, asc, isNotNull, isNull } from "drizzle-orm";
+import { queueComparisonItemsUpdatedEvent } from "../realtimeEventOutbox.js";
 import {
     conversationTable,
     rankingItemTable,
@@ -20,13 +21,12 @@ import {
 import {
     computeItemSnapshot,
     lockRankingScoringConfig,
-} from "@/service/maxdiff.js";
+} from "@/service/comparison.js";
 import { log } from "@/app.js";
 import { processUserGeneratedHtml } from "@/shared-app-api/html.js";
 import { htmlToCountedTextWithWarning } from "@/service/richText.js";
 import { marked } from "marked";
 import type { GitHubClient, GitHubIssue, SyncResult } from "./index.js";
-import { requireProjectCapability } from "@/service/projectAccess.js";
 import { contentLanguageMetadataUpdateValues } from "@/service/contentLanguageMetadata.js";
 
 async function getDeterministicProjectMemberUserId({
@@ -187,7 +187,7 @@ export async function handleIssueWebhook({
     const issue = payload.issue;
     const externalId = buildExternalId({ repo, issueNumber: issue.number });
 
-    // Find all MaxDiff ranking conversations that track this repo.
+    // Find all comparison conversations that track this repository.
     const conversations = await db
         .select({
             id: conversationTable.id,
@@ -207,8 +207,8 @@ export async function handleIssueWebhook({
         )
         .where(
             and(
-                eq(conversationTable.conversationType, "ranking"),
-                eq(rankingConversationConfigTable.rankingMode, "bws"),
+                eq(conversationTable.conversationType, "prioritizing"),
+                eq(conversationTable.prioritizationType, "comparisons"),
                 eq(conversationTable.isClosed, false),
             ),
         );
@@ -408,6 +408,10 @@ async function upsertItemFromGitHubIssue({
             log.info(
                 `[GitHub] Created item ${result.slugId} from ${externalId} (${newLifecycle})`,
             );
+            await queueComparisonItemsUpdatedEvent({
+                db: tx,
+                conversationSlugId,
+            });
             return "created";
         } else {
             // Update existing item
@@ -459,7 +463,7 @@ async function upsertItemFromGitHubIssue({
 
             if (currentItemRows.length === 0) {
                 throw new Error(
-                    `[GitHub] Maxdiff item id=${String(itemId)} disappeared during update for externalId=${externalId}`,
+                    `[GitHub] Comparison item id=${String(itemId)} disappeared during update for externalId=${externalId}`,
                 );
             }
             const currentItem = currentItemRows[0];
@@ -548,6 +552,10 @@ async function upsertItemFromGitHubIssue({
             log.info(
                 `[GitHub] Updated item from ${externalId} -> ${newLifecycle}`,
             );
+            await queueComparisonItemsUpdatedEvent({
+                db: tx,
+                conversationSlugId,
+            });
             return "updated";
         }
     });
@@ -628,6 +636,7 @@ async function deactivateItemByExternalId({
                 updatedAt: new Date(),
             })
             .where(eq(rankingItemTable.id, itemId));
+        await queueComparisonItemsUpdatedEvent({ db: tx, conversationSlugId });
         return true;
     });
     if (!changed) {
@@ -665,6 +674,7 @@ export async function syncGitHubIssues({
             externalSourceConfig:
                 rankingConversationConfigTable.externalSourceConfig,
             conversationType: conversationTable.conversationType,
+            prioritizationType: conversationTable.prioritizationType,
             rankingMode: rankingConversationConfigTable.rankingMode,
         })
         .from(conversationTable)
@@ -689,18 +699,11 @@ export async function syncGitHubIssues({
 
     const conversation = conversationRows[0];
 
-    await requireProjectCapability({
-        db,
-        userId: requestingUserId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-    });
-
     if (
-        conversation.conversationType !== "ranking" ||
-        conversation.rankingMode !== "bws"
+        conversation.conversationType !== "prioritizing" ||
+        conversation.prioritizationType !== "comparisons"
     ) {
-        throw new Error("Sync is only available for MaxDiff conversations");
+        throw new Error("Sync is only available for comparison conversations");
     }
 
     const parsed = zodExternalSourceConfig.safeParse(

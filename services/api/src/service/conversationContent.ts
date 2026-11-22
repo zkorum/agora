@@ -15,7 +15,10 @@ import type {
     RankingItemDisplayedContent,
     LocalizedSurveyQuestionContent,
 } from "@/shared/types/zod.js";
-import { getInitialDisplayContentMode, toDisplayedContent } from "./displayContent.js";
+import {
+    getInitialDisplayContentMode,
+    toStandardDisplayedContent,
+} from "./displayContent.js";
 
 type ConversationContentMode = ConversationContentFetchRequest["mode"];
 type SurveyFormFetchSuccessResponse = Extract<
@@ -58,31 +61,10 @@ export function toConversationContentFetchResponse({
     displayLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
 }): ConversationContentFetchResponse {
-    return toDisplayedContent({
+    return toStandardDisplayedContent({
         content,
-        translationAllowed,
-        displayLanguage,
-        spokenLanguages,
         mode,
-        buildOriginal: ({ original, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "original",
-            content: original,
-            translationControl,
-        }),
-        buildTranslated: ({ translated, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "translated",
-            content: translated,
-            translationControl,
-        }),
-        buildUnavailable: ({ status, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status,
-            translationControl,
-        }),
+        preferences: { translationAllowed, displayLanguage, spokenLanguages },
     });
 }
 
@@ -122,30 +104,9 @@ export function toSurveyQuestionDisplayContent({
     displayLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
 }): SurveyQuestionDisplayContent {
-    return toDisplayedContent({
+    return toStandardDisplayedContent({
         content,
-        translationAllowed,
-        displayLanguage,
-        spokenLanguages,
-        buildOriginal: ({ original, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "original",
-            content: original,
-            translationControl,
-        }),
-        buildTranslated: ({ translated, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "translated",
-            content: translated,
-            translationControl,
-        }),
-        buildUnavailable: ({ status, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status,
-            translationControl,
-        }),
+        preferences: { translationAllowed, displayLanguage, spokenLanguages },
     });
 }
 
@@ -160,30 +121,9 @@ export function toOpinionDisplayContent({
     displayLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
 }): OpinionDisplayContent {
-    return toDisplayedContent({
+    return toStandardDisplayedContent({
         content,
-        translationAllowed,
-        displayLanguage,
-        spokenLanguages,
-        buildOriginal: ({ original, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "original",
-            content: original,
-            translationControl,
-        }),
-        buildTranslated: ({ translated, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "translated",
-            content: translated,
-            translationControl,
-        }),
-        buildUnavailable: ({ status, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status,
-            translationControl,
-        }),
+        preferences: { translationAllowed, displayLanguage, spokenLanguages },
     });
 }
 
@@ -198,29 +138,8 @@ export function toRankingItemDisplayContent({
     displayLanguage: SupportedDisplayLanguageCodes;
     spokenLanguages: SupportedSpokenLanguageCodes[];
 }): RankingItemDisplayedContent {
-    return toDisplayedContent({
+    return toStandardDisplayedContent({
         content,
-        translationAllowed,
-        displayLanguage,
-        spokenLanguages,
-        buildOriginal: ({ original, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "original",
-            content: original,
-            translationControl,
-        }),
-        buildTranslated: ({ translated, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status: "available",
-            mode: "translated",
-            content: translated,
-            translationControl,
-        }),
-        buildUnavailable: ({ status, translationControl }) => ({
-            sourceVersion: content.sourceVersion,
-            status,
-            translationControl,
-        }),
+        preferences: { translationAllowed, displayLanguage, spokenLanguages },
     });
 }

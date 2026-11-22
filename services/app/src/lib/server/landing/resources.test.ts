@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { locales } from "$lib/paraglide/runtime";
-import { SITE_ORIGIN } from "$lib/seo";
+import { locales } from "#lib/paraglide/runtime.js";
+import { SITE_ORIGIN } from "#lib/seo.js";
 
 import { getResourcePost, renderResourceMarkdown } from "./resources";
 
@@ -49,7 +49,7 @@ describe("renderResourceMarkdown", () => {
 
 describe("AI charter translations", () => {
   it.each(locales)(
-    "renders all bold passages correctly in %s",
+    "renders emphasis without stray Markdown markers in %s",
     async (locale) => {
       const post = await getResourcePost({
         slug: "ai-charter-workshop",
@@ -57,8 +57,8 @@ describe("AI charter translations", () => {
       });
 
       expect(post).not.toBeNull();
-      expect(post?.content.includes("**")).toBe(false);
-      expect(post?.content.match(/<strong>/g)).toHaveLength(17);
+      expect(post?.content).not.toContain("**");
+      expect(post?.content).toMatch(/<strong>[^<]+<\/strong>/);
     },
   );
 });

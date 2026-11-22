@@ -2,6 +2,7 @@
 import { Lang, type QuasarLanguage } from "quasar";
 import enUS from "quasar/lang/en-US";
 import en from "src/i18n/en";
+import { numberFormats } from "src/i18n/numberFormats";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
   getDisplayLanguageFallbackChain,
@@ -72,6 +73,7 @@ function createAppI18n() {
     fallbackLocale,
     legacy: false,
     messages,
+    numberFormats,
   });
 }
 

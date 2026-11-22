@@ -1,12 +1,30 @@
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+    and,
+    count,
+    desc,
+    eq,
+    exists,
+    inArray,
+    isNotNull,
+    isNull,
+    sql,
+    type SQLWrapper,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { BaseLogger } from "pino";
 import {
+    analysisInputBaselineTable,
+    analysisSnapshotTable,
     analysisWorkStateTable,
+    conversationAnalysisCloseTable,
     conversationTable,
+    conversationViewSnapshotTable,
     opinionTable,
     opinionGroupSpecTable,
+    polisAnalysisCloseGenerationTable,
+    polisAnalysisCloseTable,
     polisConversationConfigTable,
+    realtimeEventOutboxTable,
     surveyResponseTable,
     voteTable,
 } from "./schema.js";
@@ -22,11 +40,15 @@ export interface AnalysisSchedule {
     scheduledSpecCount: number;
 }
 
-interface ScheduleAnalysisUpdateParams {
+interface AnalysisScheduleParams {
     db: PostgresJsDatabase;
     conversationId: number;
     log: AnalysisSchedulerLogger;
+}
+
+interface ScheduleAnalysisUpdateParams extends AnalysisScheduleParams {
     advanceGeneration?: boolean;
+    moderationChanged?: boolean;
 }
 
 interface HasActiveVotesForMathWorkParams {
@@ -113,34 +135,97 @@ function getCurrentOpinionGroupSpecIds(
     return specIds;
 }
 
+export function hasSwitchablePolisCloseEvidence({
+    db,
+    closeId,
+}: {
+    db: PostgresJsDatabase;
+    closeId: number | SQLWrapper;
+}) {
+    const native = polisAnalysisCloseTable;
+    const view = conversationViewSnapshotTable;
+    const snapshot = analysisSnapshotTable;
+    const certificate = analysisInputBaselineTable;
+    return exists(
+        db
+            .select({ id: native.closeId })
+            .from(native)
+            .innerJoin(view, eq(view.id, native.originalViewSnapshotId))
+            .leftJoin(snapshot, eq(snapshot.id, view.analysisSnapshotId))
+            .leftJoin(
+                certificate,
+                eq(certificate.inputSnapshotId, snapshot.inputSnapshotId),
+            )
+            .where(eq(native.closeId, closeId))
+            .groupBy(native.closeId)
+            .having(eq(count(certificate.inputSnapshotId), count())),
+    );
+}
+
+/** Signal a selection change without asking readers to adopt a snapshot id. */
+export async function queuePolisCloseSelectionChanged({
+    db,
+    closeId,
+    conversationSlugId,
+}: {
+    db: PostgresJsDatabase;
+    closeId: number;
+    conversationSlugId: string;
+}): Promise<void> {
+    const native = polisAnalysisCloseTable;
+    const view = conversationViewSnapshotTable;
+    const roots = await db
+        .select({ viewId: view.id, snapshotId: view.analysisSnapshotId })
+        .from(native)
+        .innerJoin(view, eq(view.id, native.originalViewSnapshotId))
+        .where(
+            and(
+                eq(native.closeId, closeId),
+                isNotNull(view.analysisSnapshotId),
+            ),
+        )
+        .limit(1);
+    const root = roots.at(0);
+    if (root?.snapshotId == null) return;
+    await db.insert(realtimeEventOutboxTable).values({
+        eventType: "conversation_analysis_updated",
+        payload: {
+            conversationSlugId,
+            conversationViewSnapshotId: root.viewId,
+            analysisSnapshotId: root.snapshotId,
+            changeKind: "snapshot",
+            checkpointChanged: false,
+            displayableGroupCounts: [],
+            closedSelectionChanged: true,
+            timestamp: Date.now(),
+        },
+    });
+}
+
 export async function scheduleAnalysisUpdate({
     db,
     conversationId,
     log,
     advanceGeneration = true,
+    moderationChanged = false,
 }: ScheduleAnalysisUpdateParams): Promise<AnalysisSchedule> {
     return await db.transaction(async (tx) => {
         const now = nowZeroMs();
 
         const conversations = await tx
             .select({
-                analysisDataGeneration:
-                    polisConversationConfigTable.analysisDataGeneration,
                 polisConfigId: conversationTable.polisConfigId,
                 conversationSlugId: conversationTable.slugId,
                 conversationType: conversationTable.conversationType,
                 currentContentId: conversationTable.currentContentId,
                 isClosed: conversationTable.isClosed,
+                voteBufferDrained: conversationTable.voteBufferDrained,
                 closedFinalizedAt: conversationTable.closedFinalizedAt,
+                closeEpoch: conversationTable.voteBufferEpoch,
+                closingTargetRevision: conversationTable.closingTargetRevision,
+                deletedAt: conversationTable.deletedAt,
             })
             .from(conversationTable)
-            .leftJoin(
-                polisConversationConfigTable,
-                eq(
-                    polisConversationConfigTable.id,
-                    conversationTable.polisConfigId,
-                ),
-            )
             .where(eq(conversationTable.id, conversationId))
             .for("no key update", { of: conversationTable });
 
@@ -151,6 +236,12 @@ export async function scheduleAnalysisUpdate({
         }
 
         const conversation = conversations[0];
+        const skipped = {
+            conversationId,
+            conversationSlugId: conversation.conversationSlugId,
+            dataGeneration: 0,
+            scheduledSpecCount: 0,
+        };
         log.info(
             {
                 event: "analysis_schedule",
@@ -162,8 +253,7 @@ export async function scheduleAnalysisUpdate({
 
         if (
             conversation.currentContentId === null ||
-            (conversation.isClosed &&
-                conversation.closedFinalizedAt !== null) ||
+            conversation.deletedAt !== null ||
             conversation.conversationType !== "polis"
         ) {
             log.info(
@@ -173,47 +263,167 @@ export async function scheduleAnalysisUpdate({
                 } satisfies LogContext,
                 "[AnalysisScheduler] Skipping deleted or non-Polis conversation",
             );
-            return {
-                conversationId,
-                conversationSlugId: conversation.conversationSlugId,
-                dataGeneration: conversation.analysisDataGeneration ?? 0,
-                scheduledSpecCount: 0,
-            };
+            return skipped;
         }
-
-        if (
-            conversation.polisConfigId === null ||
-            conversation.analysisDataGeneration === null
-        ) {
+        // Read the config after acquiring the conversation lock, not in the
+        // statement that might have waited for a concurrent scheduler.
+        const config =
+            conversation.polisConfigId === null
+                ? undefined
+                : (
+                      await tx
+                          .select({
+                              id: polisConversationConfigTable.id,
+                              analysisDataGeneration:
+                                  polisConversationConfigTable.analysisDataGeneration,
+                          })
+                          .from(polisConversationConfigTable)
+                          .where(
+                              eq(
+                                  polisConversationConfigTable.id,
+                                  conversation.polisConfigId,
+                              ),
+                          )
+                  ).at(0);
+        if (config === undefined) {
             throw new Error(
                 `Cannot schedule analysis update for polis conversation ${String(conversationId)} without polis config`,
             );
         }
 
-        const updatedConfigs = await tx
+        log.info(
+            { event: "analysis_schedule", conversationId } satisfies LogContext,
+            "[AnalysisScheduler] Fetching current opinion-group specs",
+        );
+        const currentSpecIds = getCurrentOpinionGroupSpecIds(
+            await tx
+                .select({
+                    id: opinionGroupSpecTable.id,
+                    key: opinionGroupSpecTable.key,
+                })
+                .from(opinionGroupSpecTable)
+                .orderBy(
+                    opinionGroupSpecTable.key,
+                    desc(opinionGroupSpecTable.version),
+                ),
+        );
+        log.info(
+            {
+                event: "analysis_schedule",
+                conversationId,
+                specCount: currentSpecIds.length,
+            } satisfies LogContext,
+            "[AnalysisScheduler] Loaded current opinion-group specs",
+        );
+
+        const closeTable = conversationAnalysisCloseTable;
+        const currentClose =
+            conversation.isClosed &&
+            conversation.voteBufferDrained &&
+            conversation.closedFinalizedAt !== null &&
+            conversation.closingTargetRevision !== null
+                ? (
+                      await tx
+                          .select({
+                              id: closeTable.id,
+                              selectedInputMode: closeTable.selectedInputMode,
+                          })
+                          .from(closeTable)
+                          .where(
+                              and(
+                                  eq(closeTable.conversationId, conversationId),
+                                  eq(
+                                      closeTable.closeEpoch,
+                                      conversation.closeEpoch,
+                                  ),
+                                  eq(
+                                      closeTable.sourceRevision,
+                                      conversation.closingTargetRevision,
+                                  ),
+                                  eq(
+                                      closeTable.finalizedAt,
+                                      conversation.closedFinalizedAt,
+                                  ),
+                              ),
+                          )
+                  ).at(0)
+                : undefined;
+        const closingSpecs =
+            currentClose !== undefined && moderationChanged
+                ? await tx
+                      .select({
+                          id: polisAnalysisCloseTable.opinionGroupSpecId,
+                      })
+                      .from(polisAnalysisCloseTable)
+                      .where(
+                          and(
+                              eq(
+                                  polisAnalysisCloseTable.closeId,
+                                  currentClose.id,
+                              ),
+                              hasSwitchablePolisCloseEvidence({
+                                  db: tx,
+                                  closeId: currentClose.id,
+                              }),
+                          ),
+                      )
+                : [];
+        // Reserve a distinct capture revision for retained inputs. The ordinary
+        // revision stays in the config and can advance without cancelling Closing.
+        const closingRevision =
+            closingSpecs.length > 0
+                ? config.analysisDataGeneration + 1
+                : undefined;
+        const dataGeneration =
+            closingRevision !== undefined
+                ? closingRevision + 1
+                : advanceGeneration || config.analysisDataGeneration === 0
+                  ? config.analysisDataGeneration + 1
+                  : config.analysisDataGeneration;
+        await tx
             .update(polisConversationConfigTable)
-            .set({
-                analysisDataGeneration:
-                    advanceGeneration ||
-                    conversation.analysisDataGeneration === 0
-                        ? sql`${polisConversationConfigTable.analysisDataGeneration} + 1`
-                        : conversation.analysisDataGeneration,
-            })
-            .where(
-                eq(polisConversationConfigTable.id, conversation.polisConfigId),
-            )
-            .returning({
-                dataGeneration:
-                    polisConversationConfigTable.analysisDataGeneration,
-            });
-        const updatedConfig = updatedConfigs.at(0);
-        if (updatedConfig === undefined) {
-            throw new Error(
-                "Analysis configuration disappeared while scheduling",
-            );
-        }
-        const { dataGeneration } = updatedConfig;
-        if (conversation.isClosed) {
+            .set({ analysisDataGeneration: dataGeneration })
+            .where(eq(polisConversationConfigTable.id, config.id));
+        if (currentClose !== undefined) {
+            if (closingRevision !== undefined) {
+                await tx.insert(polisAnalysisCloseGenerationTable).values({
+                    conversationId,
+                    dataGeneration: closingRevision,
+                    closeId: currentClose.id,
+                });
+            }
+            const requestedResultRevision =
+                currentClose.selectedInputMode === "live"
+                    ? dataGeneration
+                    : closingRevision;
+            if (
+                closingRevision !== undefined ||
+                requestedResultRevision !== undefined
+            ) {
+                const changed =
+                    requestedResultRevision !== undefined &&
+                    dataGeneration !== config.analysisDataGeneration;
+                await tx
+                    .update(closeTable)
+                    .set({
+                        minimumClosingResultRevision: closingRevision,
+                        requestedResultRevision,
+                        selectionRevision: changed
+                            ? sql`${closeTable.selectionRevision} + 1`
+                            : undefined,
+                    })
+                    .where(eq(closeTable.id, currentClose.id));
+                if (changed)
+                    await queuePolisCloseSelectionChanged({
+                        db: tx,
+                        closeId: currentClose.id,
+                        conversationSlugId: conversation.conversationSlugId,
+                    });
+            }
+        } else if (
+            conversation.isClosed &&
+            conversation.closedFinalizedAt === null
+        ) {
             await tx
                 .update(conversationTable)
                 .set({ closingTargetRevision: dataGeneration })
@@ -228,31 +438,11 @@ export async function scheduleAnalysisUpdate({
             "[AnalysisScheduler] Incrementing analysis generation",
         );
 
-        log.info(
-            { event: "analysis_schedule", conversationId } satisfies LogContext,
-            "[AnalysisScheduler] Fetching current opinion-group specs",
-        );
-        const specRows = await tx
-            .select({
-                id: opinionGroupSpecTable.id,
-                key: opinionGroupSpecTable.key,
-            })
-            .from(opinionGroupSpecTable)
-            .orderBy(
-                opinionGroupSpecTable.key,
-                desc(opinionGroupSpecTable.version),
-            );
-        const currentSpecIds = getCurrentOpinionGroupSpecIds(specRows);
-        log.info(
-            {
-                event: "analysis_schedule",
-                conversationId,
-                specCount: currentSpecIds.length,
-            } satisfies LogContext,
-            "[AnalysisScheduler] Loaded current opinion-group specs",
-        );
-
-        if (currentSpecIds.length === 0) {
+        const requestedSpecs = [
+            ...currentSpecIds.map((id) => ({ id, usesClosingInputs: false })),
+            ...closingSpecs.map(({ id }) => ({ id, usesClosingInputs: true })),
+        ];
+        if (requestedSpecs.length === 0) {
             return {
                 conversationId,
                 conversationSlugId: conversation.conversationSlugId,
@@ -272,6 +462,7 @@ export async function scheduleAnalysisUpdate({
         const existingWorkStates = await tx
             .select({
                 opinionGroupSpecId: analysisWorkStateTable.opinionGroupSpecId,
+                usesClosingInputs: analysisWorkStateTable.usesClosingInputs,
             })
             .from(analysisWorkStateTable)
             .where(
@@ -279,25 +470,28 @@ export async function scheduleAnalysisUpdate({
                     eq(analysisWorkStateTable.conversationId, conversationId),
                     inArray(
                         analysisWorkStateTable.opinionGroupSpecId,
-                        currentSpecIds,
+                        requestedSpecs.map(({ id }) => id),
                     ),
                 ),
             );
-        const existingSpecIds = new Set(
-            existingWorkStates.map((row) => row.opinionGroupSpecId),
-        );
-        const missingSpecIds = currentSpecIds.filter(
-            (id) => !existingSpecIds.has(id),
+        const missingSpecs = requestedSpecs.filter(
+            (spec) =>
+                !existingWorkStates.some(
+                    (work) =>
+                        work.opinionGroupSpecId === spec.id &&
+                        work.usesClosingInputs === spec.usesClosingInputs,
+                ),
         );
         // The generation is the durable dirty signal. Existing work rows belong
         // to the worker; updating them here would wait behind result persistence.
-        if (missingSpecIds.length > 0) {
+        if (missingSpecs.length > 0) {
             await tx
                 .insert(analysisWorkStateTable)
                 .values(
-                    missingSpecIds.map((opinionGroupSpecId) => ({
+                    missingSpecs.map(({ id, usesClosingInputs }) => ({
                         conversationId,
-                        opinionGroupSpecId,
+                        opinionGroupSpecId: id,
+                        usesClosingInputs,
                         dirtySince: now,
                         updatedAt: now,
                     })),
@@ -306,6 +500,7 @@ export async function scheduleAnalysisUpdate({
                     target: [
                         analysisWorkStateTable.conversationId,
                         analysisWorkStateTable.opinionGroupSpecId,
+                        analysisWorkStateTable.usesClosingInputs,
                     ],
                 });
         }
@@ -315,7 +510,7 @@ export async function scheduleAnalysisUpdate({
                 event: "analysis_schedule",
                 conversationId,
                 dataGeneration,
-                count: currentSpecIds.length,
+                count: requestedSpecs.length,
             } satisfies LogContext,
             "[AnalysisScheduler] Scheduling analysis complete",
         );
@@ -323,7 +518,7 @@ export async function scheduleAnalysisUpdate({
             conversationId,
             conversationSlugId: conversation.conversationSlugId,
             dataGeneration,
-            scheduledSpecCount: currentSpecIds.length,
+            scheduledSpecCount: requestedSpecs.length,
         };
     });
 }

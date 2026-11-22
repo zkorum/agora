@@ -31,8 +31,11 @@ import {
 } from "vue";
 
 import { useBackendPostApi } from "./post";
+import { reconcileQvCalculationLifecycle } from "./qvCalculationState";
+import { reconcileQvStats } from "./qvStatsUpdate";
 import {
   clearRetainedConversationRankingStatsUpdate,
+  compareComparisonCloseSelectionVersions,
   getRetainedConversationRankingStatsUpdate,
 } from "./rankingStatsUpdate";
 
@@ -67,15 +70,34 @@ export function applyConversationRankingStatsUpdate({
   conversation: ConversationCacheData;
   data: SSEConversationRankingStatsUpdatedData;
 }): ConversationCacheData {
-  if (conversation.metadata.conversationType !== "ranking") {
+  if (
+    conversation.metadata.conversationType !== "prioritizing" ||
+    conversation.metadata.prioritizationType !== "comparisons"
+  ) {
     return conversation;
   }
   const previousSnapshotId = conversation.metadata.rankingStatsSnapshotId;
-  if (
-    previousSnapshotId !== undefined &&
-    data.rankingStatsSnapshotId <= previousSnapshotId
-  ) {
+  const previousVersion = conversation.metadata.comparisonCloseSelectionVersion;
+  const incomingVersion = data.comparisonCloseSelectionVersion;
+  if (data.closedSelectionChanged === true && !conversation.metadata.isClosed) {
+    // A publication for the previous close must not undo reopening.
     return conversation;
+  }
+  if (previousVersion !== undefined && incomingVersion !== undefined) {
+    if (
+      compareComparisonCloseSelectionVersions({
+        left: incomingVersion,
+        right: previousVersion,
+      }) <= 0
+    )
+      return conversation;
+  } else {
+    if (previousVersion !== undefined && data.isClosed) return conversation;
+    if (
+      previousSnapshotId !== undefined &&
+      data.rankingStatsSnapshotId <= previousSnapshotId
+    )
+      return conversation;
   }
 
   return {
@@ -83,6 +105,7 @@ export function applyConversationRankingStatsUpdate({
     metadata: {
       ...conversation.metadata,
       rankingStatsSnapshotId: data.rankingStatsSnapshotId,
+      comparisonCloseSelectionVersion: incomingVersion ?? previousVersion,
       opinionCount: data.opinionCount,
       voteCount: data.voteCount,
       participantCount: data.participantCount,
@@ -119,19 +142,76 @@ function preserveNewerSnapshotMetadata({
   const cachedMetadata = cachedConversation.conversationData.metadata;
   const fetchedMetadata = fetchedConversation.conversationData.metadata;
   if (
-    cachedMetadata.conversationType === "ranking" &&
-    fetchedMetadata.conversationType === "ranking"
+    cachedMetadata.conversationType === "prioritizing" &&
+    cachedMetadata.prioritizationType === "qv" &&
+    fetchedMetadata.conversationType === "prioritizing" &&
+    fetchedMetadata.prioritizationType === "qv" &&
+    cachedMetadata.qvGeneration !== undefined &&
+    (fetchedMetadata.qvGeneration === undefined ||
+      cachedMetadata.qvGeneration > fetchedMetadata.qvGeneration)
+  ) {
+    return {
+      ...fetchedConversation,
+      conversationData: {
+        ...fetchedConversation.conversationData,
+        metadata: {
+          ...fetchedMetadata,
+          qvGeneration: cachedMetadata.qvGeneration,
+          isClosed: cachedMetadata.isClosed,
+          isFinalizing: cachedMetadata.isFinalizing,
+        },
+      },
+    };
+  }
+  if (
+    cachedMetadata.conversationType === "prioritizing" &&
+    cachedMetadata.prioritizationType === "comparisons" &&
+    fetchedMetadata.conversationType === "prioritizing" &&
+    fetchedMetadata.prioritizationType === "comparisons"
   ) {
     const cachedSnapshotId = cachedMetadata.rankingStatsSnapshotId;
     const fetchedSnapshotId = fetchedMetadata.rankingStatsSnapshotId;
-    if (
+    const cachedVersion = cachedMetadata.comparisonCloseSelectionVersion;
+    const fetchedVersion = fetchedMetadata.comparisonCloseSelectionVersion;
+    const acceptPublication =
       cachedSnapshotId === undefined ||
       (fetchedSnapshotId !== undefined &&
         (fetchedSnapshotId > cachedSnapshotId ||
           (fetchedSnapshotId === cachedSnapshotId &&
-            cachedConversation === cachedConversationBeforeFetch)))
-    ) {
-      return fetchedConversation;
+            cachedConversation === cachedConversationBeforeFetch)));
+    const acceptFetched = (() => {
+      if (cachedVersion === undefined) return acceptPublication;
+      if (fetchedVersion === undefined)
+        return !fetchedMetadata.isClosed && acceptPublication;
+      if (
+        !cachedMetadata.isClosed &&
+        cachedVersion.closeId === fetchedVersion.closeId
+      )
+        return false;
+      const order = compareComparisonCloseSelectionVersions({
+        left: fetchedVersion,
+        right: cachedVersion,
+      });
+      return (
+        order > 0 ||
+        (order === 0 && cachedConversation === cachedConversationBeforeFetch)
+      );
+    })();
+    if (acceptFetched) {
+      // Keep the last close watermark on an open cache entry until a later
+      // close replaces it. A delayed read of that old close cannot reopen it.
+      if (cachedVersion === undefined || fetchedVersion !== undefined)
+        return fetchedConversation;
+      return {
+        ...fetchedConversation,
+        conversationData: {
+          ...fetchedConversation.conversationData,
+          metadata: {
+            ...fetchedMetadata,
+            comparisonCloseSelectionVersion: cachedVersion,
+          },
+        },
+      };
     }
 
     return {
@@ -141,6 +221,7 @@ function preserveNewerSnapshotMetadata({
         metadata: {
           ...fetchedMetadata,
           rankingStatsSnapshotId: cachedSnapshotId,
+          comparisonCloseSelectionVersion: cachedVersion,
           opinionCount: cachedMetadata.opinionCount,
           voteCount: cachedMetadata.voteCount,
           participantCount: cachedMetadata.participantCount,
@@ -206,9 +287,8 @@ function mergeRetainedRankingStatsUpdate({
   const metadata = conversation.conversationData.metadata;
   if (
     update === undefined ||
-    metadata.conversationType !== "ranking" ||
-    (metadata.rankingStatsSnapshotId !== undefined &&
-      metadata.rankingStatsSnapshotId >= update.rankingStatsSnapshotId)
+    metadata.conversationType !== "prioritizing" ||
+    metadata.prioritizationType !== "comparisons"
   ) {
     return conversation;
   }
@@ -348,7 +428,8 @@ export function useConversationQuery({
         queryClient.getQueryData<ConversationDetail>(queryKey);
       const fetchedMetadata = fetchedConversation.conversationData.metadata;
       if (
-        fetchedMetadata.conversationType === "ranking" &&
+        fetchedMetadata.conversationType === "prioritizing" &&
+        fetchedMetadata.prioritizationType === "comparisons" &&
         fetchedMetadata.rankingStatsSnapshotId !== undefined
       ) {
         clearRetainedConversationRankingStatsUpdate({
@@ -383,13 +464,29 @@ export function useConversationQuery({
         cachedConversation,
         cachedConversationBeforeFetch,
       });
-      return mergeRetainedRankingStatsUpdate({
+      const reconciled = mergeRetainedRankingStatsUpdate({
         conversation: conversationWithPreservedCache,
         update: getRetainedConversationRankingStatsUpdate({
           queryClient,
           conversationSlugId: slugId,
         }),
       });
+      if (cachedConversation !== undefined) {
+        reconcileQvStats({
+          queryClient,
+          conversation: cachedConversation.conversationData,
+        });
+      }
+      return {
+        ...reconciled,
+        conversationData: reconcileQvCalculationLifecycle({
+          queryClient,
+          conversation: reconcileQvStats({
+            queryClient,
+            conversation: reconciled.conversationData,
+          }),
+        }),
+      };
     },
     enabled: computed(() => toValue(enabled) && isActive.value),
     placeholderData: (previousData, previousQuery) =>

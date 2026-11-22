@@ -1,5 +1,5 @@
 import { generateRandomSlugId } from "@/crypto.js";
-import { getPrimaryDatabase, hasPrimaryDatabase } from "@/shared-backend/db.js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     analysisSnapshotResultTable,
     analysisSnapshotTable,
@@ -26,6 +26,8 @@ import {
     conversationViewSnapshotTable,
     userTable,
     opinionModerationTable,
+    polisAnalysisCloseGenerationTable,
+    polisAnalysisCloseTable,
     polisConversationConfigTable,
     userMutePreferenceTable,
     voteTable,
@@ -39,12 +41,12 @@ import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversati
 import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
 import type {
     AnalysisFrameGroupLabels,
+    AnalysisFrameContent,
     AnalysisFrameGroups,
     AnalysisFrameKey,
     AnalysisFrameManifest,
     AnalysisFrameOpinionList,
     AnalysisFrameOpinionListKind,
-    AnalysisFreshnessRequest,
     CreateCommentResponse,
     FetchCommentStatsResponse,
     GetOpinionBySlugIdListResponse,
@@ -56,6 +58,7 @@ import {
     desc,
     asc,
     eq,
+    exists,
     sql,
     and,
     isNull,
@@ -77,8 +80,6 @@ import type {
     SlugId,
     PolisKey,
     ClusterStats,
-    EventSlug,
-    ParticipationMode,
     AnalysisView,
 } from "@/shared/types/zod.js";
 import { httpErrors } from "@fastify/sensible";
@@ -86,7 +87,11 @@ import { useCommonComment } from "./common.js";
 import { log } from "@/app.js";
 import { logApiError } from "@/logging/privacy.js";
 import { createCommentModerationPropertyObject } from "./moderation.js";
-import { checkConversationParticipation } from "./participationGate.js";
+import {
+    prepareParticipantStatement,
+    withParticipantStatementAdmission,
+} from "./participantStatementAdmission.js";
+import { fetchCurrentConversationTypeSettings } from "./conversationTypeConfig.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import { queueOpinionRedactedEvent } from "./realtimeEventOutbox.js";
 import { currentOpinionSourceCondition } from "@/shared-backend/opinionEligibility.js";
@@ -134,10 +139,7 @@ import type { OpinionContentSource } from "./contentTranslation.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import * as conversationContentService from "./conversationContent.js";
 import { getProjectLanguageSettings } from "./projectAccess.js";
-import {
-    canManageOpinion,
-    getOpinionManagementCapabilities,
-} from "./opinionPermissions.js";
+import { getOpinionManagementCapabilities } from "./opinionPermissions.js";
 import {
     getConversationOverrideTranslationTargetLanguagePolicy,
     getProjectTranslationTargetLanguagePolicy,
@@ -145,8 +147,6 @@ import {
     sourceLanguageToDisplayLanguage,
     type TranslationTargetLanguagePolicy,
 } from "./translationLanguageSetting.js";
-
-export type AnalysisFreshnessOptions = AnalysisFreshnessRequest;
 
 interface LatestConversationOpinionCountSnapshot {
     participantCount: number;
@@ -271,7 +271,7 @@ export function isPersonalNonSeedOpinionByViewer({
     viewerUserId,
     isSeed,
 }: {
-    opinionAuthorId: string;
+    opinionAuthorId: string | null;
     viewerUserId: string | undefined;
     isSeed: boolean;
 }): boolean {
@@ -308,52 +308,6 @@ export async function isPersonalNonSeedOpinionAuthoredByUser({
         .limit(1);
     const row = rows.at(0);
     return row !== undefined && !row.isSeed;
-}
-
-function shouldTryPrimaryFallback({
-    db,
-    freshnessOptions,
-}: {
-    db: PostgresJsDatabase;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): boolean {
-    return (
-        freshnessOptions?.enablePrimaryFallback === true &&
-        hasPrimaryDatabase(db)
-    );
-}
-
-async function resolveAnalysisDisplayContentAttempt({
-    db,
-    resolveDisplayContentPreferences,
-    freshnessOptions,
-}: {
-    db: PostgresJsDatabase;
-    resolveDisplayContentPreferences: ResolveOpinionDisplayContentPreferences;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): Promise<{
-    db: PostgresJsDatabase;
-    displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
-}> {
-    try {
-        return {
-            db,
-            displayContentPreferences: await resolveDisplayContentPreferences({
-                db,
-            }),
-        };
-    } catch (error) {
-        if (!shouldTryPrimaryFallback({ db, freshnessOptions })) {
-            throw error;
-        }
-        const primaryDb = getPrimaryDatabase(db);
-        return {
-            db: primaryDb,
-            displayContentPreferences: await resolveDisplayContentPreferences({
-                db: primaryDb,
-            }),
-        };
-    }
 }
 
 async function fetchLatestConversationOpinionCountSnapshot({
@@ -830,7 +784,7 @@ export async function fetchOpinionsByPostId({
             moderationUpdatedAt: opinionModerationTable.updatedAt,
         })
         .from(opinionTable)
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             opinionContentTable,
             eq(opinionContentTable.id, opinionTable.currentContentId),
@@ -1097,7 +1051,7 @@ export async function countUnansweredOpinions({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .leftJoin(
             opinionModerationTable,
             and(
@@ -1363,7 +1317,7 @@ export async function fetchOpinionTargetsBySlugIdList({
                 isNull(opinionModerationTable.deletedAt),
             ),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .orderBy(desc(opinionTable.createdAt))
         .where(
             and(
@@ -1565,11 +1519,14 @@ interface SnapshotAnalysisOpinionRow {
         | "completed"
         | "failed"
         | null;
-    authorId: string;
+    authorId: string | null;
     username: string | null;
     authorIsDeleted: boolean | null;
     isSeed: boolean;
     currentContentId: number | null;
+    deletedAt: Date | null;
+    accountHiddenAt: Date | null;
+    accountHiddenContentRetained: boolean;
     numAgrees: number;
     numDisagrees: number;
     numPasses: number;
@@ -1601,7 +1558,6 @@ interface RepresentativeOpinionRow {
 interface SelectedAnalysisFrameCandidate {
     conversationId: number;
     viewSnapshotId: number;
-    surveyAggregateSnapshotId: number | null;
     participantCount: number;
     snapshotId: number;
     resultId: number;
@@ -1701,6 +1657,9 @@ function getSnapshotAnalysisOpinionSelectFields() {
         authorIsDeleted: userTable.isDeleted,
         isSeed: opinionTable.isSeed,
         currentContentId: opinionTable.currentContentId,
+        deletedAt: opinionTable.deletedAt,
+        accountHiddenAt: opinionTable.accountHiddenAt,
+        accountHiddenContentRetained: opinionTable.accountHiddenContentRetained,
         numAgrees: analysisSnapshotOpinionTable.numAgrees,
         numDisagrees: analysisSnapshotOpinionTable.numDisagrees,
         numPasses: analysisSnapshotOpinionTable.numPasses,
@@ -1729,8 +1688,7 @@ function getAnalysisOpinionCurrentVisibilityFilter({
         ? undefined
         : and(
               isNull(opinionModerationTable.id),
-              isNotNull(opinionTable.currentContentId),
-              or(eq(opinionTable.isSeed, true), eq(userTable.isDeleted, false)),
+              currentOpinionSourceCondition(),
           );
 }
 
@@ -2045,17 +2003,29 @@ function getOpinionRedactionReason({
     moderationAction,
     authorIsDeleted,
     isSeed,
+    deletedAt,
+    accountHiddenAt,
+    frameMode,
+    accountHiddenContentRetained,
 }: {
     currentContentId: number | null;
     moderationAction: OpinionModerationAction | null;
     authorIsDeleted: boolean | null;
     isSeed: boolean;
+    deletedAt: Date | null;
+    accountHiddenAt: Date | null;
+    frameMode: AnalysisFrameKey["mode"];
+    accountHiddenContentRetained: boolean;
 }): AnalysisOpinionRedactionReason | undefined {
-    // The frozen snapshot already excludes opinions hidden before analysis.
-    // For opinions that were analyzed and hidden/deleted afterward, checkpoints
-    // retain the frozen row and statistics but redact its content. Live queries
-    // omit currently non-visible rows; this is also a final leak safeguard.
-    if (currentContentId === null || (!isSeed && authorIsDeleted !== false)) {
+    // Account hiding excludes live sources, not permitted text in a retained
+    // checkpoint. Explicit content deletion and moderation apply in both modes.
+    if (
+        deletedAt !== null ||
+        currentContentId === null ||
+        ((frameMode === "live" || !accountHiddenContentRetained) &&
+            (accountHiddenAt !== null ||
+                (!isSeed && authorIsDeleted !== false)))
+    ) {
         return "statement_deleted";
     }
     if (moderationAction === "hide") {
@@ -2068,17 +2038,14 @@ export function buildAnalysisOpinionContent({
     row,
     displayContentPreferences,
     viewerUserId,
+    frameMode,
 }: {
     row: SnapshotAnalysisOpinionRow;
     displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
     viewerUserId: string | undefined;
+    frameMode: AnalysisFrameKey["mode"];
 }): AnalysisOpinionItem["content"] {
-    const redactionReason = getOpinionRedactionReason({
-        currentContentId: row.currentContentId,
-        moderationAction: row.moderationAction,
-        authorIsDeleted: row.authorIsDeleted,
-        isSeed: row.isSeed,
-    });
+    const redactionReason = getOpinionRedactionReason({ ...row, frameMode });
     if (redactionReason !== undefined) {
         return {
             status: "redacted",
@@ -2094,6 +2061,43 @@ export function buildAnalysisOpinionContent({
         return { status: "redacted", reason: "statement_deleted" };
     }
 
+    const permitsNewTranslation =
+        row.accountHiddenAt === null &&
+        (row.isSeed || row.authorIsDeleted === false);
+    const displayContent = conversationContentService.toOpinionDisplayContent({
+        content: buildLocalizedOpinionContent({
+            source: {
+                opinionContentId: row.opinionContentId,
+                contentPublicId: row.contentPublicId,
+                comment: row.opinion,
+                sourceLanguageCode: row.sourceLanguageCode,
+                sourceRawLanguageCode: row.sourceRawLanguageCode,
+                sourceLanguageProvider: row.sourceLanguageProvider,
+                sourceLanguageConfidence: row.sourceLanguageConfidence,
+            },
+            translation:
+                row.translatedContent === null
+                    ? undefined
+                    : {
+                          translatedContent: row.translatedContent,
+                          sourceLanguageCode: row.translationSourceLanguageCode,
+                      },
+            targetLanguageCode: displayContentPreferences.targetLanguage,
+            missingTranslationStatus: toMissingContentTranslationStatus(
+                row.translationWorkStatus ?? "not_requested",
+            ),
+        }),
+        translationAllowed:
+            (permitsNewTranslation || row.translatedContent !== null) &&
+            displayContentPreferences.translationAllowed &&
+            !isPersonalNonSeedOpinionByViewer({
+                opinionAuthorId: row.authorId,
+                viewerUserId,
+                isSeed: row.isSeed,
+            }),
+        displayLanguage: displayContentPreferences.displayLanguage,
+        spokenLanguages: displayContentPreferences.spokenLanguages,
+    });
     return {
         status: "visible",
         html: row.opinion,
@@ -2105,41 +2109,9 @@ export function buildAnalysisOpinionContent({
             row.moderationCreatedAt,
             row.moderationUpdatedAt,
         ),
-        displayContent: conversationContentService.toOpinionDisplayContent({
-            content: buildLocalizedOpinionContent({
-                source: {
-                    opinionContentId: row.opinionContentId,
-                    contentPublicId: row.contentPublicId,
-                    comment: row.opinion,
-                    sourceLanguageCode: row.sourceLanguageCode,
-                    sourceRawLanguageCode: row.sourceRawLanguageCode,
-                    sourceLanguageProvider: row.sourceLanguageProvider,
-                    sourceLanguageConfidence: row.sourceLanguageConfidence,
-                },
-                translation:
-                    row.translatedContent === null
-                        ? undefined
-                        : {
-                              translatedContent: row.translatedContent,
-                              sourceLanguageCode:
-                                  row.translationSourceLanguageCode,
-                          },
-                targetLanguageCode: displayContentPreferences.targetLanguage,
-                missingTranslationStatus: toMissingContentTranslationStatus(
-                    row.translationWorkStatus ?? "not_requested",
-                ),
-            }),
-            translationAllowed:
-                row.currentContentId !== null &&
-                displayContentPreferences.translationAllowed &&
-                !isPersonalNonSeedOpinionByViewer({
-                    opinionAuthorId: row.authorId,
-                    viewerUserId,
-                    isSeed: row.isSeed,
-                }),
-            displayLanguage: displayContentPreferences.displayLanguage,
-            spokenLanguages: displayContentPreferences.spokenLanguages,
-        }),
+        displayContent: permitsNewTranslation
+            ? displayContent
+            : { ...displayContent, translationControl: null },
     };
 }
 
@@ -2151,6 +2123,7 @@ async function buildAnalysisOpinionsByIdFromRows({
     opinionRows,
     displayContentPreferences,
     viewerUserId,
+    frameMode,
 }: {
     db: PostgresJsDatabase;
     candidateId: number;
@@ -2159,6 +2132,7 @@ async function buildAnalysisOpinionsByIdFromRows({
     opinionRows: SnapshotAnalysisOpinionRow[];
     displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
     viewerUserId: string | undefined;
+    frameMode: AnalysisFrameKey["mode"];
 }): Promise<Map<number, AnalysisOpinionItem>> {
     const groupOpinionRows = await fetchGroupOpinionStatsRows({
         db,
@@ -2174,7 +2148,13 @@ async function buildAnalysisOpinionsByIdFromRows({
     }
 
     const authorIds = Array.from(
-        new Set(opinionRows.map((opinionRow) => opinionRow.authorId)),
+        new Set(
+            opinionRows.flatMap((row) =>
+                row.authorId === null || row.authorIsDeleted !== false
+                    ? []
+                    : [row.authorId],
+            ),
+        ),
     );
     const authorGroupRows =
         authorIds.length === 0
@@ -2194,10 +2174,10 @@ async function buildAnalysisOpinionsByIdFromRows({
 
     const groupIdByAuthorId = new Map<string, number>();
     for (const row of authorGroupRows) {
-        groupIdByAuthorId.set(row.userId, row.groupId);
+        if (row.userId !== null) groupIdByAuthorId.set(row.userId, row.groupId);
     }
 
-    const authorIdByOpinionId = new Map<number, string>();
+    const authorIdByOpinionId = new Map<number, string | null>();
     const opinionIdByAnalysisSnapshotOpinionId = new Map<number, number>();
     for (const row of opinionRows) {
         authorIdByOpinionId.set(row.opinionId, row.authorId);
@@ -2224,7 +2204,9 @@ async function buildAnalysisOpinionsByIdFromRows({
         const clusterStats = clustersStatsByOpinionId.get(opinionId) ?? [];
         clusterStats.push({
             key: group.key,
-            isAuthorInCluster: groupIdByAuthorId.get(authorId) === row.groupId,
+            isAuthorInCluster:
+                authorId !== null &&
+                groupIdByAuthorId.get(authorId) === row.groupId,
             numUsers: group.numUsers,
             numAgrees: row.numAgrees,
             numDisagrees: row.numDisagrees,
@@ -2243,6 +2225,7 @@ async function buildAnalysisOpinionsByIdFromRows({
                     clustersStatsByOpinionId.get(row.opinionId) ?? [],
                 displayContentPreferences,
                 viewerUserId,
+                frameMode,
             }),
         ]),
     );
@@ -2254,20 +2237,25 @@ export function buildAnalysisOpinionItem({
     clustersStats,
     displayContentPreferences,
     viewerUserId,
+    frameMode,
 }: {
     row: SnapshotAnalysisOpinionRow;
     conversationParticipantCount: number;
     clustersStats: ClusterStats[];
     displayContentPreferences: AnalysisOpinionDisplayContentPreferences;
     viewerUserId: string | undefined;
+    frameMode: AnalysisFrameKey["mode"];
 }): AnalysisOpinionItem {
     const content = buildAnalysisOpinionContent({
         row,
         displayContentPreferences,
         viewerUserId,
+        frameMode,
     });
     const attributionVisible =
-        content.status === "visible" && row.authorIsDeleted === false;
+        content.status === "visible" &&
+        row.authorIsDeleted === false &&
+        row.accountHiddenAt === null;
     return {
         opinionSlugId: row.opinionSlugId,
         createdAt: attributionVisible ? row.createdAt : undefined,
@@ -2427,12 +2415,56 @@ async function fetchSelectedOpinionGroupCandidateById({
     candidateId: number;
     frameMode: AnalysisFrameKey["mode"];
 }): Promise<SelectedAnalysisFrameCandidate | undefined> {
+    const view = conversationViewSnapshotTable;
+    const generation = polisAnalysisCloseGenerationTable;
+    const close = polisAnalysisCloseTable;
+    const reason = conversationViewSnapshotCheckpointReasonTable;
+    const publishedReplacement = db
+        .select({ dataGeneration: generation.dataGeneration })
+        .from(generation)
+        .where(
+            and(
+                eq(generation.conversationId, view.conversationId),
+                eq(generation.dataGeneration, view.closeReplacementGeneration),
+                isNotNull(generation.publishedAt),
+                frameMode === "checkpoint"
+                    ? and(
+                          exists(
+                              db
+                                  .select({ id: close.closeId })
+                                  .from(close)
+                                  .innerJoin(
+                                      reason,
+                                      and(
+                                          eq(
+                                              reason.conversationViewSnapshotId,
+                                              close.originalViewSnapshotId,
+                                          ),
+                                          eq(
+                                              reason.reason,
+                                              "conversation_closed",
+                                          ),
+                                      ),
+                                  )
+                                  .where(
+                                      and(
+                                          eq(close.closeId, generation.closeId),
+                                          eq(
+                                              close.opinionGroupSpecId,
+                                              view.opinionGroupSpecId,
+                                          ),
+                                      ),
+                                  ),
+                          ),
+                      )
+                    : undefined,
+            ),
+        );
+
     const rows = await db
         .select({
             conversationId: conversationTable.id,
             viewSnapshotId: conversationViewSnapshotTable.id,
-            surveyAggregateSnapshotId:
-                conversationViewSnapshotTable.surveyAggregateSnapshotId,
             participantCount: conversationViewSnapshotTable.participantCount,
             snapshotId: conversationViewSnapshotTable.analysisSnapshotId,
             resultId: analysisSnapshotResultTable.id,
@@ -2498,35 +2530,45 @@ async function fetchSelectedOpinionGroupCandidateById({
                 opinionGroupCandidateTable.id,
             ),
         )
-        .leftJoin(
-            conversationViewSnapshotCheckpointReasonTable,
-            and(
-                eq(
-                    conversationViewSnapshotCheckpointReasonTable.conversationViewSnapshotId,
-                    conversationViewSnapshotTable.id,
-                ),
-                eq(
-                    conversationViewSnapshotCheckpointReasonTable.conversationId,
-                    conversationTable.id,
-                ),
-            ),
-        )
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
                 eq(conversationTable.isImporting, false),
                 isNotNull(conversationTable.currentContentId),
-                isNotNull(conversationViewSnapshotTable.activatedAt),
+                isNull(conversationTable.deletedAt),
+                // An exact key remains valid after another result is selected
+                // or the conversation reopens. Staged views are never public.
+                or(
+                    and(
+                        isNull(view.closeReplacementGeneration),
+                        isNotNull(view.activatedAt),
+                        frameMode === "checkpoint"
+                            ? exists(
+                                  db
+                                      .select({ id: reason.id })
+                                      .from(reason)
+                                      .where(
+                                          and(
+                                              eq(
+                                                  reason.conversationViewSnapshotId,
+                                                  view.id,
+                                              ),
+                                              eq(
+                                                  reason.conversationId,
+                                                  view.conversationId,
+                                              ),
+                                          ),
+                                      ),
+                              )
+                            : undefined,
+                    ),
+                    exists(publishedReplacement),
+                ),
                 isNotNull(conversationViewSnapshotTable.analysisSnapshotId),
                 eq(analysisSnapshotResultTable.outcome, "success"),
                 eq(opinionGroupCandidateTable.outcome, "success"),
                 isNull(opinionGroupCandidateAssessmentTable.hiddenReason),
                 isNotNull(opinionGroupCandidateAssessmentTable.selectionScore),
-                frameMode === "checkpoint"
-                    ? isNotNull(
-                          conversationViewSnapshotCheckpointReasonTable.id,
-                      )
-                    : undefined,
             ),
         )
         .limit(1);
@@ -2539,7 +2581,6 @@ async function fetchSelectedOpinionGroupCandidateById({
     return {
         conversationId: row.conversationId,
         viewSnapshotId: row.viewSnapshotId,
-        surveyAggregateSnapshotId: row.surveyAggregateSnapshotId,
         participantCount: row.participantCount,
         snapshotId: row.snapshotId,
         resultId: row.resultId,
@@ -2595,51 +2636,6 @@ function isAnalysisFrameKeyEqual({
     );
 }
 
-function isAnalysisFrameManifestFreshEnough({
-    manifest,
-    freshnessOptions,
-}: {
-    manifest: AnalysisFrameManifest;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): boolean {
-    const minimumSnapshotId =
-        freshnessOptions?.minimumConversationViewSnapshotId ?? null;
-    if (
-        minimumSnapshotId !== null &&
-        (manifest.frameKey === undefined ||
-            manifest.frameKey.conversationViewSnapshotId < minimumSnapshotId)
-    ) {
-        return false;
-    }
-
-    return true;
-}
-
-function isAnalysisFrameGroupLabelsFreshEnough({
-    groupLabels,
-    freshnessOptions,
-}: {
-    groupLabels: AnalysisFrameGroupLabels;
-    freshnessOptions: AnalysisFreshnessOptions | null;
-}): boolean {
-    const expectedLocales = freshnessOptions?.expectedDescriptionLocales ?? [];
-    if (expectedLocales.length === 0) {
-        return true;
-    }
-
-    const displayedLocale = groupLabels.groupDescriptionDisplay.displayedLocale;
-    if (displayedLocale === null) {
-        return false;
-    }
-
-    return expectedLocales.every((locale) => {
-        if (locale === "en") {
-            return true;
-        }
-        return displayedLocale === locale;
-    });
-}
-
 function createAnalysisFrameManifest({
     selection,
     hasVotedOnAllAvailableOpinions,
@@ -2663,6 +2659,7 @@ function createAnalysisFrameManifest({
 
     return {
         frameKey,
+        closedAnalysisSelection: selection.closedAnalysisSelection,
         conversationViewSnapshot: selection.conversationViewSnapshot,
         counters,
         emptyReason: selection.emptyReason,
@@ -2679,7 +2676,6 @@ export async function fetchAnalysisFrameManifestByConversationSlugId({
     displayLanguage = "en",
     analysisView,
     checkpointViewSnapshotId,
-    freshnessOptions,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
@@ -2687,78 +2683,27 @@ export async function fetchAnalysisFrameManifestByConversationSlugId({
     displayLanguage?: string;
     analysisView?: AnalysisView;
     checkpointViewSnapshotId?: number;
-    freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameManifest> {
-    const manifest = await fetchAnalysisFrameManifestByConversationSlugIdFromDb(
-        {
-            db,
-            conversationSlugId,
-            personalizationUserId,
-            displayLanguage,
-            analysisView,
-            checkpointViewSnapshotId,
-        },
-    );
-
-    if (
-        isAnalysisFrameManifestFreshEnough({ manifest, freshnessOptions }) ||
-        !shouldTryPrimaryFallback({ db, freshnessOptions })
-    ) {
-        return manifest;
-    }
-
-    log.info(
-        `[Analysis] Falling back to primary for frame manifest conversationSlugId=${conversationSlugId} ` +
-            `minimumSnapshotId=${String(freshnessOptions?.minimumConversationViewSnapshotId)}`,
-    );
-    const primaryManifest =
-        await fetchAnalysisFrameManifestByConversationSlugIdFromDb({
-            db: getPrimaryDatabase(db),
-            conversationSlugId,
-            personalizationUserId,
-            displayLanguage,
-            analysisView,
-            checkpointViewSnapshotId,
-        });
-    if (
-        isAnalysisFrameManifestFreshEnough({
-            manifest: primaryManifest,
-            freshnessOptions,
-        })
-    ) {
-        return primaryManifest;
-    }
-    return manifest;
-}
-
-async function fetchAnalysisFrameManifestByConversationSlugIdFromDb({
-    db,
-    conversationSlugId,
-    personalizationUserId,
-    displayLanguage,
-    analysisView,
-    checkpointViewSnapshotId,
-}: {
-    db: PostgresJsDatabase;
-    conversationSlugId: string;
-    personalizationUserId?: string;
-    displayLanguage: string;
-    analysisView?: AnalysisView;
-    checkpointViewSnapshotId?: number;
-}): Promise<AnalysisFrameManifest> {
-    const hasVotedOnAllAvailableOpinions =
-        await getHasVotedOnAllAvailableOpinions({
-            db,
-            conversationSlugId,
-            personalizationUserId,
-        });
+    // A close may legitimately select an older published frame. Read its
+    // current pointer once on the primary, never compare frame IDs for freshness.
+    const primaryDb = getPrimaryDatabase(db);
     const selection = await getOpinionGroupAnalysisSelection({
-        db,
+        db: primaryDb,
         conversationSlugId,
         displayLanguage,
         analysisView,
         checkpointViewSnapshotId,
     });
+    // The completion hint is only actionable in the current open view.
+    const hasVotedOnAllAvailableOpinions =
+        checkpointViewSnapshotId === undefined &&
+        selection.conversationViewSnapshot?.isClosed !== true
+            ? await getHasVotedOnAllAvailableOpinions({
+                  db: primaryDb,
+                  conversationSlugId,
+                  personalizationUserId,
+              })
+            : undefined;
 
     return createAnalysisFrameManifest({
         selection,
@@ -2842,48 +2787,26 @@ export async function fetchAnalysisFrameGroupsByFrameKey({
     frameKey,
     personalizationUserId,
     resolveDisplayContentPreferences,
-    freshnessOptions,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     frameKey: AnalysisFrameKey;
     personalizationUserId?: string;
     resolveDisplayContentPreferences: ResolveOpinionDisplayContentPreferences;
-    freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameGroups> {
-    const initialAttempt = await resolveAnalysisDisplayContentAttempt({
-        db,
-        resolveDisplayContentPreferences,
-        freshnessOptions,
-    });
+    // Frozen frame keys do not freeze opinion visibility or viewer eligibility.
+    const primary = getPrimaryDatabase(db);
     const groups = await fetchAnalysisFrameGroupsByFrameKeyFromDb({
-        db: initialAttempt.db,
+        db: primary,
         conversationSlugId,
         frameKey,
         personalizationUserId,
-        displayContentPreferences: initialAttempt.displayContentPreferences,
+        displayContentPreferences: await resolveDisplayContentPreferences({
+            db: primary,
+        }),
     });
     if (groups !== undefined) {
         return groups;
-    }
-
-    if (
-        initialAttempt.db === db &&
-        shouldTryPrimaryFallback({ db, freshnessOptions })
-    ) {
-        const primaryDb = getPrimaryDatabase(db);
-        const primaryDisplayContentPreferences =
-            await resolveDisplayContentPreferences({ db: primaryDb });
-        const primaryGroups = await fetchAnalysisFrameGroupsByFrameKeyFromDb({
-            db: primaryDb,
-            conversationSlugId,
-            frameKey,
-            personalizationUserId,
-            displayContentPreferences: primaryDisplayContentPreferences,
-        });
-        if (primaryGroups !== undefined) {
-            return primaryGroups;
-        }
     }
 
     throw httpErrors.notFound("Analysis frame groups are not available.");
@@ -2939,6 +2862,7 @@ async function fetchAnalysisFrameGroupsByFrameKeyFromDb({
         opinionRows,
         displayContentPreferences,
         viewerUserId: personalizationUserId,
+        frameMode: frameKey.mode,
     });
     const representativeOpinionIdsByGroupKey =
         buildRepresentativeOpinionIdsByGroupKey({
@@ -3172,37 +3096,20 @@ export async function fetchAnalysisFrameGroupLabelsByFrameKey({
     conversationSlugId,
     frameKey,
     displayLanguage = "en",
-    freshnessOptions,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     frameKey: AnalysisFrameKey;
     displayLanguage?: string;
-    freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameGroupLabels> {
     const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
-    let result = await fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
-        db,
+    const primary = getPrimaryDatabase(db);
+    const result = await fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
+        db: primary,
         conversationSlugId,
         frameKey,
         displayLanguage,
     });
-    if (
-        (result === undefined ||
-            !isAnalysisFrameGroupLabelsFreshEnough({
-                groupLabels: result.groupLabels,
-                freshnessOptions,
-            })) &&
-        shouldTryPrimaryFallback({ db, freshnessOptions })
-    ) {
-        result =
-            (await fetchAnalysisFrameGroupLabelsByFrameKeyFromDb({
-                db: getPrimaryDatabase(db),
-                conversationSlugId,
-                frameKey,
-                displayLanguage,
-            })) ?? result;
-    }
     if (result === undefined) {
         throw httpErrors.notFound(
             "Analysis frame group labels are not available.",
@@ -3212,7 +3119,7 @@ export async function fetchAnalysisFrameGroupLabelsByFrameKey({
     if (result.needsDescriptionRequest) {
         // Workers materialize both English and translated work from durable
         // demand. Readers never compete for worker-owned execution records.
-        await getPrimaryDatabase(db)
+        await primary
             .insert(opinionGroupCandidateDescriptionLocaleRequestTable)
             .values({
                 candidateId: frameKey.candidateId,
@@ -3269,6 +3176,7 @@ async function fetchAnalysisFrameOpinionListByFrameKeyFromDb({
         opinionRows,
         displayContentPreferences,
         viewerUserId: personalizationUserId,
+        frameMode: frameKey.mode,
     });
     const items: AnalysisOpinionItem[] = [];
     for (const row of opinionRows) {
@@ -3292,7 +3200,6 @@ export async function fetchAnalysisFrameOpinionListByFrameKey({
     personalizationUserId,
     kind,
     resolveDisplayContentPreferences,
-    freshnessOptions,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
@@ -3300,47 +3207,130 @@ export async function fetchAnalysisFrameOpinionListByFrameKey({
     personalizationUserId?: string;
     kind: AnalysisFrameOpinionListKind;
     resolveDisplayContentPreferences: ResolveOpinionDisplayContentPreferences;
-    freshnessOptions: AnalysisFreshnessOptions | null;
 }): Promise<AnalysisFrameOpinionList> {
-    const initialAttempt = await resolveAnalysisDisplayContentAttempt({
-        db,
-        resolveDisplayContentPreferences,
-        freshnessOptions,
-    });
+    const primary = getPrimaryDatabase(db);
     const opinionList = await fetchAnalysisFrameOpinionListByFrameKeyFromDb({
-        db: initialAttempt.db,
+        db: primary,
         conversationSlugId,
         frameKey,
         personalizationUserId,
         kind,
-        displayContentPreferences: initialAttempt.displayContentPreferences,
+        displayContentPreferences: await resolveDisplayContentPreferences({
+            db: primary,
+        }),
     });
     if (opinionList !== undefined) {
         return opinionList;
     }
 
-    if (
-        initialAttempt.db === db &&
-        shouldTryPrimaryFallback({ db, freshnessOptions })
-    ) {
-        const primaryDb = getPrimaryDatabase(db);
-        const primaryDisplayContentPreferences =
-            await resolveDisplayContentPreferences({ db: primaryDb });
-        const primaryOpinionList =
-            await fetchAnalysisFrameOpinionListByFrameKeyFromDb({
-                db: primaryDb,
+    throw httpErrors.notFound("Analysis frame opinion list is not available.");
+}
+
+/** All personalized sections of one cold frame share its authorization, groups
+ * and per-opinion projections. Locale demand stays independently refreshable. */
+export async function fetchAnalysisFrameContentByFrameKey({
+    db,
+    conversationSlugId,
+    frameKey,
+    personalizationUserId,
+    resolveDisplayContentPreferences,
+}: Omit<
+    Parameters<typeof fetchAnalysisFrameOpinionListByFrameKey>[0],
+    "kind"
+>): Promise<AnalysisFrameContent> {
+    return await getPrimaryDatabase(db).transaction(
+        async (tx) => {
+            const candidate = await fetchSelectedFrameCandidateByKey({
+                db: tx,
                 conversationSlugId,
                 frameKey,
-                personalizationUserId,
-                kind,
-                displayContentPreferences: primaryDisplayContentPreferences,
             });
-        if (primaryOpinionList !== undefined) {
-            return primaryOpinionList;
-        }
-    }
-
-    throw httpErrors.notFound("Analysis frame opinion list is not available.");
+            if (candidate === undefined)
+                throw httpErrors.notFound("Analysis frame not available");
+            const displayContentPreferences =
+                await resolveDisplayContentPreferences({ db: tx });
+            const groups = await fetchSnapshotGroups({
+                db: tx,
+                candidateId: candidate.candidateId,
+                personalizationUserId,
+            });
+            const common = {
+                db: tx,
+                candidateId: candidate.candidateId,
+                snapshotId: candidate.snapshotId,
+                conversationParticipantCount: candidate.participantCount,
+                personalizationUserId,
+                frameMode: frameKey.mode,
+                displayContentPreferences,
+            };
+            const representativeRows = await fetchRepresentativeOpinionRows({
+                db: tx,
+                groups,
+            });
+            const representatives = await fetchAnalysisOpinionRowsByIds({
+                ...common,
+                analysisSnapshotOpinionIds: representativeRows.map(
+                    (r) => r.analysisSnapshotOpinionId,
+                ),
+            });
+            const readList = (kind: AnalysisFrameOpinionListKind) =>
+                fetchAnalysisOpinionRowsForList({ ...common, kind });
+            const agreements = await readList("agreements");
+            const disagreements = await readList("disagreements");
+            const divisive = await readList("divisive");
+            const unique = new Map(
+                [
+                    ...representatives,
+                    ...agreements,
+                    ...disagreements,
+                    ...divisive,
+                ].map((row) => [row.opinionId, row]),
+            );
+            const opinionsById = await buildAnalysisOpinionsByIdFromRows({
+                ...common,
+                groups,
+                opinionRows: [...unique.values()],
+                viewerUserId: personalizationUserId,
+            });
+            const representativeOpinionIdsByGroupKey =
+                buildRepresentativeOpinionIdsByGroupKey({
+                    groups,
+                    representativeRows,
+                    opinionsById,
+                });
+            const items = (rows: SnapshotAnalysisOpinionRow[]) =>
+                rows.flatMap((row) => {
+                    const item = opinionsById.get(row.opinionId);
+                    return item === undefined ? [] : [item];
+                });
+            return {
+                groups: {
+                    frameKey,
+                    clusters: buildSnapshotAnalysisFrameGroups({
+                        groups,
+                        opinionsById,
+                        representativeOpinionIdsByGroupKey,
+                    }),
+                },
+                agreements: {
+                    frameKey,
+                    kind: "agreements",
+                    items: items(agreements),
+                },
+                disagreements: {
+                    frameKey,
+                    kind: "disagreements",
+                    items: items(disagreements),
+                },
+                divisive: {
+                    frameKey,
+                    kind: "divisive",
+                    items: items(divisive),
+                },
+            };
+        },
+        { isolationLevel: "repeatable read" },
+    );
 }
 
 async function getHasVotedOnAllAvailableOpinions({
@@ -3359,7 +3349,7 @@ async function getHasVotedOnAllAvailableOpinions({
     const unvotedOpinions = await db
         .select({ opinionId: opinionTable.id })
         .from(opinionTable)
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .innerJoin(
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
@@ -3390,6 +3380,7 @@ async function getHasVotedOnAllAvailableOpinions({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
+                eq(conversationTable.isClosed, false),
                 isNotNull(opinionTable.currentContentId),
                 getUnansweredOpinionFilter({
                     personalizationUserId,
@@ -3456,18 +3447,11 @@ type PostNewOpinionContentProps =
       };
 
 interface PostNewOpinionWithConversationMetadataProps {
-    didWrite?: string;
-    userAgent?: string;
     currentDisplayLanguage?: never;
     conversationMetadata: {
         conversationId: number;
         conversationContentId: number;
         conversationAuthorId: string;
-        conversationAuthorUsername?: string;
-        conversationIsIndexed: boolean;
-        conversationParticipationMode: ParticipationMode;
-        conversationIsClosed: boolean;
-        requiresEventTicket: EventSlug | null;
     };
 }
 
@@ -3485,6 +3469,14 @@ type PostNewOpinionProps = PostNewOpinionBaseProps &
         | PostNewOpinionWithParticipationCheckProps
     );
 
+type CreatedOpinion = Omit<
+    Extract<CreateCommentResponse, { success: true }>,
+    "loginStatus"
+>;
+type InternalOpinionCreationResponse =
+    | CreatedOpinion
+    | Extract<CreateCommentResponse, { success: false }>;
+
 export function postNewOpinion(
     props: PostNewOpinionBaseProps &
         PostNewOpinionWithConversationMetadataProps & {
@@ -3494,13 +3486,20 @@ export function postNewOpinion(
             };
             commentBody?: never;
         },
-): Promise<Extract<CreateCommentResponse, { success: true }>>;
+): Promise<CreatedOpinion>;
 export function postNewOpinion(
-    props: PostNewOpinionProps,
+    props: PostNewOpinionBaseProps &
+        PostNewOpinionContentProps &
+        PostNewOpinionWithConversationMetadataProps,
+): Promise<InternalOpinionCreationResponse>;
+export function postNewOpinion(
+    props: PostNewOpinionBaseProps &
+        PostNewOpinionContentProps &
+        PostNewOpinionWithParticipationCheckProps,
 ): Promise<CreateCommentResponse>;
 export async function postNewOpinion(
     props: PostNewOpinionProps,
-): Promise<CreateCommentResponse> {
+): Promise<InternalOpinionCreationResponse | CreateCommentResponse> {
     const {
         db,
         tx,
@@ -3514,7 +3513,6 @@ export async function postNewOpinion(
         onCreatedOpinionSource,
     } = props;
     interface ParticipationContext {
-        success: true;
         conversationId: number;
         conversationContentId: number;
         participantId: string;
@@ -3549,73 +3547,56 @@ export async function postNewOpinion(
             }
         }
     }
-    const participationContext:
-        | ParticipationContext
-        | Extract<CreateCommentResponse, { success: false }> =
-        props.conversationMetadata !== undefined
-            ? {
-                  success: true,
+    const preparation =
+        props.conversationMetadata === undefined
+            ? await prepareParticipantStatement({
+                  db,
+                  conversationSlugId,
+                  family: "polis",
+                  didWrite: props.didWrite,
+                  now,
+              })
+            : {
+                  success: true as const,
                   conversationId: props.conversationMetadata.conversationId,
-                  conversationContentId:
-                      props.conversationMetadata.conversationContentId,
-                  participantId:
-                      props.conversationMetadata.conversationAuthorId,
-              }
-            : await (async () => {
-                  const participationCheck =
-                      await checkConversationParticipation({
-                          db,
-                          conversationSlugId,
-                          didWrite: props.didWrite,
-                          userAgent: props.userAgent,
-                          now,
-                          currentDisplayLanguage: props.currentDisplayLanguage,
-                      });
-                  if (!participationCheck.success) {
-                      return participationCheck;
-                  }
-
-                  return {
-                      success: true,
-                      conversationId: participationCheck.conversationId,
-                      conversationContentId:
-                          participationCheck.conversationContentId,
-                      participantId: participationCheck.participantId,
-                  };
-              })();
-
-    if (!participationContext.success) {
-        return participationContext;
-    }
-
-    const resolvedUseGoogleLanguageDetection =
-        useGoogleLanguageDetection ??
-        (
-            await getConversationMultilingualSetting({
-                db,
-                conversationId: participationContext.conversationId,
-            })
-        ).dynamicTranslationEnabled;
+                  dynamicTranslationEnabled: undefined,
+              };
+    if (!preparation.success) return preparation;
     const languageMetadata =
         props.normalizedContent?.sourceLanguageMetadata ??
         (await resolveContentLanguageMetadata({
             text: contentPlainText,
             googleCloudCredentials,
-            useGoogleLanguageDetection: resolvedUseGoogleLanguageDetection,
+            useGoogleLanguageDetection:
+                useGoogleLanguageDetection ??
+                preparation.dynamicTranslationEnabled ??
+                (
+                    await getConversationMultilingualSetting({
+                        db,
+                        conversationId: preparation.conversationId,
+                    })
+                ).dynamicTranslationEnabled,
         }));
 
     const opinionSlugId = generateRandomSlugId();
 
-    const persistNewOpinion = async (
-        transactionDb: PostgresJsDatabase,
-    ): Promise<{
+    const persistNewOpinion = async ({
+        transactionDb,
+        participationContext,
+    }: {
+        transactionDb: PostgresJsDatabase;
+        participationContext: ParticipationContext;
+    }): Promise<{
         opinionId: number;
         opinionContentId: number;
         opinionContentPublicId: string;
         opinionItem: OpinionItem;
         displayedOpinionItem: DisplayedOpinionItem;
+        contributionRevision: number;
+        participationContext: ParticipationContext;
     }> => {
-        if (!isSeed) {
+        // Internal metadata callers bypass device admission, but not account, family or policy checks.
+        if (!isSeed && props.conversationMetadata !== undefined) {
             const actors = await transactionDb
                 .select({ id: userTable.id })
                 .from(userTable)
@@ -3623,29 +3604,50 @@ export async function postNewOpinion(
                     and(
                         eq(userTable.id, participationContext.participantId),
                         eq(userTable.isDeleted, false),
+                        isNull(userTable.authRestrictedAt),
                     ),
                 )
-                .for("share");
+                .for("no key update");
             if (actors.length === 0)
                 throw httpErrors.conflict(
                     "Account no longer accepts statements",
                 );
-        }
-        const admissionRows = await transactionDb
-            .select({
-                isClosed: conversationTable.isClosed,
-                contentId: conversationTable.currentContentId,
-            })
-            .from(conversationTable)
-            .where(
-                eq(conversationTable.id, participationContext.conversationId),
+            const admissionRows = await transactionDb
+                .select({
+                    isClosed: conversationTable.isClosed,
+                    contentId: conversationTable.currentContentId,
+                    isImporting: conversationTable.isImporting,
+                })
+                .from(conversationTable)
+                .where(
+                    eq(
+                        conversationTable.id,
+                        participationContext.conversationId,
+                    ),
+                )
+                .for("share");
+            const admission = admissionRows.at(0);
+            if (
+                admission?.contentId == null ||
+                admission.isClosed ||
+                admission.isImporting
+            ) {
+                throw httpErrors.conflict(
+                    "Conversation no longer accepts statements",
+                );
+            }
+            const settings = await fetchCurrentConversationTypeSettings({
+                db: transactionDb,
+                conversationId: participationContext.conversationId,
+            });
+            if (
+                settings.presentation.conversationType !== "polis" ||
+                !settings.participantStatements.supported ||
+                !settings.participantStatements.enabled
             )
-            .for("share");
-        const admission = admissionRows.at(0);
-        if (!isSeed && (admission?.contentId == null || admission.isClosed)) {
-            throw httpErrors.conflict(
-                "Conversation no longer accepts statements",
-            );
+                throw httpErrors.conflict(
+                    "Conversation no longer accepts statements",
+                );
         }
         const insertCommentResponse = await transactionDb
             .insert(opinionTable)
@@ -3662,7 +3664,10 @@ export async function postNewOpinion(
                 updatedAt: opinionTable.updatedAt,
             });
 
-        const opinionId = insertCommentResponse[0].opinionId;
+        const insertedOpinion = insertCommentResponse.at(0);
+        if (insertedOpinion === undefined)
+            throw httpErrors.internalServerError("Statement insertion failed");
+        const opinionId = insertedOpinion.opinionId;
 
         const commentContentTableResponse = await transactionDb
             .insert(opinionContentTable)
@@ -3679,9 +3684,13 @@ export async function postNewOpinion(
                 publicId: opinionContentTable.publicId,
             });
 
-        const commentContentTableId =
-            commentContentTableResponse[0].commentContentTableId;
-        const opinionContentPublicId = commentContentTableResponse[0].publicId;
+        const insertedContent = commentContentTableResponse.at(0);
+        if (insertedContent === undefined)
+            throw httpErrors.internalServerError(
+                "Statement content insertion failed",
+            );
+        const commentContentTableId = insertedContent.commentContentTableId;
+        const opinionContentPublicId = insertedContent.publicId;
 
         await transactionDb
             .update(opinionTable)
@@ -3691,48 +3700,42 @@ export async function postNewOpinion(
             .where(eq(opinionTable.id, opinionId));
 
         // Update the user profile's comment count using atomic increment
-        await transactionDb
+        const authors = await transactionDb
             .update(userTable)
             .set({
-                totalOpinionCount: sql`total_opinion_count + 1`,
+                totalOpinionCount: sql`${userTable.totalOpinionCount} + 1`,
             })
-            .where(eq(userTable.id, participationContext.participantId));
-
-        const participantUsername =
-            props.conversationMetadata?.conversationAuthorUsername ??
-            (await (async (): Promise<string> => {
-                const participantRows = await transactionDb
-                    .select({ username: userTable.username })
-                    .from(userTable)
-                    .where(eq(userTable.id, participationContext.participantId))
-                    .limit(1);
-                const participant = participantRows.at(0);
-                if (participant === undefined) {
-                    throw httpErrors.internalServerError(
-                        "Failed to locate opinion author after creation",
-                    );
-                }
-                return participant.username;
-            })());
+            .where(eq(userTable.id, participationContext.participantId))
+            .returning({
+                contributionRevision: userTable.contributionRevision,
+                username: userTable.username,
+            });
+        const author = authors.at(0);
+        if (author === undefined)
+            throw httpErrors.conflict("Account no longer accepts statements");
 
         const opinionItem: OpinionItem = {
             opinion: commentBody,
             sourceLanguageCode: languageMetadata.sourceLanguageCode,
             opinionSlugId,
-            createdAt: insertCommentResponse[0].createdAt,
-            updatedAt: insertCommentResponse[0].updatedAt,
+            createdAt: insertedOpinion.createdAt,
+            updatedAt: insertedOpinion.updatedAt,
             numParticipants: isSeed ? 0 : 1,
             numAgrees: isSeed ? 0 : 1,
             numDisagrees: 0,
             numPasses: 0,
-            username: participantUsername,
+            username: author.username,
             moderation: { status: "unmoderated" },
             isSeed,
             isEdited: false,
         };
         const displayedOpinionItem: DisplayedOpinionItem = {
             ...opinionItem,
-            management: { editing: { allowed: true }, canDelete: true },
+            management: {
+                editing: { allowed: true },
+                canDelete: true,
+                canModerate: false,
+            },
             displayContent: {
                 sourceVersion: opinionContentPublicId,
                 status: "available",
@@ -3748,21 +3751,60 @@ export async function postNewOpinion(
             opinionContentPublicId,
             opinionItem,
             displayedOpinionItem,
+            contributionRevision: author.contributionRevision,
+            participationContext,
         };
     };
 
+    const persist = async () => {
+        if (props.conversationMetadata !== undefined) {
+            const participationContext: ParticipationContext = {
+                conversationId: props.conversationMetadata.conversationId,
+                conversationContentId:
+                    props.conversationMetadata.conversationContentId,
+                participantId: props.conversationMetadata.conversationAuthorId,
+            };
+            const value =
+                tx !== undefined
+                    ? await persistNewOpinion({
+                          transactionDb: tx,
+                          participationContext,
+                      })
+                    : await getPrimaryDatabase(db).transaction(
+                          async (transactionDb) =>
+                              await persistNewOpinion({
+                                  transactionDb,
+                                  participationContext,
+                              }),
+                      );
+            return { success: true, value, loginStatus: undefined } as const;
+        }
+        return await withParticipantStatementAdmission({
+            db,
+            conversationSlugId,
+            family: "polis",
+            didWrite: props.didWrite,
+            userAgent: props.userAgent,
+            now,
+            currentDisplayLanguage: props.currentDisplayLanguage,
+            persist: async ({ tx: transactionDb, ...context }) =>
+                await persistNewOpinion({
+                    transactionDb,
+                    participationContext: context,
+                }),
+        });
+    };
+    const persisted = await persist();
+    if (!persisted.success) return persisted;
     const {
         opinionId,
         opinionContentId,
         opinionContentPublicId,
         opinionItem,
         displayedOpinionItem,
-    } =
-        tx !== undefined
-            ? await persistNewOpinion(tx)
-            : await db.transaction(async (transactionDb) => {
-                  return await persistNewOpinion(transactionDb);
-              });
+        contributionRevision,
+        participationContext,
+    } = persisted.value;
 
     onCreatedOpinionSource?.({
         conversationId: participationContext.conversationId,
@@ -3782,6 +3824,7 @@ export async function postNewOpinion(
             await voteBuffer.add({
                 vote: {
                     userId: participationContext.participantId,
+                    contributionRevision,
                     opinionId,
                     opinionContentId,
                     conversationId: participationContext.conversationId,
@@ -3804,26 +3847,35 @@ export async function postNewOpinion(
     // Create notification for conversation owner + org members (outside transaction)
     // Skip for seed opinions
     if (!isSeed) {
-        const { recipientUserIds } = await getNotificationRecipients({
-            db,
-            conversationId: participationContext.conversationId,
-            excludeUserIds: [participationContext.participantId],
-        });
-        if (recipientUserIds.length > 0) {
-            await createOpinionNotifications({
+        try {
+            const { recipientUserIds } = await getNotificationRecipients({
                 db,
-                recipientUserIds,
-                opinionAuthorId: participationContext.participantId,
-                opinionId,
                 conversationId: participationContext.conversationId,
-                conversationSlugId,
-                opinionSlugId,
-                opinionContent: commentBody,
-                username: opinionItem.username,
-                realtimeSSEManager,
+                excludeUserIds: [participationContext.participantId],
+            });
+            if (recipientUserIds.length > 0) {
+                await createOpinionNotifications({
+                    db,
+                    recipientUserIds,
+                    opinionAuthorId: participationContext.participantId,
+                    opinionId,
+                    conversationId: participationContext.conversationId,
+                    conversationSlugId,
+                    opinionSlugId,
+                    opinionContent: commentBody,
+                    username: opinionItem.username,
+                    realtimeSSEManager,
+                });
+            }
+        } catch (error) {
+            // Notification delivery must not turn an already committed statement into a retryable failure.
+            logApiError({
+                logger: log,
+                level: "error",
+                event: { event: "application_error" },
+                error,
             });
         }
-
         realtimeSSEManager?.broadcastToConversationSubscribersExcept({
             conversationSlugId,
             id: undefined,
@@ -3837,12 +3889,15 @@ export async function postNewOpinion(
         });
     }
 
-    return {
+    const created: CreatedOpinion = {
         success: true,
         opinionSlugId: opinionSlugId,
         opinionItem,
         displayedOpinionItem,
     };
+    return persisted.loginStatus === undefined
+        ? created
+        : { ...created, loginStatus: persisted.loginStatus };
 }
 
 interface DeleteCommentBySlugIdProps {
@@ -3854,7 +3909,6 @@ interface DeleteCommentBySlugIdProps {
 export async function deleteOpinionBySlugId({
     db,
     opinionSlugId,
-    userId,
 }: DeleteCommentBySlugIdProps): Promise<void> {
     const { conversationId: targetConversationId } =
         await useCommonComment().getOpinionMetadataFromOpinionSlugId({
@@ -3866,6 +3920,7 @@ export async function deleteOpinionBySlugId({
             .select({
                 projectId: conversationTable.projectId,
                 slugId: conversationTable.slugId,
+                closedFinalizedAt: conversationTable.closedFinalizedAt,
             })
             .from(conversationTable)
             .where(eq(conversationTable.id, targetConversationId))
@@ -3894,15 +3949,6 @@ export async function deleteOpinionBySlugId({
 
         if (opinion.currentContentId === null)
             throw httpErrors.conflict("Opinion had already been deleted");
-        if (
-            !(await canManageOpinion({
-                db: tx,
-                userId,
-                opinion: { ...opinion, projectId: conversation.projectId },
-                lockAuthorization: true,
-            }))
-        )
-            throw httpErrors.forbidden("Missing statement deletion permission");
         const moderationRows = await tx
             .select({ moderationId: opinionModerationTable.id })
             .from(opinionModerationTable)
@@ -3928,6 +3974,7 @@ export async function deleteOpinionBySlugId({
             .update(opinionTable)
             .set({
                 currentContentId: null,
+                deletedAt: sql`clock_timestamp()`,
             })
             .where(eq(opinionTable.id, opinion.opinionId));
 
@@ -3945,7 +3992,10 @@ export async function deleteOpinionBySlugId({
             emitCommentStatsRealtimeEvent: true,
         });
 
-        if (moderationRows.length === 0 && activeVoteRows.length > 0) {
+        if (
+            conversation.closedFinalizedAt !== null ||
+            (moderationRows.length === 0 && activeVoteRows.length > 0)
+        ) {
             await scheduleConversationAnalysisRefresh({
                 db: tx,
                 conversationId,
@@ -3954,12 +4004,13 @@ export async function deleteOpinionBySlugId({
         }
 
         // Decrement user's total opinion count
-        await tx
-            .update(userTable)
-            .set({
-                totalOpinionCount: sql`total_opinion_count - 1`,
-            })
-            .where(eq(userTable.id, opinion.authorId));
+        if (opinion.authorId !== null)
+            await tx
+                .update(userTable)
+                .set({
+                    totalOpinionCount: sql`total_opinion_count - 1`,
+                })
+                .where(eq(userTable.id, opinion.authorId));
     });
 }
 

@@ -1,0 +1,204 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ce4336b5-143b-498b-b2ad-fcf5e6431e5e",
+  "prevIds": [
+    "c9cfb331-cc7f-4d94-b09b-43a0a4074802"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_ga_consensus_pa"
+      ],
+      "writes": [
+        "s|col|public.opinion.polis_ga_consensus_pa",
+        "n|col|public.opinion.polis_ga_consensus_pa",
+        "e|col|public.opinion.polis_ga_consensus_pa"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "polis_content_id"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster_opinion.polis_content_id",
+        "n|col|public.polis_cluster_opinion.polis_content_id",
+        "e|col|public.polis_cluster_opinion.polis_content_id"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "probability_agreement"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster_opinion.probability_agreement",
+        "n|col|public.polis_cluster_opinion.probability_agreement",
+        "e|col|public.polis_cluster_opinion.probability_agreement"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_cluster_opinion",
+        "percentage_agreement"
+      ],
+      "writes": [
+        "s|col|public.polis_cluster_opinion.percentage_agreement",
+        "n|col|public.polis_cluster_opinion.percentage_agreement",
+        "e|col|public.polis_cluster_opinion.percentage_agreement"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_cluster_opinion"
+      ],
+      "writes": [
+        "s|fk|public.polis_cluster_opinion.polis_cluster_opinion_polis_content_id_polis_content_id_fk",
+        "n|fk|public.polis_cluster_opinion.polis_cluster_opinion_polis_content_id_polis_content_id_fk",
+        "e|fk|public.polis_cluster_opinion.polis_cluster_opinion_polis_content_id_polis_content_id_fk",
+        "n|con|public.polis_cluster_opinion.polis_cluster_opinion_polis_content_id_polis_content_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|tbl|public.polis_content",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.polis_content_id",
+        "n|col|public.polis_content.id",
+        "e|uniqueness|public.polis_content.id"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_cluster_opinion"
+      ],
+      "writes": [
+        "s|ck|public.polis_cluster_opinion.check_perc_btwn_0_and_1"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.probability_agreement"
+      ],
+      "sqlHash": "f60c3bd9baa235a6"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "polis_ga_consensus_pa",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "polis_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "probability_agreement",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "polis_cluster_opinion_polis_content_id_polis_content_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "polis_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "polis_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"polis_cluster_opinion\",\"percentage_agreement\"]"
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"polis_cluster_opinion\",\"check_perc_btwn_0_and_1\"]",
+      "set": {
+        "value": "\"polis_cluster_opinion\".\"probability_agreement\" BETWEEN 0 and 1"
+      }
+    }
+  ]
+}

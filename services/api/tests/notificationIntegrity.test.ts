@@ -55,7 +55,7 @@ describe("notification persistence invariants", () => {
             password: "postgres",
             max: 4,
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await client.unsafe(readDbFixtureSql("notification-integrity.sql"));
         await client.unsafe(
             readFileSync(

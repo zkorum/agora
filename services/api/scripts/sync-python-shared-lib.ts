@@ -1,4 +1,5 @@
 import { toPythonEnumMember } from "./sync-schema-lib.js";
+import { organizationRolesWithCapability } from "../src/shared/organizationAccess.js";
 
 const STRING_LITERAL_PATTERN = /"((?:[^"\\]|\\.)*)"/g;
 
@@ -155,6 +156,10 @@ function generateLengthConstantsSection({
 const PYTHON_SHARED_SECTION_GENERATORS = [
     generateDisplayLanguageSection,
     generateLengthConstantsSection,
+    (): PythonSharedSection => ({
+        title: "Organization Roles",
+        body: `CONVERSATION_CREATE_ORGANIZATION_ROLES: tuple[str, ...] = (${organizationRolesWithCapability("conversation_create").map((role) => JSON.stringify(role)).join(", ")},)`,
+    }),
     ({ sharedTs }: SharedTypesSources): PythonSharedSection => ({
         title: "Import Lifecycle",
         body: `MAX_CONVERSATION_IMPORT_DURATION_MS: int = ${String(

@@ -3,6 +3,7 @@ import { zodVotingAction } from "@/shared/types/zod.js";
 
 export const bufferedVoteSchema = z.object({
     userId: z.uuid(),
+    contributionRevision: z.number().int().nonnegative().default(0),
     opinionId: z.number().int(),
     opinionContentId: z.number().int(),
     conversationId: z.number().int(),

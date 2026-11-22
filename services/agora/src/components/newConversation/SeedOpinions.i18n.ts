@@ -4,11 +4,11 @@ export interface SeedOpinionsTranslations {
   nextButton: string;
   publishButton: string;
   addSeedOpinions: string;
-  addMaxDiffItems: string;
+  addPrioritizationItems: string;
   seedOpinionsDescription: string;
-  maxDiffSeedDescription: string;
+  prioritizationSeedDescription: string;
   addStatementShortcut: string;
-  needMinimumForMaxDiff: string;
+  needMinimumForPrioritization: string;
   addOpinion: string;
   opinionCannotBeEmpty: string;
   opinionHtmlTooLong: string;
@@ -43,14 +43,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "Next",
     publishButton: "Publish",
     addSeedOpinions: "Add Seed Statements",
-    addMaxDiffItems: "Add Statements to Rank",
+    addPrioritizationItems: "Add Statements to Rank",
     seedOpinionsDescription:
       "It's recommended to seed 8 to 15 statements across a range of viewpoints. This has a powerful effect on early participation.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "Prioritization requires at least 2 statements. We recommend 10 to 25 for the best experience.",
     addStatementShortcut:
       "Press Shift + Enter while writing to start a new statement.",
-    needMinimumForMaxDiff:
+    needMinimumForPrioritization:
       "At least 2 statements are required for prioritization.",
     addOpinion: "Add Statement",
     opinionCannotBeEmpty: "Statement cannot be empty",
@@ -91,14 +91,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "التالي",
     publishButton: "نشر",
     addSeedOpinions: "إضافة مقترحات أولية",
-    addMaxDiffItems: "إضافة عبارات للترتيب",
+    addPrioritizationItems: "إضافة عبارات للترتيب",
     seedOpinionsDescription:
       "يُنصح بإضافة 8 إلى 15 مقترحًا أوليًا تغطي مجموعة من وجهات النظر. هذا له تأثير قوي على المشاركة المبكرة.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "يتطلب ترتيب الأولويات 4 مقترحات على الأقل. نوصي بـ 10 إلى 25 للحصول على أفضل تجربة.",
     addStatementShortcut:
       "اضغط على Shift + Enter أثناء الكتابة لبدء مقترح جديد.",
-    needMinimumForMaxDiff: "مطلوب 4 مقترحات على الأقل لترتيب الأولويات.",
+    needMinimumForPrioritization: "مطلوب 4 مقترحات على الأقل لترتيب الأولويات.",
     addOpinion: "أضف مقترحًا",
     opinionCannotBeEmpty: "لا يمكن أن يكون المقترح فارغًا",
     opinionHtmlTooLong: "تنسيق المقترح كبير جدًا. يرجى تبسيطه.",
@@ -135,14 +135,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "Siguiente",
     publishButton: "Publicar",
     addSeedOpinions: "Agregar proposiciones iniciales",
-    addMaxDiffItems: "Agregar Declaraciones a Clasificar",
+    addPrioritizationItems: "Agregar Declaraciones a Clasificar",
     seedOpinionsDescription:
       "Se recomienda agregar de 8 a 15 proposiciones iniciales que cubran una variedad de puntos de vista. Esto tiene un efecto poderoso en la participación temprana.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "La priorización requiere al menos 4 declaraciones. Recomendamos de 10 a 25 para la mejor experiencia.",
     addStatementShortcut:
       "Pulse Mayús + Intro mientras escribe para iniciar otra proposición.",
-    needMinimumForMaxDiff:
+    needMinimumForPrioritization:
       "Se requieren al menos 4 declaraciones para la priorización.",
     addOpinion: "Añadir Proposición",
     opinionCannotBeEmpty: "La proposición no puede estar vacía",
@@ -182,14 +182,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "بعدی",
     publishButton: "انتشار",
     addSeedOpinions: "افزودن گزاره‌های اولیه",
-    addMaxDiffItems: "افزودن گزاره‌ها برای رتبه‌بندی",
+    addPrioritizationItems: "افزودن گزاره‌ها برای رتبه‌بندی",
     seedOpinionsDescription:
       "توصیه می‌شود ۸ تا ۱۵ گزاره اولیه از دیدگاه‌های مختلف اضافه کنید. این تأثیر قدرتمندی بر مشارکت اولیه دارد.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "اولویت‌بندی حداقل به ۲ گزاره نیاز دارد. برای بهترین تجربه ۱۰ تا ۲۵ عدد توصیه می‌شود.",
     addStatementShortcut:
       "هنگام نوشتن، Shift + Enter را فشار دهید تا گزاره جدیدی شروع کنید.",
-    needMinimumForMaxDiff: "حداقل ۲ گزاره برای اولویت‌بندی لازم است.",
+    needMinimumForPrioritization: "حداقل ۲ گزاره برای اولویت‌بندی لازم است.",
     addOpinion: "افزودن گزاره",
     opinionCannotBeEmpty: "گزاره نمی‌تواند خالی باشد",
     opinionHtmlTooLong:
@@ -228,14 +228,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "הבא",
     publishButton: "פרסום",
     addSeedOpinions: "הוספת הצהרות ראשוניות",
-    addMaxDiffItems: "הוספת הצהרות לדירוג",
+    addPrioritizationItems: "הוספת הצהרות לדירוג",
     seedOpinionsDescription:
       "מומלץ להוסיף 8 עד 15 הצהרות ראשוניות ממגוון נקודות מבט. לכך השפעה חזקה על ההשתתפות המוקדמת.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "תיעדוף דורש לפחות 2 הצהרות. מומלץ 10 עד 25 לחוויה הטובה ביותר.",
     addStatementShortcut:
       "בזמן הכתיבה, לחצו על Shift + Enter כדי להתחיל הצהרה חדשה.",
-    needMinimumForMaxDiff: "נדרשות לפחות 2 הצהרות לתיעדוף.",
+    needMinimumForPrioritization: "נדרשות לפחות 2 הצהרות לתיעדוף.",
     addOpinion: "הוספת הצהרה",
     opinionCannotBeEmpty: "ההצהרה לא יכולה להיות ריקה",
     opinionHtmlTooLong: "עיצוב ההצהרה גדול מדי. נא לפשט אותו.",
@@ -270,14 +270,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "Suivant",
     publishButton: "Publier",
     addSeedOpinions: "Ajouter des propositions initiales",
-    addMaxDiffItems: "Ajouter les Propositions à Classer",
+    addPrioritizationItems: "Ajouter les Propositions à Classer",
     seedOpinionsDescription:
       "Il est recommandé d'ajouter 8 à 15 propositions initiales couvrant un éventail de points de vue. Cela a un effet puissant sur la participation précoce.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "La hiérarchisation nécessite au moins 4 propositions. Nous recommandons 10 à 25 pour une meilleure expérience.",
     addStatementShortcut:
       "Pendant la saisie, appuyez sur Maj + Entrée pour commencer une nouvelle proposition.",
-    needMinimumForMaxDiff:
+    needMinimumForPrioritization:
       "Au moins 4 propositions sont requises pour la hiérarchisation.",
     addOpinion: "Ajouter une Proposition",
     opinionCannotBeEmpty: "La proposition ne peut pas être vide",
@@ -318,13 +318,13 @@ export const seedOpinionsTranslations: Record<
     nextButton: "下一步",
     publishButton: "发布",
     addSeedOpinions: "添加初始意见",
-    addMaxDiffItems: "添加待排名的意见",
+    addPrioritizationItems: "添加待排名的意见",
     seedOpinionsDescription:
       "建议添加8到15个涵盖不同立场的初始意见。这会对早期参与产生强大的影响。",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "优先排序至少需要2条意见。我们建议10至25条以获得最佳体验。",
     addStatementShortcut: "输入时按 Shift + Enter 可开始一条新意见。",
-    needMinimumForMaxDiff: "优先排序至少需要2条意见。",
+    needMinimumForPrioritization: "优先排序至少需要2条意见。",
     addOpinion: "添加意见",
     opinionCannotBeEmpty: "意见不能为空",
     opinionHtmlTooLong: "陈述的格式内容过大。请简化格式。",
@@ -356,13 +356,13 @@ export const seedOpinionsTranslations: Record<
     nextButton: "下一步",
     publishButton: "發布",
     addSeedOpinions: "添加初始意見",
-    addMaxDiffItems: "添加待排名的意見",
+    addPrioritizationItems: "添加待排名的意見",
     seedOpinionsDescription:
       "建議添加8到15個涵蓋不同立場的初始意見。這會對早期參與產生強大的影響。",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "優先排序至少需要2條意見。我們建議10至25條以獲得最佳體驗。",
     addStatementShortcut: "輸入時按 Shift + Enter 可開始一條新意見。",
-    needMinimumForMaxDiff: "優先排序至少需要2條意見。",
+    needMinimumForPrioritization: "優先排序至少需要2條意見。",
     addOpinion: "添加意見",
     opinionCannotBeEmpty: "意見不能為空",
     opinionHtmlTooLong: "陳述的格式內容過大。請簡化格式。",
@@ -394,14 +394,15 @@ export const seedOpinionsTranslations: Record<
     nextButton: "次へ",
     publishButton: "公開",
     addSeedOpinions: "初期の意見を追加",
-    addMaxDiffItems: "ランク付けする意見を追加",
+    addPrioritizationItems: "ランク付けする意見を追加",
     seedOpinionsDescription:
       "様々な視点から8〜15個の初期の意見を追加することをお勧めします。これは初期段階の参加に大きな効果をもたらします。",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "優先順位付けには少なくとも2つの意見が必要です。最良の体験のために10〜25個を推奨します。",
     addStatementShortcut:
       "入力中に Shift + Enter を押すと、新しい意見を始められます。",
-    needMinimumForMaxDiff: "優先順位付けには少なくとも2つの意見が必要です。",
+    needMinimumForPrioritization:
+      "優先順位付けには少なくとも2つの意見が必要です。",
     addOpinion: "意見を追加",
     opinionCannotBeEmpty: "意見を入力してください",
     opinionHtmlTooLong: "意見の書式設定が大きすぎます。簡略化してください。",
@@ -438,14 +439,15 @@ export const seedOpinionsTranslations: Record<
     nextButton: "Кийинки",
     publishButton: "Жарыялоо",
     addSeedOpinions: "Баштапкы пикирлерди кошуу",
-    addMaxDiffItems: "Рейтингге пикирлерди кошуу",
+    addPrioritizationItems: "Рейтингге пикирлерди кошуу",
     seedOpinionsDescription:
       "Ар кандай көз караштардан 8ден 15ке чейин баштапкы пикир кошуу сунушталат. Бул эрте катышууга күчтүү таасир тийгизет.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "Артыкчылык берүү үчүн кеминде 2 пикир керек. Ыңгайлуу колдонуу үчүн 10дон 25ке чейин пикир сунушталат.",
     addStatementShortcut:
       "Жазып жатканда жаңы пикирди баштоо үчүн Shift + Enter басыңыз.",
-    needMinimumForMaxDiff: "Артыкчылык берүү үчүн кеминде 2 пикир керек.",
+    needMinimumForPrioritization:
+      "Артыкчылык берүү үчүн кеминде 2 пикир керек.",
     addOpinion: "Пикир кошуу",
     opinionCannotBeEmpty: "Пикир бош болушу мүмкүн эмес",
     opinionHtmlTooLong: "Пикирдин форматтоосу өтө чоң. Аны жөнөкөйлөтүңүз.",
@@ -482,14 +484,14 @@ export const seedOpinionsTranslations: Record<
     nextButton: "Далее",
     publishButton: "Опубликовать",
     addSeedOpinions: "Добавить начальные высказывания",
-    addMaxDiffItems: "Добавить высказывания для ранжирования",
+    addPrioritizationItems: "Добавить высказывания для ранжирования",
     seedOpinionsDescription:
       "Рекомендуется добавить от 8 до 15 начальных высказываний с разных точек зрения. Это значительно стимулирует раннее участие.",
-    maxDiffSeedDescription:
+    prioritizationSeedDescription:
       "Для приоритизации требуется как минимум 2 высказывания. Для удобной работы рекомендуем добавить от 10 до 25.",
     addStatementShortcut:
       "Во время ввода нажмите Shift + Enter, чтобы начать новое высказывание.",
-    needMinimumForMaxDiff:
+    needMinimumForPrioritization:
       "Для приоритизации требуется как минимум 2 высказывания.",
     addOpinion: "Добавить высказывание",
     opinionCannotBeEmpty: "Высказывание не может быть пустым",

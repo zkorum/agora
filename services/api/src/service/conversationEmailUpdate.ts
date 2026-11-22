@@ -1,5 +1,11 @@
 import { createHash } from "node:crypto";
 import { httpErrors } from "@fastify/sensible";
+import { getEffectiveConversationParticipationMode } from "./conversationParticipationMode.js";
+import { effectiveConversationIndexing } from "./conversationDiscovery.js";
+import {
+    organizationRoleHasCapability,
+    organizationRolesWithCapability,
+} from "@/shared/organizationAccess.js";
 import { parseSupportedDisplayLanguageOrUndefined } from "@/shared/languages.js";
 import { fetchProjectAttributions } from "./projectPage.js";
 import {
@@ -62,7 +68,6 @@ import {
     conversationContentTable,
     conversationTable,
     emailTable,
-    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
     premiumFeatureEntitlementTable,
@@ -78,7 +83,6 @@ import {
 import type {
     ConversationEmailUpdatePrepareDraftRequest,
     ConversationEmailUpdatePrepareDraftResponse,
-    ConversationEmailUpdateCancelDraftRequest,
     ConversationEmailUpdateCancelDraftResponse,
     ConversationEmailUpdatePreviewRequest,
     ConversationEmailUpdatePreviewResponse,
@@ -116,7 +120,6 @@ import type {
     ConversationEmailUpdateSendResponse,
     ConversationEmailUpdateSendTestRequest,
     ConversationEmailUpdateSendTestResponse,
-    ConversationEmailUpdateTestStatusRequest,
     ConversationEmailUpdateTestStatusResponse,
     ConversationEmailUpdateWorkspaceRequest,
     ConversationEmailUpdateWorkspaceResponse,
@@ -179,42 +182,52 @@ interface AuthenticatedRequest<Request> {
     request: Request;
 }
 
+export interface AuthoringRequest<
+    Request,
+> extends AuthenticatedRequest<Request> {
+    organizationIds: readonly number[];
+}
+
 export interface ConversationEmailUpdateService {
     prepareDraft: (
-        params: AuthenticatedRequest<ConversationEmailUpdatePrepareDraftRequest>,
+        params: AuthoringRequest<ConversationEmailUpdatePrepareDraftRequest>,
     ) => Promise<ConversationEmailUpdatePrepareDraftResponse>;
-    cancelDraft: (
-        params: AuthenticatedRequest<ConversationEmailUpdateCancelDraftRequest>,
-    ) => Promise<ConversationEmailUpdateCancelDraftResponse>;
+    cancelDraft: (params: {
+        ownedReviewId: number | undefined;
+    }) => Promise<ConversationEmailUpdateCancelDraftResponse>;
     previewHistory: (
-        params: AuthenticatedRequest<ConversationEmailUpdatePreviewRequest>,
+        params: AuthoringRequest<ConversationEmailUpdatePreviewRequest>,
     ) => Promise<ConversationEmailUpdatePreviewResponse>;
     previewDev: (
         request: ConversationEmailUpdateDevPreviewRequest,
     ) => Promise<ConversationEmailUpdatePreviewResponse>;
     compareDev: (
-        params: AuthenticatedRequest<ConversationEmailUpdateDevComparisonRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateDevComparisonRequest>,
     ) => Promise<ConversationEmailUpdateDevComparisonResponse>;
     getWorkspace: (
-        params: AuthenticatedRequest<ConversationEmailUpdateWorkspaceRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateWorkspaceRequest>,
     ) => Promise<ConversationEmailUpdateWorkspaceResponse>;
     listHistory: (
-        params: AuthenticatedRequest<ConversationEmailUpdateHistoryListRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateHistoryListRequest>,
     ) => Promise<ConversationEmailUpdateHistoryListResponse>;
     getHistoryDetail: (
-        params: AuthenticatedRequest<ConversationEmailUpdateHistoryDetailRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateHistoryDetailRequest>,
     ) => Promise<ConversationEmailUpdateHistoryDetailResponse>;
     estimateAudience: (
-        params: AuthenticatedRequest<ConversationEmailUpdateAudienceEstimateRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateAudienceEstimateRequest>,
     ) => Promise<ConversationEmailUpdateAudienceEstimateResponse>;
     sendTest: (
-        params: AuthenticatedRequest<ConversationEmailUpdateSendTestRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateSendTestRequest> & {
+            ownedReviewId: number | undefined;
+        },
     ) => Promise<ConversationEmailUpdateSendTestResponse>;
-    getTestStatus: (
-        params: AuthenticatedRequest<ConversationEmailUpdateTestStatusRequest>,
-    ) => Promise<ConversationEmailUpdateTestStatusResponse>;
+    getTestStatus: (params: {
+        ownedTestId: number | undefined;
+    }) => Promise<ConversationEmailUpdateTestStatusResponse>;
     send: (
-        params: AuthenticatedRequest<ConversationEmailUpdateSendRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateSendRequest> & {
+            ownedReviewId: number | undefined;
+        },
     ) => Promise<ConversationEmailUpdateSendResponse>;
     getPreferences: (
         params: AuthenticatedRequest<ConversationEmailUpdatePreferencesRequest>,
@@ -225,14 +238,15 @@ export interface ConversationEmailUpdateService {
     updatePreference: (
         params: AuthenticatedRequest<ConversationEmailUpdatePreferenceUpdateRequest>,
     ) => Promise<ConversationEmailUpdatePreferenceUpdateResponse>;
-    getConfiguration: (
-        params: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest>,
-    ) => Promise<ConversationEmailUpdateConfigurationResponse>;
+    getConfiguration: (params: {
+        request: ConversationEmailUpdateConfigurationRequest;
+        canConfigure: boolean;
+    }) => Promise<ConversationEmailUpdateConfigurationResponse>;
     updateConfiguration: (
         params: AuthenticatedRequest<ConversationEmailUpdateConfigurationUpdateRequest>,
     ) => Promise<ConversationEmailUpdateConfigurationUpdateResponse>;
     getConversationSummary: (
-        params: AuthenticatedRequest<ConversationEmailUpdateConversationSummaryRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateConversationSummaryRequest>,
     ) => Promise<ConversationEmailUpdateConversationSummaryResponse>;
     getParticipationOnboardingAction: (params: {
         database: PostgresJsDatabase;
@@ -240,7 +254,7 @@ export interface ConversationEmailUpdateService {
         conversationSlugId: string;
     }) => Promise<ConversationEmailUpdateOnboardingAction | undefined>;
     getProjectSummary: (
-        params: AuthenticatedRequest<ConversationEmailUpdateProjectSummaryRequest>,
+        params: AuthoringRequest<ConversationEmailUpdateProjectSummaryRequest>,
     ) => Promise<ConversationEmailUpdateProjectSummaryResponse>;
 }
 
@@ -672,11 +686,13 @@ async function getPrimaryEmail({
 export async function listAuthorizedConversations({
     db,
     userId,
+    organizationIds,
     now,
     projectId,
 }: {
     db: PostgresJsDatabase;
     userId: string;
+    organizationIds: readonly number[];
     now: Date;
     projectId?: number;
 }) {
@@ -715,40 +731,6 @@ export async function listAuthorizedConversations({
             ),
         )
         .innerJoin(
-            organizationMembershipTable,
-            and(
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(organizationMembershipTable.userId, userId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            userTable,
-            and(
-                eq(userTable.id, organizationMembershipTable.userId),
-                eq(userTable.isDeleted, false),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
-        .innerJoin(
             premiumFeatureEntitlementTable,
             and(
                 eq(
@@ -770,6 +752,7 @@ export async function listAuthorizedConversations({
         .where(
             and(
                 isNull(projectTable.deletedAt),
+                inArray(organizationTable.id, [...organizationIds]),
                 projectId === undefined
                     ? undefined
                     : eq(projectTable.id, projectId),
@@ -796,7 +779,9 @@ export async function listAuthorizedConversations({
             conversation_id: conversationTable.id,
             conversation_slug_id: conversationTable.slugId,
             conversation_title: conversationContentTable.title,
-            participation_mode: conversationTable.participationMode,
+            participation_mode: getEffectiveConversationParticipationMode(
+                projectTable.participationMode,
+            ),
             conversation_override:
                 conversationTable.conversationEmailUpdateEnabledOverride,
             contact_first_name: projectContactTable.firstName,
@@ -940,10 +925,10 @@ export async function listAuthorizedConversations({
 
 function historyProjectVisibilityPredicate({
     db,
-    userId,
+    organizationIds,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
 }) {
     return and(
         isNull(projectTable.deletedAt),
@@ -965,40 +950,6 @@ function historyProjectVisibilityPredicate({
                         isNull(organizationTable.deletedAt),
                     ),
                 )
-                .innerJoin(
-                    organizationMembershipTable,
-                    and(
-                        eq(
-                            organizationMembershipTable.organizationId,
-                            projectOrganizationOwnershipTable.organizationId,
-                        ),
-                        eq(organizationMembershipTable.userId, userId),
-                        isNull(organizationMembershipTable.deletedAt),
-                    ),
-                )
-                .innerJoin(
-                    userTable,
-                    and(
-                        eq(userTable.id, organizationMembershipTable.userId),
-                        eq(userTable.isDeleted, false),
-                    ),
-                )
-                .innerJoin(
-                    organizationMembershipAllProjectCapabilityTable,
-                    and(
-                        eq(
-                            organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                            organizationMembershipTable.id,
-                        ),
-                        eq(
-                            organizationMembershipAllProjectCapabilityTable.capability,
-                            "conversation_email_update",
-                        ),
-                        isNull(
-                            organizationMembershipAllProjectCapabilityTable.deletedAt,
-                        ),
-                    ),
-                )
                 .where(
                     and(
                         eq(
@@ -1006,6 +957,7 @@ function historyProjectVisibilityPredicate({
                             projectTable.id,
                         ),
                         isNull(projectOrganizationOwnershipTable.deletedAt),
+                        inArray(organizationTable.id, [...organizationIds]),
                     ),
                 ),
         ),
@@ -1014,14 +966,17 @@ function historyProjectVisibilityPredicate({
 
 async function isHistoryContextVisible({
     db,
-    userId,
+    organizationIds,
     context,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
     context: HistoryContext;
 }): Promise<boolean> {
-    const visibility = historyProjectVisibilityPredicate({ db, userId });
+    const visibility = historyProjectVisibilityPredicate({
+        db,
+        organizationIds,
+    });
     if (context.kind === "conversation") {
         const rows = await db
             .select({ id: conversationTable.id })
@@ -1297,28 +1252,18 @@ function buildRequiredOwnerRowsQuery({
                 isNull(organizationTable.deletedAt),
             ),
         )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
         .where(
             and(
                 inArray(projectOrganizationOwnershipTable.projectId, [
                     ...projectIds,
                 ]),
                 isNull(organizationMembershipTable.deletedAt),
+                inArray(
+                    organizationMembershipTable.role,
+                    organizationRolesWithCapability(
+                        "conversation_email_update",
+                    ),
+                ),
             ),
         );
 }
@@ -1567,8 +1512,9 @@ export async function lockRequiredOwnerUserIds({
     );
     if (orderedOrganizationIds.length === 0) return [];
 
-    // Parent UPDATE locks make concurrent FK inserts wait. Keep this global
-    // organization -> membership -> capability order across projects.
+    // Freeze the required-copy recipient set, not the caller's authorization.
+    // Parent UPDATE locks make concurrent FK inserts wait; keep organization
+    // then membership order across projects.
     const organizations = await db
         .select({ id: organizationTable.id })
         .from(organizationTable)
@@ -1586,6 +1532,7 @@ export async function lockRequiredOwnerUserIds({
         .select({
             id: organizationMembershipTable.id,
             userId: organizationMembershipTable.userId,
+            role: organizationMembershipTable.role,
         })
         .from(organizationMembershipTable)
         .where(
@@ -1601,40 +1548,16 @@ export async function lockRequiredOwnerUserIds({
         .for("update");
     if (memberships.length === 0) return [];
 
-    const capabilities = await db
-        .select({
-            id: organizationMembershipAllProjectCapabilityTable.id,
-            membershipId:
-                organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-        })
-        .from(organizationMembershipAllProjectCapabilityTable)
-        .where(
-            and(
-                inArray(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    memberships.map((membership) => membership.id),
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
-        .orderBy(organizationMembershipAllProjectCapabilityTable.id)
-        .for("update");
-    const capableMembershipIds = new Set(
-        capabilities.map((capability) => capability.membershipId),
-    );
     return [
         ...new Set(
-            memberships.flatMap((membership) =>
-                capableMembershipIds.has(membership.id)
-                    ? [membership.userId]
-                    : [],
-            ),
+            memberships
+                .filter((membership) =>
+                    organizationRoleHasCapability({
+                        role: membership.role,
+                        capability: "conversation_email_update",
+                    }),
+                )
+                .map((membership) => membership.userId),
         ),
     ];
 }
@@ -2146,15 +2069,15 @@ function historyContextPredicate({
 
 function historyAccessPredicate({
     db,
-    userId,
+    organizationIds,
     context,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
     context: HistoryContext;
 }) {
     return and(
-        historyProjectVisibilityPredicate({ db, userId }),
+        historyProjectVisibilityPredicate({ db, organizationIds }),
         historyContextPredicate({ db, context }),
     );
 }
@@ -2166,12 +2089,12 @@ interface HistoryCursorPosition {
 
 async function resolveHistoryCursorPosition({
     db,
-    userId,
+    organizationIds,
     context,
     cursor,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
     context: HistoryContext;
     cursor: string;
 }): Promise<HistoryCursorPosition | undefined> {
@@ -2194,7 +2117,7 @@ async function resolveHistoryCursorPosition({
         )
         .where(
             and(
-                historyAccessPredicate({ db, userId, context }),
+                historyAccessPredicate({ db, organizationIds, context }),
                 eq(conversationEmailUpdateTable.publicId, cursor),
             ),
         )
@@ -2204,14 +2127,14 @@ async function resolveHistoryCursorPosition({
 
 async function queryVisibleHistoryRows({
     db,
-    userId,
+    organizationIds,
     context,
     cursorPosition,
     publicUpdateId,
     limit,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
     context: HistoryContext;
     cursorPosition: HistoryCursorPosition | undefined;
     publicUpdateId: string | undefined;
@@ -2252,7 +2175,7 @@ async function queryVisibleHistoryRows({
         )
         .where(
             and(
-                historyAccessPredicate({ db, userId, context }),
+                historyAccessPredicate({ db, organizationIds, context }),
                 keysetPredicate,
                 publicUpdateId === undefined
                     ? undefined
@@ -2268,11 +2191,11 @@ async function queryVisibleHistoryRows({
 
 async function hasVisibleHistory({
     db,
-    userId,
+    organizationIds,
     context,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
     context: HistoryContext;
 }): Promise<boolean> {
     const rows = await db
@@ -2289,7 +2212,7 @@ async function hasVisibleHistory({
             projectTable,
             eq(projectTable.id, conversationEmailUpdateDeliveryTable.projectId),
         )
-        .where(historyAccessPredicate({ db, userId, context }))
+        .where(historyAccessPredicate({ db, organizationIds, context }))
         .limit(1);
     return rows.length > 0;
 }
@@ -2614,7 +2537,7 @@ function buildPreferenceConversationDiscoveryCondition({
 }) {
     // Participation makes private conversations discoverable only to that user.
     return focusConversationSlugId === undefined
-        ? or(eq(conversationTable.isIndexed, true), participationCondition)
+        ? or(effectiveConversationIndexing(), participationCondition)
         : eq(conversationTable.slugId, focusConversationSlugId);
 }
 
@@ -4400,22 +4323,18 @@ async function getConversationConfigurationRow({
     return rows.at(0);
 }
 
-async function hasConversationEmailUpdateCapability({
+async function hasAvailableEmailUpdateScope({
     db,
-    userId,
+    organizationIds,
     projectId,
     now,
-    lockAuthorization = false,
-    lockMode = "update",
 }: {
     db: PostgresJsDatabase;
-    userId: string;
+    organizationIds: readonly number[];
     projectId: number;
     now: Date;
-    lockAuthorization?: boolean;
-    lockMode?: "update" | "share";
 }): Promise<boolean> {
-    const query = db
+    const rows = await db
         .select({ id: projectOrganizationOwnershipTable.id })
         .from(projectOrganizationOwnershipTable)
         .innerJoin(
@@ -4426,40 +4345,6 @@ async function hasConversationEmailUpdateCapability({
                     projectOrganizationOwnershipTable.organizationId,
                 ),
                 isNull(organizationTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipTable,
-            and(
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(organizationMembershipTable.userId, userId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            userTable,
-            and(
-                eq(userTable.id, organizationMembershipTable.userId),
-                eq(userTable.isDeleted, false),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
             ),
         )
         .innerJoin(
@@ -4485,21 +4370,41 @@ async function hasConversationEmailUpdateCapability({
             and(
                 eq(projectOrganizationOwnershipTable.projectId, projectId),
                 isNull(projectOrganizationOwnershipTable.deletedAt),
+                inArray(organizationTable.id, [...organizationIds]),
             ),
         )
         .limit(1);
-    const rows = lockAuthorization
-        ? await query.for(lockMode, {
-              of: [
-                  projectOrganizationOwnershipTable,
-                  organizationTable,
-                  organizationMembershipTable,
-                  userTable,
-                  organizationMembershipAllProjectCapabilityTable,
-                  premiumFeatureEntitlementTable,
-              ],
-          })
-        : await query;
+    return rows.length > 0;
+}
+
+async function isEmailUpdateEntitlementCurrent({
+    db,
+    entitlementId,
+    now,
+}: {
+    db: PostgresJsDatabase;
+    entitlementId: number;
+    now: Date;
+}): Promise<boolean> {
+    const rows = await db
+        .select({ id: premiumFeatureEntitlementTable.id })
+        .from(premiumFeatureEntitlementTable)
+        .where(
+            and(
+                eq(premiumFeatureEntitlementTable.id, entitlementId),
+                eq(
+                    premiumFeatureEntitlementTable.feature,
+                    "conversation_email_update",
+                ),
+                isNull(premiumFeatureEntitlementTable.revokedAt),
+                lte(premiumFeatureEntitlementTable.startsAt, now),
+                or(
+                    isNull(premiumFeatureEntitlementTable.expiresAt),
+                    gt(premiumFeatureEntitlementTable.expiresAt, now),
+                ),
+            ),
+        )
+        .limit(1);
     return rows.length > 0;
 }
 
@@ -4546,115 +4451,6 @@ async function resumeGloballyPausedEmailUpdates({
     return resumedRows.length > 0;
 }
 
-async function lockActiveEmailUpdateAuthorization({
-    db,
-    projectId,
-    organizationId,
-    entitlementId,
-    userId,
-}: {
-    db: PostgresJsDatabase;
-    projectId: number;
-    organizationId: number;
-    entitlementId: number;
-    userId: string;
-}): Promise<boolean> {
-    const rows = await db
-        .select({
-            startsAt: premiumFeatureEntitlementTable.startsAt,
-            expiresAt: premiumFeatureEntitlementTable.expiresAt,
-        })
-        .from(projectOrganizationOwnershipTable)
-        .innerJoin(
-            organizationTable,
-            and(
-                eq(
-                    organizationTable.id,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                isNull(organizationTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipTable,
-            and(
-                eq(
-                    organizationMembershipTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(organizationMembershipTable.userId, userId),
-                isNull(organizationMembershipTable.deletedAt),
-            ),
-        )
-        .innerJoin(
-            userTable,
-            and(
-                eq(userTable.id, organizationMembershipTable.userId),
-                eq(userTable.isDeleted, false),
-            ),
-        )
-        .innerJoin(
-            organizationMembershipAllProjectCapabilityTable,
-            and(
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.organizationMembershipId,
-                    organizationMembershipTable.id,
-                ),
-                eq(
-                    organizationMembershipAllProjectCapabilityTable.capability,
-                    "conversation_email_update",
-                ),
-                isNull(
-                    organizationMembershipAllProjectCapabilityTable.deletedAt,
-                ),
-            ),
-        )
-        .innerJoin(
-            premiumFeatureEntitlementTable,
-            and(
-                eq(premiumFeatureEntitlementTable.id, entitlementId),
-                eq(
-                    premiumFeatureEntitlementTable.organizationId,
-                    projectOrganizationOwnershipTable.organizationId,
-                ),
-                eq(
-                    premiumFeatureEntitlementTable.feature,
-                    "conversation_email_update",
-                ),
-                isNull(premiumFeatureEntitlementTable.revokedAt),
-            ),
-        )
-        .where(
-            and(
-                eq(projectOrganizationOwnershipTable.projectId, projectId),
-                eq(
-                    projectOrganizationOwnershipTable.organizationId,
-                    organizationId,
-                ),
-                isNull(projectOrganizationOwnershipTable.deletedAt),
-            ),
-        )
-        .limit(1)
-        .for("update", {
-            of: [
-                projectOrganizationOwnershipTable,
-                organizationTable,
-                organizationMembershipTable,
-                userTable,
-                organizationMembershipAllProjectCapabilityTable,
-                premiumFeatureEntitlementTable,
-            ],
-        });
-    // Time can advance while any of the authorization row locks are blocked.
-    const now = new Date();
-    const entitlement = rows.at(0);
-    return (
-        entitlement !== undefined &&
-        entitlement.startsAt <= now &&
-        (entitlement.expiresAt === null || entitlement.expiresAt > now)
-    );
-}
-
 export async function hasActiveDelivery({
     db,
     projectId,
@@ -4693,14 +4489,12 @@ export type ConversationEmailUpdateOverrideUpdateResult =
 
 export async function validateConversationEmailUpdateProjectMove({
     db,
-    userId,
     conversationSlugId,
     projectId,
     enabledOverride,
     now,
 }: {
     db: PostgresJsDatabase;
-    userId: string;
     conversationSlugId: string;
     projectId: number;
     enabledOverride: boolean | null | undefined;
@@ -4730,18 +4524,7 @@ export async function validateConversationEmailUpdateProjectMove({
     });
     if (configured && normalizeContactEmail(row.contact_email) === undefined)
         return { success: false, reason: "missing_participant_contact_email" };
-    if (
-        configured &&
-        (!row.feature_available ||
-            !(await hasConversationEmailUpdateCapability({
-                db,
-                userId,
-                projectId,
-                now,
-                lockAuthorization: true,
-                lockMode: "share",
-            })))
-    )
+    if (configured && !row.feature_available)
         return { success: false, reason: "feature_not_available" };
     return { success: true };
 }
@@ -4781,14 +4564,7 @@ export async function updateConversationEmailUpdateOverrideInTransaction({
     if (row?.project_id !== initialRow.project_id) {
         return { success: false, reason: "target_not_found" };
     }
-    const allowed = await hasConversationEmailUpdateCapability({
-        db,
-        userId,
-        projectId: row.project_id,
-        now,
-        lockAuthorization: true,
-    });
-    if (!row.feature_available || !allowed) {
+    if (!row.feature_available) {
         return { success: false, reason: "feature_not_available" };
     }
     if (
@@ -5132,35 +4908,18 @@ export function createConversationEmailUpdateService({
             },
         } as const;
     };
-    const loadOwnedReview = async ({
+    const lockReview = async ({
         database,
-        userId,
-        updateId,
+        ownedReviewId,
     }: {
         database: PostgresJsDatabase;
-        userId: string;
-        updateId: string;
+        ownedReviewId: number | undefined;
     }) => {
+        if (ownedReviewId === undefined) return undefined;
         const updates = await database
             .select()
             .from(conversationEmailUpdateTable)
-            .where(
-                and(
-                    eq(conversationEmailUpdateTable.publicId, updateId),
-                    eq(conversationEmailUpdateTable.createdByUserId, userId),
-                    exists(
-                        database
-                            .select({ id: userTable.id })
-                            .from(userTable)
-                            .where(
-                                and(
-                                    eq(userTable.id, userId),
-                                    eq(userTable.isDeleted, false),
-                                ),
-                            ),
-                    ),
-                ),
-            )
+            .where(eq(conversationEmailUpdateTable.id, ownedReviewId))
             .for("update");
         return updates.at(0);
     };
@@ -5168,6 +4927,7 @@ export function createConversationEmailUpdateService({
         database,
         update,
         userId,
+        organizationIds,
         now,
     }: {
         database: PostgresJsDatabase;
@@ -5176,6 +4936,7 @@ export function createConversationEmailUpdateService({
             { success: true }
         >["update"];
         userId: string;
+        organizationIds: readonly number[];
         now: Date;
     }): Promise<boolean> => {
         const snapshots = await database
@@ -5190,6 +4951,7 @@ export function createConversationEmailUpdateService({
         const authorized = await listAuthorizedConversations({
             db: database,
             userId,
+            organizationIds,
             now,
             projectId: update.projectId,
         });
@@ -5255,13 +5017,19 @@ export function createConversationEmailUpdateService({
     };
     const estimateAudience = async ({
         userId,
+        organizationIds,
         request,
-    }: AuthenticatedRequest<ConversationEmailUpdateAudienceEstimateRequest>): Promise<ConversationEmailUpdateAudienceEstimateResponse> => {
+    }: AuthoringRequest<ConversationEmailUpdateAudienceEstimateRequest>): Promise<ConversationEmailUpdateAudienceEstimateResponse> => {
         if (!sendingEnabled) {
             return { success: false, reason: "sending_disabled" };
         }
         const now = new Date();
-        const rows = await listAuthorizedConversations({ db, userId, now });
+        const rows = await listAuthorizedConversations({
+            db,
+            userId,
+            organizationIds,
+            now,
+        });
         const resolved = resolveSelection({
             rows,
             selection: request.selection,
@@ -5288,9 +5056,11 @@ export function createConversationEmailUpdateService({
 
     const getConfigurationWithDatabase = async ({
         database,
-        userId,
+        canConfigure,
         request,
-    }: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest> & {
+    }: {
+        request: ConversationEmailUpdateConfigurationRequest;
+        canConfigure: boolean;
         database: PostgresJsDatabase;
     }): Promise<ConversationEmailUpdateConfigurationResponse> => {
         const now = new Date();
@@ -5306,12 +5076,6 @@ export function createConversationEmailUpdateService({
             if (!row.feature_available) {
                 return { success: false, reason: "feature_not_available" };
             }
-            const canConfigure = await hasConversationEmailUpdateCapability({
-                db: database,
-                userId,
-                projectId: row.project_id,
-                now,
-            });
             return {
                 success: true,
                 configuration: {
@@ -5336,12 +5100,6 @@ export function createConversationEmailUpdateService({
         if (!row.feature_available) {
             return { success: false, reason: "feature_not_available" };
         }
-        const canConfigure = await hasConversationEmailUpdateCapability({
-            db: database,
-            userId,
-            projectId: row.project_id,
-            now,
-        });
         return mapConfiguration({
             row,
             canConfigure,
@@ -5349,16 +5107,28 @@ export function createConversationEmailUpdateService({
         });
     };
     const getConfiguration = async ({
-        userId,
+        canConfigure,
         request,
-    }: AuthenticatedRequest<ConversationEmailUpdateConfigurationRequest>): Promise<ConversationEmailUpdateConfigurationResponse> =>
-        await getConfigurationWithDatabase({ database: db, userId, request });
+    }: {
+        request: ConversationEmailUpdateConfigurationRequest;
+        canConfigure: boolean;
+    }): Promise<ConversationEmailUpdateConfigurationResponse> =>
+        await getConfigurationWithDatabase({
+            database: db,
+            canConfigure,
+            request,
+        });
 
     return {
-        getWorkspace: async ({ userId, request }) => {
+        getWorkspace: async ({ userId, organizationIds, request }) => {
             const now = new Date();
             const [allRows, testDestination] = await Promise.all([
-                listAuthorizedConversations({ db, userId, now }),
+                listAuthorizedConversations({
+                    db,
+                    userId,
+                    organizationIds,
+                    now,
+                }),
                 getPrimaryEmail({ db: getPrimaryDatabase(db), userId }),
             ]);
             const workspaceContext =
@@ -5436,10 +5206,10 @@ export function createConversationEmailUpdateService({
             });
         },
 
-        listHistory: async ({ userId, request }) => {
+        listHistory: async ({ organizationIds, request }) => {
             const contextVisible = await isHistoryContextVisible({
                 db,
-                userId,
+                organizationIds,
                 context: request.context,
             });
             if (!contextVisible) {
@@ -5451,7 +5221,7 @@ export function createConversationEmailUpdateService({
                     ? undefined
                     : await resolveHistoryCursorPosition({
                           db,
-                          userId,
+                          organizationIds,
                           context: request.context,
                           cursor: request.cursor,
                       });
@@ -5461,7 +5231,7 @@ export function createConversationEmailUpdateService({
 
             const rows = await queryVisibleHistoryRows({
                 db,
-                userId,
+                organizationIds,
                 context: request.context,
                 cursorPosition,
                 publicUpdateId: undefined,
@@ -5489,10 +5259,10 @@ export function createConversationEmailUpdateService({
             };
         },
 
-        getHistoryDetail: async ({ userId, request }) => {
+        getHistoryDetail: async ({ organizationIds, request }) => {
             const rows = await queryVisibleHistoryRows({
                 db,
-                userId,
+                organizationIds,
                 context: { kind: "global" },
                 cursorPosition: undefined,
                 publicUpdateId: request.updateId,
@@ -5512,12 +5282,12 @@ export function createConversationEmailUpdateService({
             };
         },
 
-        previewHistory: async ({ userId, request }) => {
+        previewHistory: async ({ organizationIds, request }) => {
             // Historical content is immutable, but access revocations must be current.
             const historyDb = getPrimaryDatabase(db);
             const rows = await queryVisibleHistoryRows({
                 db: historyDb,
-                userId,
+                organizationIds,
                 context: { kind: "global" },
                 cursorPosition: undefined,
                 publicUpdateId: request.updateId,
@@ -5653,7 +5423,7 @@ export function createConversationEmailUpdateService({
 
         estimateAudience,
 
-        compareDev: async ({ userId, request }) => {
+        compareDev: async ({ userId, organizationIds, request }) => {
             const parsed =
                 Dto.conversationEmailUpdateDevComparisonRequest.safeParse(
                     request,
@@ -5697,6 +5467,7 @@ export function createConversationEmailUpdateService({
                     const rows = await listAuthorizedConversations({
                         db: tx,
                         userId,
+                        organizationIds,
                         now: new Date(),
                         projectId: project.id,
                     });
@@ -5772,7 +5543,7 @@ export function createConversationEmailUpdateService({
             );
         },
 
-        prepareDraft: async ({ userId, request }) => {
+        prepareDraft: async ({ userId, organizationIds, request }) => {
             if (!sendingEnabled) {
                 return {
                     success: false,
@@ -5824,6 +5595,7 @@ export function createConversationEmailUpdateService({
                         rows: await listAuthorizedConversations({
                             db: tx,
                             userId,
+                            organizationIds,
                             now: new Date(),
                             projectId: selectedProject.id,
                         }),
@@ -5841,28 +5613,12 @@ export function createConversationEmailUpdateService({
                             success: false,
                             reason: "scope_not_found",
                         } as const;
-                    if (
-                        !(await lockActiveEmailUpdateAuthorization({
-                            db: tx,
-                            projectId: initial.value.project.project_id,
-                            organizationId:
-                                initial.value.project
-                                    .authorizing_organization_id,
-                            entitlementId:
-                                initial.value.project
-                                    .authorizing_entitlement_id,
-                            userId,
-                        }))
-                    )
-                        return {
-                            success: false,
-                            reason: "scope_not_found",
-                        } as const;
                     const now = new Date(Math.floor(Date.now() / 1000) * 1000);
                     const [accessRows, requesterEmail] = await Promise.all([
                         listAuthorizedConversations({
                             db: tx,
                             userId,
+                            organizationIds,
                             now: new Date(),
                             projectId: initial.value.project.project_id,
                         }),
@@ -6062,12 +5818,11 @@ export function createConversationEmailUpdateService({
             return result;
         },
 
-        cancelDraft: async ({ userId, request }) =>
+        cancelDraft: async ({ ownedReviewId }) =>
             await getPrimaryDatabase(db).transaction(async (tx) => {
-                const update = await loadOwnedReview({
+                const update = await lockReview({
                     database: tx,
-                    userId,
-                    updateId: request.updateId,
+                    ownedReviewId,
                 });
                 if (update?.reviewExpiresAt == null)
                     return { success: false, reason: "review_not_found" };
@@ -6093,12 +5848,11 @@ export function createConversationEmailUpdateService({
                 return { success: true };
             }),
 
-        sendTest: async ({ userId, request }) =>
+        sendTest: async ({ userId, organizationIds, ownedReviewId, request }) =>
             await getPrimaryDatabase(db).transaction(async (tx) => {
-                const update = await loadOwnedReview({
+                const update = await lockReview({
                     database: tx,
-                    userId,
-                    updateId: request.updateId,
+                    ownedReviewId,
                 });
                 if (update === undefined)
                     return {
@@ -6152,23 +5906,11 @@ export function createConversationEmailUpdateService({
                         error: { reason: "review_required" },
                     };
                 if (
-                    !(await lockActiveEmailUpdateAuthorization({
-                        db: tx,
-                        projectId: update.projectId,
-                        organizationId: update.authorizingOrganizationId,
-                        entitlementId: update.authorizingPremiumFeatureId,
-                        userId,
-                    }))
-                )
-                    return {
-                        success: false,
-                        error: { reason: "review_required" },
-                    };
-                if (
                     !(await reviewBasisMatches({
                         database: tx,
                         update: review.update,
                         userId,
+                        organizationIds,
                         now: new Date(),
                     }))
                 )
@@ -6279,7 +6021,9 @@ export function createConversationEmailUpdateService({
                 };
             }),
 
-        getTestStatus: async ({ userId, request }) => {
+        getTestStatus: async ({ ownedTestId }) => {
+            if (ownedTestId === undefined)
+                return { success: false, reason: "test_not_found" };
             const rows = await getPrimaryDatabase(db)
                 .select({
                     attempt_id: conversationEmailUpdateTestAttemptTable.id,
@@ -6308,16 +6052,7 @@ export function createConversationEmailUpdateService({
                     ),
                 )
                 .where(
-                    and(
-                        eq(
-                            conversationEmailUpdateTestAttemptTable.publicId,
-                            request.testAttemptId,
-                        ),
-                        eq(
-                            conversationEmailUpdateTestAttemptTable.requestedByUserId,
-                            userId,
-                        ),
-                    ),
+                    eq(conversationEmailUpdateTestAttemptTable.id, ownedTestId),
                 )
                 .limit(1);
             const attempt = rows.at(0);
@@ -6340,14 +6075,13 @@ export function createConversationEmailUpdateService({
             return { success: true, status };
         },
 
-        send: async ({ userId, request }) => {
+        send: async ({ userId, organizationIds, ownedReviewId, request }) => {
             try {
                 const result = await getPrimaryDatabase(db).transaction(
                     async (tx) => {
-                        const update = await loadOwnedReview({
+                        const update = await lockReview({
                             database: tx,
-                            userId,
-                            updateId: request.updateId,
+                            ownedReviewId,
                         });
                         if (update === undefined)
                             return {
@@ -6368,7 +6102,7 @@ export function createConversationEmailUpdateService({
                         if (accepted.length > 0) {
                             const rows = await queryVisibleHistoryRows({
                                 db: tx,
-                                userId,
+                                organizationIds,
                                 context: { kind: "global" },
                                 cursorPosition: undefined,
                                 publicUpdateId: request.updateId,
@@ -6497,6 +6231,7 @@ export function createConversationEmailUpdateService({
                                 database: tx,
                                 update: review.update,
                                 userId,
+                                organizationIds,
                                 now: new Date(),
                             }))
                         )
@@ -6523,6 +6258,7 @@ export function createConversationEmailUpdateService({
                         const accessRows = await listAuthorizedConversations({
                             db: tx,
                             userId,
+                            organizationIds,
                             now: new Date(),
                             projectId: attempt.project_id,
                         });
@@ -6647,15 +6383,14 @@ export function createConversationEmailUpdateService({
                             ),
                             facilitatorUserId: userId,
                         });
+                        // Recipient snapshot locks may wait past feature expiry. This
+                        // checks delivery eligibility, not the requesting actor's role.
                         if (
-                            !(await lockActiveEmailUpdateAuthorization({
+                            !(await isEmailUpdateEntitlementCurrent({
                                 db: tx,
-                                projectId: attempt.project_id,
-                                organizationId:
-                                    attempt.authorizing_organization_id,
                                 entitlementId:
                                     attempt.authorizing_entitlement_id,
-                                userId,
+                                now: new Date(),
                             }))
                         ) {
                             return {
@@ -7413,14 +7148,7 @@ export function createConversationEmailUpdateService({
                             reason: "target_not_found",
                         };
                     }
-                    const allowed = await hasConversationEmailUpdateCapability({
-                        db: tx,
-                        userId,
-                        projectId: row.project_id,
-                        now,
-                        lockAuthorization: true,
-                    });
-                    if (!row.feature_available || !allowed) {
+                    if (!row.feature_available) {
                         return {
                             success: false,
                             reason: "feature_not_available",
@@ -7476,7 +7204,7 @@ export function createConversationEmailUpdateService({
                 }
                 const configuration = await getConfigurationWithDatabase({
                     database: tx,
-                    userId,
+                    canConfigure: true,
                     request,
                 });
                 return configuration.success
@@ -7596,7 +7324,11 @@ export function createConversationEmailUpdateService({
             });
         },
 
-        getConversationSummary: async ({ userId, request }) => {
+        getConversationSummary: async ({
+            userId,
+            organizationIds,
+            request,
+        }) => {
             const now = new Date();
             const row = await getConversationConfigurationRow({
                 db,
@@ -7611,7 +7343,7 @@ export function createConversationEmailUpdateService({
             }
             const hasHistory = await hasVisibleHistory({
                 db,
-                userId,
+                organizationIds,
                 context: {
                     kind: "conversation",
                     conversationSlugId: request.conversationSlugId,
@@ -7631,9 +7363,9 @@ export function createConversationEmailUpdateService({
                 });
             const [canAccessWorkspace, primaryEmail, preferenceState] =
                 await Promise.all([
-                    hasConversationEmailUpdateCapability({
+                    hasAvailableEmailUpdateScope({
                         db,
-                        userId,
+                        organizationIds,
                         projectId: row.project_id,
                         now,
                     }),
@@ -7733,7 +7465,7 @@ export function createConversationEmailUpdateService({
             };
         },
 
-        getProjectSummary: async ({ userId, request }) => {
+        getProjectSummary: async ({ userId, organizationIds, request }) => {
             const now = new Date();
             const configuration = await getProjectConfigurationRow({
                 db,
@@ -7757,12 +7489,13 @@ export function createConversationEmailUpdateService({
                 listAuthorizedConversations({
                     db,
                     userId,
+                    organizationIds,
                     now,
                     projectId: configuration.project_id,
                 }),
                 hasVisibleHistory({
                     db,
-                    userId,
+                    organizationIds,
                     context: {
                         kind: "project",
                         projectSlug: request.projectSlug,

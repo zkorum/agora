@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/vue-query";
-import type { UserVote } from "src/composables/opinion/types";
+import { uid } from "quasar";
+import type { UserVote, VoteClientAction } from "src/composables/opinion/types";
 import type { CastVoteResponse } from "src/shared/types/dto";
 
 import type { VoteCacheSnapshot } from "./voteCache";
@@ -29,12 +30,13 @@ interface StatementSubmissions {
 
 function createVoteSubmissionQueue() {
   const statements = new Map<string, Set<StatementSubmissions>>();
-  const sessionId = crypto.randomUUID();
+  let sessionId: string | undefined;
   let nextSequence = 0;
 
-  function nextAction() {
+  function nextAction(): VoteClientAction {
     // Global monotonic order also orders each statement, without retaining an
     // ever-growing map of every statement visited during the app's lifetime.
+    sessionId ??= uid();
     return { sessionId, sequence: ++nextSequence };
   }
 

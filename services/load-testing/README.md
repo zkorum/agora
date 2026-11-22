@@ -90,7 +90,7 @@ Precreate each conversation in the UI with:
 
 - Conversation type `ranking`, `rankingMode: "bws"`, and `participationMode: "guest"`.
 - At least 4 active ranking items.
-- No required survey and no event-ticket requirement.
+- No required survey.
 - Open participation and no moderation restrictions (open/unmoderated).
 
 Start the API and scoring worker against the same disposable environment, for example with root `make dev-api` and `make dev-scoring-worker`. Setup validates the fixtures before participant load starts; the scenario does not create them. Keep fixture items and participation settings unchanged during the run.
@@ -211,7 +211,7 @@ Tests voting load on one or more conversations:
 - Each user votes on 50-100% of fetched opinions
 - Users occasionally create new opinions while voting
 - Page fetches are mixed in to simulate realistic browsing behavior
-- Requires conversations with `participationMode: "guest"` and no event-ticket requirement. The scenario generates fresh guest identities and does not perform account registration, email verification, or strong verification.
+- Requires conversations with `participationMode: "guest"`. The scenario generates fresh guest identities and does not perform account registration, email verification, or strong verification.
 
 Setup captures survey presence from conversation metadata. Guests skip form requests for conversations without surveys, avoiding expected "Survey not found" 404s in `http_req_failed`; existing surveys are still completed separately by each guest. Skips without requests do not contribute latency samples. Keep survey configuration unchanged during the run. Unexpected HTTP errors, including a form disappearing after setup, remain failures.
 

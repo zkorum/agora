@@ -1,9 +1,14 @@
-import type { CastVoteResponse } from "src/shared/types/dto";
+import type { CastVoteResponse, Dto } from "src/shared/types/dto";
 import type {
   DisplayedOpinionItem,
   VotingAction,
   VotingOption,
 } from "src/shared/types/zod";
+import type { z } from "zod";
+
+export type VoteClientAction = Readonly<
+  NonNullable<z.infer<typeof Dto.castVoteRequest>["clientAction"]>
+>;
 
 export interface OpinionSourceElements {
   readonly card: HTMLElement;

@@ -112,7 +112,7 @@ def test_survey_aggregates_commit_without_default_row_inserts(
             snapshot_id_by_conversation_id={conversation_id: 1 for conversation_id in configs},
             populations_by_conversation_id={
                 conversation_id: SurveyAggregatePopulation(
-                    participant_ids=frozenset(), group_memberships=()
+                    local_index_by_user_id={}, group_memberships=()
                 )
                 for conversation_id in configs
             },

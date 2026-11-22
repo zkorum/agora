@@ -14,6 +14,7 @@
       :use-chips="isMultipleSelection"
       :counter="isMultipleSelection"
       :max-values="maxSelections"
+      :popup-bottom-boundary="popupBottomBoundary"
       @update:model-value="handleDropdownUpdate"
       @popup-show="handleDropdownShow"
       @popup-hide="handleDropdownHide"
@@ -94,6 +95,7 @@ const props = withDefaults(
     selectedMultiOptionSlugIds: readonly string[];
     selectOptionLabel: string;
     maxSelections: number | undefined;
+    popupBottomBoundary: HTMLElement | undefined;
     density?: "comfortable" | "compact";
   }>(),
   {

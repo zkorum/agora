@@ -9,8 +9,8 @@ import {
     conversationEmailUpdateUserConversationPreferenceTable,
     conversationEmailUpdateUserProjectPreferenceTable,
     conversationTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
+    comparisonAnswerTable,
+    comparisonResponseTable,
     opinionContentTable,
     opinionTable,
     organizationTable,
@@ -62,7 +62,7 @@ describe("conversation Email Update preference pagination", () => {
             password: "postgres",
             max: 8,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await db.execute(
             sql.raw(
                 readDbFixtureSql(
@@ -265,20 +265,20 @@ describe("conversation Email Update preference pagination", () => {
     }: {
         userId: string;
         conversationId: number;
-        kind: "vote" | "opinion" | "maxdiff";
+        kind: "vote" | "opinion" | "comparison";
     }): Promise<() => Promise<void>> {
-        if (kind === "maxdiff") {
+        if (kind === "comparison") {
             const [result] = await db
-                .insert(maxdiffResultTable)
+                .insert(comparisonResponseTable)
                 .values({
                     participantId: userId,
                     conversationId,
                     comparisons: [],
                 })
-                .returning({ id: maxdiffResultTable.id });
+                .returning({ id: comparisonResponseTable.id });
             if (result === undefined) throw new Error("Failed to seed ranking");
-            await db.insert(maxdiffComparisonTable).values({
-                maxdiffResultId: result.id,
+            await db.insert(comparisonAnswerTable).values({
+                comparisonResponseId: result.id,
                 position: 0,
                 bestSlugId: "best0001",
                 worstSlugId: "worst001",
@@ -287,10 +287,13 @@ describe("conversation Email Update preference pagination", () => {
             });
             return async () => {
                 await db
-                    .update(maxdiffComparisonTable)
+                    .update(comparisonAnswerTable)
                     .set({ deletedAt: NOW })
                     .where(
-                        eq(maxdiffComparisonTable.maxdiffResultId, result.id),
+                        eq(
+                            comparisonAnswerTable.comparisonResponseId,
+                            result.id,
+                        ),
                     );
             };
         }
@@ -736,6 +739,7 @@ describe("conversation Email Update preference pagination", () => {
         expect(inaccessibleBatch.nextCursorByGroup.size).toBe(0);
 
         await db.insert(organizationMembershipTable).values({
+            role: "admin",
             organizationId,
             userId: USER_ID,
         });
@@ -793,6 +797,22 @@ describe("conversation Email Update preference pagination", () => {
             }),
         ).resolves.toEqual({
             success: true,
+            groupKeys: [],
+            nextCursor: undefined,
+        });
+        await db
+            .update(projectTable)
+            .set({ directoryVisibility: "listed" })
+            .where(eq(projectTable.id, noProjectContainerId));
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request,
+                now: NOW,
+            }),
+        ).resolves.toEqual({
+            success: true,
             groupKeys: [{ kind: "no_project" }],
             nextCursor: undefined,
         });
@@ -820,12 +840,12 @@ describe("conversation Email Update preference pagination", () => {
     it.each([
         { kind: "vote", scope: "project" },
         { kind: "opinion", scope: "project" },
-        { kind: "maxdiff", scope: "project" },
+        { kind: "comparison", scope: "project" },
         { kind: "vote", scope: "no_project" },
         { kind: "opinion", scope: "no_project" },
-        { kind: "maxdiff", scope: "no_project" },
+        { kind: "comparison", scope: "no_project" },
     ] satisfies {
-        kind: "vote" | "opinion" | "maxdiff";
+        kind: "vote" | "opinion" | "comparison";
         scope: "project" | "no_project";
     }[])(
         "lists private $scope conversations after $kind participation without a saved preference",

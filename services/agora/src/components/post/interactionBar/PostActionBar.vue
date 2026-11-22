@@ -20,6 +20,7 @@
 
       <div class="rightSection">
         <ZKButton
+          v-if="showCommunityCounts"
           button-type="compactButton"
           :disable="isLoading"
           @click.stop.prevent="showVoteBreakdown = true"
@@ -32,6 +33,7 @@
         </ZKButton>
 
         <ZKButton
+          v-if="showCommunityCounts"
           button-type="compactButton"
           :disable="isLoading"
           @click.stop.prevent="showParticipantBreakdown = true"
@@ -42,6 +44,16 @@
             <AnimatedAmountText v-else :amount="participantCount" />
           </div>
         </ZKButton>
+
+        <div
+          v-if="!showCommunityCounts"
+          class="countContentContainer"
+          :aria-label="t('totalParticipants')"
+        >
+          <ZKIcon color="#7D7A85" name="ph:users-fill" size="1rem" />
+          <q-spinner v-if="isLoading" color="#7D7A85" size="1rem" />
+          <AnimatedAmountText v-else :amount="participantCount" />
+        </div>
 
         <ZKButton
           button-type="compactButton"
@@ -66,6 +78,7 @@
     </div>
 
     <CountBreakdownDialog
+      v-if="showCommunityCounts"
       v-model="showVoteBreakdown"
       :total-count="totalVoteCount"
       :analysis-count="voteCount"
@@ -75,6 +88,7 @@
     />
 
     <CountBreakdownDialog
+      v-if="showCommunityCounts"
       v-model="showParticipantBreakdown"
       :total-count="totalParticipantCount"
       :analysis-count="participantCount"
@@ -152,18 +166,24 @@ const shareActions = useShareActions();
 const showVoteBreakdown = ref(false);
 const showParticipantBreakdown = ref(false);
 const notify = useNotify();
-const isMaxDiffConversation = computed(
+const isPrioritizingConversation = computed(
+  () => props.conversationTypeConfig.conversationType === "prioritizing"
+);
+// QV exposes one live participant count, not vote totals or an analysis breakdown.
+const showCommunityCounts = computed(
   () =>
-    props.conversationTypeConfig.conversationType === "ranking" &&
-    props.conversationTypeConfig.rankingMode === "bws"
+    !(
+      props.conversationTypeConfig.conversationType === "prioritizing" &&
+      props.conversationTypeConfig.prioritizationType === "qv"
+    )
 );
 const countScopeLabel = computed(() =>
-  isMaxDiffConversation.value ? t("usedForRanking") : t("usedForAnalysis")
+  isPrioritizingConversation.value ? t("usedForRanking") : t("usedForAnalysis")
 );
 
 const votesExplanation = computed(() => {
-  if (isMaxDiffConversation.value) {
-    return t("maxdiffVotesExplanation");
+  if (isPrioritizingConversation.value) {
+    return t("prioritizationVotesExplanation");
   }
 
   const explanations = [t("moderatedVotesExplanation")];
@@ -175,8 +195,8 @@ const votesExplanation = computed(() => {
 });
 
 const participantsExplanation = computed(() => {
-  if (isMaxDiffConversation.value) {
-    return t("maxdiffParticipantsExplanation");
+  if (isPrioritizingConversation.value) {
+    return t("prioritizationParticipantsExplanation");
   }
 
   const explanations = [t("moderatedParticipantsExplanation")];

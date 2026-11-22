@@ -28,12 +28,13 @@
 </template>
 
 <script setup lang="ts">
-import { useQuery } from "@tanstack/vue-query";
+import { hashKey, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { storeToRefs } from "pinia";
 import {
   type ProjectPageTranslations,
   translateProjectPageText,
 } from "src/components/project/projectPageI18n";
+import { getProjectActivityIdentity } from "src/components/project/projectPageTypes";
 import ProjectPageView from "src/components/project/ProjectPageView.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
@@ -44,15 +45,25 @@ import type {
 } from "src/shared/types/dto";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
+import { reconcileProjectQvCalculationLifecycle } from "src/utils/api/post/qvCalculationState";
+import { reconcileProjectQvStats } from "src/utils/api/post/qvStatsUpdate";
 import { useBackendProjectPageApi } from "src/utils/api/projectPage";
 import { getSingleRouteParam } from "src/utils/router/params";
+import { useQvStatsSubscriptions } from "src/utils/sse/qvStatsSubscriptions";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref, watch } from "vue";
+import { computed, onActivated, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const activityPageSize = 12;
 
 const route = useRoute();
+const queryClient = useQueryClient();
+function reconcileActivity(activity: ProjectPageActivity): ProjectPageActivity {
+  return reconcileProjectQvCalculationLifecycle({
+    queryClient,
+    activity: reconcileProjectQvStats({ queryClient, activity }),
+  });
+}
 const { fetchProjectPage, fetchProjectPageActivities, accessProjectDocument } =
   useBackendProjectPageApi();
 const { showNotifyMessage } = useNotify();
@@ -70,6 +81,7 @@ const isProjectRootRoute = computed(
   () => route.name === "/project/[projectSlug]"
 );
 const activities = ref<ProjectPageActivity[]>([]);
+let activityScope: string | undefined;
 const nextActivityCursor = ref<ProjectPageActivityCursor | undefined>();
 const activePaginationRequestId = ref<number | undefined>();
 let latestPaginationRequestId = 0;
@@ -96,14 +108,21 @@ const projectPageQueryKey = computed(() => [
 
 const projectPageQuery = useQuery({
   queryKey: projectPageQueryKey,
-  queryFn: async () =>
-    await fetchProjectPage({
+  queryFn: async () => {
+    const data = await fetchProjectPage({
       request: {
         projectSlug: projectSlug.value,
         activityLimit: activityPageSize,
       },
       authenticated: isGuestOrLoggedIn.value,
-    }),
+    });
+    return {
+      ...data,
+      activities: data.activities.map((activity) =>
+        reconcileActivity(activity)
+      ),
+    };
+  },
   enabled: computed(
     () =>
       isProjectRootRoute.value &&
@@ -113,6 +132,10 @@ const projectPageQuery = useQuery({
   retry: false,
 });
 const projectPageData = computed(() => projectPageQuery.data.value);
+onActivated(() => {
+  if (isProjectRootRoute.value && projectPageData.value !== undefined)
+    void projectPageQuery.refetch();
+});
 
 watch(
   projectPageData,
@@ -120,15 +143,44 @@ watch(
     if (data === undefined) {
       return;
     }
-    activities.value = data.activities;
-    nextActivityCursor.value = data.nextActivityCursor;
+    const scope = hashKey(projectPageQueryKey.value);
+    const sameFirstPage =
+      activityScope === scope &&
+      data.activities.length > 0 &&
+      data.activities.every((activity, index) => {
+        const previous = activities.value[index];
+        return (
+          previous !== undefined &&
+          getProjectActivityIdentity(activity) ===
+            getProjectActivityIdentity(previous)
+        );
+      });
+    const keepPagination =
+      sameFirstPage && activities.value.length > data.activities.length;
+    activities.value = [
+      ...data.activities,
+      ...(keepPagination ? activities.value.slice(data.activities.length) : []),
+    ].map(reconcileActivity);
+    if (!keepPagination) nextActivityCursor.value = data.nextActivityCursor;
+    activityScope = scope;
   },
   { immediate: true }
 );
 watch([projectSlug, displayLanguage, isGuestOrLoggedIn, userId], () => {
   latestPaginationRequestId += 1;
   activePaginationRequestId.value = undefined;
+  if (activityScope !== hashKey(projectPageQueryKey.value))
+    activities.value = [];
 });
+useQvStatsSubscriptions(() =>
+  isProjectRootRoute.value
+    ? activities.value.flatMap((activity) =>
+        activity.isIndexed && activity.prioritizationType === "qv"
+          ? [activity.slugId]
+          : []
+      )
+    : []
+);
 
 async function loadMoreActivities(): Promise<void> {
   const cursor = nextActivityCursor.value;
@@ -169,7 +221,10 @@ async function loadMoreActivities(): Promise<void> {
     ) {
       return;
     }
-    activities.value = [...activities.value, ...response.activities];
+    activities.value = [
+      ...activities.value,
+      ...response.activities.map((activity) => reconcileActivity(activity)),
+    ];
     nextActivityCursor.value = response.nextActivityCursor;
   } catch {
     if (

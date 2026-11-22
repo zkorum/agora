@@ -70,6 +70,7 @@ async function mountChoice({
             optionTextValues: texts.value,
             selectOptionLabel: "Select an option",
             maxSelections: multiple ? 2 : 1,
+            popupBottomBoundary: undefined,
             "onUpdate:selectedSingleOptionSlugId": (value: string | null) => {
               single.value = value;
             },

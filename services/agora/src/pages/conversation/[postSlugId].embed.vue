@@ -7,7 +7,6 @@
           :initial-display-content="loadedConversationDisplayContent"
           :compact-mode="false"
           @open-moderation-history="openModerationHistory()"
-          @verified="(payload) => handleTicketVerified(payload)"
         />
 
         <div ref="sentinelElement"></div>
@@ -50,25 +49,23 @@
                 :is="Component"
                 :key="route.path"
                 :conversation-data="loadedConversationData"
-                :moderation-history-trigger="moderationHistoryTrigger"
-                :comment-filter="commentFilter"
+                :opinion-state="opinionState"
                 :on-view-analysis="onViewAnalysis"
                 :navigate-to-discover-tab="navigateToDiscoverTab"
                 :conversation-scroll-context="conversationScrollContext"
                 :conversation-route-context="conversationRouteContext"
                 :editing-opinion="undefined"
-                @update:comment-filter="
-                  (filter: CommentFilterOptions) => {
-                    commentFilter = filter;
-                  }
-                "
               />
             </KeepAlive>
           </router-view>
         </div>
 
-        <FloatingBottomContainer v-if="!isMaxDiffConversation">
+        <FloatingBottomContainer
+          v-if="!isPrioritizingConversation"
+          :anchor-element="undefined"
+        >
           <CommentComposer
+            :participant-statements="loadedConversationData.metadata.participantStatements"
             :editing-target="undefined"
             :action-bar-element="
               conversationScrollContext.actionBarElement ?? undefined
@@ -96,7 +93,6 @@ import { useConversationParentState } from "src/composables/conversation/useConv
 import { useTabScrollRestoration } from "src/composables/conversation/useTabScrollRestoration";
 import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import EmbedLayout from "src/layouts/EmbedLayout.vue";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import { useConversationDisplayContent } from "src/utils/translation/useConversationDisplayContent";
 import { computed, ref } from "vue";
@@ -120,13 +116,11 @@ const {
   loadedConversationDisplayContent,
   currentTab,
   isCurrentTabLoading,
-  moderationHistoryTrigger,
-  commentFilter,
+  opinionState,
   actionBarElement,
   onViewAnalysis,
   navigateToDiscoverTab,
   openModerationHistory,
-  handleTicketVerified,
   handleSubmittedComment,
   scrollToActionBar,
   conversationScrollContext,
@@ -174,11 +168,9 @@ const isActionBarLoading = computed(
     isLoadingCommentStats.value
 );
 
-const isMaxDiffConversation = computed(() => {
+const isPrioritizingConversation = computed(() => {
   const metadata = loadedConversationData.value.metadata;
-  return (
-    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
-  );
+  return metadata.conversationType === "prioritizing";
 });
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {

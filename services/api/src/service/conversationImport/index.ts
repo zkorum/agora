@@ -12,7 +12,6 @@ import type {
     GetActiveImportResponse,
 } from "@/shared/types/dto.js";
 import type {
-    EventSlug,
     ParticipationMode,
     PreferredOpinionGroupCount,
 } from "@/shared/types/zod.js";
@@ -44,7 +43,6 @@ interface RequestConversationImportParams {
     formData: {
         participationMode: ParticipationMode;
         isIndexed: boolean;
-        requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
         languageTargetPolicy: ImportLanguageTargetPolicy;
@@ -180,7 +178,6 @@ interface RequestUrlImportParams {
     formData: {
         participationMode: ParticipationMode;
         isIndexed: boolean;
-        requiresEventTicket?: EventSlug;
         aiLabelingEnabled: boolean;
         preferredOpinionGroupCount: PreferredOpinionGroupCount;
         languageTargetPolicy: ImportLanguageTargetPolicy;

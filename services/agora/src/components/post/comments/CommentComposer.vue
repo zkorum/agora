@@ -1,5 +1,16 @@
 <template>
-  <div v-if="!hideComposerForRoute" ref="target">
+  <div
+    v-if="
+      !hideComposerForRoute &&
+      (editingOpinion !== undefined ||
+        creationEnabled ||
+        opinionBody.length > 0)
+    "
+    ref="target"
+  >
+    <p v-if="editingOpinion === undefined && !creationEnabled" role="status">
+      {{ participantT("disabled") }}
+    </p>
     <div
       class="container borderStyle"
       :class="{ focused: innerFocus, editing: editingOpinion !== undefined }"
@@ -19,7 +30,9 @@
           :show-toolbar="innerFocus"
           :single-line="false"
           :disabled="
-            editMutation.isPending.value || editSession.isInitializing.value
+            editMutation.isPending.value ||
+            editSession.isInitializing.value ||
+            (editingOpinion === undefined && !creationEnabled)
           "
           :max-length="MAX_LENGTH_OPINION"
           :show-character-count="innerFocus"
@@ -78,6 +91,7 @@
             isOverLimit ||
             !hasVisibleOpinionText ||
             isSubmissionLoading ||
+            !creationEnabled ||
             isComposerDisabled
           "
           :loading="isSubmissionLoading"
@@ -121,6 +135,7 @@ import {
   useWindowScroll,
 } from "@vueuse/core";
 import Button from "primevue/button";
+import { participantStatementsTranslations } from "src/components/newConversation/ParticipantStatements.i18n";
 import ExitRoutePrompt from "src/components/routeGuard/ExitRoutePrompt.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
@@ -134,6 +149,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useIdleMount } from "src/composables/ui/useIdleMount";
 import { hasVisiblePlainText, MAX_LENGTH_OPINION } from "src/shared/shared";
 import type { DisplayedOpinionItem } from "src/shared/types/zod";
+import type { ParticipantStatements } from "src/shared/types/zod";
 import { useNewOpinionDraftsStore } from "src/stores/newOpinionDrafts";
 import {
   useCreateCommentMutation,
@@ -176,6 +192,7 @@ defineOptions({
 
 const props = defineProps<{
   editingTarget: OpinionEditRequest | undefined;
+  participantStatements: ParticipantStatements;
   postSlugId: string;
   isComposerDisabled: boolean;
   actionBarElement: HTMLElement | undefined;
@@ -185,12 +202,14 @@ const emit = defineEmits<{
   editCancelled: [];
   editedOpinion: [opinion: DisplayedOpinionItem];
   submittedComment: [data: SubmittedCommentData];
-  ticketVerified: [
-    payload: { userIdChanged: boolean; needsCacheRefresh: boolean },
-  ];
 }>();
 
 const editingOpinion = computed(() => props.editingTarget?.opinion);
+const creationEnabled = computed(
+  () =>
+    props.participantStatements.supported && props.participantStatements.enabled
+);
+const { t: participantT } = useComponentI18n(participantStatementsTranslations);
 
 const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
@@ -234,7 +253,6 @@ const draftAutoSaveRouteNames = [
   "/conversation/[postSlugId].onboarding/verify/passport",
   "/conversation/[postSlugId].onboarding/verify/phone",
   "/conversation/[postSlugId].onboarding/verify/phone-code",
-  "/conversation/[postSlugId].onboarding/verify/ticket",
 ] satisfies readonly RouteName[];
 
 const route = useRoute();
@@ -591,6 +609,10 @@ function onCharacterCountUpdate(count: number) {
 }
 
 async function submitPostClicked() {
+  if (!creationEnabled.value) {
+    showNotifyMessage(participantT("disabled"));
+    return;
+  }
   const participation = captureParticipationAction();
   if (participationStatus.value.status !== "ready") {
     await openOnboarding();
@@ -626,6 +648,11 @@ async function submitPostClicked() {
       if (!participation.isCurrent()) return;
       // Business logic failure
       switch (response.reason) {
+        case "participant_statements_disabled":
+        case "participant_statements_unsupported":
+          showNotifyMessage(participantT("disabled"));
+          invalidateConversation(props.postSlugId);
+          break;
         case "conversation_locked":
           showNotifyMessage(t("conversationLockedError"));
           break;
@@ -636,7 +663,6 @@ async function submitPostClicked() {
           invalidateConversation(props.postSlugId);
           // Don't clear opinionBody or unlock route - preserve the text
           break;
-        case "event_ticket_required":
         case "account_required":
         case "strong_verification_required":
         case "email_verification_required":

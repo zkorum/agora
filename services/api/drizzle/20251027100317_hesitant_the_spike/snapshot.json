@@ -1,0 +1,286 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "73305c09-6abb-4494-a86c-3660c9099131",
+  "prevIds": [
+    "8b4877a8-c2ac-4396-9378-3ecb3dc705ee"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_cluster_translation"
+      ],
+      "writes": [
+        "s|tbl|public.polis_cluster_translation",
+        "n|tbl|public.polis_cluster_translation",
+        "e|tbl|public.polis_cluster_translation",
+        "n|rel|public.polis_cluster_translation",
+        "n|type|public.polis_cluster_translation",
+        "n|rel|public.polis_cluster_translation_pkey",
+        "n|rel|public.unique_cluster_language"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "polis_cluster_translation",
+        "polis_cluster_translation_lookup_idx"
+      ],
+      "writes": [
+        "s|idx|public.polis_cluster_translation_lookup_idx",
+        "n|idx|public.polis_cluster_translation_lookup_idx",
+        "e|idx|public.polis_cluster_translation_lookup_idx",
+        "n|rel|public.polis_cluster_translation_lookup_idx"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_translation",
+        "n|sch|public",
+        "n|col|public.polis_cluster_translation.polis_cluster_id",
+        "n|col|public.polis_cluster_translation.language_code"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "polis_cluster_translation"
+      ],
+      "writes": [
+        "s|fk|public.polis_cluster_translation.polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
+        "n|fk|public.polis_cluster_translation.polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
+        "e|fk|public.polis_cluster_translation.polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
+        "n|con|public.polis_cluster_translation.polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_translation",
+        "n|sch|public",
+        "n|tbl|public.polis_cluster",
+        "n|sch|public",
+        "n|col|public.polis_cluster_translation.polis_cluster_id",
+        "n|col|public.polis_cluster.id",
+        "e|uniqueness|public.polis_cluster.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "polis_cluster_translation",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "polis_cluster_translation_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "polis_cluster_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "language_code",
+        "type": "varchar(10)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "ai_label",
+        "type": "varchar(100)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "ai_summary",
+        "type": "varchar(1000)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "polis_cluster_translation_lookup_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "polis_cluster_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "polis_cluster_translation_polis_cluster_id_polis_cluster_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "polis_cluster_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "polis_cluster",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "polis_cluster_translation_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_translation",
+        "name": "unique_cluster_language",
+        "nameExplicit": true,
+        "columns": [
+          "polis_cluster_id",
+          "language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

@@ -21,6 +21,8 @@ PYTHON_TYPECHECK_PATTERNS := \
 	services/import-worker/tests/**/*.py \
 	services/scoring-worker/src/**/*.py \
 	services/scoring-worker/tests/**/*.py \
+	services/credit-voting-worker/src/**/*.py \
+	services/credit-voting-worker/tests/**/*.py \
 	services/*/pyproject.toml
 
 generate:
@@ -103,7 +105,15 @@ sync-python-models: sync-ts-backend
 		--service content-translation-worker \
 		--schema-ts ../shared-backend/src/schema.ts \
 		--sql "$$schema_sql" \
-		--output ../content-translation-worker/src/content_translation_worker/generated_models.py
+		--output ../content-translation-worker/src/content_translation_worker/generated_models.py; \
+	npx tsx scripts/sync-schema-cli.ts \
+		--service credit-voting-worker \
+		--schema-ts ../shared-backend/src/schema.ts \
+		--sql "$$schema_sql" \
+		--output ../credit-voting-worker/src/credit_voting_worker/generated_models.py; \
+	npx tsx scripts/sync-qv-rules-cli.ts \
+		--source ../shared/src/utils/qv.ts \
+		--output ../credit-voting-worker/src/credit_voting_worker/generated_rules.py
 
 sync-api-test-db-fixtures: sync-ts-backend
 	set -eu; \
@@ -116,6 +126,12 @@ sync-api-test-db-fixtures: sync-ts-backend
 		--sql "$$schema_sql" \
 		--config tests/fixtures/db/schema-fixtures.json \
 		--output-dir tests/fixtures/db
+
+dev-credit-voting-worker:
+	$(LOG_RUNNER) --service credit-voting-worker -- $(MAKE) dev-credit-voting-worker-raw
+
+dev-credit-voting-worker-raw:
+	cd services/credit-voting-worker && uv run python -m credit_voting_worker
 
 sync-python-shared-types:
 	cd services/api && npx tsx scripts/sync-python-shared-cli.ts \
@@ -161,6 +177,7 @@ typecheck-python:
 	cd services/content-translation-worker && uv run --extra dev basedpyright
 	cd services/import-worker && uv run --extra dev basedpyright
 	cd services/scoring-worker && uv run --extra dev basedpyright
+	cd services/credit-voting-worker && uv run --extra dev basedpyright
 
 dev-typecheck-python:
 	$(LOG_RUNNER) --service python-typecheck -- $(MAKE) dev-typecheck-python-raw

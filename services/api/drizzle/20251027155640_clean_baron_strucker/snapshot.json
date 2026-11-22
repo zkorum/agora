@@ -1,0 +1,235 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a1cf6ae9-1362-46ae-9788-21990390763a",
+  "prevIds": [
+    "73305c09-6abb-4494-a86c-3660c9099131"
+  ],
+  "footprints": [
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_update_queue",
+        "idx_conversation_update_queue_pending"
+      ],
+      "writes": [
+        "s|idx|public.idx_conversation_update_queue_pending",
+        "n|idx|public.idx_conversation_update_queue_pending",
+        "e|idx|public.idx_conversation_update_queue_pending",
+        "n|rel|public.idx_conversation_update_queue_pending"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_update_queue",
+        "n|sch|public",
+        "n|col|public.conversation_update_queue.requested_at",
+        "n|col|public.conversation_update_queue.last_math_update_at"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "039e26f07488a533"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_conversationId_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_conversationId_idx",
+        "n|idx|public.opinion_conversationId_idx",
+        "e|idx|public.opinion_conversationId_idx",
+        "n|rel|public.opinion_conversationId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "polis_cluster_opinion",
+        "polis_cluster_opinion_opinionId_idx"
+      ],
+      "writes": [
+        "s|idx|public.polis_cluster_opinion_opinionId_idx",
+        "n|idx|public.polis_cluster_opinion_opinionId_idx",
+        "e|idx|public.polis_cluster_opinion_opinionId_idx",
+        "n|rel|public.polis_cluster_opinion_opinionId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.opinion_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "polis_cluster_opinion",
+        "polis_cluster_opinion_polisClusterId_idx"
+      ],
+      "writes": [
+        "s|idx|public.polis_cluster_opinion_polisClusterId_idx",
+        "n|idx|public.polis_cluster_opinion_polisClusterId_idx",
+        "e|idx|public.polis_cluster_opinion_polisClusterId_idx",
+        "n|rel|public.polis_cluster_opinion_polisClusterId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.polis_cluster_opinion",
+        "n|sch|public",
+        "n|col|public.polis_cluster_opinion.polis_cluster_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote",
+        "vote_opinionId_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_opinionId_idx",
+        "n|idx|public.vote_opinionId_idx",
+        "e|idx|public.vote_opinionId_idx",
+        "n|rel|public.vote_opinionId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public",
+        "n|col|public.vote.opinion_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "opinion_conversationId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "polis_cluster_opinion_opinionId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "opinion_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "polis_cluster_opinion",
+        "name": "polis_cluster_opinion_polisClusterId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "polis_cluster_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "vote_opinionId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "opinion_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"idx_conversation_update_queue_pending\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "requested_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "last_math_update_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "where": "\"conversation_update_queue\".\"requested_at\" > \"conversation_update_queue\".\"last_math_update_at\" OR \"conversation_update_queue\".\"last_math_update_at\" IS NULL"
+      }
+    }
+  ]
+}

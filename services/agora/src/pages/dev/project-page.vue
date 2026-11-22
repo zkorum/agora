@@ -537,7 +537,7 @@ const baseActivities = [
   },
   {
     devSlugIdBase: "voices-for-change-rank-priorities",
-    conversationType: "ranking",
+    conversationType: "prioritizing",
     isIndexed: true,
     isClosed: false,
     createdAt: new Date("2026-04-10T12:00:00.000Z"),
@@ -555,7 +555,7 @@ const baseActivities = [
   },
   {
     devSlugIdBase: "voices-for-change-final-feedback",
-    conversationType: "ranking",
+    conversationType: "prioritizing",
     isIndexed: false,
     isClosed: true,
     createdAt: new Date("2026-03-28T12:00:00.000Z"),

@@ -51,7 +51,7 @@ describe("global phone SMS budget", () => {
             password: "postgres",
             max: 10,
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         await client.unsafe(readDbFixtureSql("auth-otp.sql"));
     }, 120000);
 

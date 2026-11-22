@@ -1,0 +1,76 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5db7c6fe-31b2-4d6f-8cee-56d5794ced0b",
+  "prevIds": [
+    "55ac121e-8b1f-4839-bf05-87dfdcf45bb0"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone_sms_budget_policy",
+        "monthly_budget_cents"
+      ],
+      "writes": [
+        "s|col|public.phone_sms_budget_policy.monthly_budget_cents",
+        "n|col|public.phone_sms_budget_policy.monthly_budget_cents",
+        "e|col|public.phone_sms_budget_policy.monthly_budget_cents"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "phone_sms_budget_policy"
+      ],
+      "writes": [
+        "s|ck|public.phone_sms_budget_policy.phone_sms_budget_monthly_limit_check",
+        "n|ck|public.phone_sms_budget_policy.phone_sms_budget_monthly_limit_check",
+        "e|ck|public.phone_sms_budget_policy.phone_sms_budget_monthly_limit_check",
+        "n|con|public.phone_sms_budget_policy.phone_sms_budget_monthly_limit_check"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_policy",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_policy.monthly_budget_cents"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "monthly_budget_cents",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "phone_sms_budget_monthly_limit_check",
+        "value": "\"phone_sms_budget_policy\".\"monthly_budget_cents\" >= 0",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

@@ -3,6 +3,16 @@ import { describe, expect, it } from "vitest";
 import { getProjectContactPresentation } from "./projectContactPresentation";
 
 describe("project contact presentation", () => {
+  it("uses the project email when no name or affiliation is supplied", () => {
+    expect(
+      getProjectContactPresentation({ email: "riverside@example.com" })
+    ).toEqual({
+      displayName: "riverside@example.com",
+      subtitle: "",
+      initials: "R",
+    });
+  });
+
   it("promotes an organization-only contact without repeating its name", () => {
     expect(
       getProjectContactPresentation({

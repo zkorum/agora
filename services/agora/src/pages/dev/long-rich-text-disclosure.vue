@@ -295,6 +295,7 @@ function paragraphs({
 function createConversation({ body }: { body: string }): ExtendedConversation {
   return {
     metadata: {
+      participantStatements: { supported: true, enabled: true },
       conversationSlugId: "longtxt1",
       conversationViewSnapshotId: 1,
       createdAt: now,
@@ -349,6 +350,7 @@ function createConversation({ body }: { body: string }): ExtendedConversation {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
+        canModerate: false, canClose: false, canReopen: false,
       },
     },
   };

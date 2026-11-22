@@ -61,8 +61,16 @@
             />
           </div>
 
+          <ClosedAnalysisInputControl
+            v-if="closedSelection"
+            :selection="closedSelection"
+            :can-switch="canSwitchClosedInputs"
+            :saving="savingClosedInputs"
+            :save-failed="closedInputSaveFailed"
+            @select-mode="selectClosedInputMode"
+          />
           <AnalysisPlaybackButton
-            v-if="showAnalysisPlaybackButton"
+            v-else-if="showAnalysisPlaybackButton"
             :is-playing="isLiveAnalysis && !isLivePaused"
             :disabled="false"
             :pause-label="t('pauseAtLatestCheckpoint')"
@@ -121,6 +129,9 @@
                 :cluster-key="userClusterData.clusterKey"
                 :ai-label="userClusterData.aiLabel"
                 :ai-summary="userClusterData.aiSummary"
+                :can-vote="
+                  !props.isConversationClosed && isLiveAnalysis && !isLivePaused
+                "
                 :has-voted-on-all-available-opinions="
                   activeAnalysisData?.hasVotedOnAllAvailableOpinions
                 "
@@ -227,6 +238,7 @@
                 :survey-gate="props.surveyGate"
                 :survey-query="props.surveyQuery"
                 :survey-results-override="pausedLiveSurveyResults"
+                :polis-frame="surveyPolisFrame"
                 :clusters="polisClusters"
                 :total-participant-count="analysisParticipantCount"
                 :compact-mode="currentTab === 'Summary'"
@@ -359,8 +371,9 @@
 </template>
 
 <script setup lang="ts">
-import type { UseQueryReturnType } from "@tanstack/vue-query";
+import { useQueryClient, type UseQueryReturnType } from "@tanstack/vue-query";
 import AnalysisPlaybackButton from "src/components/post/analysis/common/AnalysisPlaybackButton.vue";
+import ClosedAnalysisInputControl from "src/components/post/analysis/common/ClosedAnalysisInputControl.vue";
 import AsyncStateHandler from "src/components/ui/AsyncStateHandler.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import SpaLink from "src/components/ui-library/SpaLink.vue";
@@ -368,6 +381,7 @@ import ZKBottomDialogBackButton from "src/components/ui-library/ZKBottomDialogBa
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
 import ZKChip from "src/components/ui-library/ZKChip.vue";
 import ZKDropdownSelectorButton from "src/components/ui-library/ZKDropdownSelectorButton.vue";
+import { useClosedAnalysisSelection } from "src/composables/conversation/useClosedAnalysisSelection";
 import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type { ConversationScrollContext } from "src/composables/conversation/useConversationParentState";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
@@ -391,6 +405,7 @@ import {
   parseCheckpointQuery,
 } from "src/utils/analysis/analysisRoute";
 import { getLiveAnalysisClosedTransitionAction } from "src/utils/analysis/liveAnalysisClosedTransition";
+import { refreshClosedAnalysisSelection } from "src/utils/analysis/refreshClosedAnalysisSelection";
 import type { AnalysisData } from "src/utils/api/comment/comment";
 import {
   getAnalysisViewGroupCount,
@@ -453,6 +468,7 @@ const props = withDefaults(
     reportRouteOverride?: RouteLocationRaw;
     isLiveAnalysisPaused: boolean;
     isConversationClosed: boolean;
+    canEditConversation: boolean;
     isFinalizing: boolean;
     navigateToDiscoverTab: () => void;
     conversationScrollContext: ConversationScrollContext;
@@ -501,6 +517,16 @@ const pausedLiveSurveyResults = ref<
   SurveyResultsAggregatedResponse | undefined
 >();
 const lastLoadedAnalysisViewState = ref<AnalysisViewState | undefined>();
+watch(
+  () => sourceRedactions.resyncVersion,
+  () => {
+    // A missing replay prefix may contain source redactions. Re-anchor a paused
+    // frame instead of retaining a private copy that cannot be revalidated.
+    clearLivePause();
+    lastLoadedAnalysisViewState.value = undefined;
+  },
+  { flush: "sync" }
+);
 
 const { currentTab, handleSameTabClick } = useTabNavigation({
   schema: shortcutItemSchema,
@@ -592,6 +618,17 @@ const analysisParticipantCount = computed(
   () =>
     activeAnalysisData.value?.conversationViewSnapshot?.participantCount ?? 0
 );
+const surveyPolisFrame = computed(() => {
+  const viewSnapshotId = activeAnalysisData.value?.conversationViewSnapshotId;
+  return viewSnapshotId === undefined
+    ? undefined
+    : {
+        viewSnapshotId,
+        candidateId:
+          activeAnalysisData.value?.analysisViewState?.resolvedCandidateId ??
+          null,
+      };
+});
 
 const selectedRouteAnalysisView = computed(() =>
   parseAnalysisViewQuery({ query: route.query })
@@ -606,6 +643,24 @@ const hasInvalidRouteAnalysisView = computed(
 const selectedRouteCheckpoint = computed(() =>
   parseCheckpointQuery({ query: route.query })
 );
+const closedSelection = computed(() =>
+  selectedRouteCheckpoint.value === undefined && props.isConversationClosed
+    ? activeAnalysisData.value?.manifest?.closedAnalysisSelection
+    : undefined
+);
+const queryClient = useQueryClient();
+const {
+  canSwitch: canSwitchClosedInputs,
+  saving: savingClosedInputs,
+  saveFailed: closedInputSaveFailed,
+  selectMode: selectClosedInputMode,
+} = useClosedAnalysisSelection({
+  slug: () => props.conversationSlugId,
+  selection: closedSelection,
+  canEdit: () => props.canEditConversation,
+  refresh: async (conversationSlugId) =>
+    await refreshClosedAnalysisSelection({ queryClient, conversationSlugId }),
+});
 
 watch(
   [activeAnalysisData, selectedRouteCheckpoint],
@@ -790,7 +845,10 @@ const analysisViewOptions = computed(() => {
 });
 
 const showAnalysisControls = computed(
-  () => analysisViewOptions.value.length > 0 || showAnalysisPlaybackButton.value
+  () =>
+    analysisViewOptions.value.length > 0 ||
+    showAnalysisPlaybackButton.value ||
+    closedSelection.value?.isSwitchable === true
 );
 
 const modeAnalysisViewOptions = computed(() =>
@@ -1184,16 +1242,6 @@ function getAnalysisViewReasonCaption(
 
   if (!("reason" in option)) {
     return undefined;
-  }
-
-  if (
-    analysisViewStateForControls.value?.resolvedBy === "no_analysis" &&
-    option.reason === "recommended_default_unavailable"
-  ) {
-    return (
-      activeAnalysisData.value?.emptyReason ??
-      t("recommendedDefaultUnavailable")
-    );
   }
 
   switch (option.reason) {

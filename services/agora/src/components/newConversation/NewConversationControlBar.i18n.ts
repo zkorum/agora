@@ -20,10 +20,8 @@ export interface NewConversationControlBarTranslations {
   guestParticipation: string;
   makePublicNever: string;
   makePublic: string;
-  noVerification: string;
-  devconnect2025: string;
   typeStandard: string;
-  typeMaxDiff: string;
+  typePrioritizing: string;
 }
 
 export const newConversationControlBarTranslations: Record<
@@ -51,10 +49,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "Guest participation",
     makePublicNever: "Make public: Never",
     makePublic: "Make public: {date}",
-    noVerification: "No verification",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "Standard",
-    typeMaxDiff: "New Prioritization",
+    typePrioritizing: "New Prioritization",
   },
   ar: {
     asLabel: "باسم {name}",
@@ -77,10 +73,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "مشاركة الضيوف",
     makePublicNever: "جعله عامًا: أبدًا",
     makePublic: "جعله عامًا: {date}",
-    noVerification: "بدون تحقق",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "قياسي",
-    typeMaxDiff: "ترتيب أولويات جديد",
+    typePrioritizing: "ترتيب أولويات جديد",
   },
   es: {
     asLabel: "Como {name}",
@@ -103,10 +97,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "Participación de invitados",
     makePublicNever: "Hacer público: Nunca",
     makePublic: "Hacer público: {date}",
-    noVerification: "Sin verificación",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "Estándar",
-    typeMaxDiff: "Nueva Priorización",
+    typePrioritizing: "Nueva Priorización",
   },
   fa: {
     asLabel: "به عنوان {name}",
@@ -129,10 +121,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "مشارکت مهمان",
     makePublicNever: "عمومی کردن: هرگز",
     makePublic: "عمومی کردن: {date}",
-    noVerification: "بدون تأیید هویت",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "استاندارد",
-    typeMaxDiff: "اولویت‌بندی جدید",
+    typePrioritizing: "اولویت‌بندی جدید",
   },
   fr: {
     asLabel: "En tant que {name}",
@@ -155,10 +145,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "Participation d'invités",
     makePublicNever: "Rendre public : Jamais",
     makePublic: "Rendre public : {date}",
-    noVerification: "Pas de vérification",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "Classique",
-    typeMaxDiff: "Nouvelle Hiérarchisation",
+    typePrioritizing: "Nouvelle Hiérarchisation",
   },
   "zh-Hans": {
     asLabel: "作为 {name}",
@@ -181,10 +169,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "访客参与",
     makePublicNever: "公开：永不",
     makePublic: "公开：{date}",
-    noVerification: "无需验证",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "标准",
-    typeMaxDiff: "新建优先排序",
+    typePrioritizing: "新建优先排序",
   },
   "zh-Hant": {
     asLabel: "作為 {name}",
@@ -207,10 +193,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "訪客參與",
     makePublicNever: "公開：永不",
     makePublic: "公開：{date}",
-    noVerification: "無需驗證",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "標準",
-    typeMaxDiff: "新建優先排序",
+    typePrioritizing: "新建優先排序",
   },
   he: {
     asLabel: "בתור {name}",
@@ -233,10 +217,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "השתתפות אורחים",
     makePublicNever: "הפיכה לציבורי: לעולם לא",
     makePublic: "הפיכה לציבורי: {date}",
-    noVerification: "ללא אימות",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "רגיל",
-    typeMaxDiff: "תיעדוף חדש",
+    typePrioritizing: "תיעדוף חדש",
   },
   ja: {
     asLabel: "{name} として",
@@ -259,10 +241,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "ゲスト参加",
     makePublicNever: "公開：しない",
     makePublic: "公開：{date}",
-    noVerification: "検証不要",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "標準",
-    typeMaxDiff: "新しい優先順位付け",
+    typePrioritizing: "新しい優先順位付け",
   },
   ky: {
     asLabel: "{name} катары",
@@ -285,10 +265,8 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "Конок катышуу",
     makePublicNever: "Ачык кылуу: Эч качан",
     makePublic: "Ачык кылуу: {date}",
-    noVerification: "Текшерүүсүз",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "Стандарттуу",
-    typeMaxDiff: "Жаңы артыкчылыктуу кылуу",
+    typePrioritizing: "Жаңы артыкчылыктуу кылуу",
   },
   ru: {
     asLabel: "От имени {name}",
@@ -311,9 +289,7 @@ export const newConversationControlBarTranslations: Record<
     guestParticipation: "Гостевое участие",
     makePublicNever: "Сделать публичным: Никогда",
     makePublic: "Сделать публичным: {date}",
-    noVerification: "Без проверки",
-    devconnect2025: "Devconnect 2025",
     typeStandard: "Стандартный",
-    typeMaxDiff: "Новая приоритизация",
+    typePrioritizing: "Новая приоритизация",
   },
 };

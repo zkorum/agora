@@ -7,9 +7,8 @@ import { useEmbeddedBrowserWarningStore } from "src/stores/embeddedBrowserWarnin
  * Boot file to detect embedded/in-app browsers and redirect users to system browser.
  *
  * Problem: Embedded browsers (Telegram, WeChat, Facebook, Instagram, etc.) have
- * restrictions on iframes, popups, and redirects that break features like Zupass
- * verification. The Zupass email verification flow uses iframe + popup, and
- * redirects leak out to the parent window in embedded browsers.
+ * restrictions on popups and redirects that can break external identity
+ * verification flows, as well as platform-specific navigation behavior.
  *
  * Solution: Detect embedded browsers and redirect to system browser where all
  * features work correctly.

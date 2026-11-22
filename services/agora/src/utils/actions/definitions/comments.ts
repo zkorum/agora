@@ -37,6 +37,7 @@ interface CommentActionsParams {
   management: {
     edit: CommentEditAction | undefined;
     canDelete: boolean;
+    canModerate: boolean;
     editLabel: string;
   };
 }
@@ -52,7 +53,7 @@ export function getCommentActions({
   management,
 }: CommentActionsParams): ContentAction[] {
   return [
-    ...(management.edit === undefined
+    ...(management.edit === undefined || management.edit.disabled
       ? []
       : [
           {
@@ -77,9 +78,7 @@ export function getCommentActions({
       handler: moderateCommentCallback,
       isVisible: (context: ContentActionContext) =>
         context.targetType === "comment" &&
-        (context.isSiteModerator ||
-          context.isConversationOwner ||
-          context.isOrgMember) &&
+        (context.isSiteModerator || management.canModerate) &&
         !context.isEmbeddedMode,
     },
     {
@@ -89,9 +88,7 @@ export function getCommentActions({
       handler: openUserReportsCallback,
       isVisible: (context: ContentActionContext) =>
         context.targetType === "comment" &&
-        (context.isSiteModerator ||
-          context.isConversationOwner ||
-          context.isOrgMember) &&
+        (context.isSiteModerator || management.canModerate) &&
         !context.isEmbeddedMode,
     },
     {

@@ -1,0 +1,1032 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc",
+  "prevIds": [
+    "5cad9907-568e-4c93-b192-9d1a2c814755"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "event_slug"
+      ],
+      "writes": [
+        "s|enum|public.event_slug",
+        "n|enum|public.event_slug",
+        "e|enum|public.event_slug",
+        "n|type|public.event_slug"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "ticket_provider"
+      ],
+      "writes": [
+        "s|enum|public.ticket_provider",
+        "n|enum|public.ticket_provider",
+        "e|enum|public.ticket_provider",
+        "n|type|public.ticket_provider"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "auth_type"
+      ],
+      "writes": [
+        "s|enum|public.auth_type"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "event_ticket"
+      ],
+      "writes": [
+        "s|tbl|public.event_ticket",
+        "n|tbl|public.event_ticket",
+        "e|tbl|public.event_ticket",
+        "n|rel|public.event_ticket",
+        "n|type|public.event_ticket",
+        "n|rel|public.event_ticket_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.ticket_provider",
+        "n|enum|public.event_slug"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "zk_passport"
+      ],
+      "writes": [
+        "s|uq|public.zk_passport.zk_passport_nullifier_unique",
+        "n|uq|public.zk_passport.zk_passport_nullifier_unique",
+        "e|uq|public.zk_passport.zk_passport_nullifier_unique",
+        "n|con|public.zk_passport.zk_passport_nullifier_unique",
+        "n|rel|public.zk_passport_nullifier_unique"
+      ],
+      "reads": [
+        "n|tbl|public.zk_passport",
+        "n|sch|public",
+        "e|col|public.zk_passport.nullifier"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.zk_passport.nullifier"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "requires_event_ticket"
+      ],
+      "writes": [
+        "s|col|public.conversation.requires_event_ticket",
+        "n|col|public.conversation.requires_event_ticket",
+        "e|col|public.conversation.requires_event_ticket"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|enum|public.event_slug"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "phone",
+        "is_deleted"
+      ],
+      "writes": [
+        "s|col|public.phone.is_deleted",
+        "n|col|public.phone.is_deleted",
+        "e|col|public.phone.is_deleted"
+      ],
+      "reads": [
+        "n|tbl|public.phone",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.user.deleted_at",
+        "n|col|public.user.deleted_at",
+        "e|col|public.user.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "zk_passport",
+        "is_deleted"
+      ],
+      "writes": [
+        "s|col|public.zk_passport.is_deleted",
+        "n|col|public.zk_passport.is_deleted",
+        "e|col|public.zk_passport.is_deleted"
+      ],
+      "reads": [
+        "n|tbl|public.zk_passport",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_authorId_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_authorId_idx",
+        "n|idx|public.conversation_authorId_idx",
+        "e|idx|public.conversation_authorId_idx",
+        "n|rel|public.conversation_authorId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.author_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "event_ticket",
+        "user_event_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_event_idx",
+        "n|idx|public.user_event_idx",
+        "e|idx|public.user_event_idx",
+        "n|rel|public.user_event_idx"
+      ],
+      "reads": [
+        "n|tbl|public.event_ticket",
+        "n|sch|public",
+        "n|col|public.event_ticket.user_id",
+        "n|col|public.event_ticket.event_slug"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "event_ticket",
+        "event_ticket_nullifier_event_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.event_ticket_nullifier_event_active_unique",
+        "n|idx|public.event_ticket_nullifier_event_active_unique",
+        "e|idx|public.event_ticket_nullifier_event_active_unique",
+        "n|rel|public.event_ticket_nullifier_event_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.event_ticket",
+        "n|sch|public",
+        "n|col|public.event_ticket.nullifier",
+        "n|col|public.event_ticket.event_slug"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "event_ticket",
+        "nullifier_idx"
+      ],
+      "writes": [
+        "s|idx|public.nullifier_idx",
+        "n|idx|public.nullifier_idx",
+        "e|idx|public.nullifier_idx",
+        "n|rel|public.nullifier_idx"
+      ],
+      "reads": [
+        "n|tbl|public.event_ticket",
+        "n|sch|public",
+        "n|col|public.event_ticket.nullifier"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_authorId_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_authorId_idx",
+        "n|idx|public.opinion_authorId_idx",
+        "e|idx|public.opinion_authorId_idx",
+        "n|rel|public.opinion_authorId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.author_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "phone",
+        "phone_hash_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.phone_hash_active_unique",
+        "n|idx|public.phone_hash_active_unique",
+        "e|idx|public.phone_hash_active_unique",
+        "n|rel|public.phone_hash_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.phone",
+        "n|sch|public",
+        "n|col|public.phone.phone_hash"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "phone",
+        "phone_hash_idx"
+      ],
+      "writes": [
+        "s|idx|public.phone_hash_idx",
+        "n|idx|public.phone_hash_idx",
+        "e|idx|public.phone_hash_idx",
+        "n|rel|public.phone_hash_idx"
+      ],
+      "reads": [
+        "n|tbl|public.phone",
+        "n|sch|public",
+        "n|col|public.phone.phone_hash"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user",
+        "user_isDeleted_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_isDeleted_idx",
+        "n|idx|public.user_isDeleted_idx",
+        "e|idx|public.user_isDeleted_idx",
+        "n|rel|public.user_isDeleted_idx"
+      ],
+      "reads": [
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.user.is_deleted"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote",
+        "vote_authorId_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_authorId_idx",
+        "n|idx|public.vote_authorId_idx",
+        "e|idx|public.vote_authorId_idx",
+        "n|rel|public.vote_authorId_idx"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public",
+        "n|col|public.vote.author_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "zk_passport",
+        "zk_passport_nullifier_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.zk_passport_nullifier_active_unique",
+        "n|idx|public.zk_passport_nullifier_active_unique",
+        "e|idx|public.zk_passport_nullifier_active_unique",
+        "n|rel|public.zk_passport_nullifier_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.zk_passport",
+        "n|sch|public",
+        "n|col|public.zk_passport.nullifier"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "zk_passport",
+        "zk_passport_nullifier_idx"
+      ],
+      "writes": [
+        "s|idx|public.zk_passport_nullifier_idx",
+        "n|idx|public.zk_passport_nullifier_idx",
+        "e|idx|public.zk_passport_nullifier_idx",
+        "n|rel|public.zk_passport_nullifier_idx"
+      ],
+      "reads": [
+        "n|tbl|public.zk_passport",
+        "n|sch|public",
+        "n|col|public.zk_passport.nullifier"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "event_ticket"
+      ],
+      "writes": [
+        "s|fk|public.event_ticket.event_ticket_user_id_user_id_fk",
+        "n|fk|public.event_ticket.event_ticket_user_id_user_id_fk",
+        "e|fk|public.event_ticket.event_ticket_user_id_user_id_fk",
+        "n|con|public.event_ticket.event_ticket_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.event_ticket",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.event_ticket.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "event_ticket",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "event_slug",
+        "values": [
+          "devconnect-2025"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "ticket_provider",
+        "values": [
+          "zupass"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "requires_event_ticket",
+        "type": "event_slug",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "event_ticket_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "provider",
+        "type": "ticket_provider",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "nullifier",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "event_slug",
+        "type": "event_slug",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "is_deleted",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "verified_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "pcd_type",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "provider_metadata",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone",
+        "name": "is_deleted",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "zk_passport",
+        "name": "is_deleted",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_authorId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "user_event_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "event_slug",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "event_ticket_nullifier_event_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "nullifier",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "event_slug",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"event_ticket\".\"is_deleted\" = false",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "nullifier_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "nullifier",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "opinion_authorId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone",
+        "name": "phone_hash_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "phone_hash",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"phone\".\"is_deleted\" = false",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone",
+        "name": "phone_hash_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "phone_hash",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user",
+        "name": "user_isDeleted_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "is_deleted",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "vote_authorId_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "zk_passport",
+        "name": "zk_passport_nullifier_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "nullifier",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"zk_passport\".\"is_deleted\" = false",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "zk_passport",
+        "name": "zk_passport_nullifier_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "nullifier",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "event_ticket_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "event_ticket",
+        "name": "event_ticket_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"zk_passport\",\"zk_passport_nullifier_unique\"]"
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"auth_type\"]",
+      "set": {
+        "values": [
+          "register",
+          "login_known_device",
+          "login_new_device",
+          "merge",
+          "restore_deleted",
+          "restore_and_merge"
+        ]
+      }
+    }
+  ]
+}

@@ -7,17 +7,21 @@ import {
 } from "fastify-type-provider-zod";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-    registerConversationIndexingRoute,
+    registerDiscoveryIndexingRoutes,
     type ConversationIndexingRequest,
-} from "./conversationIndexing.js";
+    type ProjectIndexingRequest,
+} from "./discoveryIndexingRoutes.js";
 
-describe("conversation indexing route", () => {
+describe("discovery indexing routes", () => {
     let server: FastifyInstance;
     const isIndexable =
         vi.fn<(request: ConversationIndexingRequest) => Promise<boolean>>();
+    const isProjectIndexable =
+        vi.fn<(request: ProjectIndexingRequest) => Promise<boolean>>();
 
     beforeEach(async () => {
         isIndexable.mockReset();
+        isProjectIndexable.mockReset();
         server = Fastify({ logger: false });
         server.setValidatorCompiler(validatorCompiler);
         server.setSerializerCompiler(serializerCompiler);
@@ -33,10 +37,11 @@ describe("conversation indexing route", () => {
             },
             transform: jsonSchemaTransform,
         });
-        registerConversationIndexingRoute({
+        registerDiscoveryIndexingRoutes({
             server,
             apiVersion: "v1",
-            isIndexable,
+            isConversationIndexable: isIndexable,
+            isProjectIndexable,
         });
     });
 
@@ -82,6 +87,22 @@ describe("conversation indexing route", () => {
         });
         expect(response.statusCode).toBe(500);
         expect(response.headers["x-conversation-indexing"]).toBeUndefined();
+    });
+
+    it("publishes an explicit, uncached crawler policy for a project", async () => {
+        isProjectIndexable.mockResolvedValue(false);
+        const response = await server.inject({
+            method: "POST",
+            url: "/api/v1/project/indexing",
+            payload: { projectSlug: "a-project" },
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.headers["cache-control"]).toBe("no-store");
+        expect(response.headers["x-project-indexing"]).toBe("noindex");
+        expect(response.json<unknown>()).toEqual({ isIndexed: false });
+        expect(isProjectIndexable).toHaveBeenCalledExactlyOnceWith({
+            projectSlug: "a-project",
+        });
     });
 
     it("rejects oversized bodies before querying the database", async () => {

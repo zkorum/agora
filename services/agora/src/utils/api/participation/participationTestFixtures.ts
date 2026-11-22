@@ -19,10 +19,6 @@ const statuses = {
     status: "onboarding_required",
     nextStep: { kind: "identity", purpose: "login" },
   },
-  event_ticket_required: {
-    status: "onboarding_required",
-    nextStep: { kind: "ticket", eventSlug: "devconnect-2025" },
-  },
   survey_required: {
     status: "onboarding_required",
     nextStep: {

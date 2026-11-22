@@ -2,6 +2,7 @@
   <div
     v-if="!hideBottomBarForRoute"
     v-show="isActive"
+    ref="anchorPlaceholder"
     aria-hidden="true"
     :style="{ blockSize: `${barHeight}px` }"
   />
@@ -23,46 +24,27 @@
 </template>
 
 <script setup lang="ts">
-import {
-  useElementSize,
-  useEventListener,
-  useResizeObserver,
-} from "@vueuse/core";
-import { storeToRefs } from "pinia";
-import { useQuasar } from "quasar";
-import { useNavigationStore } from "src/stores/navigation";
+import { useElementSize } from "@vueuse/core";
+import { useFloatingElementAlignment } from "src/composables/layout/useFloatingElementAlignment";
 import { useVisibleViewport } from "src/utils/html/viewPort";
 import {
   isConversationOnboardingRouteName,
   isConversationOnboardingRoutePath,
   isConversationRoutePath,
 } from "src/utils/router/conversationRouteContext";
-import {
-  computed,
-  onActivated,
-  onDeactivated,
-  ref,
-  useTemplateRef,
-  watch,
-} from "vue";
+import { computed, onActivated, onDeactivated, ref, useTemplateRef } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-const props = withDefaults(
-  defineProps<{
-    respectDrawerOffset?: boolean;
-    anchorElement?: HTMLElement | undefined;
-  }>(),
-  { respectDrawerOffset: true, anchorElement: undefined }
-);
+const props = defineProps<{
+  anchorElement: HTMLElement | undefined;
+}>();
 
-const $q = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const isOnboarding = computed(() =>
   isConversationOnboardingRouteName(router.currentRoute.value.name)
 );
-const { drawerBehavior, drawerWidth } = storeToRefs(useNavigationStore());
-const anchorRect = ref<DOMRectReadOnly | undefined>(undefined);
+const anchorPlaceholder = useTemplateRef<HTMLElement>("anchorPlaceholder");
 const bottomBar = useTemplateRef<HTMLElement>("bottomBar");
 const isActive = ref(true);
 const { viewportStyle } = useVisibleViewport();
@@ -75,23 +57,6 @@ onActivated(() => {
 onDeactivated(() => {
   isActive.value = false;
 });
-function updateAnchorRect(): void {
-  anchorRect.value = isActive.value
-    ? props.anchorElement?.getBoundingClientRect()
-    : undefined;
-}
-
-const activeAnchor = computed(() =>
-  isActive.value ? props.anchorElement : undefined
-);
-useResizeObserver(activeAnchor, updateAnchorRect);
-useEventListener(
-  () => (activeAnchor.value === undefined ? undefined : window),
-  "resize",
-  updateAnchorRect,
-  { passive: true }
-);
-watch(activeAnchor, updateAnchorRect, { immediate: true, flush: "post" });
 
 const hideBottomBarForRoute = computed(() => {
   const routePath = route.path;
@@ -101,32 +66,9 @@ const hideBottomBarForRoute = computed(() => {
   );
 });
 
-const barStyle = computed(() => {
-  const rect = anchorRect.value;
-  if (rect !== undefined) {
-    return {
-      left: `${rect.left + rect.width / 2}px`,
-      transform: "translateX(-50%)",
-      width: `${rect.width}px`,
-    };
-  }
-
-  const isRtl = $q.lang.rtl;
-  if (props.respectDrawerOffset && drawerBehavior.value === "desktop") {
-    const dw = drawerWidth.value;
-    // In RTL the drawer is on the right, so offset the center leftward
-    const positionProp = isRtl ? "right" : "left";
-    return {
-      [positionProp]: `calc(50% + ${dw / 2}px)`,
-      transform: isRtl ? "translateX(50%)" : "translateX(-50%)",
-      width: `min(35rem, calc(100vw - ${dw}px - 1rem))`,
-    };
-  }
-  return {
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "min(35rem, 100%)",
-  };
+const barStyle = useFloatingElementAlignment({
+  anchor: () => props.anchorElement ?? anchorPlaceholder.value,
+  enabled: () => isActive.value && !hideBottomBarForRoute.value,
 });
 </script>
 
@@ -139,7 +81,6 @@ const barStyle = computed(() => {
   inset-block-end: var(--visible-viewport-bottom-inset, 0px);
   z-index: 100;
   padding-block-end: var(--floating-bottom-clearance);
-  padding-inline: 0.5rem;
   padding-block-start: 1.5rem;
   background: linear-gradient(
     to bottom,

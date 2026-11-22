@@ -10,14 +10,16 @@ import { uid } from "quasar";
 import { MAX_LENGTH_CONVERSATION_TITLE } from "src/shared/shared";
 import {
   zodConversationMultilingualSetting,
-  zodEventSlug,
   zodExternalSourceConfig,
   zodParticipationMode,
   zodPolisVotingPresentation,
   zodPreferredOpinionGroupCount,
   zodProjectSlug,
-  zodRankingMode,
+  zodQvConversationTypeConfig,
+  zodRankingConversationTypeConfig,
+  zodSupportedParticipantStatements,
   zodSurveyConfig,
+  zodUnsupportedParticipantStatements,
 } from "src/shared/types/zod";
 import { isValidPolisUrl } from "src/shared/utils/polis";
 import { z } from "zod";
@@ -101,6 +103,15 @@ const zodConversationDraftBase = z.object({
   inheritProjectLanguages: z.boolean().default(false),
   conversationEmailUpdateEnabledOverride: z.boolean().optional(),
   seedOpinions: z.array(z.string()),
+  qvStatements: z
+    .array(
+      z.object({
+        localKey: z.string(),
+        title: z.string(),
+        description: z.string(),
+      })
+    )
+    .default([]),
   aiSuggestionDraftId: z.uuid().default(uid),
 
   // Publishing options
@@ -110,16 +121,13 @@ const zodConversationDraftBase = z.object({
   isPrivate: z.boolean(),
   participationMode: zodParticipationMode.default("account_required"),
 
-  // Event ticket verification
-  requiresEventTicket: zodEventSlug.optional(),
-
   // AI labeling
   aiLabelingEnabled: z.boolean().default(true),
 
   // Facilitator analysis preference
   preferredOpinionGroupCount: zodPreferredOpinionGroupCount.default(null),
 
-  // External source (GitHub integration for MaxDiff)
+  // External source (GitHub integration for comparisons).
   externalSourceConfig: zodExternalSourceConfig.nullable().default(null),
 
   // Survey configuration
@@ -139,11 +147,13 @@ export const zodSerializableConversationDraft = z.preprocess(
       return val;
     }
     const normalizedLegacyConversationType =
-      "conversationType" in val && val.conversationType === "maxdiff"
+      "conversationType" in val &&
+      (val.conversationType === "maxdiff" || val.conversationType === "ranking")
         ? {
             ...val,
-            conversationType: "ranking",
-            rankingMode: "bws",
+            conversationType: "prioritizing",
+            prioritizationType: "comparisons",
+            comparisonMethod: "bws",
           }
         : val;
     if (
@@ -172,12 +182,29 @@ export const zodSerializableConversationDraft = z.preprocess(
   z.discriminatedUnion("conversationType", [
     zodConversationDraftBase.extend({
       conversationType: z.literal("polis"),
+      participantStatements: zodSupportedParticipantStatements.default({
+        supported: true,
+        enabled: true,
+      }),
       votingPresentation: zodPolisVotingPresentation.default("list"),
     }),
-    zodConversationDraftBase.extend({
-      conversationType: z.literal("ranking"),
-      rankingMode: zodRankingMode,
-    }),
+    z.discriminatedUnion("prioritizationType", [
+      zodConversationDraftBase
+        .extend(zodRankingConversationTypeConfig.shape)
+        .extend({
+          participantStatements: zodSupportedParticipantStatements.default({
+            supported: true,
+            enabled: false,
+          }),
+        }),
+      zodConversationDraftBase
+        .extend(zodQvConversationTypeConfig.shape)
+        .extend({
+          participantStatements: zodUnsupportedParticipantStatements.default({
+            supported: false,
+          }),
+        }),
+    ]),
   ])
 );
 

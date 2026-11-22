@@ -39,7 +39,6 @@
               :compact-mode="false"
               @open-moderation-history="openModerationHistory()"
               @conversation-deleted="handleConversationDeleted"
-              @verified="(payload) => handleTicketVerified(payload)"
             />
 
             <div ref="sentinelElement"></div>
@@ -78,7 +77,7 @@
             </ConversationStickyActionBar>
 
             <div
-              v-if="currentTab === 'comment' && !isMaxDiffConversation"
+              v-if="currentTab === 'comment' && !isPrioritizingConversation"
               class="dropdownSlot"
             >
               <CommentSortingSelector
@@ -101,8 +100,7 @@
                     :is="Component"
                     :key="route.path"
                     :conversation-data="loadedConversationData"
-                    :moderation-history-trigger="moderationHistoryTrigger"
-                    :comment-filter="commentFilter"
+                    :opinion-state="opinionState"
                     :on-view-analysis="onViewAnalysis"
                     :navigate-to-discover-tab="navigateToDiscoverTab"
                     :conversation-route-context="normalConversationRouteContext"
@@ -110,18 +108,17 @@
                     v-bind="analysisRouteProps"
                     @edit-opinion="beginEditOpinion"
                     @analysis-live-pause-stats="setAnalysisLivePauseStats"
-                    @update:comment-filter="
-                      (filter: CommentFilterOptions) => {
-                        commentFilter = filter;
-                      }
-                    "
                   />
                 </KeepAlive>
               </router-view>
             </div>
 
-            <FloatingBottomContainer v-if="!isMaxDiffConversation">
+            <FloatingBottomContainer
+              v-if="!isPrioritizingConversation"
+              :anchor-element="undefined"
+            >
               <CommentComposer
+                :participant-statements="loadedConversationData.metadata.participantStatements"
                 ref="commentComposerRef"
                 :editing-target="editingTarget"
                 :action-bar-element="
@@ -173,7 +170,6 @@ import { useStickyObserver } from "src/composables/ui/useStickyObserver";
 import { useLayoutHeaderStore } from "src/stores/layout/header";
 import { useNavigationStore } from "src/stores/navigation";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
 import { getElementScrollTop, getScrollTop } from "src/utils/html/scroll";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
 import {
@@ -240,14 +236,13 @@ const {
   finishEditOpinion,
   handleEditedOpinion,
   isCurrentTabLoading,
-  moderationHistoryTrigger,
+  opinionState,
   commentFilter,
   selectCommentFilter,
   actionBarElement,
   onViewAnalysis,
   navigateToDiscoverTab,
   openModerationHistory,
-  handleTicketVerified,
   handleSubmittedComment,
   handleRefresh,
   scrollToActionBar,
@@ -289,11 +284,9 @@ const isActionBarLoading = computed(
     isLoadingCommentStats.value
 );
 
-const isMaxDiffConversation = computed(() => {
+const isPrioritizingConversation = computed(() => {
   const metadata = loadedConversationData.value.metadata;
-  return (
-    metadata.conversationType === "ranking" && metadata.rankingMode === "bws"
-  );
+  return metadata.conversationType === "prioritizing";
 });
 
 function getActionBarStatsFromMetadata(): ConversationActionBarStats {

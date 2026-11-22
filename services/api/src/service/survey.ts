@@ -1,4 +1,5 @@
 import { httpErrors } from "@fastify/sensible";
+import { getEffectiveConversationParticipationModeWithProjectLookup } from "./conversationParticipationMode.js";
 import {
     and,
     asc,
@@ -10,16 +11,20 @@ import {
     or,
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { alias } from "drizzle-orm/pg-core";
 import { generateRandomSlugId } from "@/crypto.js";
 import {
     conversationContentTable,
     conversationTable,
-    maxdiffComparisonTable,
-    maxdiffResultTable,
+    conversationViewSnapshotTable,
+    comparisonAnswerTable,
+    comparisonResponseTable,
     opinionModerationTable,
     opinionGroupLineageTable,
     opinionGroupTable,
     opinionTable,
+    polisAnalysisCloseGenerationTable,
+    polisAnalysisCloseTable,
     rankingConversationConfigTable,
     surveyAggregateOptionTable,
     surveyAggregateQuestionTable,
@@ -37,7 +42,13 @@ import {
     voteTable,
 } from "@/shared-backend/schema.js";
 import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import { scheduleQvStatsRefresh } from "@/shared-backend/qvStatsRefresh.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
+import { refreshClosedQvLiveInputs } from "./qvLifecycle.js";
+import { buildQvOwnerResponseQuery } from "./qvQueries.js";
 import {
     enqueueConversationForMathWork,
     hasActiveVotesForMathWork,
@@ -95,13 +106,13 @@ import type {
     SurveyAnswerSaveResponse,
     SurveyAnswerRecovery,
     SurveyStatusCheckResponse,
+    SurveyResponseWithdrawRequest,
     SurveyResponseWithdrawResponse,
+    SurveyResultsAggregatedResponse,
 } from "@/shared/types/dto.js";
 import { log } from "@/app.js";
 import { logApiError } from "@/logging/privacy.js";
 import type { GoogleCloudCredentials } from "@/shared-backend/googleCloudAuth.js";
-import { getConversationViewAccessLevelForConversation } from "@/service/conversationAccess.js";
-import { requireProjectCapability } from "@/service/projectAccess.js";
 import {
     buildSurveyAggregateResultRows,
     buildSurveyCompletionCounts,
@@ -114,7 +125,8 @@ import {
 import { queueConversationSurveyUpdatedEvent } from "./realtimeEventOutbox.js";
 import {
     getDescriptionTextsByGroupId,
-    getSelectedOpinionGroupCandidate,
+    getOpinionGroupAnalysisSelection,
+    type OpinionGroupAnalysisSelection,
 } from "./opinionGroupAnalysis.js";
 import {
     getPremiumEntitlementSubjectForConversation,
@@ -147,9 +159,9 @@ interface ConversationAccessContext {
     participationMode: (typeof conversationTable.$inferSelect)["participationMode"];
     conversationType: (typeof conversationTable.$inferSelect)["conversationType"];
     rankingMode: RankingMode | null;
+    prioritizationType: "comparisons" | "qv" | null;
     currentContentId: number | null;
     isClosed: boolean;
-    requiresEventTicket: (typeof conversationTable.$inferSelect)["requiresEventTicket"];
 }
 
 interface SurveyConfigUpdateEffect {
@@ -228,26 +240,37 @@ interface SurveyAnalysisRefreshContextBase {
 }
 
 export type SurveyAnalysisRefreshContext = SurveyAnalysisRefreshContextBase &
-    ({ conversationType: "polis" } | { conversationType: "ranking" });
+    (
+        | { conversationType: "polis" }
+        | { conversationType: "gathering" }
+        | {
+              conversationType: "prioritizing";
+              prioritizationType: "comparisons" | "qv";
+          }
+    );
 
 export function buildSurveyAnalysisRefreshContext({
     conversationId,
     slugId,
     conversationType,
     rankingMode,
+    prioritizationType,
 }: SurveyAnalysisRefreshContextBase & {
     conversationType: ConversationType;
     rankingMode: RankingMode | null;
+    prioritizationType: "comparisons" | "qv" | null;
 }): SurveyAnalysisRefreshContext {
-    if (conversationType === "polis") {
+    if (conversationType === "polis" || conversationType === "gathering") {
         return { conversationId, slugId, conversationType };
     }
-    if (rankingMode === null) {
+    if (prioritizationType === "qv")
+        return { conversationId, slugId, conversationType, prioritizationType };
+    if (rankingMode === null || prioritizationType !== "comparisons") {
         throw httpErrors.internalServerError(
             "Ranking conversation is missing its ranking mode",
         );
     }
-    return { conversationId, slugId, conversationType };
+    return { conversationId, slugId, conversationType, prioritizationType };
 }
 
 async function markRankingConversationDirty({
@@ -325,10 +348,22 @@ export async function scheduleConversationAnalysisForSurveyChange({
     db,
     conversation,
 }: {
-    db: PostgresJsDatabase;
+    db: PostgresTransaction;
     conversation: SurveyAnalysisRefreshContext;
 }): Promise<boolean> {
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "gathering") return false;
+    if (conversation.conversationType === "prioritizing") {
+        if (conversation.prioritizationType === "qv") {
+            await scheduleQvStatsRefresh({
+                db,
+                conversationIds: [conversation.conversationId],
+            });
+            await refreshClosedQvLiveInputs({
+                db,
+                conversationIds: [conversation.conversationId],
+            });
+            return true;
+        }
         return true;
     }
 
@@ -360,7 +395,9 @@ export async function wakeScheduledConversationAnalysisForSurveyChange({
     conversation: SurveyAnalysisRefreshContext;
     valkey: Valkey | undefined;
 }): Promise<void> {
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "gathering") return;
+    if (conversation.conversationType === "prioritizing") {
+        if (conversation.prioritizationType === "qv") return;
         await markRankingConversationDirty({
             conversationId: conversation.conversationId,
             conversationSlugId: conversation.slugId,
@@ -388,25 +425,34 @@ async function hasParticipantAnalysisInput({
     conversation: SurveyAnalysisRefreshContext;
     participantId: string;
 }): Promise<boolean> {
-    if (conversation.conversationType === "ranking") {
+    if (conversation.conversationType === "gathering") return false;
+    if (conversation.conversationType === "prioritizing") {
+        if (conversation.prioritizationType === "qv") {
+            const responses = await buildQvOwnerResponseQuery({
+                db,
+                conversationId: conversation.conversationId,
+                userId: participantId,
+            });
+            return responses.some((response) => response.versionId !== null);
+        }
         const rows = await db
-            .select({ id: maxdiffResultTable.id })
-            .from(maxdiffResultTable)
+            .select({ id: comparisonResponseTable.id })
+            .from(comparisonResponseTable)
             .innerJoin(
-                maxdiffComparisonTable,
+                comparisonAnswerTable,
                 eq(
-                    maxdiffComparisonTable.maxdiffResultId,
-                    maxdiffResultTable.id,
+                    comparisonAnswerTable.comparisonResponseId,
+                    comparisonResponseTable.id,
                 ),
             )
             .where(
                 and(
                     eq(
-                        maxdiffResultTable.conversationId,
+                        comparisonResponseTable.conversationId,
                         conversation.conversationId,
                     ),
-                    eq(maxdiffResultTable.participantId, participantId),
-                    isNull(maxdiffComparisonTable.deletedAt),
+                    eq(comparisonResponseTable.participantId, participantId),
+                    isNull(comparisonAnswerTable.deletedAt),
                 ),
             )
             .limit(1);
@@ -442,7 +488,7 @@ async function scheduleConversationAnalysisForParticipantSurveyTransition({
     conversation,
     participantId,
 }: {
-    db: PostgresJsDatabase;
+    db: PostgresTransaction;
     conversation: SurveyAnalysisRefreshContext;
     participantId: string;
 }): Promise<boolean> {
@@ -1353,12 +1399,13 @@ async function getConversationAccessContextBySlugId({
             conversationId: conversationTable.id,
             slugId: conversationTable.slugId,
             projectId: conversationTable.projectId,
-            participationMode: conversationTable.participationMode,
+            participationMode:
+                getEffectiveConversationParticipationModeWithProjectLookup(db),
             conversationType: conversationTable.conversationType,
             rankingMode: rankingConversationConfigTable.rankingMode,
+            prioritizationType: conversationTable.prioritizationType,
             currentContentId: conversationTable.currentContentId,
             isClosed: conversationTable.isClosed,
-            requiresEventTicket: conversationTable.requiresEventTicket,
         })
         .from(conversationTable)
         .leftJoin(
@@ -2435,6 +2482,7 @@ interface SurveyAggregateRowsFromSnapshot {
 async function fetchSurveyAggregateRowsFromSnapshot({
     db,
     surveyAggregateSnapshotId,
+    overallSurveyAggregateSnapshotId,
     selectedCandidateId,
     displayLanguage,
     useSystemDescriptions,
@@ -2442,7 +2490,8 @@ async function fetchSurveyAggregateRowsFromSnapshot({
 }: {
     db: PostgresJsDatabase;
     surveyAggregateSnapshotId: number;
-    selectedCandidateId: number;
+    overallSurveyAggregateSnapshotId: number;
+    selectedCandidateId: number | undefined;
     displayLanguage: SupportedDisplayLanguageCodes;
     useSystemDescriptions: boolean;
     currentPublicSuppressionByQuestionId: Map<string, boolean> | undefined;
@@ -2495,21 +2544,27 @@ async function fetchSurveyAggregateRowsFromSnapshot({
             eq(opinionGroupLineageTable.id, opinionGroupTable.lineageId),
         )
         .where(
-            and(
-                eq(
-                    surveyAggregateResultTable.surveyAggregateSnapshotId,
-                    surveyAggregateSnapshotId,
-                ),
-                or(
-                    eq(surveyAggregateResultTable.scope, "overall"),
-                    and(
-                        eq(surveyAggregateResultTable.scope, "opinion_group"),
-                        eq(
-                            surveyAggregateResultTable.candidateId,
-                            selectedCandidateId,
-                        ),
+            or(
+                and(
+                    eq(
+                        surveyAggregateResultTable.surveyAggregateSnapshotId,
+                        overallSurveyAggregateSnapshotId,
                     ),
+                    eq(surveyAggregateResultTable.scope, "overall"),
                 ),
+                selectedCandidateId === undefined
+                    ? undefined
+                    : and(
+                          eq(
+                              surveyAggregateResultTable.surveyAggregateSnapshotId,
+                              surveyAggregateSnapshotId,
+                          ),
+                          eq(surveyAggregateResultTable.scope, "opinion_group"),
+                          eq(
+                              surveyAggregateResultTable.candidateId,
+                              selectedCandidateId,
+                          ),
+                      ),
             ),
         )
         .orderBy(
@@ -2693,41 +2748,117 @@ function getCurrentPublicSuppressionByQuestionId({
     );
 }
 
-export async function fetchSurveyAggregatedResults({
+async function getPolisSurveyAggregateSnapshot({
     db,
+    viewSnapshotId,
+    candidateId,
+    surveySource,
+}: {
+    db: PostgresJsDatabase;
+    viewSnapshotId: number;
+    candidateId: number | undefined;
+    surveySource: NonNullable<OpinionGroupAnalysisSelection["surveySource"]>;
+}): Promise<
+    | {
+          id: number;
+          overallId: number;
+          suppressionThreshold: number;
+          source: NonNullable<SurveyResultsAggregatedResponse["source"]>;
+      }
+    | undefined
+> {
+    const aggregate = surveyAggregateSnapshotTable;
+    if (surveySource.kind === "frame") {
+        const rows = await db
+            .select({
+                id: aggregate.id,
+                originalAggregateId: aggregate.sourceSurveyAggregateSnapshotId,
+                suppressionThreshold: aggregate.suppressionThreshold,
+            })
+            .from(aggregate)
+            .where(eq(aggregate.id, surveySource.aggregateSnapshotId));
+        const row = rows.at(0);
+        return row === undefined
+            ? undefined
+            : {
+                  id: row.id,
+                  overallId: row.originalAggregateId ?? row.id,
+                  suppressionThreshold: row.suppressionThreshold,
+                  source: { kind: "polis_frame", viewSnapshotId, candidateId },
+              };
+    }
+
+    const view = conversationViewSnapshotTable;
+    const generation = polisAnalysisCloseGenerationTable;
+    const close = polisAnalysisCloseTable;
+    const original = alias(view, "original_survey_view");
+    const rows = await db
+        .select({
+            id: aggregate.id,
+            suppressionThreshold: aggregate.suppressionThreshold,
+            originalViewSnapshotId: original.id,
+        })
+        .from(view)
+        .innerJoin(
+            generation,
+            and(
+                eq(generation.conversationId, view.conversationId),
+                eq(generation.dataGeneration, view.closeReplacementGeneration),
+                isNotNull(generation.publishedAt),
+            ),
+        )
+        .innerJoin(
+            close,
+            and(
+                eq(close.closeId, generation.closeId),
+                eq(close.opinionGroupSpecId, view.opinionGroupSpecId),
+            ),
+        )
+        .innerJoin(original, eq(original.id, close.originalViewSnapshotId))
+        .innerJoin(
+            aggregate,
+            eq(aggregate.id, original.surveyAggregateSnapshotId),
+        )
+        .where(eq(view.id, viewSnapshotId));
+
+    const row = rows.at(0);
+    if (row === undefined) return undefined;
+    return {
+        id: row.id,
+        overallId: row.id,
+        suppressionThreshold: row.suppressionThreshold,
+        source: {
+            kind: "original_close",
+            viewSnapshotId,
+            originalViewSnapshotId: row.originalViewSnapshotId,
+        },
+    };
+}
+
+export async function fetchSurveyAggregatedResults({
+    db: database,
     conversationSlugId,
     analysisView,
     checkpointViewSnapshotId,
-    userId,
+    accessLevel,
     displayLanguage,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
     analysisView: AnalysisView | undefined;
     checkpointViewSnapshotId: number | undefined;
-    userId: string | undefined;
-    displayLanguage: SupportedDisplayLanguageCodes;
-}): Promise<{
-    hasSurvey: boolean;
     accessLevel: SurveyResultsAccessLevel;
-    suppressionThreshold: number;
-    suppressedRows: SurveyAggregateRow[];
-    fullRows: SurveyAggregateRow[] | undefined;
-}> {
+    displayLanguage: SupportedDisplayLanguageCodes;
+}): Promise<Omit<SurveyResultsAggregatedResponse, "questionDisplayContents">> {
+    // The survey follows the current served frame, including switches back to
+    // an older result. Exact requests still resolve the explicit checkpoint ID.
+    const db = getPrimaryDatabase(database);
     const conversation = await getConversationAccessContextBySlugId({
         db,
         conversationSlugId,
     });
-    if (conversation.conversationType === "ranking") {
-        const primaryDb = getPrimaryDatabase(db);
-        const accessLevel = await getConversationViewAccessLevelForConversation(
-            {
-                db: primaryDb,
-                userId,
-                projectId: conversation.projectId,
-            },
-        );
-        const context = await primaryDb.transaction(
+    if (conversation.conversationType === "prioritizing") {
+        const context = await db.transaction(
             async (tx) =>
                 await loadSurveyExportContext({
                     db: tx,
@@ -2765,75 +2896,61 @@ export async function fetchSurveyAggregatedResults({
         };
     }
 
-    const accessLevel = await getConversationViewAccessLevelForConversation({
-        db,
-        userId,
-        projectId: conversation.projectId,
-    });
-
     const activeSurveyConfig = await getActiveSurveyConfigRecord({
         db,
         conversationId: conversation.conversationId,
     });
+    const emptyResults = {
+        hasSurvey: false,
+        accessLevel,
+        suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
+        suppressedRows: [],
+    };
     if (
+        activeSurveyConfig === undefined &&
         checkpointViewSnapshotId === undefined &&
-        activeSurveyConfig === undefined
+        !conversation.isClosed
     ) {
-        return {
-            hasSurvey: false,
-            accessLevel,
-            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
-            suppressedRows: [],
-            fullRows: undefined,
-        };
+        return emptyResults;
     }
-
-    const selectedCandidate = await getSelectedOpinionGroupCandidate({
+    const selection = await getOpinionGroupAnalysisSelection({
         db,
         conversationId: conversation.conversationId,
         analysisView,
         checkpointViewSnapshotId,
         displayLanguage,
     });
-    if (selectedCandidate?.surveyAggregateSnapshotId == null) {
-        return {
-            hasSurvey: false,
-            accessLevel,
-            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
-            suppressedRows: [],
-            fullRows: undefined,
-        };
+    if (
+        selection.surveySource === undefined ||
+        selection.conversationViewSnapshot === undefined ||
+        (activeSurveyConfig === undefined &&
+            checkpointViewSnapshotId === undefined &&
+            selection.closedAnalysisSelection?.servedInputMode !== "closing")
+    ) {
+        return emptyResults;
     }
-
-    const snapshotRows = await db
-        .select({
-            suppressionThreshold:
-                surveyAggregateSnapshotTable.suppressionThreshold,
-        })
-        .from(surveyAggregateSnapshotTable)
-        .where(
-            eq(
-                surveyAggregateSnapshotTable.id,
-                selectedCandidate.surveyAggregateSnapshotId,
-            ),
-        )
-        .limit(1);
-    if (snapshotRows.length === 0) {
-        return {
-            hasSurvey: false,
-            accessLevel,
-            suppressionThreshold: PUBLIC_AGGREGATE_SUPPRESSION_THRESHOLD,
-            suppressedRows: [],
-            fullRows: undefined,
-        };
-    }
+    const snapshot = await getPolisSurveyAggregateSnapshot({
+        db,
+        viewSnapshotId:
+            selection.conversationViewSnapshot.conversationViewSnapshotId,
+        candidateId: selection.candidate?.candidateId,
+        surveySource: selection.surveySource,
+    });
+    if (snapshot === undefined) return emptyResults;
 
     const aggregateRows = await fetchSurveyAggregateRowsFromSnapshot({
         db,
-        surveyAggregateSnapshotId: selectedCandidate.surveyAggregateSnapshotId,
-        selectedCandidateId: selectedCandidate.candidateId,
+        surveyAggregateSnapshotId: snapshot.id,
+        overallSurveyAggregateSnapshotId: snapshot.overallId,
+        // Frozen aggregates belong to the original groups. On a replacement
+        // frame show only the overall rows; the original checkpoint keeps its groups.
+        selectedCandidateId:
+            snapshot.source.kind === "polis_frame"
+                ? snapshot.source.candidateId
+                : undefined,
         displayLanguage,
-        useSystemDescriptions: selectedCandidate.useSystemDescriptions,
+        useSystemDescriptions:
+            selection.candidate?.useSystemDescriptions ?? false,
         currentPublicSuppressionByQuestionId:
             activeSurveyConfig === undefined
                 ? undefined
@@ -2845,7 +2962,8 @@ export async function fetchSurveyAggregatedResults({
     return {
         hasSurvey: true,
         accessLevel,
-        suppressionThreshold: snapshotRows[0].suppressionThreshold,
+        suppressionThreshold: snapshot.suppressionThreshold,
+        source: snapshot.source,
         suppressedRows: aggregateRows.suppressedRows,
         fullRows:
             accessLevel === "owner" &&
@@ -2858,7 +2976,6 @@ export async function fetchSurveyAggregatedResults({
 export async function fetchSurveyCompletionCounts({
     db,
     conversationSlugId,
-    userId,
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
@@ -2871,14 +2988,6 @@ export async function fetchSurveyCompletionCounts({
         db,
         conversationSlugId,
     });
-    const accessLevel = await getConversationViewAccessLevelForConversation({
-        db,
-        userId,
-        projectId: conversation.projectId,
-    });
-    if (accessLevel !== "owner") {
-        throw httpErrors.forbidden("Missing conversation_edit capability");
-    }
 
     const context = await loadSurveyExportContext({
         db,
@@ -3189,6 +3298,7 @@ export async function saveSurveyAnswer({
         slugId: conversationSlugId,
         conversationType: participationCheck.conversationType,
         rankingMode: participationCheck.rankingMode,
+        prioritizationType: participationCheck.prioritizationType,
     });
 
     const surveyTransition = await db.transaction(async (tx) => {
@@ -3469,6 +3579,7 @@ export async function saveSurveyAnswer({
 export async function withdrawSurveyResponse({
     db,
     conversationSlugId,
+    expectedForm,
     didWrite,
     userAgent,
     now,
@@ -3479,6 +3590,7 @@ export async function withdrawSurveyResponse({
 }: {
     db: PostgresJsDatabase;
     conversationSlugId: string;
+    expectedForm?: SurveyResponseWithdrawRequest["expectedForm"];
     didWrite: string;
     userAgent: string;
     now: Date;
@@ -3495,6 +3607,7 @@ export async function withdrawSurveyResponse({
         now,
         currentDisplayLanguage,
         requireCompletedSurvey: false,
+        skipClosedCheck: true,
     });
     if (!participationCheck.success) {
         return participationCheck;
@@ -3506,6 +3619,7 @@ export async function withdrawSurveyResponse({
         slugId: conversationSlugId,
         conversationType: participationCheck.conversationType,
         rankingMode: participationCheck.rankingMode,
+        prioritizationType: participationCheck.prioritizationType,
     });
 
     const surveyTransition = await db.transaction(async (tx) => {
@@ -3521,6 +3635,16 @@ export async function withdrawSurveyResponse({
             conversationId: conversation.conversationId,
             participantId,
         });
+        const activeSurveyConfig = previousSurveyState.activeSurveyConfig;
+        // Survey edits are excluded by the participant write lock above. Do not
+        // act on consent given for a form with different participation rules.
+        if (
+            expectedForm !== undefined &&
+            (expectedForm.surveyConfigId !== activeSurveyConfig?.id ||
+                expectedForm.currentRevision !==
+                    activeSurveyConfig.currentRevision)
+        )
+            throw httpErrors.conflict("Survey changed before withdrawal");
         const previousSurveyGate = deriveSurveyGate({
             surveyState: previousSurveyState,
             participantId,
@@ -3529,10 +3653,9 @@ export async function withdrawSurveyResponse({
             surveyState: previousSurveyState,
             surveyGate: previousSurveyGate,
         });
-        const activeSurveyConfig = previousSurveyState.activeSurveyConfig;
         if (activeSurveyConfig === undefined) {
             // The active-form loader deliberately skips retired surveys. A
-            // withdrawal still has to remove their retained participant data.
+            // withdrawal still has to retire responses from the live form.
             const withdrawnRows = await tx
                 .update(surveyResponseTable)
                 .set({ withdrawnAt: now, completedAt: null, updatedAt: now })
@@ -3616,7 +3739,19 @@ export async function withdrawSurveyResponse({
             conversationSlugId,
             configChanged: false,
         });
+        // Optional answers affect Polis survey aggregates even when the
+        // participant remains eligible for the numerical analysis.
+        const removesPolisSurveyChoices =
+            conversation.conversationType === "polis" &&
+            previousSurveyState.response.withdrawnAt === null &&
+            activeSurveyConfig.questions.some(
+                (question) =>
+                    question.questionType === "choice" &&
+                    (previousSurveyState.answersByQuestionId.get(question.id)
+                        ?.optionSlugIds.length ?? 0) > 0,
+            );
         const analysisRefreshScheduled =
+            removesPolisSurveyChoices ||
             shouldRecomputeAnalysisForSurveyTransition({
                 previousSurveyGateStatus: previousSurveyGate.status,
                 nextSurveyGateStatus: nextSurveyGate.status,
@@ -3686,13 +3821,6 @@ export async function updateSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    await requireProjectCapability({
-        db,
-        userId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-        message: "Missing conversation_edit capability",
-    });
     const existingSurveyConfig = await getActiveSurveyConfigRecord({
         db,
         conversationId: conversation.conversationId,
@@ -3715,6 +3843,7 @@ export async function updateSurveyConfigByAuthor({
         slugId: conversation.slugId,
         conversationType: conversation.conversationType,
         rankingMode: conversation.rankingMode,
+        prioritizationType: conversation.prioritizationType,
     });
 
     const surveyConfigUpdate = await db.transaction(async (tx) => {
@@ -3800,18 +3929,12 @@ export async function deleteSurveyConfigByAuthor({
         db,
         conversationSlugId,
     });
-    await requireProjectCapability({
-        db,
-        userId,
-        projectId: conversation.projectId,
-        capability: "conversation_edit",
-        message: "Missing conversation_edit capability",
-    });
     const analysisRefreshContext = buildSurveyAnalysisRefreshContext({
         conversationId: conversation.conversationId,
         slugId: conversation.slugId,
         conversationType: conversation.conversationType,
         rankingMode: conversation.rankingMode,
+        prioritizationType: conversation.prioritizationType,
     });
     const surveyConfigDeleteResult = await db.transaction(async (tx) => {
         await lockConversationForSurveyEdit({

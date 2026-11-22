@@ -121,7 +121,7 @@ describe("OTP destination throttling", () => {
             password: "postgres",
             max: 5,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
 
         await sqlClient.unsafe(readDbFixtureSql("auth-otp.sql"));
     }, 120000);
@@ -2618,12 +2618,15 @@ describe("OTP destination throttling", () => {
             .where(eq(userTable.id, targetUserId));
 
         await expect(
-            mergeGuestIntoVerifiedUser({
-                db,
-                verifiedUserId: targetUserId,
-                guestUserId,
-                now: currentNow,
-            }),
+            db.transaction(
+                async (tx) =>
+                    await mergeGuestIntoVerifiedUser({
+                        db: tx,
+                        verifiedUserId: targetUserId,
+                        guestUserId,
+                        now: currentNow,
+                    }),
+            ),
         ).rejects.toThrow("Cannot merge inactive users");
     }, 30000);
 

@@ -41,7 +41,7 @@ describe("conversation feed display content", () => {
             password: "postgres",
             max: 4,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         await sqlClient.unsafe(readDbFixtureSql("content-translation.sql"));
     }, 120_000);
 

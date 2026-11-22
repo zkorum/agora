@@ -89,7 +89,7 @@ export function getPostActions({
           icon: "mdi-play-circle",
           handler: openConversationCallback,
           isVisible: (context: ContentActionContext) =>
-            conversationCapabilities.canEdit && !context.isEmbeddedMode,
+            conversationCapabilities.canReopen && !context.isEmbeddedMode,
         }
       : {
           id: "closeConversation",
@@ -97,7 +97,7 @@ export function getPostActions({
           icon: "mdi-stop-circle",
           handler: closeConversationCallback,
           isVisible: (context: ContentActionContext) =>
-            conversationCapabilities.canEdit && !context.isEmbeddedMode,
+            conversationCapabilities.canClose && !context.isEmbeddedMode,
         }
   );
 

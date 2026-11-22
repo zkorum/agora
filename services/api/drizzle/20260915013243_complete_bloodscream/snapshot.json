@@ -1,0 +1,337 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "31b2b43f-c07c-4f75-b0a4-672d07a6d55c",
+  "prevIds": [
+    "3e9dfc59-2d5b-47f8-a12b-14192548fc93"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "maxdiff_user_entity_score",
+        "display_score"
+      ],
+      "writes": [
+        "s|col|public.maxdiff_user_entity_score.display_score",
+        "n|col|public.maxdiff_user_entity_score.display_score",
+        "e|col|public.maxdiff_user_entity_score.display_score"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_user_entity_score",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_conversation_stats_snapshot",
+        "ranking_score_id"
+      ],
+      "writes": [
+        "s|col|public.ranking_conversation_stats_snapshot.ranking_score_id",
+        "n|col|public.ranking_conversation_stats_snapshot.ranking_score_id",
+        "e|col|public.ranking_conversation_stats_snapshot.ranking_score_id"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_snapshot",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_item",
+        "snapshot_ranking_score_id"
+      ],
+      "writes": [
+        "s|col|public.ranking_item.snapshot_ranking_score_id",
+        "n|col|public.ranking_item.snapshot_ranking_score_id",
+        "e|col|public.ranking_item.snapshot_ranking_score_id"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "ranking_score_entity",
+        "display_score"
+      ],
+      "writes": [
+        "s|col|public.ranking_score_entity.display_score",
+        "n|col|public.ranking_score_entity.display_score",
+        "e|col|public.ranking_score_entity.display_score"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score_entity",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_score"
+      ],
+      "writes": [
+        "s|uq|public.ranking_score.ranking_score_id_conversation_unique",
+        "n|uq|public.ranking_score.ranking_score_id_conversation_unique",
+        "e|uq|public.ranking_score.ranking_score_id_conversation_unique",
+        "n|con|public.ranking_score.ranking_score_id_conversation_unique",
+        "n|rel|public.ranking_score_id_conversation_unique"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score",
+        "n|sch|public",
+        "n|col|public.ranking_score.id",
+        "n|col|public.ranking_score.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_conversation_stats_snapshot"
+      ],
+      "writes": [
+        "s|fk|public.ranking_conversation_stats_snapshot.ranking_stats_snapshot_score_conversation_fk",
+        "n|fk|public.ranking_conversation_stats_snapshot.ranking_stats_snapshot_score_conversation_fk",
+        "e|fk|public.ranking_conversation_stats_snapshot.ranking_stats_snapshot_score_conversation_fk",
+        "n|con|public.ranking_conversation_stats_snapshot.ranking_stats_snapshot_score_conversation_fk"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_conversation_stats_snapshot",
+        "n|sch|public",
+        "n|tbl|public.ranking_score",
+        "n|sch|public",
+        "n|col|public.ranking_conversation_stats_snapshot.ranking_score_id",
+        "n|col|public.ranking_conversation_stats_snapshot.conversation_id",
+        "n|col|public.ranking_score.id",
+        "n|col|public.ranking_score.conversation_id",
+        "e|uniqueness|public.ranking_score.conversation_id.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_item"
+      ],
+      "writes": [
+        "s|fk|public.ranking_item.ranking_item_snapshot_score_conversation_fk",
+        "n|fk|public.ranking_item.ranking_item_snapshot_score_conversation_fk",
+        "e|fk|public.ranking_item.ranking_item_snapshot_score_conversation_fk",
+        "n|con|public.ranking_item.ranking_item_snapshot_score_conversation_fk"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_item",
+        "n|sch|public",
+        "n|tbl|public.ranking_score",
+        "n|sch|public",
+        "n|col|public.ranking_item.snapshot_ranking_score_id",
+        "n|col|public.ranking_item.conversation_id",
+        "n|col|public.ranking_score.id",
+        "n|col|public.ranking_score.conversation_id",
+        "e|uniqueness|public.ranking_score.conversation_id.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "maxdiff_user_entity_score"
+      ],
+      "writes": [
+        "s|ck|public.maxdiff_user_entity_score.maxdiff_user_entity_score_display_score_check",
+        "n|ck|public.maxdiff_user_entity_score.maxdiff_user_entity_score_display_score_check",
+        "e|ck|public.maxdiff_user_entity_score.maxdiff_user_entity_score_display_score_check",
+        "n|con|public.maxdiff_user_entity_score.maxdiff_user_entity_score_display_score_check"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_user_entity_score",
+        "n|sch|public",
+        "n|col|public.maxdiff_user_entity_score.display_score"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "ranking_score_entity"
+      ],
+      "writes": [
+        "s|ck|public.ranking_score_entity.ranking_score_entity_display_score_check",
+        "n|ck|public.ranking_score_entity.ranking_score_entity_display_score_check",
+        "e|ck|public.ranking_score_entity.ranking_score_entity_display_score_check",
+        "n|con|public.ranking_score_entity.ranking_score_entity_display_score_check"
+      ],
+      "reads": [
+        "n|tbl|public.ranking_score_entity",
+        "n|sch|public",
+        "n|col|public.ranking_score_entity.display_score"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_user_entity_score",
+        "name": "display_score",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_stats_snapshot",
+        "name": "ranking_score_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_item",
+        "name": "snapshot_ranking_score_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "display_score",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_conversation_stats_snapshot",
+        "name": "ranking_stats_snapshot_score_conversation_fk",
+        "nameExplicit": true,
+        "columns": [
+          "ranking_score_id",
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "ranking_score",
+        "columnsTo": [
+          "id",
+          "conversation_id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_item",
+        "name": "ranking_item_snapshot_score_conversation_fk",
+        "nameExplicit": true,
+        "columns": [
+          "snapshot_ranking_score_id",
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "ranking_score",
+        "columnsTo": [
+          "id",
+          "conversation_id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score",
+        "name": "ranking_score_id_conversation_unique",
+        "nameExplicit": true,
+        "columns": [
+          "id",
+          "conversation_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_user_entity_score",
+        "name": "maxdiff_user_entity_score_display_score_check",
+        "value": "\"maxdiff_user_entity_score\".\"display_score\" IS NULL OR (\"maxdiff_user_entity_score\".\"display_score\" >= 0 AND \"maxdiff_user_entity_score\".\"display_score\" <= 1)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "ranking_score_entity",
+        "name": "ranking_score_entity_display_score_check",
+        "value": "\"ranking_score_entity\".\"display_score\" IS NULL OR (\"ranking_score_entity\".\"display_score\" >= 0 AND \"ranking_score_entity\".\"display_score\" <= 1)",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

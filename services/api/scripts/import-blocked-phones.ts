@@ -178,7 +178,7 @@ async function main(): Promise<void> {
     const client = await createPostgresClient(config, console);
     try {
         await applyReviewedManifest({
-            db: drizzle(client),
+            db: drizzle({ client }),
             manifest,
             now: new Date(),
         });

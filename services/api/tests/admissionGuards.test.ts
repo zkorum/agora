@@ -63,7 +63,7 @@ describe("Admission guards", () => {
             password: "postgres",
             max: 3,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
 
         await sqlClient.unsafe(readDbFixtureSql("admission-guards.sql"));
         await sqlClient.unsafe("CREATE DATABASE agora_replica");
@@ -75,7 +75,7 @@ describe("Admission guards", () => {
             password: "postgres",
             max: 3,
         });
-        replicaDb = drizzle(replicaClient);
+        replicaDb = drizzle({ client: replicaClient });
         await replicaClient.unsafe(readDbFixtureSql("admission-guards.sql"));
     }, 120000);
 
@@ -281,7 +281,7 @@ describe("Admission guards", () => {
             connect_timeout: 1,
         });
         try {
-            const replicatedDb = withReplicas(drizzle(unavailableWriter), [db]);
+            const replicatedDb = withReplicas(drizzle({ client: unavailableWriter }), [db]);
             expect(
                 await getImportStatus({
                     db: replicatedDb,

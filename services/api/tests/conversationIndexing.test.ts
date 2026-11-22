@@ -5,15 +5,22 @@ import postgres from "postgres";
 import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { isConversationIndexable } from "../src/service/conversationIndexing.js";
+import { getReplicaDatabase } from "../src/shared-backend/db.js";
 import {
     conversationContentTable,
     conversationTable,
+    projectTable,
 } from "../src/shared-backend/schema.js";
 import { readDbFixtureSql } from "./dbFixture.js";
 
 process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
 
 async function createConversations(db: PostgresJsDatabase): Promise<void> {
+    await db.insert(projectTable).values({
+        slug: "indexing-project",
+        title: "Indexing project",
+        directoryVisibility: "listed",
+    });
     const conversations = await db
         .insert(conversationTable)
         .values([
@@ -81,8 +88,8 @@ describe("conversation indexing database policy", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client);
-        await client.unsafe(readDbFixtureSql("content-translation.sql"));
+        db = drizzle({ client });
+        await client.unsafe(readDbFixtureSql("feed-pagination.sql"));
         await createConversations(db);
         // Independent databases let the replica retain the old visibility without
         // requiring a replication cluster for this routing regression test.
@@ -94,8 +101,8 @@ describe("conversation indexing database policy", () => {
             username: "postgres",
             password: "postgres",
         });
-        replicaDb = drizzle(replicaClient);
-        await replicaClient.unsafe(readDbFixtureSql("content-translation.sql"));
+        replicaDb = drizzle({ client: replicaClient });
+        await replicaClient.unsafe(readDbFixtureSql("feed-pagination.sql"));
         await createConversations(replicaDb);
     }, 120_000);
 
@@ -114,7 +121,7 @@ describe("conversation indexing database policy", () => {
         },
     );
 
-    it("reads the writer when a replica still considers the conversation listed", async () => {
+    it("unlists and relists via the writer without overriding conversation intent", async () => {
         const replicatedDb = withReplicas(db, [replicaDb]);
         expect(
             await isConversationIndexable({
@@ -123,19 +130,29 @@ describe("conversation indexing database policy", () => {
             }),
         ).toBe(true);
         await db
-            .update(conversationTable)
-            .set({ isIndexed: false })
-            .where(eq(conversationTable.slugId, "listed"));
-        const staleConversations = await replicatedDb
-            .select({ isIndexed: conversationTable.isIndexed })
-            .from(conversationTable)
-            .where(eq(conversationTable.slugId, "listed"));
-        expect(staleConversations).toEqual([{ isIndexed: true }]);
+            .update(projectTable)
+            .set({ directoryVisibility: "unlisted" })
+            .where(eq(projectTable.id, 1));
+        const staleProjects = await getReplicaDatabase(replicatedDb)
+            .select({ directoryVisibility: projectTable.directoryVisibility })
+            .from(projectTable)
+            .where(eq(projectTable.id, 1));
+        expect(staleProjects).toEqual([{ directoryVisibility: "listed" }]);
         expect(
             await isConversationIndexable({
                 db: replicatedDb,
                 conversationSlugId: "listed",
             }),
         ).toBe(false);
+        await db
+            .update(projectTable)
+            .set({ directoryVisibility: "listed" })
+            .where(eq(projectTable.id, 1));
+        await expect(
+            isConversationIndexable({ db, conversationSlugId: "listed" }),
+        ).resolves.toBe(true);
+        await expect(
+            isConversationIndexable({ db, conversationSlugId: "unlisted" }),
+        ).resolves.toBe(false);
     });
 });

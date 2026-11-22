@@ -30,12 +30,12 @@ CREATE INDEX "other_value_idx" ON "other" USING btree ("value");`;
         });
         const fixtureSql = fixtures.get("demo");
 
-        expect(fixtureSql).toContain("CREATE TYPE \"public\".\"kept_enum\"");
+        expect(fixtureSql).toContain('CREATE TYPE "public"."kept_enum"');
         expect(fixtureSql).not.toContain("unused_enum");
-        expect(fixtureSql).toContain("CREATE TABLE \"kept\"");
-        expect(fixtureSql).not.toContain("CREATE TABLE \"other\"");
+        expect(fixtureSql).toContain('CREATE TABLE "kept"');
+        expect(fixtureSql).not.toContain('CREATE TABLE "other"');
         expect(fixtureSql).not.toContain("ALTER TABLE");
-        expect(fixtureSql).toContain("CREATE INDEX \"kept_value_idx\"");
+        expect(fixtureSql).toContain('CREATE INDEX "kept_value_idx"');
         expect(fixtureSql).not.toContain("other_value_idx");
     });
 
@@ -45,5 +45,20 @@ CREATE INDEX "other_value_idx" ON "other" USING btree ("value");`;
                 JSON.stringify({ "../demo": ["kept"] }),
             ),
         ).toThrow();
+    });
+
+    it("places unqualified enums from current Drizzle exports before their tables", () => {
+        const fixtures = generateApiTestSchemaFixtures({
+            sql: `CREATE TYPE "status" AS ENUM('active');
+CREATE TABLE "items" (
+    "value" "status" NOT NULL
+);`,
+            config: { demo: ["items"] },
+        });
+        const sql = fixtures.get("demo") ?? "";
+        expect(sql).toContain('CREATE TYPE "status"');
+        expect(sql.indexOf("CREATE TYPE")).toBeLessThan(
+            sql.indexOf("CREATE TABLE"),
+        );
     });
 });

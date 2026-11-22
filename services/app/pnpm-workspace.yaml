@@ -5,7 +5,6 @@ minimumReleaseAgeExclude:
   - svelte@5.55.7
 
 allowBuilds:
-  "@sentry/cli": true
   esbuild: true
   sharp: true
   unrs-resolver: true
@@ -14,3 +13,8 @@ overrides:
   "eslint>ajv": "^6.14.0"
   "@eslint/eslintrc>ajv": "^6.14.0"
   cookie: ">=0.7.0"
+  # GHSA-rj75-hqrm-r3gf: typography still pins an affected parser release.
+  "@tailwindcss/typography>postcss-selector-parser": "6.1.5"
+  # GHSA-g3hv-75wg-m249: ESLint/config-array/TS-ESTree use the retained match APIs.
+  # Import-X needs 4.18.0 first: older versions import makeRe, removed in v11.
+  "minimatch@10": "11.0.5"

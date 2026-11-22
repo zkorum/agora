@@ -86,6 +86,7 @@ function conversationMetadata(
   const { contentLanguageMetadata, ...restOverrides } = overrides;
   return {
     conversationSlugId: "conversation-1",
+    participantStatements: { supported: true, enabled: true },
     conversationViewSnapshotId: 12,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     lastReactedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -240,7 +241,7 @@ describe("analysis frame data", () => {
     });
 
     expect(data.conversationViewSnapshotId).toBeUndefined();
-    expect(data.emptyReason).toBe("No analysis is available yet.");
+    expect(data.manifest?.emptyReason).toBe("No analysis is available yet.");
     expect(data.consensusAgree).toEqual([]);
     expect(data.polisClusters).toEqual({});
   });

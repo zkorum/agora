@@ -1,5 +1,5 @@
 <script lang="ts">
-  import * as m from "$lib/paraglide/messages.js";
+  import * as m from "#lib/paraglide/messages.js";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
@@ -46,7 +46,7 @@
           class="
             absolute top-[-0.04%] left-0 h-[100.08%] w-[105.25%] max-w-none
           "
-          src="$lib/assets/testimonials-bg-new.png"
+          src="#lib/assets/testimonials-bg-new.png"
         />
       </div>
       <div

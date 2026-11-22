@@ -8,13 +8,16 @@ from agora_analysis_worker_shared.generated_models import (
     SurveyQuestionType,
 )
 from agora_analysis_worker_shared.survey_aggregates import (
+    SurveyAggregateBuildResult,
     SurveyAggregateGroupMembership,
     SurveyAnswerSnapshot,
+    SurveyChoiceAnswer,
     SurveyConfigSnapshot,
     SurveyOptionSnapshot,
     SurveyQuestionSnapshot,
     SurveyResponseSnapshot,
-    build_suppressed_survey_aggregates,
+    build_suppressed_survey_choice_aggregates,
+    prepare_survey_choice_answers,
 )
 
 USER_1 = UUID("00000000-0000-0000-0000-000000000001")
@@ -22,6 +25,21 @@ USER_2 = UUID("00000000-0000-0000-0000-000000000002")
 USER_3 = UUID("00000000-0000-0000-0000-000000000003")
 USER_4 = UUID("00000000-0000-0000-0000-000000000004")
 USER_5 = UUID("00000000-0000-0000-0000-000000000005")
+
+
+def build_suppressed_survey_aggregates(
+    *,
+    config: SurveyConfigSnapshot,
+    responses: list[SurveyResponseSnapshot],
+    group_memberships: list[SurveyAggregateGroupMembership[UUID]],
+) -> SurveyAggregateBuildResult:
+    return build_suppressed_survey_choice_aggregates(
+        questions=config.questions,
+        answers=prepare_survey_choice_answers(
+            config=config, responses=responses, participant_key_for=lambda user_id: user_id
+        ),
+        group_memberships=group_memberships,
+    )
 
 
 def _question(*, is_public_aggregate_suppression_enabled: bool = True) -> SurveyQuestionSnapshot:
@@ -167,7 +185,7 @@ def test_build_suppressed_survey_aggregates_adds_group_scope_rows() -> None:
             SurveyAggregateGroupMembership(
                 candidate_id=10,
                 group_id=20,
-                user_ids=frozenset({USER_1, USER_2}),
+                participant_keys=frozenset({USER_1, USER_2}),
             )
         ],
     )
@@ -199,6 +217,46 @@ def test_build_suppressed_survey_aggregates_excludes_withdrawn_and_stale_answers
     assert [record.suppressed_count for record in result.results] == [None, None]
     assert [record.full_count for record in result.results] == [0, 1]
     assert {record.is_suppressed for record in result.results} == {True}
+
+
+def test_recounts_closing_choices_for_new_groups_without_account_ids() -> None:
+    config = _config(is_optional=True)
+    answers = prepare_survey_choice_answers(
+        config=config,
+        responses=[
+            _response(participant_id=USER_1, option_slug_ids=["a"]),
+            _response(participant_id=USER_2, option_slug_ids=["b"]),
+            _response(participant_id=USER_3, option_slug_ids=["a"], withdrawn=True),
+            _response(participant_id=USER_4, option_slug_ids=["a"], semantic_version=1),
+            _response(participant_id=USER_5, option_slug_ids=["b"]),
+        ],
+        participant_key_for={USER_1: 0, USER_2: 1, USER_3: 2, USER_4: 3}.get,
+    )
+    assert answers == [
+        SurveyChoiceAnswer(participant_key=0, question_slug_id="q1", option_slug_ids=("a",)),
+        SurveyChoiceAnswer(participant_key=1, question_slug_id="q1", option_slug_ids=("b",)),
+    ]
+
+    result = build_suppressed_survey_choice_aggregates(
+        questions=config.questions,
+        answers=answers,
+        group_memberships=[
+            SurveyAggregateGroupMembership(
+                candidate_id=9, group_id=10, participant_keys=frozenset({0})
+            ),
+            SurveyAggregateGroupMembership(
+                candidate_id=9, group_id=11, participant_keys=frozenset({1, 2, 3})
+            ),
+        ],
+    )
+    assert [(row.group_id, row.full_count, row.suppressed_count) for row in result.results] == [
+        (None, 1, None),
+        (None, 1, None),
+        (10, 1, None),
+        (10, 0, None),
+        (11, 0, None),
+        (11, 1, None),
+    ]
 
 
 def test_required_free_text_validation_filters_choice_aggregates() -> None:

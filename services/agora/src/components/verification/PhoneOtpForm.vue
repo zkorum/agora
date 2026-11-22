@@ -1,5 +1,9 @@
 <template>
   <div>
+    <AccountRecoveryNotice
+      v-if="recoveryReason !== undefined"
+      :unavailable="recoveryReason === 'recovery_unavailable'"
+    />
     <div
       v-if="countryPolicy.isPending.value"
       class="row justify-center q-pa-md"
@@ -95,6 +99,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 
 import ZKButton from "../ui-library/ZKButton.vue";
 import ZKInputOtp from "../ui-library/ZKInputOtp.vue";
+import AccountRecoveryNotice from "./AccountRecoveryNotice.vue";
 import PhoneAuthUnavailableNotice from "./PhoneAuthUnavailableNotice.vue";
 import {
   type PhoneOtpFormTranslations,
@@ -104,13 +109,14 @@ import { phoneTurnstileTranslations } from "./PhoneTurnstile.i18n";
 import PhoneTurnstile from "./PhoneTurnstile.vue";
 
 const props = defineProps<{
+  recoverAccount: boolean;
   purpose: PhoneAuthPurpose;
 }>();
 const emit = defineEmits<{
   verified: [accountMerged: boolean];
   changeIdentifier: [];
 }>();
-
+const recoveryReason = ref<"recovery_required" | "recovery_unavailable">();
 const { t } = useComponentI18n<PhoneOtpFormTranslations>(
   phoneOtpFormTranslations
 );
@@ -270,6 +276,7 @@ async function nextButtonClicked() {
 
   try {
     const response = await verifyPhoneOtp({
+      recoverAccount: props.recoverAccount,
       code: validatedCode,
       phoneNumber: verificationPhoneNumber.value.internationalPhoneNumber,
       defaultCallingCode: verificationPhoneNumber.value.countryCallingCode,
@@ -292,6 +299,11 @@ async function nextButtonClicked() {
         await finishVerification();
       } else {
         switch (data.reason) {
+          case "recovery_required":
+          case "recovery_unavailable":
+            recoveryReason.value = data.reason;
+            codeExpired();
+            break;
           case "expired_code":
             codeExpired();
             showNotifyMessage(t("codeExpiredResend"));

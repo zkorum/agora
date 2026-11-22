@@ -205,6 +205,7 @@ export function useSeedSuggestions({
     generation.value = { status: "generating", controller };
     try {
       const draft = context.value;
+      if (draft.conversationType === "gathering") return { status: "skipped" };
       const identity = await resolveDraftPublicationIdentityAtBoundary({
         postAs: draft.postAs,
         getProfile: () => userStore.profileData,

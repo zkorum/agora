@@ -89,8 +89,6 @@ export interface AdministratorProjectTranslations {
   deleteProjectDescription: string;
   confirmDeleteProjectButton: string;
   cancelButton: string;
-  requiredSuffix: string;
-  optionalSuffix: string;
   dangerZoneTitle: string;
   changeSlugDangerTitle: string;
   changeSlugDangerDescription: string;
@@ -157,7 +155,7 @@ const en: AdministratorProjectTranslations = {
   externalOrganizationSource: "External organization",
   contactTitle: "Participant contact",
   contactDescription:
-    "Optional. Provide a person's name or select an organization, plus an email address or HTTPS contact page. Without a person's name, the organization is shown as the contact name.",
+    "To add a contact, enter an email address. All other contact details are optional.",
   contactFirstNameLabel: "Contact first name",
   contactLastNameLabel: "Contact last name",
   contactRoleLabel: "Contact role label",
@@ -198,17 +196,17 @@ const en: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Change slug",
   deleteProjectButton: "Delete project",
   deleteProjectTitle: "Delete project?",
-  deleteProjectDescription: "This will delete this project.",
+  deleteProjectDescription:
+    "This will delete the project and make its conversations, documents, and historical reports inaccessible. This action cannot be undone.",
   confirmDeleteProjectButton: "Confirm delete",
   cancelButton: "Cancel",
-  requiredSuffix: "required",
-  optionalSuffix: "optional",
   dangerZoneTitle: "Danger zone",
   changeSlugDangerTitle: "Change project slug",
   changeSlugDangerDescription:
     "Changing this slug can break public links that were already visited or shared.",
   deleteDangerTitle: "Delete this project",
-  deleteDangerDescription: "Delete this project.",
+  deleteDangerDescription:
+    "Delete the project and its conversations, documents, and historical reports.",
 };
 
 const ar: AdministratorProjectTranslations = {
@@ -269,7 +267,7 @@ const ar: AdministratorProjectTranslations = {
   externalOrganizationSource: "منظمة خارجية",
   contactTitle: "جهة اتصال المشاركين",
   contactDescription:
-    "اختياري. أدخل اسم شخص أو اختر مؤسسة، مع عنوان بريد إلكتروني أو صفحة اتصال تستخدم HTTPS. إذا لم تُدخل اسم شخص، فسيظهر اسم المؤسسة كاسم جهة الاتصال.",
+    "لإضافة جهة اتصال، أدخل عنوان بريد إلكتروني. جميع تفاصيل الاتصال الأخرى اختيارية.",
   contactFirstNameLabel: "الاسم الأول لجهة الاتصال",
   contactLastNameLabel: "اسم العائلة لجهة الاتصال",
   contactRoleLabel: "مسمى دور جهة الاتصال",
@@ -311,17 +309,16 @@ const ar: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "تغيير المعرّف النصي",
   deleteProjectButton: "حذف المشروع",
   deleteProjectTitle: "هل تريد حذف المشروع؟",
-  deleteProjectDescription: "سيؤدي هذا إلى حذف هذا المشروع.",
+  deleteProjectDescription:
+    "سيؤدي هذا إلى حذف المشروع ومنع الوصول إلى محادثاته ومستنداته وتقاريره السابقة. لا يمكن التراجع عن هذا الإجراء.",
   confirmDeleteProjectButton: "تأكيد الحذف",
   cancelButton: "إلغاء",
-  requiredSuffix: "مطلوب",
-  optionalSuffix: "اختياري",
   dangerZoneTitle: "منطقة الخطر",
   changeSlugDangerTitle: "تغيير المعرّف النصي للمشروع",
   changeSlugDangerDescription:
     "قد يؤدي تغيير هذا المعرّف النصي إلى تعطيل الروابط العامة التي تمت زيارتها أو مشاركتها بالفعل.",
   deleteDangerTitle: "حذف هذا المشروع",
-  deleteDangerDescription: "احذف هذا المشروع.",
+  deleteDangerDescription: "احذف المشروع ومحادثاته ومستنداته وتقاريره السابقة.",
 };
 
 const es: AdministratorProjectTranslations = {
@@ -384,7 +381,7 @@ const es: AdministratorProjectTranslations = {
   externalOrganizationSource: "Organización externa",
   contactTitle: "Contacto para participantes",
   contactDescription:
-    "Opcional. Indique el nombre de una persona o seleccione una organización, junto con un correo electrónico o una página de contacto HTTPS. Si no hay nombre de persona, la organización se mostrará como nombre de contacto.",
+    "Para añadir un contacto, introduce una dirección de correo electrónico. Los demás datos de contacto son opcionales.",
   contactFirstNameLabel: "Nombre del contacto",
   contactLastNameLabel: "Apellidos del contacto",
   contactRoleLabel: "Nombre del rol del contacto",
@@ -428,17 +425,17 @@ const es: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Cambiar slug",
   deleteProjectButton: "Eliminar proyecto",
   deleteProjectTitle: "¿Eliminar proyecto?",
-  deleteProjectDescription: "Esto eliminará este proyecto.",
+  deleteProjectDescription:
+    "Esto eliminará el proyecto e impedirá acceder a sus conversaciones, documentos e informes históricos. Esta acción no se puede deshacer.",
   confirmDeleteProjectButton: "Confirmar eliminación",
   cancelButton: "Cancelar",
-  requiredSuffix: "obligatorio",
-  optionalSuffix: "opcional",
   dangerZoneTitle: "Zona de peligro",
   changeSlugDangerTitle: "Cambiar el slug del proyecto",
   changeSlugDangerDescription:
     "Cambiar este slug puede romper enlaces públicos que ya se hayan visitado o compartido.",
   deleteDangerTitle: "Eliminar este proyecto",
-  deleteDangerDescription: "Elimine este proyecto.",
+  deleteDangerDescription:
+    "Elimine el proyecto y sus conversaciones, documentos e informes históricos.",
 };
 
 const fa: AdministratorProjectTranslations = {
@@ -500,7 +497,7 @@ const fa: AdministratorProjectTranslations = {
   externalOrganizationSource: "سازمان خارجی",
   contactTitle: "اطلاعات تماس شرکت‌کنندگان",
   contactDescription:
-    "اختیاری. نام یک شخص را وارد کنید یا سازمانی را انتخاب کنید و نشانی ایمیل یا صفحه تماس HTTPS ارائه دهید. اگر نام شخص وارد نشود، نام سازمان به‌عنوان نام مخاطب نمایش داده می‌شود.",
+    "برای افزودن مخاطب، نشانی ایمیل را وارد کنید. سایر اطلاعات تماس اختیاری هستند.",
   contactFirstNameLabel: "نام شخص تماس",
   contactLastNameLabel: "نام خانوادگی شخص تماس",
   contactRoleLabel: "عنوان نقش شخص تماس",
@@ -543,17 +540,17 @@ const fa: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "تغییر نامک",
   deleteProjectButton: "حذف پروژه",
   deleteProjectTitle: "پروژه حذف شود؟",
-  deleteProjectDescription: "این کار پروژه را حذف می‌کند.",
+  deleteProjectDescription:
+    "این کار پروژه را حذف می‌کند و گفتگوها، اسناد و گزارش‌های پیشین آن را از دسترس خارج می‌کند. این کار قابل بازگشت نیست.",
   confirmDeleteProjectButton: "تأیید حذف",
   cancelButton: "لغو",
-  requiredSuffix: "الزامی",
-  optionalSuffix: "اختیاری",
   dangerZoneTitle: "محدوده خطر",
   changeSlugDangerTitle: "تغییر نامک پروژه",
   changeSlugDangerDescription:
     "تغییر این نامک ممکن است پیوندهای عمومی را که قبلاً بازدید یا هم‌رسانی شده‌اند از کار بیندازد.",
   deleteDangerTitle: "حذف این پروژه",
-  deleteDangerDescription: "این پروژه را حذف کنید.",
+  deleteDangerDescription:
+    "پروژه و گفتگوها، اسناد و گزارش‌های پیشین آن را حذف کنید.",
 };
 
 const fr: AdministratorProjectTranslations = {
@@ -617,7 +614,7 @@ const fr: AdministratorProjectTranslations = {
   externalOrganizationSource: "Organisation externe",
   contactTitle: "Contact pour les participants",
   contactDescription:
-    "Facultatif. Renseignez le nom d’une personne ou sélectionnez une organisation, ainsi qu’une adresse e-mail ou une page de contact HTTPS. Sans nom de personne, l’organisation est affichée comme nom du contact.",
+    "Pour ajouter un contact, saisissez une adresse e-mail. Toutes les autres coordonnées sont facultatives.",
   contactFirstNameLabel: "Prénom du contact",
   contactLastNameLabel: "Nom du contact",
   contactRoleLabel: "Libellé du rôle du contact",
@@ -661,17 +658,17 @@ const fr: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Modifier le slug",
   deleteProjectButton: "Supprimer le projet",
   deleteProjectTitle: "Supprimer le projet ?",
-  deleteProjectDescription: "Cette action supprimera ce projet.",
+  deleteProjectDescription:
+    "Cette action supprimera le projet et rendra ses conversations, documents et rapports historiques inaccessibles. Elle est irréversible.",
   confirmDeleteProjectButton: "Confirmer la suppression",
   cancelButton: "Annuler",
-  requiredSuffix: "obligatoire",
-  optionalSuffix: "facultatif",
   dangerZoneTitle: "Zone de danger",
   changeSlugDangerTitle: "Modifier le slug du projet",
   changeSlugDangerDescription:
     "La modification de ce slug peut rompre les liens publics déjà consultés ou partagés.",
   deleteDangerTitle: "Supprimer ce projet",
-  deleteDangerDescription: "Supprimez ce projet.",
+  deleteDangerDescription:
+    "Supprimez le projet ainsi que ses conversations, documents et rapports historiques.",
 };
 
 const he: AdministratorProjectTranslations = {
@@ -732,7 +729,7 @@ const he: AdministratorProjectTranslations = {
   externalOrganizationSource: "ארגון חיצוני",
   contactTitle: "איש קשר למשתתפים",
   contactDescription:
-    "אופציונלי. הזינו שם של אדם או בחרו ארגון, לצד כתובת דוא״ל או דף קשר המשתמש ב-HTTPS. ללא שם של אדם, שם הארגון יוצג כשם איש הקשר.",
+    "כדי להוסיף איש קשר, הזינו כתובת דוא״ל. שאר פרטי הקשר אינם חובה.",
   contactFirstNameLabel: "השם הפרטי של איש הקשר",
   contactLastNameLabel: "שם המשפחה של איש הקשר",
   contactRoleLabel: "תיאור התפקיד של איש הקשר",
@@ -773,17 +770,17 @@ const he: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "שינוי המזהה",
   deleteProjectButton: "מחיקת הפרויקט",
   deleteProjectTitle: "למחוק את הפרויקט?",
-  deleteProjectDescription: "פעולה זו תמחק את הפרויקט.",
+  deleteProjectDescription:
+    "פעולה זו תמחק את הפרויקט ותחסום את הגישה לשיחות, למסמכים ולדוחות ההיסטוריים שלו. לא ניתן לבטל פעולה זו.",
   confirmDeleteProjectButton: "אישור המחיקה",
   cancelButton: "ביטול",
-  requiredSuffix: "חובה",
-  optionalSuffix: "רשות",
   dangerZoneTitle: "אזור מסוכן",
   changeSlugDangerTitle: "שינוי מזהה הפרויקט",
   changeSlugDangerDescription:
     "שינוי המזהה הזה עלול לשבור קישורים ציבוריים שכבר נפתחו או שותפו.",
   deleteDangerTitle: "מחיקת הפרויקט הזה",
-  deleteDangerDescription: "מחקו את הפרויקט הזה.",
+  deleteDangerDescription:
+    "מחקו את הפרויקט ואת השיחות, המסמכים והדוחות ההיסטוריים שלו.",
 };
 
 const ja: AdministratorProjectTranslations = {
@@ -844,7 +841,7 @@ const ja: AdministratorProjectTranslations = {
   externalOrganizationSource: "外部組織",
   contactTitle: "参加者向け連絡先",
   contactDescription:
-    "任意です。個人名を入力するか組織を選択し、メールアドレスまたはHTTPSの連絡先ページを指定してください。個人名がない場合は、組織名が連絡先名として表示されます。",
+    "連絡先を追加するには、メールアドレスを入力してください。その他の連絡先情報は任意です。",
   contactFirstNameLabel: "連絡先の名",
   contactLastNameLabel: "連絡先の姓",
   contactRoleLabel: "連絡先の役割ラベル",
@@ -886,17 +883,17 @@ const ja: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "スラッグを変更",
   deleteProjectButton: "プロジェクトを削除",
   deleteProjectTitle: "プロジェクトを削除しますか？",
-  deleteProjectDescription: "このプロジェクトが削除されます。",
+  deleteProjectDescription:
+    "プロジェクトが削除され、その会話、ドキュメント、過去のレポートにアクセスできなくなります。この操作は取り消せません。",
   confirmDeleteProjectButton: "削除を確定",
   cancelButton: "キャンセル",
-  requiredSuffix: "必須",
-  optionalSuffix: "任意",
   dangerZoneTitle: "危険な操作",
   changeSlugDangerTitle: "プロジェクトのスラッグを変更",
   changeSlugDangerDescription:
     "このスラッグを変更すると、すでにアクセスまたは共有された公開リンクが機能しなくなる可能性があります。",
   deleteDangerTitle: "このプロジェクトを削除",
-  deleteDangerDescription: "このプロジェクトを削除します。",
+  deleteDangerDescription:
+    "プロジェクトとその会話、ドキュメント、過去のレポートを削除します。",
 };
 
 const zhHans: AdministratorProjectTranslations = {
@@ -957,7 +954,7 @@ const zhHans: AdministratorProjectTranslations = {
   externalOrganizationSource: "外部组织",
   contactTitle: "参与者联系人",
   contactDescription:
-    "可选。请填写个人姓名或选择组织，并提供电子邮件地址或 HTTPS 联系页面。未填写个人姓名时，将使用组织名称作为联系人名称。",
+    "要添加联系人，请填写电子邮件地址。其他联系信息均为选填。",
   contactFirstNameLabel: "联系人名字",
   contactLastNameLabel: "联系人姓氏",
   contactRoleLabel: "联系人角色标签",
@@ -995,17 +992,16 @@ const zhHans: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "更改标识符",
   deleteProjectButton: "删除项目",
   deleteProjectTitle: "删除项目？",
-  deleteProjectDescription: "这将删除此项目。",
+  deleteProjectDescription:
+    "这将删除项目，并使其对话、文档和历史报告无法访问。此操作无法撤销。",
   confirmDeleteProjectButton: "确认删除",
   cancelButton: "取消",
-  requiredSuffix: "必填",
-  optionalSuffix: "可选",
   dangerZoneTitle: "危险区域",
   changeSlugDangerTitle: "更改项目标识符",
   changeSlugDangerDescription:
     "更改此标识符可能会导致已访问或已分享的公开链接失效。",
   deleteDangerTitle: "删除此项目",
-  deleteDangerDescription: "删除此项目。",
+  deleteDangerDescription: "删除项目及其对话、文档和历史报告。",
 };
 
 const zhHant: AdministratorProjectTranslations = {
@@ -1065,7 +1061,7 @@ const zhHant: AdministratorProjectTranslations = {
   externalOrganizationSource: "外部組織",
   contactTitle: "參與者聯絡人",
   contactDescription:
-    "選填。請填寫個人姓名或選擇組織，並提供電子郵件地址或 HTTPS 聯絡頁面。未填寫個人姓名時，將使用組織名稱作為聯絡人名稱。",
+    "若要新增聯絡人，請輸入電子郵件地址。其他聯絡資訊皆為選填。",
   contactFirstNameLabel: "聯絡人名字",
   contactLastNameLabel: "聯絡人姓氏",
   contactRoleLabel: "聯絡人角色標籤",
@@ -1104,17 +1100,16 @@ const zhHant: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "變更識別字串",
   deleteProjectButton: "刪除專案",
   deleteProjectTitle: "刪除專案？",
-  deleteProjectDescription: "這將刪除此專案。",
+  deleteProjectDescription:
+    "這將刪除專案，並使其對話、文件和歷史報告無法存取。此操作無法復原。",
   confirmDeleteProjectButton: "確認刪除",
   cancelButton: "取消",
-  requiredSuffix: "必填",
-  optionalSuffix: "選填",
   dangerZoneTitle: "危險區域",
   changeSlugDangerTitle: "變更專案識別字串",
   changeSlugDangerDescription:
     "變更此識別字串可能會使已造訪或分享的公開連結失效。",
   deleteDangerTitle: "刪除此專案",
-  deleteDangerDescription: "刪除此專案。",
+  deleteDangerDescription: "刪除專案及其對話、文件和歷史報告。",
 };
 
 const ky: AdministratorProjectTranslations = {
@@ -1176,7 +1171,7 @@ const ky: AdministratorProjectTranslations = {
   externalOrganizationSource: "Тышкы уюм",
   contactTitle: "Катышуучулар үчүн байланыш",
   contactDescription:
-    "Милдеттүү эмес. Адамдын атын жазыңыз же уюмду тандаңыз жана электрондук почта дарегин же HTTPS байланыш барагын көрсөтүңүз. Адамдын аты жок болсо, байланыштын аты катары уюмдун аты көрсөтүлөт.",
+    "Байланыш маалыматын кошуу үчүн электрондук почта дарегин жазыңыз. Калган маалыматтарды толтуруу милдеттүү эмес.",
   contactFirstNameLabel: "Байланыш адамынын аты",
   contactLastNameLabel: "Байланыш адамынын фамилиясы",
   contactRoleLabel: "Байланыш адамынын ролу",
@@ -1219,17 +1214,17 @@ const ky: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Слагды өзгөртүү",
   deleteProjectButton: "Долбоорду өчүрүү",
   deleteProjectTitle: "Долбоор өчүрүлсүнбү?",
-  deleteProjectDescription: "Бул долбоор өчүрүлөт.",
+  deleteProjectDescription:
+    "Долбоор өчүрүлүп, анын талкуулары, документтери жана мурунку отчёттору жеткиликсиз болот. Бул аракетти артка кайтаруу мүмкүн эмес.",
   confirmDeleteProjectButton: "Өчүрүүнү ырастоо",
   cancelButton: "Жокко чыгаруу",
-  requiredSuffix: "милдеттүү",
-  optionalSuffix: "милдеттүү эмес",
   dangerZoneTitle: "Кооптуу аймак",
   changeSlugDangerTitle: "Долбоордун слагын өзгөртүү",
   changeSlugDangerDescription:
     "Бул слагды өзгөртүү буга чейин ачылган же бөлүшүлгөн жалпыга ачык шилтемелерди иштен чыгарышы мүмкүн.",
   deleteDangerTitle: "Бул долбоорду өчүрүү",
-  deleteDangerDescription: "Бул долбоорду өчүрүңүз.",
+  deleteDangerDescription:
+    "Долбоорду, анын талкууларын, документтерин жана мурунку отчётторун өчүрүңүз.",
 };
 
 const ru: AdministratorProjectTranslations = {
@@ -1293,7 +1288,7 @@ const ru: AdministratorProjectTranslations = {
   externalOrganizationSource: "Внешняя организация",
   contactTitle: "Контактное лицо для участников",
   contactDescription:
-    "Необязательно. Укажите имя человека или выберите организацию, а также адрес электронной почты или страницу для связи по HTTPS. Если имя человека не указано, в качестве имени контакта отображается название организации.",
+    "Чтобы добавить контакт, укажите адрес электронной почты. Остальные контактные данные необязательны.",
   contactFirstNameLabel: "Имя контактного лица",
   contactLastNameLabel: "Фамилия контактного лица",
   contactRoleLabel: "Роль контактного лица",
@@ -1337,17 +1332,17 @@ const ru: AdministratorProjectTranslations = {
   confirmSlugChangeButton: "Изменить слаг",
   deleteProjectButton: "Удалить проект",
   deleteProjectTitle: "Удалить проект?",
-  deleteProjectDescription: "Этот проект будет удален.",
+  deleteProjectDescription:
+    "Проект будет удалён, а его обсуждения, документы и исторические отчёты станут недоступны. Это действие нельзя отменить.",
   confirmDeleteProjectButton: "Подтвердить удаление",
   cancelButton: "Отмена",
-  requiredSuffix: "обязательно",
-  optionalSuffix: "необязательно",
   dangerZoneTitle: "Опасная зона",
   changeSlugDangerTitle: "Изменить слаг проекта",
   changeSlugDangerDescription:
     "Изменение этого слага может нарушить работу публичных ссылок, которые уже открывали или которыми делились.",
   deleteDangerTitle: "Удалить этот проект",
-  deleteDangerDescription: "Удалите этот проект.",
+  deleteDangerDescription:
+    "Удалите проект, его обсуждения, документы и исторические отчёты.",
 };
 
 export const administratorProjectTranslations: Record<

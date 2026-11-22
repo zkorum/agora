@@ -128,7 +128,7 @@ test("backfills and maintains one sticky security notification until email verif
         username: "postgres",
         password: "test-only",
     });
-    const db = drizzle(client);
+    const db = drizzle({ client });
     try {
         const phoneUserId = "00000000-0000-4000-8000-000000000001";
         await ensureAddEmailSecurityNotification({ db, userId: phoneUserId });

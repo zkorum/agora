@@ -73,13 +73,15 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
         },
         write: (draft: ConversationDraft): string => {
           try {
-            const serializableDraft: SerializableConversationDraft = draft;
+            const serializableDraft =
+              zodSerializableConversationDraft.parse(draft);
             return JSON.stringify(serializableDraft);
           } catch (error) {
             console.error("Failed to serialize conversation draft:", error);
             // Fallback to empty draft
             const emptyDraft = createEmptyDraft();
-            const fallbackData: SerializableConversationDraft = emptyDraft;
+            const fallbackData =
+              zodSerializableConversationDraft.parse(emptyDraft);
             return JSON.stringify(fallbackData);
           }
         },
@@ -100,6 +102,8 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
 
     // Check basic content changes
     const hasContentChanges =
+      JSON.stringify(current.participantStatements) !==
+        JSON.stringify(emptyDraft.participantStatements) ||
       current.title !== emptyDraft.title ||
       current.content !== emptyDraft.content;
 
@@ -118,7 +122,9 @@ export const useNewPostDraftsStore = defineStore("newPostDrafts", () => {
     // Check seed opinions changes
     const hasSeedOpinionsChanges =
       JSON.stringify(current.seedOpinions) !==
-      JSON.stringify(emptyDraft.seedOpinions);
+        JSON.stringify(emptyDraft.seedOpinions) ||
+      JSON.stringify(current.qvStatements) !==
+        JSON.stringify(emptyDraft.qvStatements);
 
     // Check conversation type changes
     const hasConversationTypeChanges =

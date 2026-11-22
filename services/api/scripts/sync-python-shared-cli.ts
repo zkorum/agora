@@ -24,7 +24,7 @@ const output = generatePythonSharedTypes({
         languagesTs: await readFile(languagesPath, "utf-8"),
         sharedTs: await readFile(sharedPath, "utf-8"),
     },
-    sourcePaths: [languagesPath, sharedPath],
+    sourcePaths: [languagesPath, sharedPath, join(values["shared-src"], "organizationAccess.ts")],
 });
 
 await writeFile(values.output, output);

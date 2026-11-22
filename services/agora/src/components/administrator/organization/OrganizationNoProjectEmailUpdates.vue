@@ -46,15 +46,6 @@
             @update:model-value="setContactEmail"
           />
         </div>
-        <p
-          v-if="
-            configuration.contact !== undefined &&
-            !configuration.canDeleteContact
-          "
-          class="contact-hint"
-        >
-          {{ t("contactInUse") }}
-        </p>
         <div class="actions">
           <ZKButton
             button-type="largeButton"
@@ -65,12 +56,15 @@
             :disable="!canSaveContact"
           />
           <ZKButton
-            v-if="configuration.contact !== undefined"
+            v-if="
+              configuration.contact !== undefined &&
+              configuration.canDeleteContact
+            "
             button-type="largeButton"
             :label="t('deleteContact')"
             color="negative"
             outline
-            :disable="!configuration.canDeleteContact || isSaving"
+            :disable="isSaving"
             @click="showDeleteConfirmDialog = true"
           />
         </div>

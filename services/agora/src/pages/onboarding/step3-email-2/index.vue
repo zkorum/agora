@@ -23,6 +23,7 @@
           <template #body>
             <EmailOtpForm
               ref="emailOtpFormRef"
+              :recover-account="false"
               @change-identifier="changeEmail"
             />
           </template>

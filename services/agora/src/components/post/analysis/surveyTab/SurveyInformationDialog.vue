@@ -2,7 +2,12 @@
   <q-dialog v-model="showDialog" position="bottom">
     <ZKBottomDialogContainer :title="t('title')">
       <div class="description">
-        {{ t("description") }}
+        {{
+          isFrozenClosingSurvey
+            ? surveyText("frozenClosingSurvey")
+            : t("description")
+        }}
+        <p>{{ t("privacy") }}</p>
       </div>
     </ZKBottomDialogContainer>
   </q-dialog>
@@ -16,8 +21,11 @@ import {
   type SurveyInformationDialogTranslations,
   surveyInformationDialogTranslations,
 } from "./SurveyInformationDialog.i18n";
+import { surveyTabTranslations } from "./SurveyTab.i18n";
 
+defineProps<{ isFrozenClosingSurvey: boolean }>();
 const showDialog = defineModel<boolean>({ required: true });
+const { t: surveyText } = useComponentI18n(surveyTabTranslations);
 
 const { t } = useComponentI18n<SurveyInformationDialogTranslations>(
   surveyInformationDialogTranslations

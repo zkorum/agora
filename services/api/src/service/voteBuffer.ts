@@ -40,7 +40,10 @@ import { queueOpinionVoteCountsUpdatedEvent } from "./realtimeEventOutbox.js";
 import { createVoteBufferProgress } from "./voteBufferProgress.js";
 import { partitionVoteBatches } from "./voteBatches.js";
 import { currentOpinionSourceCondition } from "@/shared-backend/opinionEligibility.js";
-import { getPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import { httpErrors } from "@fastify/sensible";
 import {
     getBufferedVoteKey,
@@ -174,7 +177,7 @@ export interface VoteBuffer {
     hasBlockingVotes: (params: {
         db: PostgresJsDatabase;
         opinionId: number;
-        authorId: string;
+        authorId: string | null;
         isSeed: boolean;
     }) => Promise<boolean>;
     flush: () => Promise<void>;
@@ -189,10 +192,6 @@ interface CreateVoteBufferParams {
     stallWarningMs?: number;
     realtimeSSEManager?: RealtimeSSEManager;
 }
-
-type VoteTransaction = Parameters<
-    Parameters<PostgresJsDatabase["transaction"]>[0]
->[0];
 
 // ============================================================================
 // Vote Buffer Implementation
@@ -448,6 +447,23 @@ export function createVoteBuffer({
                 : [];
         });
         if (pending.length === 0) return false;
+        const voters = await authoritativeDb
+            .select({
+                id: userTable.id,
+                contributionRevision: userTable.contributionRevision,
+            })
+            .from(userTable)
+            .where(
+                and(
+                    inArray(userTable.id, [
+                        ...new Set(pending.map((vote) => vote.userId)),
+                    ]),
+                    eq(userTable.isDeleted, false),
+                ),
+            );
+        const activeVoterIds = new Map(
+            voters.map((voter) => [voter.id, voter.contributionRevision]),
+        );
         const opinions = await authoritativeDb
             .select({
                 conversationId: opinionTable.conversationId,
@@ -459,7 +475,7 @@ export function createVoteBuffer({
                 conversationTable,
                 eq(conversationTable.id, opinionTable.conversationId),
             )
-            .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+            .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
             .leftJoin(
                 opinionModerationTable,
                 and(
@@ -478,6 +494,7 @@ export function createVoteBuffer({
         if (opinion === undefined) return false;
         const candidates = pending.filter(
             (vote) =>
+                activeVoterIds.get(vote.userId) === vote.contributionRevision &&
                 vote.opinionContentId === opinion.contentId &&
                 vote.voteBufferEpoch === opinion.epoch,
         );
@@ -648,8 +665,35 @@ export function createVoteBuffer({
                 });
                 if (currentVotes.length === 0) continue;
                 const persistVoteBatch = async (
-                    tx: VoteTransaction,
+                    tx: PostgresTransaction,
                 ): Promise<void> => {
+                    // Match account deletion/merge lock order. The revision check
+                    // also rejects pre-deletion actions after successful recovery.
+                    const voters = await tx
+                        .select({
+                            id: userTable.id,
+                            contributionRevision:
+                                userTable.contributionRevision,
+                        })
+                        .from(userTable)
+                        .where(
+                            and(
+                                inArray(userTable.id, [
+                                    ...new Set(
+                                        currentVotes.map((vote) => vote.userId),
+                                    ),
+                                ]),
+                                eq(userTable.isDeleted, false),
+                            ),
+                        )
+                        .orderBy(userTable.id)
+                        .for("no key update");
+                    const activeVoterIds = new Map(
+                        voters.map((voter) => [
+                            voter.id,
+                            voter.contributionRevision,
+                        ]),
+                    );
                     progress.enterStage("lock_conversations");
                     const scopes = await tx
                         .select({
@@ -676,7 +720,7 @@ export function createVoteBuffer({
                             contentId: opinionTable.currentContentId,
                         })
                         .from(opinionTable)
-                        .innerJoin(
+                        .leftJoin(
                             userTable,
                             eq(userTable.id, opinionTable.authorId),
                         )
@@ -706,6 +750,8 @@ export function createVoteBuffer({
                     );
                     const candidates = currentVotes.filter(
                         (vote) =>
+                            activeVoterIds.get(vote.userId) ===
+                                vote.contributionRevision &&
                             vote.voteBufferEpoch === scope.epoch &&
                             (vote.vote === "cancel" ||
                                 sourceVersions.get(vote.opinionId) ===
@@ -993,6 +1039,7 @@ export function createVoteBuffer({
                                 .update(voteTable)
                                 .set({
                                     currentContentId: sql`(CASE ${sql.join(caseStatements, sql` `)} END)::int`,
+                                    withdrawnAt: sql`CASE WHEN (CASE ${sql.join(caseStatements, sql` `)} END)::int IS NULL THEN coalesce(${voteTable.withdrawnAt}, clock_timestamp()) ELSE NULL END`,
                                     bufferEpoch: scope.epoch,
                                     bufferSequence: sql`(CASE ${sql.join(sequenceStatements, sql` `)} END)::bigint`,
                                 })
@@ -1245,7 +1292,7 @@ export function createVoteBuffer({
                                     realtimeSSEManager,
                                 });
                             }
-                        } else {
+                        } else if (opinion.authorId !== null) {
                             // Regular opinion: notify opinion author only
                             const selfVoted = voteData.voterIds.has(
                                 opinion.authorId,

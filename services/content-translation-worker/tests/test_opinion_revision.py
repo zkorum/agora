@@ -92,6 +92,8 @@ def opinion_revision_session() -> Iterator[Session]:
                     survey_question_content_id INTEGER,
                     survey_question_option_content_ids TEXT,
                     ranking_item_content_id INTEGER,
+                    gathering_field_id TEXT,
+                    gathering_response_content_id INTEGER,
                     display_language_code TEXT NOT NULL,
                     status TEXT NOT NULL,
                     priority_rank INTEGER NOT NULL,

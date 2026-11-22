@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "5a21539c-3e2e-442b-b073-079a0eda3a67",
+  "prevIds": [
+    "78974b0e-d0e4-465c-af29-f51f74ee6031"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "body"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_content.body.type",
+        "s|colprop|public.conversation_content.body.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.conversation_content.body"
+      ],
+      "sqlHash": "00ae5e3f11b09b4e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "content"
+      ],
+      "writes": [
+        "s|colprop|public.opinion_content.content.type",
+        "s|colprop|public.opinion_content.content.default"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content.content"
+      ],
+      "sqlHash": "0fd613757bfcaef3"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_content\",\"body\"]",
+      "set": {
+        "type": "varchar(3000)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"opinion_content\",\"content\"]",
+      "set": {
+        "type": "varchar(3000)"
+      }
+    }
+  ]
+}

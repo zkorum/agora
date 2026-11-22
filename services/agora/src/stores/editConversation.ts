@@ -4,6 +4,7 @@ import { getConversationUpdatesOverrideUpdate } from "src/components/newConversa
 import type {
   ConversationFormState,
   PostAsSettings,
+  QvItemDraft,
 } from "src/composables/conversation/draft/conversationDraft.types";
 import type {
   ConversationEmailUpdateConfigurationResponse,
@@ -12,6 +13,10 @@ import type {
 } from "src/shared/types/dto";
 import type { ConversationProjectTarget } from "src/shared/types/zod";
 import { getConversationProjectTargetKey } from "src/shared/utils/conversationProject";
+import {
+  areConversationTypeConfigsEqual,
+  projectConversationTypeConfig,
+} from "src/shared/utils/conversationTypeConfig";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { computed, ref, watch } from "vue";
 
@@ -41,6 +46,9 @@ export interface EditConversationSession extends EditConversationDetails {
   postAs: PostAsSettings;
   newSeedOpinions: string[];
   existingSeedOpinions: ExistingSeedOpinionDraft[];
+  qvItems: QvItemDraft[];
+  qvItemsNeedRefresh: boolean;
+  participantPolicyNeedsRefresh: boolean;
   isSaving: boolean;
 }
 
@@ -78,10 +86,53 @@ export function buildSeedOpinionChanges(
   });
 }
 
+export function buildQvItemUpdate(
+  session: EditConversationSession
+): UpdateConversationRequest["qvStatementUpdate"] {
+  const original = session.original.qvStatements;
+  if (original === undefined) return undefined;
+  const current = new Map(session.qvItems.map((item) => [item.localKey, item]));
+  const changes: NonNullable<
+    UpdateConversationRequest["qvStatementUpdate"]
+  >["changes"] = [];
+  for (const item of original.items) {
+    const draft = current.get(item.slugId);
+    if (draft === undefined)
+      changes.push({
+        action: "delete",
+        slugId: item.slugId,
+        sourceVersion: item.sourceVersion,
+      });
+    else if (
+      draft.title !== item.title ||
+      draft.description !== (item.description ?? "")
+    )
+      changes.push({
+        action: "edit",
+        slugId: item.slugId,
+        sourceVersion: item.sourceVersion,
+        content: {
+          title: draft.title,
+          description:
+            draft.description.trim() === "" ? undefined : draft.description,
+        },
+      });
+  }
+  const order = session.qvItems.map((item) => item.localKey);
+  if (
+    changes.length === 0 &&
+    JSON.stringify(order) ===
+      JSON.stringify(original.items.map((item) => item.slugId))
+  )
+    return undefined;
+  return { expectedRevision: original.revision, changes, order };
+}
+
 export function createEditConversationForm(
   original: EditableConversation
 ): ConversationFormState {
   return {
+    participantStatements: { ...original.participantStatements },
     title: original.conversationTitle,
     content: original.conversationBody ?? "",
     conversationTypeConfig: original.conversationTypeConfig,
@@ -92,7 +143,6 @@ export function createEditConversationForm(
       original.projectLanguageProject !== undefined,
     isPrivate: !original.isIndexed,
     participationMode: original.participationMode,
-    requiresEventTicket: original.requiresEventTicket,
     aiLabelingEnabled: original.aiLabelingEnabled,
     preferredOpinionGroupCount: original.preferredOpinionGroupCount,
     surveyConfig: original.surveyConfig ?? null,
@@ -111,6 +161,16 @@ export function buildEditConversationRequest(
   } = details;
   return {
     conversationSlugId: original.conversationSlugId,
+    participantStatementsChange:
+      original.participantStatements.supported &&
+      form.participantStatements.supported &&
+      original.participantStatements.enabled !==
+        form.participantStatements.enabled
+        ? {
+            expectedEnabled: original.participantStatements.enabled,
+            enabled: form.participantStatements.enabled,
+          }
+        : undefined,
     projectChange:
       getConversationProjectTargetKey(projectTarget) ===
       getConversationProjectTargetKey(original.projectTarget)
@@ -127,7 +187,6 @@ export function buildEditConversationRequest(
         : form.content,
     isIndexed: !form.isPrivate,
     participationMode: form.participationMode,
-    requiresEventTicket: form.requiresEventTicket,
     multilingualSetting: {
       dynamicTranslationEnabled:
         form.multilingualSetting.dynamicTranslationEnabled,
@@ -148,6 +207,12 @@ export function buildEditConversationRequest(
             preferredOpinionGroupCount: form.preferredOpinionGroupCount,
           }
         : form.conversationTypeConfig,
+    expectedConversationTypeConfig: areConversationTypeConfigsEqual({
+      left: original.conversationTypeConfig,
+      right: form.conversationTypeConfig,
+    })
+      ? undefined
+      : projectConversationTypeConfig(original.conversationTypeConfig),
     conversationEmailUpdateEnabledOverride:
       getConversationUpdatesOverrideUpdate({
         currentOverride: emailOverride,
@@ -180,18 +245,31 @@ export const useEditConversationStore = defineStore("editConversation", () => {
       session.value !== undefined &&
       (session.value.newSeedOpinions.length > 0 ||
         hasExistingSeedOpinionChanges(session.value) ||
+        buildQvItemUpdate(session.value) !== undefined ||
         hasEditConversationDetailsChanges(session.value))
   );
 
   function start(
     value: Omit<
       EditConversationSession,
-      "existingSeedOpinions" | "aiSuggestionDraftId"
+      | "existingSeedOpinions"
+      | "aiSuggestionDraftId"
+      | "qvItems"
+      | "qvItemsNeedRefresh"
+      | "participantPolicyNeedsRefresh"
     >
   ): void {
     session.value = {
       ...value,
       aiSuggestionDraftId: uid(),
+      qvItemsNeedRefresh: false,
+      participantPolicyNeedsRefresh: false,
+      qvItems:
+        value.original.qvStatements?.items.map((item) => ({
+          localKey: item.slugId,
+          title: item.title,
+          description: item.description ?? "",
+        })) ?? [],
       existingSeedOpinions: value.original.seedOpinions.map((opinion) => ({
         slugId: opinion.slugId,
         sourceVersion: opinion.sourceVersion,

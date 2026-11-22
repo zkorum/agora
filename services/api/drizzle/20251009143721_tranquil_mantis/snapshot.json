@@ -1,0 +1,137 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "b7b34631-d1bc-487c-b0be-c4012076c61b",
+  "prevIds": [
+    "ba4d7e60-a03e-41dc-b402-4dfb67aad9e5"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "needs_math_update"
+      ],
+      "writes": [
+        "s|col|public.conversation.needs_math_update",
+        "n|col|public.conversation.needs_math_update",
+        "e|col|public.conversation.needs_math_update"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "math_update_requested_at"
+      ],
+      "writes": [
+        "s|col|public.conversation.math_update_requested_at",
+        "n|col|public.conversation.math_update_requested_at",
+        "e|col|public.conversation.math_update_requested_at"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "last_math_update_at"
+      ],
+      "writes": [
+        "s|col|public.conversation.last_math_update_at",
+        "n|col|public.conversation.last_math_update_at",
+        "e|col|public.conversation.last_math_update_at"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "polis_content",
+        "ai_summary"
+      ],
+      "writes": [
+        "s|col|public.polis_content.ai_summary",
+        "n|col|public.polis_content.ai_summary",
+        "e|col|public.polis_content.ai_summary"
+      ],
+      "reads": [
+        "n|tbl|public.polis_content",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "needs_math_update",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "math_update_requested_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "last_math_update_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"polis_content\",\"ai_summary\"]"
+    }
+  ]
+}

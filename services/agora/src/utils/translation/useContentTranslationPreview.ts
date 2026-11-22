@@ -53,6 +53,13 @@ function toContentTranslationEventSubject({
   if (sourceVersion === undefined) {
     return undefined;
   }
+  // Gathering response identities must never be retained on conversation-wide SSE topics.
+  if (
+    subject.kind === "gathering_field" ||
+    subject.kind === "gathering_response"
+  ) {
+    return undefined;
+  }
   if (subject.kind === "conversation") {
     return { ...subject, sourceVersion };
   }
@@ -100,6 +107,22 @@ function isSameContentTranslationSubject({
     return (
       left.conversationSlugId === right.conversationSlugId &&
       left.itemSlugId === right.itemSlugId &&
+      left.sourceVersion === right.sourceVersion
+    );
+  }
+  if (left.kind === "gathering_field" && right.kind === "gathering_field") {
+    return (
+      left.conversationSlugId === right.conversationSlugId &&
+      left.fieldId === right.fieldId
+    );
+  }
+  if (
+    left.kind === "gathering_response" &&
+    right.kind === "gathering_response"
+  ) {
+    return (
+      left.conversationSlugId === right.conversationSlugId &&
+      left.responseSlugId === right.responseSlugId &&
       left.sourceVersion === right.sourceVersion
     );
   }

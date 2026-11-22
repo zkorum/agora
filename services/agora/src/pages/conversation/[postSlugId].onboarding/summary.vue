@@ -55,13 +55,13 @@
 
           <div class="survey-card__actions">
             <q-btn
-              v-if="canWithdraw"
+              v-if="withdrawalMessageKey"
               flat
               no-caps
               color="negative"
               :label="t('withdrawResponseLabel')"
               :loading="isWithdrawing"
-              @click="handleOpenWithdrawDialog"
+              @click="showWithdrawDialog = true"
             />
           </div>
         </div>
@@ -69,15 +69,16 @@
     </StepperLayout>
 
     <ZKConfirmDialog
+      v-if="withdrawalMessageKey"
       v-model="showWithdrawDialog"
-      :message="t('confirmWithdrawMessage')"
+      :message="t(withdrawalMessageKey)"
       :actions="{
         cancel: {
           label: t('withdrawDialogCancelLabel'),
           appearance: 'secondary-outlined',
         },
         confirm: {
-          label: t('confirmWithdrawButtonLabel'),
+          label: t('withdrawResponseLabel'),
           appearance: 'danger',
         },
       }"
@@ -103,6 +104,7 @@ import type { ConversationParticipationRejection } from "src/shared/types/dto";
 import type { SurveyQuestionFormItem } from "src/shared/types/zod";
 import { useSurveyWithdrawMutation } from "src/utils/api/survey/useSurveyQueries";
 import { useGoBackButtonHandler } from "src/utils/nav/goBackButton";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import {
   getConversationOnboardingStepPath,
   getConversationPath,
@@ -113,7 +115,7 @@ import {
 import { getConversationLanguageSettingSourceLanguageCode } from "src/utils/translation/contentTranslation";
 import type { DismissalController } from "src/utils/ui/dismissalController";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, ref, watch } from "vue";
+import { computed, onDeactivated, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -165,15 +167,32 @@ const headerDescription = computed(() => {
   return t("summaryDescriptionPending");
 });
 
-const canWithdraw = computed(() => {
-  return (
-    surveyForm.value?.questions.some((question) => {
-      return question.currentAnswer !== undefined || question.isPassed;
-    }) ?? false
-  );
+const isWithdrawing = computed(() => withdrawMutation.isPending.value);
+const withdrawalMessageKey = computed(() => {
+  const form = surveyForm.value;
+  if (!form?.questions.some((q) => q.currentAnswer !== undefined || q.isPassed))
+    return undefined;
+  return !form.surveyGate.isOptional && form.questions.some((q) => q.isRequired)
+    ? "confirmRequiredWithdrawMessage"
+    : "confirmWithdrawMessage";
 });
 
-const isWithdrawing = computed(() => withdrawMutation.isPending.value);
+const viewer = useViewerQueryScope();
+function dismissWithdrawal() {
+  showWithdrawDialog.value = false;
+}
+watch(
+  [
+    () => viewer.value.userId,
+    conversationSlugId,
+    () => surveyForm.value?.surveyConfigId,
+    () => surveyForm.value?.currentRevision,
+    withdrawalMessageKey,
+  ],
+  dismissWithdrawal,
+  { flush: "sync" }
+);
+onDeactivated(dismissWithdrawal);
 
 const conversationSourceLanguageCode = computed(() => {
   const metadata = conversationData.value?.metadata;
@@ -324,11 +343,24 @@ async function handlePrimaryAction(): Promise<void> {
 }
 
 async function handleWithdraw(): Promise<void> {
+  const form = surveyForm.value;
+  if (
+    !showWithdrawDialog.value ||
+    form === undefined ||
+    !withdrawalMessageKey.value ||
+    isWithdrawing.value
+  )
+    return;
+  dismissWithdrawal();
   let response: Awaited<ReturnType<typeof withdrawMutation.mutateAsync>>;
   try {
-    response = await withdrawMutation.mutateAsync();
+    response = await withdrawMutation.mutateAsync({
+      surveyConfigId: form.surveyConfigId,
+      currentRevision: form.currentRevision,
+    });
   } catch {
     showNotifyMessage(t("failedToWithdrawMessage"));
+    await refetchAll();
     return;
   }
   if (response === undefined) return;
@@ -342,10 +374,6 @@ async function handleWithdraw(): Promise<void> {
       routeContext: routeContext.value,
     }),
   });
-}
-
-function handleOpenWithdrawDialog(): void {
-  showWithdrawDialog.value = true;
 }
 
 async function handleBackToConversation(): Promise<void> {

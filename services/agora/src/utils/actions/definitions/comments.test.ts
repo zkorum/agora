@@ -18,7 +18,12 @@ function actions(edit: CommentEditAction | undefined) {
       userReports: "Reports",
       share: "Share",
     },
-    management: { edit, canDelete: true, editLabel: "Edit" },
+    management: {
+      edit,
+      canDelete: true,
+      canModerate: false,
+      editLabel: "Edit",
+    },
   });
 }
 
@@ -29,7 +34,7 @@ describe("statement edit actions", () => {
     );
   });
 
-  it("keeps a disabled edit action with its server-derived explanation", () => {
+  it("hides unavailable editing rather than showing a disabled explanation", () => {
     const handler = vi.fn();
     expect(
       actions({
@@ -37,10 +42,7 @@ describe("statement edit actions", () => {
         description: "Valid votes remain",
         handler,
       }).find((action) => action.id === "edit")
-    ).toMatchObject({
-      disabled: true,
-      description: "Valid votes remain",
-      handler,
-    });
+    ).toBeUndefined();
+    expect(handler).not.toHaveBeenCalled();
   });
 });

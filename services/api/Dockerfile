@@ -54,9 +54,9 @@ RUN test "$(dpkg --print-architecture)" = "$TARGETARCH" && \
 WORKDIR /app
 COPY --chown=node:node --from=deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
-COPY --chown=node:node package.json esm-loader-lodash-fix.mjs ./
+COPY --chown=node:node package.json ./
 USER node
 RUN node --input-type=module -e "await import('opencc')"
 EXPOSE 8080
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "--loader", "esm-module-alias/loader", "--loader", "./esm-loader-lodash-fix.mjs", "--no-warnings", "dist/index.js"]
+CMD ["node", "--loader", "esm-module-alias/loader", "--no-warnings", "dist/index.js"]

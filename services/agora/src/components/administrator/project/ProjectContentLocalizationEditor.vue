@@ -6,11 +6,17 @@
     dense-toggle
   >
     <div class="nested-form">
-      <p v-if="availableLanguageOptions.length === 0" class="section-description">
+      <p
+        v-if="availableLanguageOptions.length === 0"
+        class="section-description"
+      >
         {{ noLanguagesMessage }}
       </p>
       <template v-else>
-        <div v-if="availableMachineLocalizations.length > 0" class="machine-list">
+        <div
+          v-if="availableMachineLocalizations.length > 0"
+          class="machine-list"
+        >
           <div
             v-for="machineLocalization in availableMachineLocalizations"
             :key="machineLocalization.languageCode"
@@ -21,7 +27,9 @@
                 {{ machineTranslationPreviewTitle }} ·
                 {{ getLanguageLabel(machineLocalization.languageCode) }}
               </div>
-              <div class="summary-meta">{{ machineTranslationPreviewDescription }}</div>
+              <div class="summary-meta">
+                {{ machineTranslationPreviewDescription }}
+              </div>
               <div class="machine-card__preview">
                 <strong>{{ machineLocalization.projectTitle }}</strong>
                 <span v-if="machineLocalization.subtitle !== undefined">
@@ -54,38 +62,53 @@
             emit-value
             map-options
             :disable="editingLanguageCode !== undefined"
-            :label="requiredLabel(languageLabel)"
+            :label="languageLabel"
+            label-slot
+            v-bind="{ 'aria-required': true }"
             :options="availableLanguageOptions"
-          />
-          <q-input
+          >
+            <template #label
+              ><ZKFieldLabel
+                :label="languageLabel"
+                required
+                :required-text="undefined"
+            /></template>
+          </q-select>
+          <ZKInput
             v-model="draftTitleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="
-              dynamicTranslationEnabled
-                ? optionalLabel(projectTitleLabel)
-                : requiredLabel(projectTitleLabel)
-            "
+            :label="projectTitleLabel"
+            :required="!dynamicTranslationEnabled"
           />
-          <q-input
+          <ZKInput
             v-model="draftSubtitleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="subtitleInputLabel"
+            :label="subtitleLabel"
+            :required="effectiveLocalizedSubtitleRequired"
           />
           <div class="grid-full">
+            <ZKFieldLabel
+              :id="bodyLabelId"
+              :label="bodyLabel"
+              :required="effectiveLocalizedBodyRequired"
+              :required-text="undefined"
+            />
             <ProjectBodyEditor
               v-model="draftBody"
               v-model:plain-text="draftBodyPlainText"
               v-model:is-over-limit="isDraftBodyOverLimit"
-              :placeholder="bodyPlaceholder"
+              :placeholder="bodyLabel"
               :disabled="false"
+              :labelled-by="bodyLabelId"
+              :required="effectiveLocalizedBodyRequired"
             />
           </div>
           <q-input
             v-model="draftBannerPathInput"
             outlined
-            :label="optionalLabel(bannerPathLabel)"
+            :label="bannerPathLabel"
           />
           <q-checkbox
             v-model="draftBannerIsFullPath"
@@ -98,7 +121,11 @@
           outline
           color="primary"
           :disable="!canSaveDraftLocalization"
-          :label="editingLanguageCode === undefined ? addButtonLabel : updateButtonLabel"
+          :label="
+            editingLanguageCode === undefined
+              ? addButtonLabel
+              : updateButtonLabel
+          "
           @click="saveDraftLocalization"
         />
         <q-btn
@@ -147,10 +174,19 @@
 </template>
 
 <script setup lang="ts">
+import ZKFieldLabel from "src/components/ui-library/ZKFieldLabel.vue";
+import ZKInput from "src/components/ui-library/ZKInput.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { AdminProject } from "src/shared/types/dto";
-import { computed, type Ref, ref, watch, type WritableComputedRef } from "vue";
+import {
+  computed,
+  type Ref,
+  ref,
+  useId,
+  watch,
+  type WritableComputedRef,
+} from "vue";
 
 import ProjectBodyEditor from "./ProjectBodyEditor.vue";
 
@@ -180,8 +216,6 @@ const props = defineProps<{
   machineTranslationPreviewDescription: string;
   useMachineTranslationButtonLabel: string;
   machineTranslationIncompleteLabel: string;
-  requiredSuffix: string;
-  optionalSuffix: string;
   localizedSubtitleRequired: boolean;
   localizedBodyRequired: boolean;
   targetLanguageCodes: SupportedDisplayLanguageCodes[];
@@ -194,6 +228,7 @@ const localizations = defineModel<ProjectContentLocalization[]>({
   required: true,
 });
 
+const bodyLabelId = useId();
 const draftLanguageCode = ref<SupportedDisplayLanguageCodes>(
   props.displayLanguageOptions[0]?.value ?? "en"
 );
@@ -217,7 +252,8 @@ const selectedLanguageCodes = computed(
     new Set(
       localizations.value
         .filter(
-          (localization) => localization.languageCode !== editingLanguageCode.value
+          (localization) =>
+            localization.languageCode !== editingLanguageCode.value
         )
         .map((localization) => localization.languageCode)
     )
@@ -247,19 +283,9 @@ const effectiveLocalizedBodyRequired = computed(
   () => !props.dynamicTranslationEnabled && props.localizedBodyRequired
 );
 
-const subtitleInputLabel = computed(() =>
-  effectiveLocalizedSubtitleRequired.value
-    ? requiredLabel(props.subtitleLabel)
-    : optionalLabel(props.subtitleLabel)
+const hasLocalizedTitle = computed(
+  () => optionalString(draftTitle.value) !== undefined
 );
-
-const bodyPlaceholder = computed(() =>
-  effectiveLocalizedBodyRequired.value
-    ? requiredLabel(props.bodyLabel)
-    : optionalLabel(props.bodyLabel)
-);
-
-const hasLocalizedTitle = computed(() => optionalString(draftTitle.value) !== undefined);
 const hasLocalizedBanner = computed(
   () => optionalString(draftBannerPath.value) !== undefined
 );
@@ -305,14 +331,6 @@ function stringInputModel(
   });
 }
 
-function requiredLabel(label: string): string {
-  return `${label} (${props.requiredSuffix})`;
-}
-
-function optionalLabel(label: string): string {
-  return `${label} (${props.optionalSuffix})`;
-}
-
 function optionalString(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed === "" ? undefined : trimmed;
@@ -339,7 +357,9 @@ function getLanguageLabel(languageCode: SupportedDisplayLanguageCodes): string {
   );
 }
 
-function isCompleteLocalization(localization: ProjectContentLocalization): boolean {
+function isCompleteLocalization(
+  localization: ProjectContentLocalization
+): boolean {
   const projectTitle = localization.projectTitle;
 
   return (
@@ -366,7 +386,8 @@ function saveDraftLocalization(): void {
 
   const nextLocalization = buildDraftLocalization();
   const existingIndex = localizations.value.findIndex(
-    (localization) => localization.languageCode === nextLocalization.languageCode
+    (localization) =>
+      localization.languageCode === nextLocalization.languageCode
   );
   if (existingIndex === -1) {
     localizations.value = [...localizations.value, nextLocalization];
@@ -546,14 +567,9 @@ function resetDraft(): void {
   font-size: 0.9rem;
 }
 </style>
-const hasLocalizedTitle = computed(() => draftTitle.value.trim() !== "");
-
-const hasLocalizedSubtitle = computed(() => draftSubtitle.value.trim() !== "");
-
-const hasLocalizedBody = computed(() => draftBodyPlainText.value.trim() !== "");
-
-const hasLocalizedBanner = computed(() => draftBannerPath.value.trim() !== "");
-
-const hasOrphanLocalizedContent = computed(
-  () => !hasLocalizedTitle.value && (hasLocalizedSubtitle.value || hasLocalizedBody.value)
-);
+const hasLocalizedTitle = computed(() => draftTitle.value.trim() !== ""); const
+hasLocalizedSubtitle = computed(() => draftSubtitle.value.trim() !== ""); const
+hasLocalizedBody = computed(() => draftBodyPlainText.value.trim() !== ""); const
+hasLocalizedBanner = computed(() => draftBannerPath.value.trim() !== ""); const
+hasOrphanLocalizedContent = computed( () => !hasLocalizedTitle.value &&
+(hasLocalizedSubtitle.value || hasLocalizedBody.value) );

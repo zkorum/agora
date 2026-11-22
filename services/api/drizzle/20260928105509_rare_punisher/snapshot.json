@@ -1,0 +1,628 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "680f6df2-8d6e-4dd6-b26d-bd9d40114fa6",
+  "prevIds": [
+    "8eb71911-dcfb-4157-a121-48771cb6da05"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "phone_sms_budget_alert"
+      ],
+      "writes": [
+        "s|tbl|public.phone_sms_budget_alert",
+        "n|tbl|public.phone_sms_budget_alert",
+        "e|tbl|public.phone_sms_budget_alert",
+        "n|rel|public.phone_sms_budget_alert",
+        "n|type|public.phone_sms_budget_alert",
+        "n|rel|public.phone_sms_budget_alert_pkey",
+        "n|rel|public.phone_sms_budget_alert_day_kind_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "phone_sms_budget_policy"
+      ],
+      "writes": [
+        "s|tbl|public.phone_sms_budget_policy",
+        "n|tbl|public.phone_sms_budget_policy",
+        "e|tbl|public.phone_sms_budget_policy",
+        "n|rel|public.phone_sms_budget_policy",
+        "n|type|public.phone_sms_budget_policy",
+        "n|rel|public.phone_sms_budget_policy_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "phone_sms_budget_reservation"
+      ],
+      "writes": [
+        "s|tbl|public.phone_sms_budget_reservation",
+        "n|tbl|public.phone_sms_budget_reservation",
+        "e|tbl|public.phone_sms_budget_reservation",
+        "n|rel|public.phone_sms_budget_reservation",
+        "n|type|public.phone_sms_budget_reservation",
+        "n|rel|public.phone_sms_budget_reservation_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "phone_sms_budget_alert",
+        "phone_sms_budget_alert_due_idx"
+      ],
+      "writes": [
+        "s|idx|public.phone_sms_budget_alert_due_idx",
+        "n|idx|public.phone_sms_budget_alert_due_idx",
+        "e|idx|public.phone_sms_budget_alert_due_idx",
+        "n|rel|public.phone_sms_budget_alert_due_idx"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_alert",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_alert.sent_at",
+        "n|col|public.phone_sms_budget_alert.next_attempt_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "phone_sms_budget_reservation",
+        "phone_sms_budget_reservation_time_idx"
+      ],
+      "writes": [
+        "s|idx|public.phone_sms_budget_reservation_time_idx",
+        "n|idx|public.phone_sms_budget_reservation_time_idx",
+        "e|idx|public.phone_sms_budget_reservation_time_idx",
+        "n|rel|public.phone_sms_budget_reservation_time_idx"
+      ],
+      "reads": [
+        "n|tbl|public.phone_sms_budget_reservation",
+        "n|sch|public",
+        "n|col|public.phone_sms_budget_reservation.reserved_at"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "phone_sms_budget_alert",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "phone_sms_budget_policy",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "phone_sms_budget_reservation",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "kind",
+        "type": "varchar(16)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "day",
+        "type": "varchar(10)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "next_attempt_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "attempt_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "sent_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "created_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "sending_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "hourly_send_limit",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "daily_send_limit",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "estimated_cents_per_send",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "hourly_budget_cents",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "daily_budget_cents",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "warning_percent",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "75",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "registration_paused_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "updated_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_reservation",
+        "name": "id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_reservation",
+        "name": "estimated_cents",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_reservation",
+        "name": "reserved_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "phone_sms_budget_alert_due_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "sent_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "next_attempt_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_reservation",
+        "name": "phone_sms_budget_reservation_time_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "reserved_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "phone_sms_budget_alert_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "phone_sms_budget_policy_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_reservation",
+        "name": "phone_sms_budget_reservation_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "phone_sms_budget_alert_day_kind_unique",
+        "nameExplicit": false,
+        "columns": [
+          "day",
+          "kind"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "phone_sms_budget_alert_kind_check",
+        "value": "\"phone_sms_budget_alert\".\"kind\" IN ('warning', 'hard_limit')",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_alert",
+        "name": "phone_sms_budget_alert_attempts_check",
+        "value": "\"phone_sms_budget_alert\".\"attempt_count\" >= 0",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "phone_sms_budget_single_policy_check",
+        "value": "\"phone_sms_budget_policy\".\"id\" = 1",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "phone_sms_budget_positive_limits_check",
+        "value": "\"phone_sms_budget_policy\".\"hourly_send_limit\" > 0 AND \"phone_sms_budget_policy\".\"daily_send_limit\" >= \"phone_sms_budget_policy\".\"hourly_send_limit\" AND \"phone_sms_budget_policy\".\"estimated_cents_per_send\" > 0 AND \"phone_sms_budget_policy\".\"hourly_budget_cents\" > 0 AND \"phone_sms_budget_policy\".\"daily_budget_cents\" >= \"phone_sms_budget_policy\".\"hourly_budget_cents\"",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_policy",
+        "name": "phone_sms_budget_warning_percent_check",
+        "value": "\"phone_sms_budget_policy\".\"warning_percent\" BETWEEN 1 AND 99",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "phone_sms_budget_reservation",
+        "name": "phone_sms_budget_reservation_cents_check",
+        "value": "\"phone_sms_budget_reservation\".\"estimated_cents\" > 0",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

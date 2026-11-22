@@ -3,12 +3,12 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from time import monotonic, sleep
+from uuid import uuid4
 
 from sqlalchemy import create_engine, insert, select, text, update
 from testcontainers.postgres import PostgresContainer
 
 from scoring_worker.db import (
-    ComparisonsBatchResult,
     ScoringInputs,
     persist_scoring_batch,
 )
@@ -21,6 +21,8 @@ from scoring_worker.generated_models import (
     RankingConversationConfig,
     RankingMode,
 )
+from scoring_worker.pipeline_config import COMPARISON_RECIPE
+from scoring_worker.prepared_inputs import PreparedConversationInputs
 
 
 def test_publication_does_not_deadlock_a_closing_revision_update() -> None:
@@ -56,7 +58,8 @@ def test_publication_does_not_deadlock_a_closing_revision_update() -> None:
                         id=1,
                         slug_id="locktest",
                         project_id=1,
-                        conversation_type=ConversationType.ranking,
+                        conversation_type=ConversationType.prioritizing,
+                        prioritization_type="comparisons",
                         ranking_config_id=1,
                         language_settings_source=ConversationLanguageSettingsSource.conversation_override,
                         participation_mode=ParticipationMode.account_required,
@@ -66,16 +69,20 @@ def test_publication_does_not_deadlock_a_closing_revision_update() -> None:
                         last_reacted_at=now,
                     )
                 )
-            inputs = ScoringInputs(
-                revisions={1: 0},
-                ranking_items={},
-                comparisons=ComparisonsBatchResult(
-                    comparisons={},
-                    user_idx_to_result_id={},
-                    total_vote_count_by_conversation={},
-                    total_participant_count_by_conversation={},
-                ),
-            )
+            inputs: ScoringInputs = {
+                1: PreparedConversationInputs(
+                    revision=0,
+                    method=RankingMode.bws,
+                    input_snapshot_id=uuid4(),
+                    recipe=COMPARISON_RECIPE,
+                    ranking_items=(),
+                    entity_ids=(),
+                    tasks=(),
+                    participants={},
+                    total_vote_count=0,
+                    total_participant_count=0,
+                )
+            }
 
             def publish():
                 with engine.connect() as connection:

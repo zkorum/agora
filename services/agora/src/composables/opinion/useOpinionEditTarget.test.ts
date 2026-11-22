@@ -18,7 +18,11 @@ const opinion = zodDisplayedOpinionItem.parse({
   numDisagrees: 0,
   numPasses: 0,
   moderation: { status: "unmoderated" },
-  management: { editing: { allowed: true }, canDelete: true },
+  management: {
+    editing: { allowed: true },
+    canDelete: true,
+    canModerate: false,
+  },
   displayContent: {
     sourceVersion: "00000000-0000-4000-8000-000000000001",
     status: "available",

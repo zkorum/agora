@@ -1,15 +1,14 @@
 /** **** WARNING: GENERATED FROM SHARED DIRECTORY, DO NOT MODIFY THIS FILE DIRECTLY! **** **/
-export const DEFAULT_QV_CREDIT_BUDGET = 100;
-export const MAX_QV_CREDIT_BUDGET = 1000;
+export const QV_CREDIT_BUDGET = 100;
+export const QV_RULE_VERSION = 1;
+export const QV_ALGORITHM_VERSION = 1;
 
 export interface QvConfig {
-    creditBudget: number;
-    allowNegativeVotes: boolean;
+    allowOpposition: boolean;
 }
 
 export const DEFAULT_QV_CONFIG: QvConfig = {
-    creditBudget: DEFAULT_QV_CREDIT_BUDGET,
-    allowNegativeVotes: true,
+    allowOpposition: true,
 };
 
 export interface QvAllocation {
@@ -22,7 +21,6 @@ export type QvBallotResult =
     | {
           valid: false;
           reason:
-              | "invalid_budget"
               | "invalid_item"
               | "duplicate_item"
               | "invalid_votes"
@@ -30,7 +28,7 @@ export type QvBallotResult =
               | "over_budget";
       };
 
-/** The budget is supplied by the activity configuration, never by the ballot. */
+/** All QV conversations use the same fixed credit budget. */
 export function parseQvBallot({
     allocations,
     config,
@@ -38,16 +36,8 @@ export function parseQvBallot({
     allocations: readonly QvAllocation[];
     config: QvConfig;
 }): QvBallotResult {
-    const { creditBudget, allowNegativeVotes } = config;
-    if (
-        !Number.isSafeInteger(creditBudget) ||
-        creditBudget <= 0 ||
-        creditBudget > MAX_QV_CREDIT_BUDGET
-    ) {
-        return { valid: false, reason: "invalid_budget" };
-    }
-
-    const maxVotesPerItem = Math.floor(Math.sqrt(creditBudget));
+    const { allowOpposition } = config;
+    const maxVotesPerItem = Math.floor(Math.sqrt(QV_CREDIT_BUDGET));
     const seen = new Set<string>();
     const nonzeroAllocations: QvAllocation[] = [];
     let creditsUsed = 0;
@@ -67,12 +57,12 @@ export function parseQvBallot({
         ) {
             return { valid: false, reason: "invalid_votes" };
         }
-        if (!allowNegativeVotes && allocation.votes < 0) {
+        if (!allowOpposition && allocation.votes < 0) {
             return { valid: false, reason: "negative_votes_disabled" };
         }
 
         creditsUsed += allocation.votes * allocation.votes;
-        if (creditsUsed > creditBudget) {
+        if (creditsUsed > QV_CREDIT_BUDGET) {
             return { valid: false, reason: "over_budget" };
         }
         if (allocation.votes !== 0) {

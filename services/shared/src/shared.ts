@@ -83,13 +83,15 @@ export interface RichTextValidationFailure<
     limit: number;
 }
 
-const graphemeSegmenter = /* @__PURE__ */ new Intl.Segmenter(undefined, {
-    granularity: "grapheme",
-});
+let graphemeSegmenter: Intl.Segmenter | undefined;
 
 export function countPlainTextCharacters(
     plainText: string,
 ): CountHtmlPlainTextCharactersReturn {
+    // Shared schemas are imported before frontend compatibility initialization.
+    graphemeSegmenter ??= new Intl.Segmenter(undefined, {
+        granularity: "grapheme",
+    });
     let characterCount = 0;
     for (const _segment of graphemeSegmenter.segment(plainText)) {
         characterCount += 1;

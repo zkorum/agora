@@ -174,6 +174,7 @@
             }"
             :is-live-analysis-paused="false"
             :is-conversation-closed="conversation.isClosed"
+            :can-edit-conversation="false"
             :is-finalizing="false"
             :navigate-to-discover-tab="showStatementsTab"
             :conversation-scroll-context="conversationScrollContext"
@@ -458,6 +459,7 @@ const conversationData = computed<ExtendedConversation>(() => {
 
   return {
     metadata: {
+      participantStatements: { supported: true, enabled: true },
       conversationSlugId: "share01",
       createdAt: now,
       updatedAt: now,
@@ -514,6 +516,7 @@ const conversationData = computed<ExtendedConversation>(() => {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
+        canModerate: false, canClose: false, canReopen: false,
       },
     },
   };
@@ -592,7 +595,6 @@ const devAnalysisData = computed<AnalysisData>(() => ({
   consensusDisagree: [],
   controversial: [],
   polisClusters: {},
-  emptyReason: "not_enough_votes",
   hasVotedOnAllAvailableOpinions: false,
 }));
 

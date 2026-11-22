@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -23,8 +25,12 @@ from import_worker.generated_models import (
     Notification,
     NotificationImport,
     OpinionGroupSpec,
+    Organization,
+    OrganizationMembership,
+    OrganizationMembershipAllProjectCapability,
     PolisConversationConfig,
     Project,
+    ProjectOrganizationOwnership,
     User,
 )
 from import_worker.importer import (
@@ -54,17 +60,36 @@ if TYPE_CHECKING:
 def engine() -> Generator[Engine]:
     with PostgresContainer("postgres:16-alpine", driver="psycopg") as container:
         engine = create_primary_engine(container.get_connection_url())
-        # Exercise the real constraints/defaults, which generated ORM models do
-        # not fully reproduce, rather than defining a parallel test schema.
-        migrations = Path(__file__).resolve().parents[2] / "api" / "database" / "flyway"
-        paths = sorted(
-            migrations.glob("V*.sql"),
-            key=lambda path: tuple(int(part) for part in path.name.split("__")[0][1:].split(".")),
+        # Use canonical constraints/defaults while production migration generation
+        # is deferred, matching the other cross-service integration fixtures.
+        api = Path(__file__).resolve().parents[2] / "api"
+        subprocess.run(
+            [
+                "node",
+                "--import",
+                "tsx",
+                "tests/pushCurrentSchema.ts",
+                container.get_connection_url().replace("postgresql+psycopg://", "postgresql://"),
+                "import-lifecycle",
+            ],
+            cwd=api,
+            check=True,
+            capture_output=True,
+            text=True,
         )
-        for path in paths:
-            with engine.begin() as connection:
+        participant_contract = (
+            api / "database/flyway/V0111.1__backfill_conversation_participants.sql"
+        ).read_text()
+        statements = re.findall(
+            r"^CREATE (?:OR REPLACE )?FUNCTION\b.*?^\$\$;|^(?:CREATE|DROP) TRIGGER\b.*?;",
+            participant_contract,
+            re.MULTILINE | re.DOTALL,
+        )
+        with engine.begin() as connection:
+            for statement in statements:
                 connection.exec_driver_sql(
-                    path.read_text(), execution_options={"no_parameters": True}
+                    statement.replace("maxdiff_result", "comparison_response"),
+                    execution_options={"no_parameters": True},
                 )
         try:
             yield engine
@@ -180,6 +205,7 @@ def test_processing_failure_persists_a_timezone_aware_notification(session: Sess
     seed_import(session, slug_id="failure1", age=timedelta(seconds=10))
 
     user_id = session.scalars(select(ConversationImport.user_id)).one()
+    assert user_id is not None
     event = mark_import_failed(
         session,
         import_slug_id="failure1",
@@ -257,6 +283,7 @@ def test_cleanup_protects_live_ingestion_but_enforces_its_hard_deadline(session:
                 ConversationImport.user_id,
             ).where(ConversationImport.slug_id.in_(["active01", "hung0001"]))
         ).tuples()
+        if user_id is not None
     )
     heartbeat_imports(session, imports=active_imports)
     events = cleanup_stale_imports(
@@ -440,6 +467,7 @@ def test_ready_imports_including_old_ones_recover_before_cleanup_and_are_idempot
 def csv_request(session: Session) -> ImportRequest:
     seed_import(session, slug_id="zero0001", age=timedelta(seconds=10))
     user_id = session.scalars(select(ConversationImport.user_id)).one()
+    assert user_id is not None
     project_id = session.scalars(
         insert(Project)
         .values(
@@ -449,6 +477,34 @@ def csv_request(session: Session) -> ImportRequest:
         )
         .returning(Project.id)
     ).one()
+    organization_id = session.scalar(
+        insert(Organization)
+        .values(
+            slug=f"import-owner-{uuid4().hex[:8]}",
+            display_name="Import owner",
+            default_language_code="en",
+            directory_visibility=DirectoryVisibility.listed,
+            is_full_image_path=False,
+        )
+        .returning(Organization.id)
+    )
+    membership_id = session.scalar(
+        insert(OrganizationMembership)
+        .values(organization_id=organization_id, user_id=user_id, role="admin")
+        .returning(OrganizationMembership.id)
+    )
+    session.execute(
+        insert(OrganizationMembershipAllProjectCapability).values(
+            organization_membership_id=membership_id,
+            capability="conversation_create",
+        )
+    )
+    session.execute(
+        insert(ProjectOrganizationOwnership).values(
+            project_id=project_id,
+            organization_id=organization_id,
+        )
+    )
     session.commit()
     return IMPORT_REQUEST_ADAPTER.validate_python(
         {
@@ -500,6 +556,7 @@ def test_import_without_eligible_votes_publishes_before_analysis(
         ).one()
         is False
     )
+    assert result.notification is not None
     assert result.notification.conversation_id == row.conversation_id
     # A duplicate delivery must not fail a completed import or ingest it again.
     assert (
@@ -544,6 +601,7 @@ def test_late_failure_cannot_overwrite_a_terminal_state(
 ) -> None:
     seed_import(session, slug_id="terminal", age=timedelta(hours=24), status=terminal_status)
     user_id = session.scalars(select(ConversationImport.user_id)).one()
+    assert user_id is not None
     if terminal_status == "failed":
         session.execute(update(ConversationImport).values(failure_reason="timeout"))
         session.commit()

@@ -1,7 +1,9 @@
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createPinia, setActivePinia } from "pinia";
 import type * as QuasarModule from "quasar";
 import type { ConversationProjectSelectOption } from "src/components/newConversation/conversationProjectSelect";
 import type { PostAsSettings } from "src/composables/conversation/draft";
+import { MAX_BYTES_RICH_TEXT_HTML } from "src/shared/shared";
 import type {
   GetConversationForEditResponse,
   UpdateConversationRequest,
@@ -61,7 +63,9 @@ vi.mock("src/utils/api/post/useConversationMutations", () => ({
   useUpdateConversationMutation: () => ({ mutateAsync: mocks.save }),
 }));
 vi.mock("src/utils/api/post/postEdit", () => ({
-  useBackendPostEditApi: () => ({ getConversationForEdit: mocks.getForEdit }),
+  useBackendPostEditApi: () => ({
+    getConversationForEdit: mocks.getForEdit,
+  }),
 }));
 vi.mock("src/utils/api/conversationUpdates/conversationEmailUpdates", () => ({
   useBackendConversationEmailUpdatesApi: () => ({
@@ -251,6 +255,7 @@ async function mountFlow({
   initialSession = "cached",
   page = "seed",
   returnTo = "/",
+  qv = false,
 }: {
   newSeeds?: string[];
   detailsChanged?: boolean;
@@ -258,6 +263,7 @@ async function mountFlow({
   initialSession?: "cached" | "restoring" | "signed_out";
   page?: "seed" | "details" | "survey";
   returnTo?: string;
+  qv?: boolean;
 } = {}) {
   const pinia = createPinia();
   setActivePinia(pinia);
@@ -272,13 +278,23 @@ async function mountFlow({
   }
   const response = Dto.getConversationForEditResponse.parse({
     success: true,
+    participantStatements: qv
+      ? { supported: false }
+      : { supported: true, enabled: true },
     conversationSlugId: "seedtest",
     conversationTitle: "Original title",
     conversationBody: "Original body",
-    conversationTypeConfig: {
-      conversationType: "polis",
-      votingPresentation: "list",
-    },
+    conversationTypeConfig: qv
+      ? {
+          conversationType: "prioritizing",
+          prioritizationType: "qv",
+          creditPricing: "quadratic",
+          allowOpposition: true,
+        }
+      : {
+          conversationType: "polis",
+          votingPresentation: "list",
+        },
     contentLanguageMetadata: {
       detectedDisplayLanguageCode: null,
       detectedSourceLanguageCode: null,
@@ -324,6 +340,7 @@ async function mountFlow({
       {
         target: { kind: "project", projectSlug: "destination" },
         title: "Destination",
+        participationMode: "guest",
         organizationSlugs: ["owner"],
         premiumFeatures: [],
         defaultLanguageCode: "en",
@@ -340,6 +357,8 @@ async function mountFlow({
     ],
     isIndexed: true,
     participationMode: "account_required",
+    participationModeSettingsSource: "conversation_override",
+    projectParticipationMode: "guest",
     aiLabelingEnabled: true,
     preferredOpinionGroupCount: null,
     createdAt: new Date(),
@@ -350,9 +369,6 @@ async function mountFlow({
       canEditConversationContent: true,
       canEditSurvey: page === "survey",
       canDeleteSurvey: false,
-      canAddEventTicket: false,
-      canChangeEventTicket: false,
-      canRemoveEventTicket: true,
       canUseAnalysisVariantsPreference: false,
       canUseDynamicTranslation: false,
       restrictedPremiumFeatures: [],
@@ -367,7 +383,26 @@ async function mountFlow({
           : { allowed: false, reason: "has_votes" },
       },
     ],
-    canAddSeedOpinions: true,
+    qvStatements: qv
+      ? {
+          revision: 1,
+          editing: { allowed: true },
+          items: [
+            {
+              slugId: "qvseed01",
+              sourceVersion: "00000000-0000-4000-8000-000000000011",
+              title: "First QV statement",
+              description: "<p>First description</p>",
+            },
+            {
+              slugId: "qvseed02",
+              sourceVersion: "00000000-0000-4000-8000-000000000012",
+              title: "Second QV statement",
+            },
+          ],
+        }
+      : undefined,
+    canAddSeedOpinions: !qv,
     externalSourceConfig: null,
   });
   if (!response.success) throw new Error("Invalid test fixture");
@@ -377,6 +412,7 @@ async function mountFlow({
     store.start({
       original: response,
       form: {
+        participantStatements: response.participantStatements,
         conversationTypeConfig: response.conversationTypeConfig,
         title,
         content: "Original body",
@@ -443,9 +479,15 @@ async function mountFlow({
   document.body.append(container);
   const app = createApp(RouterView);
   app.use(pinia);
+  app.use(VueQueryPlugin, {
+    queryClient: new QueryClient({
+      defaultOptions: { queries: { gcTime: 0, retry: false } },
+    }),
+  });
   app.use(router);
   app.component("QIcon", () => null);
   app.component("QBtn", () => null);
+  app.component("QToggle", () => null);
   app.component("QSpinnerDots", () => null);
   apps.push(app);
   app.mount(container);
@@ -461,6 +503,127 @@ function clickButton(label: string): void {
     throw new Error(`Missing button: ${label}`);
   button.click();
 }
+
+describe("QV statement conflict recovery", () => {
+  it("rejects an oversized markup-only optional description before sending a save", async () => {
+    const { store } = await mountFlow({
+      qv: true,
+      newSeeds: [],
+      detailsChanged: false,
+    });
+    const session = store.session;
+    if (session === undefined) throw new Error("Missing QV session");
+    session.qvItems[0] = {
+      localKey: "qvseed01",
+      title: "Valid title",
+      description: "<p></p>".repeat(MAX_BYTES_RICH_TEXT_HTML),
+    };
+    await nextTick();
+    clickButton("Save");
+    await nextTick();
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it("preserves local edits until explicit reload, then saves with current revisions", async () => {
+    const { store, response } = await mountFlow({
+      qv: true,
+      newSeeds: [],
+      detailsChanged: false,
+    });
+    const session = store.session;
+    if (session === undefined || response.qvStatements === undefined)
+      throw new Error("Missing QV session");
+    session.qvItems[0] = {
+      localKey: "qvseed01",
+      title: "My unsaved edit",
+      description: "<p>My description</p>",
+    };
+    const fresh = {
+      ...response,
+      qvStatements: {
+        ...response.qvStatements,
+        revision: 2,
+        items: response.qvStatements.items.map((item) =>
+          item.slugId === "qvseed01"
+            ? {
+                ...item,
+                title: "Another facilitator's edit",
+                sourceVersion: "00000000-0000-4000-8000-000000000021",
+              }
+            : item
+        ),
+      },
+    };
+    mocks.getForEdit.mockResolvedValue(fresh);
+    mocks.save.mockResolvedValueOnce({
+      success: false,
+      reason: "qv_statement_change_rejected",
+      changeFailure: "version_conflict",
+    });
+    await nextTick();
+    clickButton("Save");
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(true));
+    await vi.waitFor(() => expect(session.isSaving).toBe(false));
+    expect(session.qvItems[0]?.title).toBe("My unsaved edit");
+    expect(session.original.qvStatements?.revision).toBe(1);
+    clickButton("Save");
+    await nextTick();
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+
+    clickButton("Reload current statements");
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(false));
+    expect(session.qvItems[0]?.title).toBe("Another facilitator's edit");
+    expect(session.original.qvStatements?.revision).toBe(2);
+    session.qvItems[0] = {
+      localKey: "qvseed01",
+      title: "An edit based on current content",
+      description: "<p>First description</p>",
+    };
+    mocks.save.mockResolvedValueOnce({
+      success: true,
+      participantStatements: { supported: true, enabled: true },
+    });
+    await nextTick();
+    clickButton("Save");
+    await vi.waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(2));
+    expect(mocks.save.mock.calls[1]?.[0].qvStatementUpdate).toMatchObject({
+      expectedRevision: 2,
+      changes: [
+        {
+          action: "edit",
+          slugId: "qvseed01",
+          sourceVersion: "00000000-0000-4000-8000-000000000021",
+        },
+      ],
+    });
+  });
+
+  it("retains local edits and allows reload retry after a failed refresh", async () => {
+    const { store, response } = await mountFlow({ qv: true, newSeeds: [] });
+    const session = store.session;
+    if (session === undefined) throw new Error("Missing QV session");
+    session.qvItems[0] = {
+      localKey: "qvseed01",
+      title: "Keep this edit",
+      description: "",
+    };
+    mocks.save.mockResolvedValueOnce({
+      success: false,
+      reason: "qv_statement_change_rejected",
+      changeFailure: "version_conflict",
+    });
+    mocks.getForEdit.mockRejectedValueOnce(new Error("Network unavailable"));
+    await nextTick();
+    clickButton("Save");
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(true));
+    await vi.waitFor(() => expect(session.isSaving).toBe(false));
+    expect(session.qvItems[0]?.title).toBe("Keep this edit");
+    mocks.getForEdit.mockResolvedValueOnce(response);
+    clickButton("Reload current statements");
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(false));
+    expect(session.qvItems[0]?.title).toBe("First QV statement");
+  });
+});
 
 describe.each(["details", "survey"] as const)(
   "%s edit-page initialization",
@@ -776,6 +939,7 @@ describe("edit conversation statement step", () => {
       session.original.projectLanguageProject = {
         projectSlug: "seed-project",
         projectTitle: "Source project",
+        participationMode: "guest",
         defaultLanguageCode: "en",
         languageSettings: {
           dynamicTranslationEnabled: false,
@@ -995,12 +1159,68 @@ describe("edit conversation statement step", () => {
   });
   it("clears the edit session and returns to the conversation after a successful save", async () => {
     const { router, store } = await mountFlow({ newSeeds: [] });
-    mocks.save.mockResolvedValueOnce({ success: true });
+    mocks.save.mockResolvedValueOnce({
+      success: true,
+      participantStatements: { supported: true, enabled: true },
+    });
     clickButton("Save");
     await vi.waitUntil(
       () => router.currentRoute.value.path === "/conversation/seedtest/"
     );
     expect(store.session).toBeUndefined();
+  });
+
+  it("sends the expected original policy only for an intentional toggle", async () => {
+    const { store } = await mountFlow({ newSeeds: [], detailsChanged: false });
+    const current = store.session;
+    if (current === undefined) throw new Error("Missing edit session");
+    current.form.participantStatements = { supported: true, enabled: false };
+    mocks.save.mockResolvedValueOnce({ success: false, reason: "not_author" });
+    await nextTick();
+    clickButton("Save");
+    await vi.waitUntil(() => mocks.save.mock.calls.length === 1);
+    expect(
+      mocks.save.mock.calls.at(0)?.at(0)?.participantStatementsChange
+    ).toEqual({ expectedEnabled: true, enabled: false });
+    expect(current.newSeedOpinions).toEqual([]);
+  });
+
+  it("reloads conflicting policy without discarding statement drafts", async () => {
+    const { store, container } = await mountFlow({
+      newSeeds: ["Keep my statement"],
+      detailsChanged: false,
+    });
+    const current = store.session;
+    if (current === undefined) throw new Error("Missing edit session");
+    current.form.participantStatements = { supported: true, enabled: false };
+    mocks.save.mockResolvedValueOnce({
+      success: false,
+      reason: "participant_statements_changed",
+    });
+    await nextTick();
+    clickButton("Save");
+    await vi.waitUntil(
+      () => container.textContent?.includes("Reload setting") === true
+    );
+    mocks.getForEdit.mockResolvedValueOnce({
+      ...current.original,
+      participantStatements: { supported: true, enabled: false },
+    });
+    clickButton("Reload setting");
+    await vi.waitUntil(
+      () =>
+        mocks.getForEdit.mock.calls.length > 0 &&
+        !container.textContent?.includes("Reload setting")
+    );
+    expect(current.newSeedOpinions).toEqual(["Keep my statement"]);
+    expect(current.form.participantStatements).toEqual({
+      supported: true,
+      enabled: false,
+    });
+    expect(current.original.participantStatements).toEqual({
+      supported: true,
+      enabled: false,
+    });
   });
 
   it("prompts before discarding unsaved edits outside the edit flow", async () => {

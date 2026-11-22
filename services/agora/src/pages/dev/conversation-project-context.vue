@@ -317,6 +317,7 @@ const conversationData = computed<ExtendedConversation>(() => {
 
   return {
     metadata: {
+      participantStatements: { supported: true, enabled: true },
       conversationSlugId: "prior01",
       createdAt: now,
       updatedAt: now,
@@ -360,7 +361,6 @@ const conversationData = computed<ExtendedConversation>(() => {
       isEdited: false,
       organization: undefined,
       moderation: { status: "unmoderated" },
-      requiresEventTicket: undefined,
       externalSourceConfig: null,
       importInfo: undefined,
       conversationType: "polis",
@@ -375,6 +375,7 @@ const conversationData = computed<ExtendedConversation>(() => {
       conversationCapabilities: {
         canEdit: false,
         canDelete: false,
+        canModerate: false, canClose: false, canReopen: false,
       },
     },
   };

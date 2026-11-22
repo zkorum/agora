@@ -41,6 +41,7 @@ import {
 import { getOpinionManagementCapabilities } from "../src/service/opinionPermissions.js";
 import { editOpinion } from "../src/service/opinionEdit.js";
 import { deleteOpinionBySlugId } from "../src/service/comment.js";
+import { requireOpinionManagement } from "../src/service/organizationAuthorization.js";
 import {
     createVoteBuffer,
     CLEANUP_VOTES_SCRIPT,
@@ -157,7 +158,7 @@ describe("statement editing and seed deletion", () => {
             password: "postgres",
             database: "agora_test",
         });
-        db = drizzle(client);
+        db = drizzle({ client });
         cacheContainer = await new GenericContainer("valkey/valkey:8-alpine")
             .withExposedPorts(6379)
             .start();
@@ -212,7 +213,11 @@ describe("statement editing and seed deletion", () => {
         const membership = first(
             await db
                 .insert(organizationMembershipTable)
-                .values({ organizationId: organization.id, userId: editorId })
+                .values({
+                    organizationId: organization.id,
+                    userId: editorId,
+                    role: "manager",
+                })
                 .returning(),
         );
         await db
@@ -381,6 +386,7 @@ describe("statement editing and seed deletion", () => {
             await buffer.add({
                 vote: {
                     userId: voterId,
+                    contributionRevision: 0,
                     opinionId: opinion.id,
                     opinionContentId: content.id,
                     conversationId,
@@ -708,7 +714,7 @@ describe("statement editing and seed deletion", () => {
         }
     });
 
-    it("keeps a seed locked when its only voter deleted their account, preserving the original vote", async () => {
+    it("allows editing when the only voter is deleted, preserving their private original vote", async () => {
         const { opinion, content } = await statement(true);
         await vote({
             opinionId: opinion.id,
@@ -727,7 +733,7 @@ describe("statement editing and seed deletion", () => {
                     opinionSlugIds: [opinion.slugId],
                 })
             ).get(opinion.slugId)?.editing,
-        ).toEqual({ allowed: false, reason: "has_votes" });
+        ).toEqual({ allowed: true });
         expect(
             (
                 await fetchConversationSeedOpinions({
@@ -736,7 +742,7 @@ describe("statement editing and seed deletion", () => {
                     conversationType: "polis",
                 })
             ).at(0)?.editing,
-        ).toEqual({ allowed: false, reason: "has_votes" });
+        ).toEqual({ allowed: true });
         const votesBeforeEdit = await db.select().from(voteTable);
         expect(
             await save({
@@ -744,7 +750,7 @@ describe("statement editing and seed deletion", () => {
                 sourceVersion: content.publicId,
                 userId: editorId,
             }),
-        ).toEqual({ success: false, reason: "has_votes" });
+        ).toMatchObject({ success: true });
         expect(await db.select().from(voteTable)).toEqual(votesBeforeEdit);
         expect(
             first(await db.select().from(voteContentTable)).opinionContentId,
@@ -763,6 +769,7 @@ describe("statement editing and seed deletion", () => {
             await buffer.add({
                 vote: {
                     userId: voterId,
+                    contributionRevision: 0,
                     opinionId: opinion.id,
                     opinionContentId: content.id,
                     conversationId,
@@ -810,7 +817,7 @@ describe("statement editing and seed deletion", () => {
                     authorId,
                     isSeed: true,
                 }),
-            ).toBe(true);
+            ).toBe(false);
         } finally {
             await buffer.shutdown();
         }
@@ -1067,13 +1074,13 @@ describe("statement editing and seed deletion", () => {
         );
         expect(revision.editedByUserId).toBe(editorId);
         const regular = await statement();
-        expect(
-            await save({
-                slugId: regular.opinion.slugId,
-                sourceVersion: regular.content.publicId,
+        await expect(
+            requireOpinionManagement({
+                db,
+                opinionSlugId: regular.opinion.slugId,
                 userId: editorId,
             }),
-        ).toEqual({ success: false, reason: "not_allowed" });
+        ).rejects.toMatchObject({ statusCode: 403 });
     });
 
     it("blocks seed edits for any vote, including the creator's vote", async () => {
@@ -1148,6 +1155,12 @@ describe("statement editing and seed deletion", () => {
         ).toEqual({
             editing: { allowed: false, reason: "has_votes" },
             canDelete: true,
+            canModerate: true,
+        });
+        await requireOpinionManagement({
+            db,
+            opinionSlugId: opinion.slugId,
+            userId: editorId,
         });
         await deleteOpinionBySlugId({
             db,
@@ -1214,12 +1227,12 @@ describe("statement editing and seed deletion", () => {
     it("does not authorize seed deletion just because the user is its original author", async () => {
         const { opinion } = await statement(true);
         await expect(
-            deleteOpinionBySlugId({
+            requireOpinionManagement({
                 db,
                 opinionSlugId: opinion.slugId,
                 userId: authorId,
             }),
-        ).rejects.toThrow("Missing statement deletion permission");
+        ).rejects.toMatchObject({ statusCode: 403 });
     });
 
     it("does not hold statement locks while a language provider is running", async () => {
@@ -1324,6 +1337,7 @@ describe("statement editing and seed deletion", () => {
             valkeyBatchLimit: 100,
         });
         const baseVote = {
+            contributionRevision: 0,
             opinionId: opinion.id,
             opinionContentId: content.id,
             conversationId,

@@ -19,7 +19,6 @@ export interface AdministratorPremiumEntitlementsTranslations {
   revokedLabel: string;
   revokeButton: string;
   surveyFeature: string;
-  eventTicketFeature: string;
   analysisVariantsFeature: string;
   dynamicTranslationFeature: string;
   conversationEmailUpdateFeature: string;
@@ -44,7 +43,6 @@ const en: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "Revoked",
   revokeButton: "Revoke",
   surveyFeature: "Survey",
-  eventTicketFeature: "Event ticket",
   analysisVariantsFeature: "Analysis variants (2-6 groups)",
   dynamicTranslationFeature: "Dynamic Translation",
   conversationEmailUpdateFeature: "Email Updates",
@@ -69,7 +67,6 @@ const ar: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "ملغى",
   revokeButton: "إلغاء",
   surveyFeature: "استطلاع",
-  eventTicketFeature: "تذكرة فعالية",
   analysisVariantsFeature: "خيارات التحليل (2-6 مجموعات)",
   dynamicTranslationFeature: "الترجمة الديناميكية",
   conversationEmailUpdateFeature: "تحديثات البريد الإلكتروني",
@@ -94,7 +91,6 @@ const es: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "Revocado",
   revokeButton: "Revocar",
   surveyFeature: "Encuesta",
-  eventTicketFeature: "Entrada para evento",
   analysisVariantsFeature: "Variantes de análisis (2-6 grupos)",
   dynamicTranslationFeature: "Traducción dinámica",
   conversationEmailUpdateFeature: "Novedades por correo",
@@ -119,7 +115,6 @@ const fa: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "لغوشده",
   revokeButton: "لغو",
   surveyFeature: "نظرسنجی",
-  eventTicketFeature: "بلیت رویداد",
   analysisVariantsFeature: "گزینه‌های تحلیل (۲ تا ۶ گروه)",
   dynamicTranslationFeature: "ترجمه پویا",
   conversationEmailUpdateFeature: "به‌روزرسانی‌های ایمیلی",
@@ -144,7 +139,6 @@ const fr: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "Révoqué",
   revokeButton: "Révoquer",
   surveyFeature: "Sondage",
-  eventTicketFeature: "Billet d’événement",
   analysisVariantsFeature: "Variantes d’analyse (2 à 6 groupes)",
   dynamicTranslationFeature: "Traduction dynamique",
   conversationEmailUpdateFeature: "Nouvelles par e-mail",
@@ -169,7 +163,6 @@ const he: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "בוטלה",
   revokeButton: "ביטול",
   surveyFeature: "סקר",
-  eventTicketFeature: "כרטיס לאירוע",
   analysisVariantsFeature: "גרסאות ניתוח (2-6 קבוצות)",
   dynamicTranslationFeature: "תרגום דינמי",
   conversationEmailUpdateFeature: "עדכונים בדוא״ל",
@@ -194,7 +187,6 @@ const ja: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "取り消し済み",
   revokeButton: "取り消す",
   surveyFeature: "アンケート",
-  eventTicketFeature: "イベントチケット",
   analysisVariantsFeature: "分析バリエーション（2～6グループ）",
   dynamicTranslationFeature: "動的翻訳",
   conversationEmailUpdateFeature: "メール更新",
@@ -219,7 +211,6 @@ const ky: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "Жокко чыгарылган",
   revokeButton: "Жокко чыгаруу",
   surveyFeature: "Сурамжылоо",
-  eventTicketFeature: "Иш-чарага билет",
   analysisVariantsFeature: "Анализ варианттары (2-6 топ)",
   dynamicTranslationFeature: "Динамикалык котормо",
   conversationEmailUpdateFeature: "Электрондук почта жаңыртуулары",
@@ -244,7 +235,6 @@ const ru: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "Отозвано",
   revokeButton: "Отозвать",
   surveyFeature: "Опрос",
-  eventTicketFeature: "Билет на мероприятие",
   analysisVariantsFeature: "Варианты анализа (2-6 групп)",
   dynamicTranslationFeature: "Динамический перевод",
   conversationEmailUpdateFeature: "Обновления по электронной почте",
@@ -269,7 +259,6 @@ const zhHans: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "已撤销",
   revokeButton: "撤销",
   surveyFeature: "调查问卷",
-  eventTicketFeature: "活动门票",
   analysisVariantsFeature: "分析方案（2-6 个群组）",
   dynamicTranslationFeature: "动态翻译",
   conversationEmailUpdateFeature: "电子邮件更新",
@@ -294,7 +283,6 @@ const zhHant: AdministratorPremiumEntitlementsTranslations = {
   revokedLabel: "已撤銷",
   revokeButton: "撤銷",
   surveyFeature: "問卷調查",
-  eventTicketFeature: "活動票券",
   analysisVariantsFeature: "分析方案（2-6 個群組）",
   dynamicTranslationFeature: "動態翻譯",
   conversationEmailUpdateFeature: "電子郵件更新",

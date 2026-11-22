@@ -4,8 +4,14 @@ import {
   logoutAllAuthSessionsResponse,
   revokeAuthSessionResponse,
 } from "src/shared/types/dto-auth";
-import type { DeviceLoginStatus } from "src/shared/types/zod";
-import { type LoginStatusUpdate, useAuthenticationStore } from "src/stores/authentication";
+import type {
+  DeviceLoginStatus,
+  KnownDeviceLoginStatus,
+} from "src/shared/types/zod";
+import {
+  type LoginStatusUpdate,
+  useAuthenticationStore,
+} from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useNotificationStore } from "src/stores/notification";
 import { useTopicStore } from "src/stores/topic";
@@ -257,11 +263,17 @@ export function useBackendAuthApi() {
   async function updateAuthStateFromBackend({
     loginStatus,
     didWrite,
+    isCurrent,
   }: {
     loginStatus: DeviceLoginStatus;
     didWrite: string;
+    isCurrent: () => boolean;
   }): Promise<AuthStateUpdateResult> {
-    const application = await applyBackendAuthStatus({ loginStatus, didWrite });
+    const application = await applyBackendAuthStatus({
+      loginStatus,
+      didWrite,
+      isCurrent,
+    });
     if (application.type === "ignored") {
       return { authStateChanged: false, needsCacheRefresh: false };
     }
@@ -278,8 +290,8 @@ export function useBackendAuthApi() {
   }
 
   async function refreshAuthState(): Promise<AuthStateUpdateResult> {
-    const { loginStatus, didWrite } = await requestBackendAuthStatus();
-    return await updateAuthStateFromBackend({ loginStatus, didWrite });
+    const status = await requestBackendAuthStatus();
+    return await updateAuthStateFromBackend(status);
   }
 
   async function ensureParticipationAuthState(): Promise<AuthStateUpdateResult> {
@@ -289,11 +301,11 @@ export function useBackendAuthApi() {
     const pending = participationAuthRefreshes.get(authStore);
     if (pending !== undefined) return await pending;
 
-    // Participation responses omit device identity/credentials. Resolve them
-    // once through the primary-backed auth endpoint, rather than inventing a guest ID.
+    // Older participation endpoints still omit identity. Accepted statement/QV
+    // writes instead install their response snapshot via applyAcceptedParticipationAuth.
     const refresh = (async () => {
-      const { loginStatus, didWrite } = await requestBackendDeviceLoginStatus();
-      return await updateAuthStateFromBackend({ loginStatus, didWrite });
+      const status = await requestBackendDeviceLoginStatus();
+      return await updateAuthStateFromBackend(status);
     })();
     participationAuthRefreshes.set(authStore, refresh);
     try {
@@ -301,6 +313,58 @@ export function useBackendAuthApi() {
     } finally {
       participationAuthRefreshes.delete(authStore);
     }
+  }
+
+  /** Install identity returned by an accepted write; account enrichment is never part of write success. */
+  async function applyAcceptedParticipationAuth({
+    loginStatus,
+    didWrite,
+    isCurrent,
+  }: {
+    loginStatus: KnownDeviceLoginStatus;
+    didWrite: string;
+    isCurrent: () => boolean;
+  }): Promise<AuthStateUpdateResult> {
+    const application = await applyBackendAuthStatus({
+      loginStatus,
+      didWrite,
+      isCurrent,
+    });
+    if (application.type !== "updated")
+      return { authStateChanged: false, needsCacheRefresh: false };
+    const {
+      oldLoginStatus,
+      newLoginStatus,
+      oldIsGuestOrLoggedIn,
+      newIsGuestOrLoggedIn,
+    } = application.transition;
+    const oldUserId = oldLoginStatus.isKnown
+      ? oldLoginStatus.userId
+      : undefined;
+    const newUserId = newLoginStatus.isKnown
+      ? newLoginStatus.userId
+      : undefined;
+    const authStateChanged =
+      oldUserId !== newUserId || oldIsGuestOrLoggedIn !== newIsGuestOrLoggedIn;
+    if (oldLoginStatus.isKnown && oldUserId !== newUserId)
+      clearAccountScopedState();
+    if (authStateChanged) {
+      void (async () => {
+        try {
+          await queryClient.invalidateQueries({
+            queryKey: ["feed"],
+            refetchType: "none",
+          });
+          if (authStore.userId === newUserId) await loadAuthenticatedModules();
+        } catch (error) {
+          console.error(
+            "Background account refresh failed",
+            getErrorLogContext(error)
+          );
+        }
+      })();
+    }
+    return { authStateChanged, needsCacheRefresh: false };
   }
 
   async function logoutDataCleanup({
@@ -319,6 +383,7 @@ export function useBackendAuthApi() {
     getDeviceLoginStatus,
     updateAuthState,
     ensureParticipationAuthState,
+    applyAcceptedParticipationAuth,
     refreshAuthState,
     loadAuthenticatedModules,
   };

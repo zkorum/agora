@@ -1,0 +1,1095 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "620e5964-362e-482b-92f8-81eabe5341a6",
+  "prevIds": [
+    "f9c793c7-4209-4783-80f6-2850f014890f"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_participant"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_participant",
+        "n|tbl|public.conversation_participant",
+        "e|tbl|public.conversation_participant",
+        "n|rel|public.conversation_participant",
+        "n|type|public.conversation_participant",
+        "n|rel|public.conversation_participant_pkey",
+        "n|rel|public.conversation_participant_account_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_submission"
+      ],
+      "writes": [
+        "s|tbl|public.vote_submission",
+        "n|tbl|public.vote_submission",
+        "e|tbl|public.vote_submission",
+        "n|rel|public.vote_submission",
+        "n|type|public.vote_submission",
+        "n|rel|public.vote_submission_pkey",
+        "n|rel|public.vote_submission_account_opinion_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "closing_target_revision"
+      ],
+      "writes": [
+        "s|col|public.conversation.closing_target_revision",
+        "n|col|public.conversation.closing_target_revision",
+        "e|col|public.conversation.closing_target_revision"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "closed_finalized_at"
+      ],
+      "writes": [
+        "s|col|public.conversation.closed_finalized_at",
+        "n|col|public.conversation.closed_finalized_at",
+        "e|col|public.conversation.closed_finalized_at"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_lineage_description_work",
+        "sources_blocked"
+      ],
+      "writes": [
+        "s|col|public.opinion_group_lineage_description_work.sources_blocked",
+        "n|col|public.opinion_group_lineage_description_work.sources_blocked",
+        "e|col|public.opinion_group_lineage_description_work.sources_blocked"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_lineage_description_work",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_user",
+        "participant_id"
+      ],
+      "writes": [
+        "s|col|public.opinion_group_user.participant_id",
+        "n|col|public.opinion_group_user.participant_id",
+        "e|col|public.opinion_group_user.participant_id"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_user",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "vote",
+        "participant_id"
+      ],
+      "writes": [
+        "s|col|public.vote.participant_id",
+        "n|col|public.vote.participant_id",
+        "e|col|public.vote.participant_id"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_group_user"
+      ],
+      "writes": [
+        "s|uq|public.opinion_group_user.opinion_group_participant_candidate_unique",
+        "n|uq|public.opinion_group_user.opinion_group_participant_candidate_unique",
+        "e|uq|public.opinion_group_user.opinion_group_participant_candidate_unique",
+        "n|con|public.opinion_group_user.opinion_group_participant_candidate_unique",
+        "n|rel|public.opinion_group_participant_candidate_unique"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_user",
+        "n|sch|public",
+        "n|col|public.opinion_group_user.candidate_id",
+        "n|col|public.opinion_group_user.participant_id"
+      ]
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote"
+      ],
+      "writes": [
+        "s|uq|public.vote.vote_participant_opinion_unique",
+        "n|uq|public.vote.vote_participant_opinion_unique",
+        "e|uq|public.vote.vote_participant_opinion_unique",
+        "n|con|public.vote.vote_participant_opinion_unique",
+        "n|rel|public.vote_participant_opinion_unique"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public",
+        "n|col|public.vote.participant_id",
+        "n|col|public.vote.opinion_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_participant",
+        "conversation_participant_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_participant_user_idx",
+        "n|idx|public.conversation_participant_user_idx",
+        "e|idx|public.conversation_participant_user_idx",
+        "n|rel|public.conversation_participant_user_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_participant",
+        "n|sch|public",
+        "n|col|public.conversation_participant.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote_submission",
+        "vote_submission_pending_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_submission_pending_idx",
+        "n|idx|public.vote_submission_pending_idx",
+        "e|idx|public.vote_submission_pending_idx",
+        "n|rel|public.vote_submission_pending_idx"
+      ],
+      "reads": [
+        "n|tbl|public.vote_submission",
+        "n|sch|public",
+        "n|col|public.vote_submission.submitted_at",
+        "n|col|public.vote_submission.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote_submission",
+        "vote_submission_conversation_pending_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_submission_conversation_pending_idx",
+        "n|idx|public.vote_submission_conversation_pending_idx",
+        "e|idx|public.vote_submission_conversation_pending_idx",
+        "n|rel|public.vote_submission_conversation_pending_idx"
+      ],
+      "reads": [
+        "n|tbl|public.vote_submission",
+        "n|sch|public",
+        "n|col|public.vote_submission.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_participant"
+      ],
+      "writes": [
+        "s|fk|public.conversation_participant.conversation_participant_conversation_id_conversation_id_fk",
+        "n|fk|public.conversation_participant.conversation_participant_conversation_id_conversation_id_fk",
+        "e|fk|public.conversation_participant.conversation_participant_conversation_id_conversation_id_fk",
+        "n|con|public.conversation_participant.conversation_participant_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_participant",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_participant.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_participant"
+      ],
+      "writes": [
+        "s|fk|public.conversation_participant.conversation_participant_user_id_user_id_fk",
+        "n|fk|public.conversation_participant.conversation_participant_user_id_user_id_fk",
+        "e|fk|public.conversation_participant.conversation_participant_user_id_user_id_fk",
+        "n|con|public.conversation_participant.conversation_participant_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_participant",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.conversation_participant.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_group_user"
+      ],
+      "writes": [
+        "s|fk|public.opinion_group_user.opinion_group_user_participant_id_conversation_participant_id_f",
+        "n|fk|public.opinion_group_user.opinion_group_user_participant_id_conversation_participant_id_f",
+        "e|fk|public.opinion_group_user.opinion_group_user_participant_id_conversation_participant_id_f",
+        "n|con|public.opinion_group_user.opinion_group_user_participant_id_conversation_participant_id_f"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_user",
+        "n|sch|public",
+        "n|tbl|public.conversation_participant",
+        "n|sch|public",
+        "n|col|public.opinion_group_user.participant_id",
+        "n|col|public.conversation_participant.id",
+        "e|uniqueness|public.conversation_participant.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_submission"
+      ],
+      "writes": [
+        "s|fk|public.vote_submission.vote_submission_conversation_id_conversation_id_fk",
+        "n|fk|public.vote_submission.vote_submission_conversation_id_conversation_id_fk",
+        "e|fk|public.vote_submission.vote_submission_conversation_id_conversation_id_fk",
+        "n|con|public.vote_submission.vote_submission_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.vote_submission",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.vote_submission.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_submission"
+      ],
+      "writes": [
+        "s|fk|public.vote_submission.vote_submission_user_id_user_id_fk",
+        "n|fk|public.vote_submission.vote_submission_user_id_user_id_fk",
+        "e|fk|public.vote_submission.vote_submission_user_id_user_id_fk",
+        "n|con|public.vote_submission.vote_submission_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.vote_submission",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.vote_submission.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_submission"
+      ],
+      "writes": [
+        "s|fk|public.vote_submission.vote_submission_opinion_id_opinion_id_fk",
+        "n|fk|public.vote_submission.vote_submission_opinion_id_opinion_id_fk",
+        "e|fk|public.vote_submission.vote_submission_opinion_id_opinion_id_fk",
+        "n|con|public.vote_submission.vote_submission_opinion_id_opinion_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.vote_submission",
+        "n|sch|public",
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.vote_submission.opinion_id",
+        "n|col|public.opinion.id",
+        "e|uniqueness|public.opinion.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote_submission"
+      ],
+      "writes": [
+        "s|fk|public.vote_submission.vote_submission_opinion_content_id_opinion_content_id_fk",
+        "n|fk|public.vote_submission.vote_submission_opinion_content_id_opinion_content_id_fk",
+        "e|fk|public.vote_submission.vote_submission_opinion_content_id_opinion_content_id_fk",
+        "n|con|public.vote_submission.vote_submission_opinion_content_id_opinion_content_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.vote_submission",
+        "n|sch|public",
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.vote_submission.opinion_content_id",
+        "n|col|public.opinion_content.id",
+        "e|uniqueness|public.opinion_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "vote"
+      ],
+      "writes": [
+        "s|fk|public.vote.vote_participant_id_conversation_participant_id_fk",
+        "n|fk|public.vote.vote_participant_id_conversation_participant_id_fk",
+        "e|fk|public.vote.vote_participant_id_conversation_participant_id_fk",
+        "n|con|public.vote.vote_participant_id_conversation_participant_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public",
+        "n|tbl|public.conversation_participant",
+        "n|sch|public",
+        "n|col|public.vote.participant_id",
+        "n|col|public.conversation_participant.id",
+        "e|uniqueness|public.conversation_participant.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation"
+      ],
+      "writes": [
+        "s|ck|public.conversation.conversation_closing_state_check",
+        "n|ck|public.conversation.conversation_closing_state_check",
+        "e|ck|public.conversation.conversation_closing_state_check",
+        "n|con|public.conversation.conversation_closing_state_check"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.is_closed",
+        "n|col|public.conversation.closing_target_revision",
+        "n|col|public.conversation.closed_finalized_at"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_participant",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "vote_submission",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "gen_random_uuid()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "closing_target_revision",
+        "type": "bigint",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "closed_finalized_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_lineage_description_work",
+        "name": "sources_blocked",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_user",
+        "name": "participant_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "vote_submission_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "opinion_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "opinion_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "action",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "submitted_at",
+        "type": "timestamp (3)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "pending",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "true",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "participant_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "conversation_participant_user_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_pending_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "submitted_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"vote_submission\".\"pending\" = true",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_conversation_pending_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"vote_submission\".\"pending\" = true",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "conversation_participant_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "conversation_participant_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_user",
+        "name": "opinion_group_user_participant_id_conversation_participant_id_f",
+        "nameExplicit": false,
+        "columns": [
+          "participant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_participant",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_opinion_id_opinion_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "opinion_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "opinion",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_opinion_content_id_opinion_content_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "opinion_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "opinion_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "vote_participant_id_conversation_participant_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "participant_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_participant",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "conversation_participant_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_participant",
+        "name": "conversation_participant_account_unique",
+        "nameExplicit": true,
+        "columns": [
+          "conversation_id",
+          "user_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_user",
+        "name": "opinion_group_participant_candidate_unique",
+        "nameExplicit": true,
+        "columns": [
+          "candidate_id",
+          "participant_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_account_opinion_unique",
+        "nameExplicit": true,
+        "columns": [
+          "user_id",
+          "opinion_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote",
+        "name": "vote_participant_opinion_unique",
+        "nameExplicit": true,
+        "columns": [
+          "participant_id",
+          "opinion_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "conversation_closing_state_check",
+        "value": "(\"conversation\".\"is_closed\" OR (\"conversation\".\"closing_target_revision\" IS NULL AND \"conversation\".\"closed_finalized_at\" IS NULL)) AND (\"conversation\".\"closed_finalized_at\" IS NULL OR \"conversation\".\"closing_target_revision\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "vote_submission",
+        "name": "vote_submission_action_check",
+        "value": "\"vote_submission\".\"action\" IN ('agree', 'disagree', 'pass', 'cancel')",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

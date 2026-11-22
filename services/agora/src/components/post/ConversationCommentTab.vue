@@ -16,7 +16,7 @@
       :editing-opinion="editingOpinion"
       @edit-opinion="emit('editOpinion', $event)"
     />
-    <CommentSection
+    <OpinionList
       v-else-if="opinionView.kind === 'list'"
       :key="conversationData.metadata.conversationSlugId"
       ref="opinionSectionRef"
@@ -28,8 +28,7 @@
       :on-view-analysis="props.onViewAnalysis"
       :is-voting-disabled="isVotingDisabled"
       :conversation-route-context="props.conversationRouteContext"
-      :filter="opinionView.filter"
-      :conversation-type-config="conversationData.metadata"
+      :opinion-state="opinionState"
       :editing-opinion="editingOpinion"
       @edit-opinion="emit('editOpinion', $event)"
     />
@@ -43,6 +42,7 @@ import type {
   SubmittedCommentData,
 } from "src/composables/conversation/useConversationParentState";
 import type { OpinionEditRequest } from "src/composables/opinion/types";
+import type { OpinionListState } from "src/composables/opinion/useOpinionListState";
 import type {
   DisplayedOpinionItem,
   ExtendedConversationDisplayData,
@@ -50,7 +50,6 @@ import type {
 import { useUserStore } from "src/stores/user";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import { useInvalidateCommentQueries } from "src/utils/api/comment/useCommentQueries";
-import type { CommentFilterOptions } from "src/utils/component/opinion";
 import type { ConversationRouteContext } from "src/utils/router/conversationRouteContext";
 import {
   computed,
@@ -63,8 +62,8 @@ import {
   watch,
 } from "vue";
 
-import CommentSection from "./comments/CommentSection.vue";
 import OneAtATimeSection from "./comments/OneAtATimeSection.vue";
+import OpinionList from "./comments/OpinionList.vue";
 import {
   type OpinionView,
   resolveOpinionView,
@@ -73,15 +72,13 @@ import {
 // Props from parent
 const props = defineProps<{
   conversationData: ExtendedConversationDisplayData | undefined;
-  moderationHistoryTrigger: number;
-  commentFilter: CommentFilterOptions;
+  opinionState: OpinionListState;
   onViewAnalysis: () => void;
   conversationRouteContext: ConversationRouteContext;
   editingOpinion: DisplayedOpinionItem | undefined;
 }>();
 
 const emit = defineEmits<{
-  "update:commentFilter": [filter: CommentFilterOptions];
   editOpinion: [request: OpinionEditRequest];
 }>();
 
@@ -106,7 +103,7 @@ const registerSubmittedCommentHandler = inject<
   /* noop */
 });
 
-const opinionSectionRef = ref<InstanceType<typeof CommentSection>>();
+const opinionSectionRef = ref<InstanceType<typeof OpinionList>>();
 const oneAtATimeRef = ref<InstanceType<typeof OneAtATimeSection>>();
 const isTabActive = ref(true);
 let unregisterChildRefreshHandler: (() => void) | undefined;
@@ -123,7 +120,7 @@ const opinionView = computed<OpinionView | { kind: "unavailable" }>(() => {
   return resolveOpinionView({
     metadata: data.metadata,
     routeContext: props.conversationRouteContext,
-    filter: props.commentFilter,
+    filter: props.opinionState.filter.value,
   });
 });
 
@@ -154,16 +151,6 @@ watch(isLoading, (loading) => {
   setCurrentTabLoading(loading);
 });
 
-// Sync filter: when CommentSection changes filter internally (e.g. openModerationHistory), tell parent
-watch(
-  () => opinionSectionRef.value?.currentFilter,
-  (newFilter) => {
-    if (newFilter !== undefined && newFilter !== props.commentFilter) {
-      emit("update:commentFilter", newFilter);
-    }
-  }
-);
-
 async function submittedComment(data: SubmittedCommentData): Promise<void> {
   if (props.conversationData === undefined) {
     return;
@@ -190,15 +177,6 @@ async function submittedComment(data: SubmittedCommentData): Promise<void> {
     profileData.value.userName = data.displayedOpinionItem.username;
   }
 }
-
-watch(
-  () => props.moderationHistoryTrigger,
-  () => {
-    if (opinionSectionRef.value) {
-      opinionSectionRef.value.openModerationHistory();
-    }
-  }
-);
 
 async function handleChildRefresh(): Promise<void> {
   if (oneAtATimeRef.value) {

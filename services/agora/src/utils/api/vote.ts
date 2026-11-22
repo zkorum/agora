@@ -3,6 +3,7 @@ import {
   DefaultApiAxiosParamCreator,
   DefaultApiFactory,
 } from "src/api";
+import type { VoteClientAction } from "src/composables/opinion/types";
 import {
   type CastVoteResponse,
   Dto,
@@ -10,6 +11,7 @@ import {
 } from "src/shared/types/dto";
 import { type VotingAction } from "src/shared/types/zod";
 import { useAuthenticationStore } from "src/stores/authentication";
+import type { z } from "zod";
 
 import { buildAuthorizationHeader } from "../crypto/ucan/operation";
 import { api } from "./client";
@@ -32,7 +34,7 @@ export function useBackendVoteApi() {
     returnIsUserClustered: boolean;
     isCurrent: () => boolean;
     sourceVersion: string;
-    clientAction?: { sessionId: string; sequence: number };
+    clientAction?: VoteClientAction;
   }): Promise<CastVoteResponse> {
     const params = Dto.castVoteRequest.parse({
       opinionSlugId,
@@ -95,5 +97,59 @@ export function useBackendVoteApi() {
     return Dto.getUserVotesByConversationsResponse.parse(response.data);
   }
 
-  return { fetchUserVotesForPostSlugIds, castVoteForComment };
+  async function getClosedVoteWithdrawalStatus({
+    conversationSlugId,
+    signal,
+  }: {
+    conversationSlugId: string;
+    signal: AbortSignal;
+  }) {
+    const params = Dto.closedVoteWithdrawalStatusRequest.parse({
+      conversationSlugId,
+    });
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1VoteWithdrawStatusPost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    signal.throwIfAborted();
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1VoteWithdrawStatusPost(
+      params,
+      createRawAxiosRequestConfig({ encodedUcan, signal })
+    );
+    return Dto.closedVoteWithdrawalStatusResponse.parse(response.data);
+  }
+
+  async function withdrawClosedVotes({
+    request,
+    isCurrent,
+  }: {
+    request: z.infer<typeof Dto.closedVoteWithdrawalRequest>;
+    isCurrent: () => boolean;
+  }) {
+    const params = Dto.closedVoteWithdrawalRequest.parse(request);
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1VoteWithdrawPost(params);
+    const encodedUcan = await buildEncodedUcan(url, options);
+    if (!isCurrent())
+      throw new DOMException("Voting session changed", "AbortError");
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1VoteWithdrawPost(
+      params,
+      createRawAxiosRequestConfig({ encodedUcan })
+    );
+    return Dto.closedVoteWithdrawalResponse.parse(response.data);
+  }
+
+  return {
+    fetchUserVotesForPostSlugIds,
+    castVoteForComment,
+    getClosedVoteWithdrawalStatus,
+    withdrawClosedVotes,
+  };
 }

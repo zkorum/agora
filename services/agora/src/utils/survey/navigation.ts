@@ -50,7 +50,6 @@ export function getConversationCredentialChoicePath({
       });
     case "email":
     case "survey":
-    case "ticket":
     case "email_updates":
       return getConversationSurveyOnboardingPath({
         conversationSlugId,
@@ -76,8 +75,6 @@ export function getConversationOnboardingStepPath({
       return getConversationSurveyVerifyEmailPath(params);
     case "identity":
       return getConversationSurveyVerifyIdentityPath(params);
-    case "ticket":
-      return getConversationSurveyVerifyTicketPath(params);
     case "email_updates":
       return getConversationSurveyCompletePath(params);
     case "survey":
@@ -128,16 +125,6 @@ export function getConversationSurveyVerifyIdentityPath({
   routeContext?: ConversationRouteContext;
 }): string {
   return `${getConversationSurveyBasePath({ conversationSlugId, routeContext })}/verify/identity`;
-}
-
-export function getConversationSurveyVerifyTicketPath({
-  conversationSlugId,
-  routeContext = normalConversationRouteContext,
-}: {
-  conversationSlugId: string;
-  routeContext?: ConversationRouteContext;
-}): string {
-  return `${getConversationSurveyBasePath({ conversationSlugId, routeContext })}/verify/ticket`;
 }
 
 export function getConversationSurveyVerifyPhonePath({

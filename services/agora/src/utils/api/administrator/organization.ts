@@ -1,4 +1,10 @@
+import { useQueryClient } from "@tanstack/vue-query";
+import { isAxiosError } from "axios";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import type {
+  OrganizationManagementPermissions,
+  OrganizationRole,
+} from "src/shared/organizationAccess";
 import {
   type AdminOrganizationOption,
   type AdminOrganizationProperties,
@@ -13,9 +19,10 @@ import {
   type UpdateOrganizationSlugRequest,
 } from "src/shared/types/dto";
 import type { OrganizationProperties } from "src/shared/types/zod";
+import { invalidateManagementPermissions } from "src/utils/api/invalidateManagementPermissions";
 import { buildAuthorizationHeader } from "src/utils/crypto/ucan/operation";
 import { useNotify } from "src/utils/ui/notify";
-import type { z } from "zod";
+import { z } from "zod";
 
 import { api } from "../client";
 import { useCommonApi } from "../common";
@@ -38,6 +45,7 @@ const updateSlugFailureTranslationKeys: Record<
 };
 
 export function useBackendAdministratorOrganizationApi() {
+  const queryClient = useQueryClient();
   const { buildEncodedUcan } = useCommonApi();
 
   const { showNotifyMessage } = useNotify();
@@ -68,10 +76,16 @@ export function useBackendAdministratorOrganizationApi() {
     return responseSchema.parse(response.data);
   }
 
-  async function getOrganizationOptions(): Promise<AdminOrganizationOption[]> {
+  async function getOrganizationOptions({
+    forProjectCreation = false,
+  }: { forProjectCreation?: boolean } = {}): Promise<
+    AdminOrganizationOption[]
+  > {
     try {
       const response = await postWithUcan({
-        url: "/api/v1/administrator/organization/get-organization-options",
+        url: forProjectCreation
+          ? "/api/v1/administrator/organization/get-project-owner-options"
+          : "/api/v1/administrator/organization/get-organization-options",
         responseSchema: Dto.getOrganizationOptionsResponse,
       });
       return response?.organizationList ?? [];
@@ -84,7 +98,12 @@ export function useBackendAdministratorOrganizationApi() {
 
   async function getOrganizationDetails(
     data: GetOrganizationDetailsRequest
-  ): Promise<AdminOrganizationProperties | undefined> {
+  ): Promise<
+    | (AdminOrganizationProperties & {
+        permissions: OrganizationManagementPermissions;
+      })
+    | undefined
+  > {
     try {
       const params = Dto.getOrganizationDetailsRequest.parse(data);
       const response = await postWithUcan({
@@ -92,7 +111,9 @@ export function useBackendAdministratorOrganizationApi() {
         data: params,
         responseSchema: Dto.getOrganizationDetailsResponse,
       });
-      return response?.organization;
+      return response?.organization === undefined
+        ? undefined
+        : { ...response.organization, permissions: response.permissions };
     } catch (e) {
       console.error(e);
       showNotifyMessage(t("failedToFetchOrganizations"));
@@ -161,20 +182,24 @@ export function useBackendAdministratorOrganizationApi() {
   async function addUserOrganizationMapping({
     username,
     organizationName,
+    role,
   }: {
     username: string;
     organizationName: string;
+    role: OrganizationRole;
   }): Promise<boolean> {
     try {
       const params = Dto.addUserOrganizationMappingRequest.parse({
         username,
         organizationName,
+        role,
       } satisfies z.input<typeof Dto.addUserOrganizationMappingRequest>);
       await postWithUcan({
         url: "/api/v1/administrator/organization/add-user-organization-mapping",
         data: params,
       });
       showNotifyMessage(t("addedUserOrganizationMapping"));
+      await invalidateManagementPermissions(queryClient);
       return true;
     } catch (e) {
       console.error(e);
@@ -200,6 +225,7 @@ export function useBackendAdministratorOrganizationApi() {
         data: params,
       });
       showNotifyMessage(t("removedUserOrganizationMapping"));
+      await invalidateManagementPermissions(queryClient);
       return true;
     } catch (e) {
       console.error(e);
@@ -222,10 +248,22 @@ export function useBackendAdministratorOrganizationApi() {
         data: params,
       });
       showNotifyMessage(t("deletedOrganization"));
+      await invalidateManagementPermissions(queryClient);
       return true;
     } catch (e) {
       console.error(e);
-      showNotifyMessage(t("failedToDeleteOrganization"));
+      const failure = z
+        .object({
+          message: z.literal("organization_has_solely_owned_projects"),
+        })
+        .safeParse(isAxiosError<unknown>(e) ? e.response?.data : undefined);
+      showNotifyMessage(
+        t(
+          failure.success
+            ? "organizationHasSolelyOwnedProjects"
+            : "failedToDeleteOrganization"
+        )
+      );
       return false;
     }
   }
@@ -241,6 +279,7 @@ export function useBackendAdministratorOrganizationApi() {
         data: params,
       });
       showNotifyMessage(t("createdUserOrganization"));
+      await invalidateManagementPermissions(queryClient);
       return true;
     } catch (e) {
       console.error(e);
@@ -300,6 +339,7 @@ export function useBackendAdministratorOrganizationApi() {
       });
       if (response?.success) {
         showNotifyMessage(t("updatedOrganizationSlug"));
+        await invalidateManagementPermissions(queryClient);
         return true;
       }
 

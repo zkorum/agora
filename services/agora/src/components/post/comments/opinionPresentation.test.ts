@@ -25,7 +25,7 @@ describe("resolveOpinionView", () => {
         routeContext: { kind: "normal" },
         filter,
       })
-    ).toEqual({ kind: "list", filter });
+    ).toEqual({ kind: "list" });
   });
 
   it.each(["discover", "new"] satisfies CommentFilterOptions[])(
@@ -37,7 +37,7 @@ describe("resolveOpinionView", () => {
           routeContext: { kind: "normal" },
           filter,
         })
-      ).toEqual({ kind: "list", filter });
+      ).toEqual({ kind: "list" });
     }
   );
 
@@ -80,11 +80,15 @@ describe("resolveOpinionView", () => {
   it("does not apply Polis presentation to ranking", () => {
     expect(
       resolveOpinionView({
-        metadata: { conversationType: "ranking", rankingMode: "bws" },
+        metadata: {
+          conversationType: "prioritizing",
+          prioritizationType: "comparisons",
+          comparisonMethod: "bws",
+        },
         routeContext: { kind: "embed" },
         filter: "discover",
       })
-    ).toEqual({ kind: "list", filter: "discover" });
+    ).toEqual({ kind: "list" });
   });
 });
 

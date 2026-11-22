@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp } from "vue";
+import { computed, createApp, ref } from "vue";
 
 vi.mock("pinia", () => ({
   storeToRefs: () => ({ profileData: { value: { userName: "" } } }),
@@ -24,7 +24,7 @@ vi.mock("src/utils/api/comment/useCommentQueries", () => {
   };
 });
 
-vi.mock("./comments/CommentSection.vue", () => ({
+vi.mock("./comments/OpinionList.vue", () => ({
   default: { template: '<div data-testid="comment-section"></div>' },
 }));
 vi.mock("./comments/OneAtATimeSection.vue", () => ({
@@ -44,8 +44,16 @@ describe("ConversationCommentTab", () => {
 
     const app = createApp(ConversationCommentTab, {
       conversationData: undefined,
-      moderationHistoryTrigger: 0,
-      commentFilter: "discover",
+      opinionState: {
+        filter: computed(() => "discover"),
+        selectFilter: vi.fn(),
+        targetOpinion: computed(() => null),
+        highlightState: computed<{ kind: "none" }>(() => ({ kind: "none" })),
+        isResolvingLink: ref(false),
+        clearHighlight: vi.fn(),
+        highlightOpinion: vi.fn(),
+        captureHighlight: () => vi.fn(),
+      },
       onViewAnalysis: vi.fn(),
       conversationRouteContext: { kind: "normal" },
       editingOpinion: undefined,

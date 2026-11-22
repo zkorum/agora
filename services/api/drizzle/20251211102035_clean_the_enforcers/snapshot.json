@@ -1,0 +1,2161 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "359900d5-6f7c-41c2-acc3-0f63fafd3894",
+  "prevIds": [
+    "ed596691-a409-4d8b-8ef4-ea7c1cd2cadc"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "export_cancellation_reason_enum"
+      ],
+      "writes": [
+        "s|enum|public.export_cancellation_reason_enum",
+        "n|enum|public.export_cancellation_reason_enum",
+        "e|enum|public.export_cancellation_reason_enum",
+        "n|type|public.export_cancellation_reason_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "export_file_type_enum"
+      ],
+      "writes": [
+        "s|enum|public.export_file_type_enum",
+        "n|enum|public.export_file_type_enum",
+        "e|enum|public.export_file_type_enum",
+        "n|type|public.export_file_type_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "export_status_enum"
+      ],
+      "writes": [
+        "s|enum|public.export_status_enum",
+        "n|enum|public.export_status_enum",
+        "e|enum|public.export_status_enum",
+        "n|type|public.export_status_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "import_method"
+      ],
+      "writes": [
+        "s|enum|public.import_method",
+        "n|enum|public.import_method",
+        "e|enum|public.import_method",
+        "n|type|public.import_method"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "import_status_enum"
+      ],
+      "writes": [
+        "s|enum|public.import_status_enum",
+        "n|enum|public.import_status_enum",
+        "e|enum|public.import_status_enum",
+        "n|type|public.import_status_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "notification_type_enum"
+      ],
+      "writes": [
+        "s|enum|public.notification_type_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_export_file"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_export_file",
+        "n|tbl|public.conversation_export_file",
+        "e|tbl|public.conversation_export_file",
+        "n|rel|public.conversation_export_file",
+        "n|type|public.conversation_export_file",
+        "n|rel|public.conversation_export_file_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.export_file_type_enum"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_export"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_export",
+        "n|tbl|public.conversation_export",
+        "e|tbl|public.conversation_export",
+        "n|rel|public.conversation_export",
+        "n|type|public.conversation_export",
+        "n|rel|public.conversation_export_pkey",
+        "n|rel|public.conversation_export_slug_id_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.export_status_enum",
+        "n|enum|public.export_cancellation_reason_enum"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_import"
+      ],
+      "writes": [
+        "s|tbl|public.conversation_import",
+        "n|tbl|public.conversation_import",
+        "e|tbl|public.conversation_import",
+        "n|rel|public.conversation_import",
+        "n|type|public.conversation_import",
+        "n|rel|public.conversation_import_pkey",
+        "n|rel|public.conversation_import_slug_id_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.import_status_enum"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_export"
+      ],
+      "writes": [
+        "s|tbl|public.notification_export",
+        "n|tbl|public.notification_export",
+        "e|tbl|public.notification_export",
+        "n|rel|public.notification_export",
+        "n|type|public.notification_export",
+        "n|rel|public.notification_export_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_import"
+      ],
+      "writes": [
+        "s|tbl|public.notification_import",
+        "n|tbl|public.notification_import",
+        "e|tbl|public.notification_import",
+        "n|rel|public.notification_import",
+        "n|type|public.notification_import",
+        "n|rel|public.notification_import_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "is_importing"
+      ],
+      "writes": [
+        "s|col|public.conversation.is_importing",
+        "n|col|public.conversation.is_importing",
+        "e|col|public.conversation.is_importing"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "import_method"
+      ],
+      "writes": [
+        "s|col|public.conversation.import_method",
+        "n|col|public.conversation.import_method",
+        "e|col|public.conversation.import_method"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|enum|public.import_method"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export_file",
+        "conversation_export_file_export_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_file_export_idx",
+        "n|idx|public.conversation_export_file_export_idx",
+        "e|idx|public.conversation_export_file_export_idx",
+        "n|rel|public.conversation_export_file_export_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export_file",
+        "n|sch|public",
+        "n|col|public.conversation_export_file.export_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export_file",
+        "conversation_export_file_type_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_file_type_idx",
+        "n|idx|public.conversation_export_file_type_idx",
+        "e|idx|public.conversation_export_file_type_idx",
+        "n|rel|public.conversation_export_file_type_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export_file",
+        "n|sch|public",
+        "n|col|public.conversation_export_file.file_type"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export",
+        "conversation_export_conversation_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_conversation_idx",
+        "n|idx|public.conversation_export_conversation_idx",
+        "e|idx|public.conversation_export_conversation_idx",
+        "n|rel|public.conversation_export_conversation_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export",
+        "conversation_export_status_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_status_idx",
+        "n|idx|public.conversation_export_status_idx",
+        "e|idx|public.conversation_export_status_idx",
+        "n|rel|public.conversation_export_status_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export.status"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export",
+        "conversation_export_deleted_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_deleted_idx",
+        "n|idx|public.conversation_export_deleted_idx",
+        "e|idx|public.conversation_export_deleted_idx",
+        "n|rel|public.conversation_export_deleted_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export.is_deleted"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export",
+        "conversation_export_created_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_created_idx",
+        "n|idx|public.conversation_export_created_idx",
+        "e|idx|public.conversation_export_created_idx",
+        "n|rel|public.conversation_export_created_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export.created_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_export",
+        "conversation_export_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_export_user_idx",
+        "n|idx|public.conversation_export_user_idx",
+        "e|idx|public.conversation_export_user_idx",
+        "n|rel|public.conversation_export_user_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_import",
+        "conversation_import_status_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_import_status_idx",
+        "n|idx|public.conversation_import_status_idx",
+        "e|idx|public.conversation_import_status_idx",
+        "n|rel|public.conversation_import_status_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.conversation_import.status"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_import",
+        "conversation_import_created_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_import_created_idx",
+        "n|idx|public.conversation_import_created_idx",
+        "e|idx|public.conversation_import_created_idx",
+        "n|rel|public.conversation_import_created_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.conversation_import.created_at"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_import",
+        "conversation_import_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_import_user_idx",
+        "n|idx|public.conversation_import_user_idx",
+        "e|idx|public.conversation_import_user_idx",
+        "n|rel|public.conversation_import_user_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.conversation_import.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_import",
+        "conversation_import_conversation_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_import_conversation_idx",
+        "n|idx|public.conversation_import_conversation_idx",
+        "e|idx|public.conversation_import_conversation_idx",
+        "n|rel|public.conversation_import_conversation_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.conversation_import.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_export_file"
+      ],
+      "writes": [
+        "s|fk|public.conversation_export_file.conversation_export_file_export_id_conversation_export_id_fk",
+        "n|fk|public.conversation_export_file.conversation_export_file_export_id_conversation_export_id_fk",
+        "e|fk|public.conversation_export_file.conversation_export_file_export_id_conversation_export_id_fk",
+        "n|con|public.conversation_export_file.conversation_export_file_export_id_conversation_export_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export_file",
+        "n|sch|public",
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.conversation_export_file.export_id",
+        "n|col|public.conversation_export.id",
+        "e|uniqueness|public.conversation_export.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_export"
+      ],
+      "writes": [
+        "s|fk|public.conversation_export.conversation_export_conversation_id_conversation_id_fk",
+        "n|fk|public.conversation_export.conversation_export_conversation_id_conversation_id_fk",
+        "e|fk|public.conversation_export.conversation_export_conversation_id_conversation_id_fk",
+        "n|con|public.conversation_export.conversation_export_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_export.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_export"
+      ],
+      "writes": [
+        "s|fk|public.conversation_export.conversation_export_user_id_user_id_fk",
+        "n|fk|public.conversation_export.conversation_export_user_id_user_id_fk",
+        "e|fk|public.conversation_export.conversation_export_user_id_user_id_fk",
+        "n|con|public.conversation_export.conversation_export_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.conversation_export.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_import"
+      ],
+      "writes": [
+        "s|fk|public.conversation_import.conversation_import_conversation_id_conversation_id_fk",
+        "n|fk|public.conversation_import.conversation_import_conversation_id_conversation_id_fk",
+        "e|fk|public.conversation_import.conversation_import_conversation_id_conversation_id_fk",
+        "n|con|public.conversation_import.conversation_import_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_import.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_import"
+      ],
+      "writes": [
+        "s|fk|public.conversation_import.conversation_import_user_id_user_id_fk",
+        "n|fk|public.conversation_import.conversation_import_user_id_user_id_fk",
+        "e|fk|public.conversation_import.conversation_import_user_id_user_id_fk",
+        "n|con|public.conversation_import.conversation_import_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.conversation_import.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_export"
+      ],
+      "writes": [
+        "s|fk|public.notification_export.notification_export_notification_id_notification_id_fk",
+        "n|fk|public.notification_export.notification_export_notification_id_notification_id_fk",
+        "e|fk|public.notification_export.notification_export_notification_id_notification_id_fk",
+        "n|con|public.notification_export.notification_export_notification_id_notification_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_export",
+        "n|sch|public",
+        "n|tbl|public.notification",
+        "n|sch|public",
+        "n|col|public.notification_export.notification_id",
+        "n|col|public.notification.id",
+        "e|uniqueness|public.notification.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_export"
+      ],
+      "writes": [
+        "s|fk|public.notification_export.notification_export_export_id_conversation_export_id_fk",
+        "n|fk|public.notification_export.notification_export_export_id_conversation_export_id_fk",
+        "e|fk|public.notification_export.notification_export_export_id_conversation_export_id_fk",
+        "n|con|public.notification_export.notification_export_export_id_conversation_export_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_export",
+        "n|sch|public",
+        "n|tbl|public.conversation_export",
+        "n|sch|public",
+        "n|col|public.notification_export.export_id",
+        "n|col|public.conversation_export.id",
+        "e|uniqueness|public.conversation_export.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_export"
+      ],
+      "writes": [
+        "s|fk|public.notification_export.notification_export_conversation_id_conversation_id_fk",
+        "n|fk|public.notification_export.notification_export_conversation_id_conversation_id_fk",
+        "e|fk|public.notification_export.notification_export_conversation_id_conversation_id_fk",
+        "n|con|public.notification_export.notification_export_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_export",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.notification_export.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_import"
+      ],
+      "writes": [
+        "s|fk|public.notification_import.notification_import_notification_id_notification_id_fk",
+        "n|fk|public.notification_import.notification_import_notification_id_notification_id_fk",
+        "e|fk|public.notification_import.notification_import_notification_id_notification_id_fk",
+        "n|con|public.notification_import.notification_import_notification_id_notification_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_import",
+        "n|sch|public",
+        "n|tbl|public.notification",
+        "n|sch|public",
+        "n|col|public.notification_import.notification_id",
+        "n|col|public.notification.id",
+        "e|uniqueness|public.notification.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_import"
+      ],
+      "writes": [
+        "s|fk|public.notification_import.notification_import_import_id_conversation_import_id_fk",
+        "n|fk|public.notification_import.notification_import_import_id_conversation_import_id_fk",
+        "e|fk|public.notification_import.notification_import_import_id_conversation_import_id_fk",
+        "n|con|public.notification_import.notification_import_import_id_conversation_import_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_import",
+        "n|sch|public",
+        "n|tbl|public.conversation_import",
+        "n|sch|public",
+        "n|col|public.notification_import.import_id",
+        "n|col|public.conversation_import.id",
+        "e|uniqueness|public.conversation_import.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "notification_import"
+      ],
+      "writes": [
+        "s|fk|public.notification_import.notification_import_conversation_id_conversation_id_fk",
+        "n|fk|public.notification_import.notification_import_conversation_id_conversation_id_fk",
+        "e|fk|public.notification_import.notification_import_conversation_id_conversation_id_fk",
+        "n|con|public.notification_import.notification_import_conversation_id_conversation_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.notification_import",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.notification_import.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_export_file",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_export",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "conversation_import",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "notification_export",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "notification_import",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "export_cancellation_reason_enum",
+        "values": [
+          "duplicate_in_batch",
+          "cooldown_active"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "export_file_type_enum",
+        "values": [
+          "comments",
+          "votes",
+          "participants",
+          "summary",
+          "stats"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "export_status_enum",
+        "values": [
+          "processing",
+          "completed",
+          "failed",
+          "cancelled"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "import_method",
+        "values": [
+          "url",
+          "csv"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "import_status_enum",
+        "values": [
+          "processing",
+          "completed",
+          "failed"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_export_file_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "export_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "file_type",
+        "type": "export_file_type_enum",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "file_name",
+        "type": "varchar(100)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "file_size",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "record_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "s3_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_export_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "slug_id",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "status",
+        "type": "export_status_enum",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'processing'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "total_file_size",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "total_file_count",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "error_message",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "cancellation_reason",
+        "type": "export_cancellation_reason_enum",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "expires_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "is_deleted",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "conversation_import_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "slug_id",
+        "type": "varchar(8)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "status",
+        "type": "import_status_enum",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'processing'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "error_message",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "csv_file_metadata",
+        "type": "jsonb",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "is_importing",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "import_method",
+        "type": "import_method",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": "'url'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "notification_export_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "notification_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "export_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "notification_import_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "notification_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "import_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "conversation_export_file_export_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "export_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "conversation_export_file_type_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "file_type",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_conversation_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_status_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "status",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_deleted_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "is_deleted",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_created_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_user_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_status_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "status",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_created_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_user_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_conversation_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "conversation_export_file_export_id_conversation_export_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "export_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_export",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "notification_export_notification_id_notification_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "notification_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "notification",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "notification_export_export_id_conversation_export_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "export_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_export",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "notification_export_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "notification_import_notification_id_notification_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "notification_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "notification",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "notification_import_import_id_conversation_import_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "import_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation_import",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "notification_import_conversation_id_conversation_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export_file",
+        "name": "conversation_export_file_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_export",
+        "name": "notification_export_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "notification_import",
+        "name": "notification_import_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "conversation_export_slug_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "slug_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_import",
+        "name": "conversation_import_slug_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "slug_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"notification_type_enum\"]",
+      "set": {
+        "values": [
+          "opinion_vote",
+          "new_opinion",
+          "export_started",
+          "export_completed",
+          "export_failed",
+          "export_cancelled",
+          "import_started",
+          "import_completed",
+          "import_failed"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "907ac22c-cb4f-4daf-aa4c-3afed8973f6e",
+  "prevIds": [
+    "1cf17ae7-9efa-43b2-8ad7-1bd1acc57cb9"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_majority_type"
+      ],
+      "writes": [
+        "s|col|public.opinion.polis_majority_type",
+        "n|col|public.opinion.polis_majority_type",
+        "e|col|public.opinion.polis_majority_type"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|enum|public.vote_enum_simple"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion",
+        "polis_majority_ps"
+      ],
+      "writes": [
+        "s|col|public.opinion.polis_majority_ps",
+        "n|col|public.opinion.polis_majority_ps",
+        "e|col|public.opinion.polis_majority_ps"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion"
+      ],
+      "writes": [
+        "s|ck|public.opinion.check_polis_majority",
+        "n|ck|public.opinion.check_polis_majority",
+        "e|ck|public.opinion.check_polis_majority",
+        "n|con|public.opinion.check_polis_majority"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.polis_majority_type",
+        "n|col|public.opinion.polis_majority_ps"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "polis_majority_type",
+        "type": "vote_enum_simple",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "polis_majority_ps",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion",
+        "name": "check_polis_majority",
+        "value": "(\n            (\"opinion\".\"polis_majority_type\" IS NOT NULL AND \"opinion\".\"polis_majority_ps\" IS NOT NULL)\n            OR\n            (\"opinion\".\"polis_majority_type\" IS NULL AND \"opinion\".\"polis_majority_ps\" IS NULL)\n            )",
+        "entityType": "checks"
+      }
+    }
+  ]
+}

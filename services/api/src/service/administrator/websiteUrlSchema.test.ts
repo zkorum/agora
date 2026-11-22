@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { Dto } from "@/shared/types/dto.js";
+import {
+    Dto,
+    type GetAllProjectsResponse,
+    type GetOrganizationDetailsResponse,
+} from "@/shared/types/dto.js";
 import { zodHttpsUrl } from "@/shared/types/zod.js";
 
 const organization = {
@@ -9,11 +13,20 @@ const organization = {
     defaultLanguageCode: "en",
     localizations: [],
     canUseDynamicTranslation: false,
-};
+} satisfies NonNullable<GetOrganizationDetailsResponse["organization"]>;
+
+const permissions = {
+    canUpdate: false,
+    canManageMembers: false,
+    canCreateProjects: false,
+    canDelete: false,
+    canConfigureEmailUpdates: false,
+} satisfies GetOrganizationDetailsResponse["permissions"];
 
 describe("website URL schemas", () => {
     it("accepts HTTPS website URLs", () => {
         const result = Dto.getOrganizationDetailsResponse.safeParse({
+            permissions,
             organization: {
                 ...organization,
                 websiteUrl: "https://example.com",
@@ -25,6 +38,7 @@ describe("website URL schemas", () => {
 
     it("rejects HTTP website URLs", () => {
         const result = Dto.getOrganizationDetailsResponse.safeParse({
+            permissions,
             organization: {
                 ...organization,
                 websiteUrl: "http://example.com",
@@ -48,6 +62,8 @@ describe("administrator project legacy contact response", () => {
                 {
                     projectSlug: "example-project",
                     projectTitle: "Example Project",
+                    directoryVisibility: "listed",
+                    participationMode: "guest",
                     ownerOrganizationSlugs: ["example-organization"],
                     bannerIsFullPath: false,
                     contentLocalizations: [],
@@ -63,7 +79,7 @@ describe("administrator project legacy contact response", () => {
                     },
                 },
             ],
-        });
+        } satisfies GetAllProjectsResponse);
 
         expect(result.success).toBe(true);
     });

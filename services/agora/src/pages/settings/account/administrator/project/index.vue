@@ -5,34 +5,53 @@
 
   <div class="container">
     <q-tabs
+      v-if="
+        managementAccess.data.value?.permissions.canCreateProjects ||
+        managementAccess.data.value?.permissions.canManageProjects
+      "
       v-model="activeTab"
       class="admin-tabs"
       align="justify"
       active-color="primary"
       indicator-color="primary"
     >
-      <q-tab name="create" :label="t('createTab')" />
-      <q-tab name="manage" :label="t('manageTab')" />
+      <q-tab
+        v-if="managementAccess.data.value?.permissions.canCreateProjects"
+        name="create"
+        :label="t('createTab')"
+      />
+      <q-tab
+        v-if="managementAccess.data.value?.permissions.canManageProjects"
+        name="manage"
+        :label="t('manageTab')"
+      />
     </q-tabs>
 
-    <template v-if="activeTab === 'create'">
+    <template
+      v-if="
+        activeTab === 'create' &&
+        managementAccess.data.value?.permissions.canCreateProjects
+      "
+    >
       <ZKCard padding="1rem" class="card-background">
         <div class="section-title">{{ t("basicsTitle") }}</div>
         <p class="section-description">{{ t("basicsDescription") }}</p>
 
         <div class="form-grid">
-          <q-input
+          <ZKInput
             v-model="projectTitleInput"
             outlined
-            :label="requiredLabel(t('projectTitleLabel'))"
+            :label="t('projectTitleLabel')"
+            required
             autocomplete="off"
             :maxlength="MAX_LENGTH_TITLE"
             data-1p-ignore
           />
-          <q-input
+          <ZKInput
             v-model="projectSlugInput"
             outlined
-            :label="requiredLabel(t('projectSlugLabel'))"
+            :label="t('projectSlugLabel')"
+            required
             autocomplete="off"
             data-1p-ignore
             @update:model-value="hasEditedProjectSlug = true"
@@ -41,7 +60,8 @@
             v-model="ownerOrganizationSlugsSelectModel"
             multiple
             searchable
-            :label="requiredLabel(t('ownerOrganizationsLabel'))"
+            :label="t('ownerOrganizationsLabel')"
+            required
             :loading="isLoadingOrganizations"
             :disable="isLoadingOrganizations"
             :options="organizationOptions"
@@ -50,7 +70,7 @@
             v-model="subtitleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="optionalLabel(t('subtitleLabel'))"
+            :label="t('subtitleLabel')"
           />
           <div class="grid-full">
             <ProjectBodyEditor
@@ -59,12 +79,14 @@
               v-model:is-over-limit="isProjectBodyOverLimit"
               :placeholder="t('bodyLabel')"
               :disabled="false"
+              :labelled-by="undefined"
+              :required="false"
             />
           </div>
           <q-input
             v-model="bannerPathInput"
             outlined
-            :label="optionalLabel(t('bannerPathLabel'))"
+            :label="t('bannerPathLabel')"
           />
           <q-checkbox
             v-model="bannerIsFullPath"
@@ -109,8 +131,6 @@
             :machine-translation-incomplete-label="
               t('machineTranslationIncomplete')
             "
-            :required-suffix="t('requiredSuffix')"
-            :optional-suffix="t('optionalSuffix')"
             :localized-subtitle-required="createLocalizedSubtitleRequired"
             :localized-body-required="createLocalizedBodyRequired"
             :target-language-codes="
@@ -160,28 +180,38 @@
               outlined
               emit-value
               map-options
-              :label="requiredLabel(t('externalLanguageLabel'))"
+              :label="t('externalLanguageLabel')"
+              label-slot
+              v-bind="{ 'aria-required': true }"
               :hint="t('externalLanguageHint')"
               :options="displayLanguageOptions"
-            />
-            <q-input
+            >
+              <template #label
+                ><ZKFieldLabel
+                  :label="t('externalLanguageLabel')"
+                  required
+                  :required-text="undefined"
+              /></template>
+            </q-select>
+            <ZKInput
               v-model="externalDisplayNameInput"
               outlined
               :maxlength="MAX_LENGTH_NAME_CREATOR"
-              :label="requiredLabel(t('externalNameLabel'))"
+              :label="t('externalNameLabel')"
+              required
             />
             <q-input
               v-model="externalDescriptionInput"
               outlined
               autogrow
               :maxlength="MAX_LENGTH_DESCRIPTION_CREATOR"
-              :label="optionalLabel(t('externalDescriptionLabel'))"
+              :label="t('externalDescriptionLabel')"
             />
             <q-input
               v-model="externalWebsiteUrlInput"
               outlined
               type="url"
-              :label="optionalLabel(t('externalWebsiteLabel'))"
+              :label="t('externalWebsiteLabel')"
               :hint="t('websiteUrlHint')"
               :error="!isExternalWebsiteUrlValid"
               :error-message="t('websiteUrlError')"
@@ -190,7 +220,7 @@
             <q-input
               v-model="externalImagePathInput"
               outlined
-              :label="optionalLabel(t('externalImagePathLabel'))"
+              :label="t('externalImagePathLabel')"
             />
             <q-checkbox
               v-model="externalImageIsFullPath"
@@ -251,31 +281,33 @@
             v-model="contactFirstNameInput"
             outlined
             :maxlength="MAX_LENGTH_NAME_CREATOR"
-            :label="optionalLabel(t('contactFirstNameLabel'))"
+            :label="t('contactFirstNameLabel')"
           />
           <q-input
             v-model="contactLastNameInput"
             outlined
             :maxlength="MAX_LENGTH_NAME_CREATOR"
-            :label="optionalLabel(t('contactLastNameLabel'))"
+            :label="t('contactLastNameLabel')"
           />
           <q-input
             v-model="contactRoleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="optionalLabel(t('contactRoleLabel'))"
+            :label="t('contactRoleLabel')"
           />
-          <q-input
+          <ZKInput
             v-model="contactEmailInput"
             outlined
             type="email"
-            :label="contactChannelLabel(t('contactEmailLabel'))"
+            autocomplete="email"
+            :label="t('contactEmailLabel')"
+            :required="contactForm.requiresEmail"
           />
           <q-input
             v-model="contactWebsiteInput"
             outlined
             type="url"
-            :label="contactChannelLabel(t('contactWebsiteLabel'))"
+            :label="t('contactWebsiteLabel')"
             :hint="t('websiteUrlHint')"
             :error="!isContactWebsiteUrlValid"
             :error-message="t('websiteUrlError')"
@@ -284,7 +316,7 @@
           <q-input
             v-model="contactImagePathInput"
             outlined
-            :label="optionalLabel(t('contactImagePathLabel'))"
+            :label="t('contactImagePathLabel')"
           />
           <q-checkbox
             v-model="contactImageIsFullPath"
@@ -294,11 +326,7 @@
             v-model="contactOrganizationSlugSelectModel"
             clearable
             searchable
-            :label="
-              contactForm.requiresOrganization
-                ? requiredLabel(t('contactOrganizationLabel'))
-                : optionalLabel(t('contactOrganizationLabel'))
-            "
+            :label="t('contactOrganizationLabel')"
             :loading="isLoadingOrganizations"
             :disable="isLoadingOrganizations"
             :options="contactOrganizationOptions"
@@ -317,7 +345,9 @@
       />
     </template>
 
-    <template v-else>
+    <template
+      v-else-if="managementAccess.data.value?.permissions.canManageProjects"
+    >
       <ZKCard padding="1rem" class="card-background">
         <AdminSectionHeader
           :title="t('manageTitle')"
@@ -365,6 +395,7 @@
 
       <template v-if="selectedProject !== undefined">
         <ProjectConversationUpdatesActivation
+          v-if="selectedProject.permissions.canConfigureEmailUpdates"
           v-model="selectedProjectConversationUpdatesEnabled"
           activation-kind="listed-project"
           :project-title="selectedProject.projectTitle"
@@ -376,9 +407,23 @@
             selectedProjectConversationUpdatesConfiguration?.canConfigure ===
             true
           "
-          :disabled="isSavingProjectConversationUpdatesDefault"
+          :disabled="
+            isSavingProjectConversationUpdatesDefault || isSavingProject
+          "
           @edit-contact="scrollToManageContact"
-        />
+        >
+          <template v-if="selectedProject.permissions.canUpdate" #contact>
+            <ZKInput
+              v-model="manageContactEmailInput"
+              outlined
+              type="email"
+              autocomplete="email"
+              :label="t('contactEmailLabel')"
+              :disable="isSavingProject"
+              required
+            />
+          </template>
+        </ProjectConversationUpdatesActivation>
 
         <ZKInfoBanner
           v-if="conversationUpdatesConfigurationError !== undefined"
@@ -392,19 +437,22 @@
             :description="t('basicsDescription')"
           />
           <div class="form-grid">
-            <q-input
+            <ZKInput
               v-model="manageProjectTitleInput"
               outlined
-              :label="requiredLabel(t('projectTitleLabel'))"
+              :label="t('projectTitleLabel')"
+              required
               autocomplete="off"
               :maxlength="MAX_LENGTH_TITLE"
               data-1p-ignore
             />
             <ZKSelect
+              v-if="selectedProject.permissions.canManageOwners"
               v-model="manageOwnerOrganizationSlugsSelectModel"
               multiple
               searchable
-              :label="requiredLabel(t('ownerOrganizationsLabel'))"
+              :label="t('ownerOrganizationsLabel')"
+              required
               :loading="isLoadingOrganizations"
               :disable="isLoadingOrganizations"
               :options="organizationOptions"
@@ -413,7 +461,7 @@
               v-model="manageSubtitleInput"
               outlined
               :maxlength="MAX_LENGTH_TITLE"
-              :label="optionalLabel(t('subtitleLabel'))"
+              :label="t('subtitleLabel')"
             />
             <div class="grid-full">
               <ProjectBodyEditor
@@ -422,12 +470,14 @@
                 v-model:is-over-limit="isManageProjectBodyOverLimit"
                 :placeholder="t('bodyLabel')"
                 :disabled="false"
+                :labelled-by="undefined"
+                :required="false"
               />
             </div>
             <q-input
               v-model="manageBannerPathInput"
               outlined
-              :label="optionalLabel(t('bannerPathLabel'))"
+              :label="t('bannerPathLabel')"
             />
             <q-checkbox
               v-model="manageBannerIsFullPath"
@@ -472,8 +522,6 @@
               :machine-translation-incomplete-label="
                 t('machineTranslationIncomplete')
               "
-              :required-suffix="t('requiredSuffix')"
-              :optional-suffix="t('optionalSuffix')"
               :localized-subtitle-required="manageLocalizedSubtitleRequired"
               :localized-body-required="manageLocalizedBodyRequired"
               :target-language-codes="
@@ -535,28 +583,38 @@
                 outlined
                 emit-value
                 map-options
-                :label="requiredLabel(t('externalLanguageLabel'))"
+                :label="t('externalLanguageLabel')"
+                label-slot
+                v-bind="{ 'aria-required': true }"
                 :hint="t('externalLanguageHint')"
                 :options="displayLanguageOptions"
-              />
-              <q-input
+              >
+                <template #label
+                  ><ZKFieldLabel
+                    :label="t('externalLanguageLabel')"
+                    required
+                    :required-text="undefined"
+                /></template>
+              </q-select>
+              <ZKInput
                 v-model="externalDisplayNameInput"
                 outlined
                 :maxlength="MAX_LENGTH_NAME_CREATOR"
-                :label="requiredLabel(t('externalNameLabel'))"
+                :label="t('externalNameLabel')"
+                required
               />
               <q-input
                 v-model="externalDescriptionInput"
                 outlined
                 autogrow
                 :maxlength="MAX_LENGTH_DESCRIPTION_CREATOR"
-                :label="optionalLabel(t('externalDescriptionLabel'))"
+                :label="t('externalDescriptionLabel')"
               />
               <q-input
                 v-model="externalWebsiteUrlInput"
                 outlined
                 type="url"
-                :label="optionalLabel(t('externalWebsiteLabel'))"
+                :label="t('externalWebsiteLabel')"
                 :hint="t('websiteUrlHint')"
                 :error="!isExternalWebsiteUrlValid"
                 :error-message="t('websiteUrlError')"
@@ -565,7 +623,7 @@
               <q-input
                 v-model="externalImagePathInput"
                 outlined
-                :label="optionalLabel(t('externalImagePathLabel'))"
+                :label="t('externalImagePathLabel')"
               />
               <q-checkbox
                 v-model="externalImageIsFullPath"
@@ -639,31 +697,33 @@
               v-model="manageContactFirstNameInput"
               outlined
               :maxlength="MAX_LENGTH_NAME_CREATOR"
-              :label="optionalLabel(t('contactFirstNameLabel'))"
+              :label="t('contactFirstNameLabel')"
             />
             <q-input
               v-model="manageContactLastNameInput"
               outlined
               :maxlength="MAX_LENGTH_NAME_CREATOR"
-              :label="optionalLabel(t('contactLastNameLabel'))"
+              :label="t('contactLastNameLabel')"
             />
             <q-input
               v-model="manageContactRoleInput"
               outlined
               :maxlength="MAX_LENGTH_TITLE"
-              :label="optionalLabel(t('contactRoleLabel'))"
+              :label="t('contactRoleLabel')"
             />
-            <q-input
+            <ZKInput
               v-model="manageContactEmailInput"
               outlined
               type="email"
-              :label="manageContactChannelLabel(t('contactEmailLabel'))"
+              autocomplete="email"
+              :label="t('contactEmailLabel')"
+              :required="manageContactForm.requiresEmail"
             />
             <q-input
               v-model="manageContactWebsiteInput"
               outlined
               type="url"
-              :label="manageContactChannelLabel(t('contactWebsiteLabel'))"
+              :label="t('contactWebsiteLabel')"
               :hint="t('websiteUrlHint')"
               :error="!isManageContactWebsiteUrlValid"
               :error-message="t('websiteUrlError')"
@@ -672,7 +732,7 @@
             <q-input
               v-model="manageContactImagePathInput"
               outlined
-              :label="optionalLabel(t('contactImagePathLabel'))"
+              :label="t('contactImagePathLabel')"
             />
             <q-checkbox
               v-model="manageContactImageIsFullPath"
@@ -682,11 +742,7 @@
               v-model="manageContactOrganizationSlugSelectModel"
               clearable
               searchable
-              :label="
-                manageContactForm.requiresOrganization
-                  ? requiredLabel(t('contactOrganizationLabel'))
-                  : optionalLabel(t('contactOrganizationLabel'))
-              "
+              :label="t('contactOrganizationLabel')"
               :loading="isLoadingOrganizations"
               :disable="isLoadingOrganizations"
               :options="contactOrganizationOptions"
@@ -705,10 +761,18 @@
           />
         </div>
 
-        <ZKCard padding="0" class="card-background danger-zone-card">
+        <ZKCard
+          v-if="
+            selectedProject.permissions.canUpdate ||
+            selectedProject.permissions.canDelete
+          "
+          padding="0"
+          class="card-background danger-zone-card"
+        >
           <div class="danger-zone-title">{{ t("dangerZoneTitle") }}</div>
 
           <form
+            v-if="selectedProject.permissions.canUpdate"
             class="danger-zone-row"
             @submit.prevent="requestProjectSlugUpdate"
           >
@@ -719,12 +783,13 @@
               <div class="danger-zone-description">
                 {{ t("changeSlugDangerDescription") }}
               </div>
-              <q-input
+              <ZKInput
                 v-model="selectedProjectSlugDraftInput"
                 class="danger-zone-input"
                 outlined
                 dense
-                :label="requiredLabel(t('projectSlugLabel'))"
+                :label="t('projectSlugLabel')"
+                required
                 autocomplete="off"
                 data-1p-ignore
               />
@@ -741,7 +806,10 @@
             />
           </form>
 
-          <div class="danger-zone-row">
+          <div
+            v-if="selectedProject.permissions.canDelete"
+            class="danger-zone-row"
+          >
             <div class="danger-zone-content">
               <div class="danger-zone-row-title">
                 {{ t("deleteDangerTitle") }}
@@ -830,11 +898,14 @@ import ConversationLanguageSettingDialog from "src/components/newConversation/di
 import ConversationLanguageSettingsRow from "src/components/newConversation/dialog/ConversationLanguageSettingsRow.vue";
 import ZKCard from "src/components/ui-library/ZKCard.vue";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
+import ZKFieldLabel from "src/components/ui-library/ZKFieldLabel.vue";
 import ZKInfoBanner from "src/components/ui-library/ZKInfoBanner.vue";
+import ZKInput from "src/components/ui-library/ZKInput.vue";
 import ZKSelect from "src/components/ui-library/ZKSelect.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+import type { ProjectManagementPermissions } from "src/shared/organizationAccess";
 import {
   MAX_LENGTH_DESCRIPTION_CREATOR,
   MAX_LENGTH_NAME_CREATOR,
@@ -863,16 +934,11 @@ import { useLanguageStore } from "src/stores/language";
 import { useBackendAdministratorOrganizationApi } from "src/utils/api/administrator/organization";
 import { useBackendAdministratorProjectApi } from "src/utils/api/administrator/project";
 import { useBackendConversationEmailUpdatesApi } from "src/utils/api/conversationUpdates/conversationEmailUpdates";
+import { useManagementAccess } from "src/utils/api/useManagementAccess";
+import { useViewerQueryScope } from "src/utils/query/viewerScope";
 import { useNotify } from "src/utils/ui/notify";
 import { isOptionalHttpsUrl } from "src/utils/url";
-import {
-  computed,
-  onMounted,
-  type Ref,
-  ref,
-  watch,
-  type WritableComputedRef,
-} from "vue";
+import { computed, type Ref, ref, watch, type WritableComputedRef } from "vue";
 
 import { displayLanguageOptions } from "../organization/organizationAdminForm";
 import {
@@ -922,12 +988,16 @@ const {
   updateProjectSlug,
 } = useBackendAdministratorProjectApi();
 const languageStore = useLanguageStore();
+const managementAccess = useManagementAccess();
+const viewerScope = useViewerQueryScope();
 const $q = useQuasar();
 const { showNotifyMessage, showCopiedToClipboard } = useNotify();
 
 const organizationList = ref<AdminOrganizationOption[]>([]);
 const projectOptionList = ref<AdminProjectOption[]>([]);
-const selectedProject = ref<AdminProject | undefined>(undefined);
+const selectedProject = ref<
+  (AdminProject & { permissions: ProjectManagementPermissions }) | undefined
+>(undefined);
 type ProjectConversationUpdatesConfiguration = Extract<
   Extract<
     ConversationEmailUpdateConfigurationResponse,
@@ -943,13 +1013,47 @@ const conversationUpdatesConfigurationError = ref<string | undefined>(
   undefined
 );
 const isSavingProjectConversationUpdatesDefault = ref(false);
+const pendingConversationUpdatesProjectSlug = ref<string>();
+const hasPendingConversationUpdatesActivation = computed(
+  () =>
+    pendingConversationUpdatesProjectSlug.value !== undefined &&
+    pendingConversationUpdatesProjectSlug.value === selectedProjectSlug.value
+);
 let conversationUpdatesConfigurationRequestId = 0;
 let conversationUpdatesMutationGeneration = 0;
 const selectedProjectConversationUpdatesEnabled = computed({
   get: () =>
-    selectedProjectConversationUpdatesConfiguration.value?.defaultEnabled ??
-    false,
+    hasPendingConversationUpdatesActivation.value ||
+    (selectedProjectConversationUpdatesConfiguration.value?.projectSlug ===
+      selectedProjectSlug.value &&
+      selectedProjectConversationUpdatesConfiguration.value?.defaultEnabled ===
+        true),
   set: (enabled: boolean) => {
+    const configuration = selectedProjectConversationUpdatesConfiguration.value;
+    if (
+      configuration === undefined ||
+      configuration.projectSlug !== selectedProjectSlug.value ||
+      !configuration.canConfigure ||
+      isSavingProject.value ||
+      isSavingProjectConversationUpdatesDefault.value
+    ) {
+      return;
+    }
+    if (hasPendingConversationUpdatesActivation.value && !enabled) {
+      pendingConversationUpdatesProjectSlug.value = undefined;
+      if (!configuration.defaultEnabled) return;
+    }
+    if (enabled === configuration.defaultEnabled) {
+      return;
+    }
+    if (
+      enabled &&
+      selectedProject.value?.permissions.canUpdate &&
+      configuration.participantContactEmail === undefined
+    ) {
+      pendingConversationUpdatesProjectSlug.value = configuration.projectSlug;
+      return;
+    }
     void updateSelectedProjectConversationUpdatesDefault(enabled);
   },
 });
@@ -991,7 +1095,7 @@ const contactImageIsFullPath = ref(true);
 const contactOrganizationSlug = ref<string | null>(null);
 const isCreating = ref(false);
 const isDeletingProject = ref(false);
-const activeTab = ref<"create" | "manage">("create");
+const activeTab = ref<"create" | "manage">("manage");
 const selectedProjectSlug = ref<string | undefined>(undefined);
 const selectedProjectSlugDraft = ref("");
 const manageProjectTitle = ref("");
@@ -1017,6 +1121,8 @@ const isSavingProject = ref(false);
 const editingManageAttributionIndex = ref<number | undefined>();
 let isPopulatingManageProject = false;
 let latestProjectDetailsRequest = 0;
+let latestProjectOptionsRequest = 0;
+let latestOrganizationOptionsRequest = 0;
 const showCreateLanguageSettingDialog = ref(false);
 const showManageLanguageSettingDialog = ref(false);
 const showProjectSlugConfirmDialog = ref(false);
@@ -1199,13 +1305,13 @@ const manageLocalizedSubtitleRequired = computed(
 
 const externalLocalizationEditorLabels = computed(() => ({
   title: t("additionalLanguagesTitle"),
-  languageLabel: requiredLabel(t("externalLanguageLabel")),
-  nameLabel: requiredLabel(t("externalNameLabel")),
-  descriptionLabel: optionalLabel(t("externalDescriptionLabel")),
-  websiteLabel: optionalLabel(t("externalWebsiteLabel")),
+  languageLabel: t("externalLanguageLabel"),
+  nameLabel: t("externalNameLabel"),
+  descriptionLabel: t("externalDescriptionLabel"),
+  websiteLabel: t("externalWebsiteLabel"),
   websiteHint: t("websiteUrlHint"),
   websiteError: t("websiteUrlError"),
-  imagePathLabel: optionalLabel(t("externalImagePathLabel")),
+  imagePathLabel: t("externalImagePathLabel"),
   imageIsFullPathLabel: t("externalImageIsFullPathLabel"),
   addLanguageButton: t("addLanguageButton"),
   removeButton: t("removeButton"),
@@ -1297,6 +1403,7 @@ const manageContactForm = computed(() =>
     lastName: manageContactLastName.value,
     roleLabel: manageContactRole.value,
     email: manageContactEmail.value,
+    asksParticipants: selectedProjectConversationUpdatesEnabled.value,
     websiteUrl: manageContactWebsite.value,
     imagePath: manageContactImagePath.value,
     isFullImagePath: manageContactImageIsFullPath.value,
@@ -1320,6 +1427,10 @@ const canSaveProject = computed(
   () =>
     selectedProject.value !== undefined &&
     !isSavingProject.value &&
+    !isSavingProjectConversationUpdatesDefault.value &&
+    (!hasPendingConversationUpdatesActivation.value ||
+      selectedProjectConversationUpdatesConfiguration.value?.canConfigure ===
+        true) &&
     manageProjectTitle.value.trim() !== "" &&
     manageOwnerOrganizationSlugs.value.length > 0 &&
     !isManageProjectBodyOverLimit.value &&
@@ -1463,71 +1574,122 @@ watch(
   }
 );
 
-watch(activeTab, async (tab) => {
-  if (
-    tab === "manage" &&
-    projectOptionList.value.length === 0 &&
-    !isLoadingProjects.value
-  ) {
-    await refreshProjects();
-  }
-});
+watch(
+  viewerScope,
+  () => {
+    latestProjectDetailsRequest += 1;
+    latestProjectOptionsRequest += 1;
+    latestOrganizationOptionsRequest += 1;
+    conversationUpdatesConfigurationRequestId += 1;
+    conversationUpdatesMutationGeneration += 1;
+    selectedProject.value = undefined;
+    selectedProjectSlug.value = undefined;
+    selectedProjectConversationUpdatesConfiguration.value = undefined;
+    projectOptionList.value = [];
+    organizationList.value = [];
+    ownerOrganizationSlugs.value = [];
+    isLoadingProjects.value = false;
+    isLoadingOrganizations.value = false;
+  },
+  { flush: "sync" }
+);
+
+watch(
+  [activeTab, isActive, managementAccess.dataUpdatedAt],
+  async ([tab, active]) => {
+    const canManage =
+      managementAccess.data.value?.permissions.canManageProjects === true;
+    const canCreate =
+      managementAccess.data.value?.permissions.canCreateProjects === true;
+    if (tab === "create" && !canCreate && canManage) activeTab.value = "manage";
+    if (tab === "manage" && !canManage && canCreate) activeTab.value = "create";
+    if (!canManage) {
+      latestProjectDetailsRequest += 1;
+      latestProjectOptionsRequest += 1;
+      pendingConversationUpdatesProjectSlug.value = undefined;
+      selectedProject.value = undefined;
+      projectOptionList.value = [];
+      isLoadingProjects.value = false;
+      return;
+    }
+    if (active && tab === "manage") {
+      await refreshProjects({ preserveDraft: true });
+    }
+  },
+  { immediate: true }
+);
 
 watch(selectedProjectSlug, async (projectSlug) => {
-  await refreshSelectedProjectDetails(projectSlug);
+  pendingConversationUpdatesProjectSlug.value = undefined;
+  await refreshSelectedProjectDetails({ projectSlug });
 });
 
-watch(selectedProject, async (project) => {
-  const requestId = ++conversationUpdatesConfigurationRequestId;
-  conversationUpdatesMutationGeneration += 1;
-  isSavingProjectConversationUpdatesDefault.value = false;
-  selectedProjectConversationUpdatesConfiguration.value = undefined;
-  conversationUpdatesConfigurationError.value = undefined;
-  if (project === undefined) {
-    return;
-  }
-  try {
-    const response = await conversationEmailUpdatesApi.getConfiguration({
-      target: "project",
-      projectSlug: project.projectSlug,
-    });
-    if (requestId !== conversationUpdatesConfigurationRequestId) {
-      return;
-    }
+watch(
+  [
+    selectedProject,
+    () => selectedProject.value?.permissions.canConfigureEmailUpdates,
+  ],
+  async ([project]) => {
+    const requestId = ++conversationUpdatesConfigurationRequestId;
+    conversationUpdatesMutationGeneration += 1;
+    isSavingProjectConversationUpdatesDefault.value = false;
+    selectedProjectConversationUpdatesConfiguration.value = undefined;
+    conversationUpdatesConfigurationError.value = undefined;
     if (
-      !response.success ||
-      response.configuration.target !== "project" ||
-      response.configuration.projectSlug !== project.projectSlug
+      project === undefined ||
+      !project.permissions.canConfigureEmailUpdates
     ) {
-      conversationUpdatesConfigurationError.value = tConversationUpdates(
-        "configurationUnavailable"
-      );
+      pendingConversationUpdatesProjectSlug.value = undefined;
       return;
     }
-    selectedProjectConversationUpdatesConfiguration.value =
-      response.configuration;
-  } catch (error) {
-    console.error("Failed to load project Email Update configuration", error);
-    if (requestId === conversationUpdatesConfigurationRequestId) {
-      conversationUpdatesConfigurationError.value = tConversationUpdates(
-        "configurationUnavailable"
-      );
+    try {
+      const response = await conversationEmailUpdatesApi.getConfiguration({
+        target: "project",
+        projectSlug: project.projectSlug,
+      });
+      if (requestId !== conversationUpdatesConfigurationRequestId) {
+        return;
+      }
+      if (
+        !response.success ||
+        response.configuration.target !== "project" ||
+        response.configuration.projectSlug !== project.projectSlug
+      ) {
+        pendingConversationUpdatesProjectSlug.value = undefined;
+        conversationUpdatesConfigurationError.value = tConversationUpdates(
+          "configurationUnavailable"
+        );
+        return;
+      }
+      selectedProjectConversationUpdatesConfiguration.value =
+        response.configuration;
+      if (!response.configuration.canConfigure) {
+        pendingConversationUpdatesProjectSlug.value = undefined;
+      }
+    } catch {
+      if (requestId === conversationUpdatesConfigurationRequestId) {
+        pendingConversationUpdatesProjectSlug.value = undefined;
+        conversationUpdatesConfigurationError.value = tConversationUpdates(
+          "configurationUnavailable"
+        );
+      }
     }
   }
-});
+);
 
 async function updateSelectedProjectConversationUpdatesDefault(
   enabled: boolean
-): Promise<void> {
+): Promise<boolean> {
   const configuration = selectedProjectConversationUpdatesConfiguration.value;
   if (
     configuration === undefined ||
     !configuration.canConfigure ||
-    isSavingProjectConversationUpdatesDefault.value ||
-    enabled === configuration.defaultEnabled
+    configuration.projectSlug !== selectedProjectSlug.value ||
+    isSavingProjectConversationUpdatesDefault.value
   ) {
-    return;
+    return false;
   }
+  if (enabled === configuration.defaultEnabled) return true;
   const projectSlug = configuration.projectSlug;
   const generation = ++conversationUpdatesMutationGeneration;
   isSavingProjectConversationUpdatesDefault.value = true;
@@ -1543,7 +1705,7 @@ async function updateSelectedProjectConversationUpdatesDefault(
       defaultEnabled: enabled,
     });
     if (!isCurrentConversationUpdatesMutation({ generation, projectSlug })) {
-      return;
+      return false;
     }
     if (
       !response.success ||
@@ -1552,7 +1714,7 @@ async function updateSelectedProjectConversationUpdatesDefault(
     ) {
       selectedProjectConversationUpdatesConfiguration.value = configuration;
       showNotifyMessage(tConversationUpdates("defaultSaveError"));
-      return;
+      return false;
     }
     selectedProjectConversationUpdatesConfiguration.value =
       response.configuration;
@@ -1563,13 +1725,14 @@ async function updateSelectedProjectConversationUpdatesDefault(
           : "defaultDisabledSaved"
       )
     );
-  } catch (error) {
+    return true;
+  } catch {
     if (!isCurrentConversationUpdatesMutation({ generation, projectSlug })) {
-      return;
+      return false;
     }
-    console.error("Failed to save project Email Update configuration", error);
     selectedProjectConversationUpdatesConfiguration.value = configuration;
     showNotifyMessage(tConversationUpdates("defaultSaveError"));
+    return false;
   } finally {
     if (isCurrentConversationUpdatesMutation({ generation, projectSlug })) {
       isSavingProjectConversationUpdatesDefault.value = false;
@@ -1586,6 +1749,7 @@ function isCurrentConversationUpdatesMutation({
 }): boolean {
   return (
     generation === conversationUpdatesMutationGeneration &&
+    selectedProjectSlug.value === projectSlug &&
     selectedProject.value?.projectSlug === projectSlug &&
     selectedProjectConversationUpdatesConfiguration.value?.projectSlug ===
       projectSlug
@@ -1660,41 +1824,36 @@ watch(selectedProject, (project) => {
   isPopulatingManageProject = false;
 });
 
-onMounted(async () => {
-  isLoadingOrganizations.value = true;
-  try {
-    organizationList.value = await getOrganizationOptions();
-  } finally {
-    isLoadingOrganizations.value = false;
-  }
-  if (activeTab.value === "manage") {
-    await refreshProjects();
-  }
-});
+watch(
+  [isActive, managementAccess.dataUpdatedAt],
+  async ([active]) => {
+    const requestId = ++latestOrganizationOptionsRequest;
+    if (managementAccess.data.value?.permissions.canCreateProjects !== true) {
+      organizationList.value = [];
+      isLoadingOrganizations.value = false;
+      return;
+    }
+    if (!active) return;
+    isLoadingOrganizations.value = true;
+    try {
+      const organizations = await getOrganizationOptions({
+        forProjectCreation: true,
+      });
+      if (requestId === latestOrganizationOptionsRequest) {
+        organizationList.value = organizations;
+      }
+    } finally {
+      if (requestId === latestOrganizationOptionsRequest) {
+        isLoadingOrganizations.value = false;
+      }
+    }
+  },
+  { immediate: true }
+);
 
 function optionalString(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed === "" ? undefined : trimmed;
-}
-
-function requiredLabel(label: string): string {
-  return `${label} (${t("requiredSuffix")})`;
-}
-
-function optionalLabel(label: string): string {
-  return `${label} (${t("optionalSuffix")})`;
-}
-
-function contactChannelLabel(label: string): string {
-  return contactForm.value.requiresChannel
-    ? requiredLabel(label)
-    : optionalLabel(label);
-}
-
-function manageContactChannelLabel(label: string): string {
-  return manageContactForm.value.requiresChannel
-    ? requiredLabel(label)
-    : optionalLabel(label);
 }
 
 function stringInputModel(
@@ -1825,12 +1984,17 @@ function hasProjectOwnerDynamicTranslationEntitlement({
 
 async function refreshProjects({
   refreshSelectedDetails = true,
+  preserveDraft = false,
 }: {
   refreshSelectedDetails?: boolean;
+  preserveDraft?: boolean;
 } = {}): Promise<void> {
+  const requestId = ++latestProjectOptionsRequest;
   isLoadingProjects.value = true;
   try {
-    projectOptionList.value = await getProjectOptions();
+    const projects = await getProjectOptions();
+    if (requestId !== latestProjectOptionsRequest) return;
+    projectOptionList.value = projects;
     const shouldSelectFallbackProject =
       selectedProjectSlug.value === undefined ||
       !projectOptionList.value.some(
@@ -1845,21 +2009,34 @@ async function refreshProjects({
         return;
       }
 
-      await refreshSelectedProjectDetails(nextProjectSlug);
+      await refreshSelectedProjectDetails({
+        projectSlug: nextProjectSlug,
+        preserveDraft,
+      });
       return;
     }
 
     selectedProjectSlug.value = nextProjectSlug;
   } finally {
-    isLoadingProjects.value = false;
+    if (requestId === latestProjectOptionsRequest) {
+      isLoadingProjects.value = false;
+    }
   }
 }
 
-async function refreshSelectedProjectDetails(
-  projectSlug: string | undefined
-): Promise<void> {
+async function refreshSelectedProjectDetails({
+  projectSlug,
+  preserveDraft = false,
+}: {
+  projectSlug: string | undefined;
+  preserveDraft?: boolean;
+}): Promise<void> {
   latestProjectDetailsRequest += 1;
   const requestId = latestProjectDetailsRequest;
+
+  if (selectedProject.value?.projectSlug !== projectSlug) {
+    selectedProject.value = undefined;
+  }
 
   if (projectSlug === undefined) {
     selectedProject.value = undefined;
@@ -1868,7 +2045,15 @@ async function refreshSelectedProjectDetails(
 
   const project = await getProjectDetails({ projectSlug });
   if (requestId === latestProjectDetailsRequest) {
-    selectedProject.value = project;
+    if (
+      preserveDraft &&
+      project !== undefined &&
+      selectedProject.value?.projectSlug === project.projectSlug
+    ) {
+      selectedProject.value.permissions = project.permissions;
+    } else {
+      selectedProject.value = project;
+    }
   }
 }
 
@@ -2285,11 +2470,23 @@ async function saveSelectedProject(): Promise<void> {
     const updatedProjectSlug = await updateProject(
       buildUpdateRequest({ project, contact: contact.data })
     );
-    if (updatedProjectSlug !== undefined) {
-      showProjectSlugConfirmDialog.value = false;
-      selectedProjectSlug.value = updatedProjectSlug;
-      await refreshProjects();
+    if (
+      updatedProjectSlug === undefined ||
+      selectedProjectSlug.value !== project.projectSlug
+    ) {
+      return;
     }
+    // A failed activation leaves the choice visible so Save can retry it.
+    if (
+      hasPendingConversationUpdatesActivation.value &&
+      (await updateSelectedProjectConversationUpdatesDefault(true))
+    ) {
+      pendingConversationUpdatesProjectSlug.value = undefined;
+    }
+    if (selectedProjectSlug.value !== project.projectSlug) return;
+    showProjectSlugConfirmDialog.value = false;
+    selectedProjectSlug.value = updatedProjectSlug;
+    await refreshProjects();
   } finally {
     isSavingProject.value = false;
   }

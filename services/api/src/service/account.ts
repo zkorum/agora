@@ -2,21 +2,22 @@ import { log } from "@/app.js";
 import {
     userTable,
     zkPassportTable,
-    eventTicketTable,
     phoneTable,
     emailTable,
-    opinionTable,
-    conversationTable,
 } from "@/shared-backend/schema.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import { nowZeroMs } from "@/shared/util.js";
 import { revokeAllSessionsWithinTransaction } from "./authSession.js";
 import { httpErrors } from "@fastify/sensible";
 import { MAX_LENGTH_USERNAME } from "@/shared/shared.js";
-import { scheduleConversationAnalysisRefresh } from "@/shared-backend/conversationCounters.js";
+import { lockAccountConversations } from "@/shared-backend/accountContributions.js";
 import { cancelPendingOpinionTranslationWorkForUser } from "@/shared-backend/contentTranslationWork.js";
-import { queueOpinionRedactedEvent } from "./realtimeEventOutbox.js";
+import { applyAccountLiveInputChange } from "./accountLiveInputs.js";
+import { retireAccountDefaultResources } from "./accountOrganizationLifecycle.js";
+import type { Dto } from "@/shared/types/dto.js";
+import type { z } from "zod";
 
 interface CheckUserNameExistProps {
     db: PostgresJsDatabase;
@@ -616,55 +617,75 @@ interface DeleteAccountProps {
     userId: string;
 }
 
-interface ConversationSourceChanges {
-    slugId: string;
-    inputsChanged: boolean;
-    opinions: Parameters<typeof queueOpinionRedactedEvent>[0]["opinions"];
-}
-
-export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
-    // TODO: 1. confirmation should be requested upon account deletion request (phone number or ZKP)
-    // delay should be given for people to recover their account - so data should not be set to be deleted immediately even though it should immediately not show on the client anymore
-    // 2. conversation deletion should not necessarily delete other people's opinion
-    // 3. opinion deletion should not necessarily delete other people's replies
-    await db.transaction(async (tx) => {
-        const now = nowZeroMs();
-        const updatedUserTableResponse = await tx
-            .update(userTable)
-            .set({
-                isDeleted: true,
-                deletedAt: now,
-                updatedAt: now,
-            })
+export async function deleteUserAccount({
+    db,
+    userId,
+}: DeleteAccountProps): Promise<z.infer<typeof Dto.deleteUserAccountResponse>> {
+    return await getPrimaryDatabase(db).transaction(async (tx) => {
+        const activeUsers = await tx
+            .select({ id: userTable.id })
+            .from(userTable)
             .where(
                 and(eq(userTable.id, userId), eq(userTable.isDeleted, false)),
             )
-            .returning({ id: userTable.id });
-
-        // Repeated requests must not restart recovery time or enqueue the same
-        // input change twice. Credential/session changes commit with this row.
-        if (updatedUserTableResponse.length === 0) return;
+            .for("no key update");
+        // Repeated requests preserve the original deletion time and input generation.
+        if (activeUsers.length === 0) return { success: true };
+        // Account/source triggers acquire AI/scoring fences. Conversation locks
+        // must precede that mutation, matching statement edits and vote persistence.
+        await lockAccountConversations({ db: tx, userId });
+        const resources = await retireAccountDefaultResources({
+            db: tx,
+            userId,
+        });
+        if (!resources.success) return resources;
+        const now = resources.now;
+        const recoverableUntil = new Date(
+            now.getTime() + 15 * 24 * 60 * 60 * 1000,
+        );
+        await tx
+            .update(userTable)
+            .set({
+                isDeleted: true,
+                contributionRevision: sql`${userTable.contributionRevision} + 1`,
+                deletedAt: now,
+                deletionReason: "account_deletion",
+                deletionRequestedAt: now,
+                recoverableUntil,
+                updatedAt: now,
+            })
+            .where(eq(userTable.id, userId));
 
         // Update denormalized isDeleted flag in credential tables
         await tx
             .update(zkPassportTable)
-            .set({ isDeleted: true, updatedAt: now })
-            .where(eq(zkPassportTable.userId, userId));
-
-        await tx
-            .update(eventTicketTable)
-            .set({ isDeleted: true, updatedAt: now })
-            .where(eq(eventTicketTable.userId, userId));
+            .set({ isDeleted: true, reservedForRecovery: true, updatedAt: now })
+            .where(
+                and(
+                    eq(zkPassportTable.userId, userId),
+                    eq(zkPassportTable.isDeleted, false),
+                ),
+            );
 
         await tx
             .update(phoneTable)
-            .set({ isDeleted: true, updatedAt: now })
-            .where(eq(phoneTable.userId, userId));
+            .set({ isDeleted: true, reservedForRecovery: true, updatedAt: now })
+            .where(
+                and(
+                    eq(phoneTable.userId, userId),
+                    eq(phoneTable.isDeleted, false),
+                ),
+            );
 
         await tx
             .update(emailTable)
-            .set({ isDeleted: true, updatedAt: now })
-            .where(eq(emailTable.userId, userId));
+            .set({ isDeleted: true, reservedForRecovery: true, updatedAt: now })
+            .where(
+                and(
+                    eq(emailTable.userId, userId),
+                    eq(emailTable.isDeleted, false),
+                ),
+            );
 
         await cancelPendingOpinionTranslationWorkForUser({
             db: tx,
@@ -672,62 +693,17 @@ export async function deleteUserAccount({ db, userId }: DeleteAccountProps) {
             now,
         });
 
-        // Account hiding affects personal statement columns and attribution,
-        // not retained votes or project/organization-owned conversations.
-        const userOpinions = await tx
-            .select({
-                conversationId: opinionTable.conversationId,
-                conversationSlugId: conversationTable.slugId,
-                slugId: opinionTable.slugId,
-                isSeed: opinionTable.isSeed,
-                currentContentId: opinionTable.currentContentId,
-            })
-            .from(opinionTable)
-            .innerJoin(
-                conversationTable,
-                eq(conversationTable.id, opinionTable.conversationId),
-            )
-            .where(eq(opinionTable.authorId, userId))
-            .orderBy(opinionTable.conversationId, opinionTable.id);
-        const changesByConversation = new Map<
-            number,
-            ConversationSourceChanges
-        >();
-        for (const opinion of userOpinions) {
-            const changes: ConversationSourceChanges =
-                changesByConversation.get(opinion.conversationId) ?? {
-                    slugId: opinion.conversationSlugId,
-                    inputsChanged: false,
-                    opinions: [],
-                };
-            changes.opinions.push({
-                opinionSlugId: opinion.slugId,
-                action: opinion.isSeed ? "unlink_author" : "redact",
-            });
-            changes.inputsChanged ||=
-                !opinion.isSeed && opinion.currentContentId !== null;
-            changesByConversation.set(opinion.conversationId, changes);
-        }
-        for (const [conversationId, changes] of changesByConversation) {
-            await queueOpinionRedactedEvent({
-                db: tx,
-                conversationSlugId: changes.slugId,
-                opinions: changes.opinions,
-            });
-            if (changes.inputsChanged) {
-                await scheduleConversationAnalysisRefresh({
-                    db: tx,
-                    conversationId,
-                    log,
-                });
-            }
-        }
-
+        await applyAccountLiveInputChange({
+            db: tx,
+            userId,
+            change: { type: "hide", hiddenAt: now },
+        });
         await revokeAllSessionsWithinTransaction({
             db: tx,
             userId,
             now,
             reason: "account_deleted",
         });
+        return { success: true };
     });
 }

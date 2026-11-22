@@ -291,7 +291,7 @@ export async function createExerciseDatabase({
     });
     await client`select 1`;
     return {
-        db: drizzle(client),
+        db: drizzle({ client }),
         close: async () => {
             await client.end({ timeout: 5 });
         },

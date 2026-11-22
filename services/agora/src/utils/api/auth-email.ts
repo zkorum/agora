@@ -28,6 +28,7 @@ interface SendEmailCodeProps {
 }
 
 interface VerifyEmailOtpProps {
+  recoverAccount?: boolean;
   code: number;
   email: string;
 }
@@ -86,6 +87,7 @@ export function useAuthEmailApi() {
     | AxiosErrorResponse;
 
   async function verifyEmailOtp({
+    recoverAccount = false,
     code,
     email,
   }: VerifyEmailOtpProps): Promise<VerifyEmailOtpResponse> {
@@ -99,9 +101,12 @@ export function useAuthEmailApi() {
     }
 
     try {
-      const params: ApiV1AuthEmailVerifyOtpPostRequest = {
+      const params = {
         code: code,
         email: canonicalEmail,
+        recoverAccount,
+      } satisfies ApiV1AuthEmailVerifyOtpPostRequest & {
+        recoverAccount: boolean;
       };
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1AuthEmailVerifyOtpPost(params);

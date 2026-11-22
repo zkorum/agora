@@ -384,7 +384,7 @@ describe("conversation email update action service", () => {
             password: "postgres",
             max: 4,
         });
-        db = drizzle(sqlClient);
+        db = drizzle({ client: sqlClient });
         service = createConversationEmailUpdateActionService({ db });
         await sqlClient.unsafe(`
             CREATE TABLE "user" ("id" uuid PRIMARY KEY);

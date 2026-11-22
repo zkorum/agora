@@ -5,6 +5,8 @@
       v-model:plain-text="plainText"
       outlined
       :placeholder="placeholder"
+      :aria-labelledby="labelledBy"
+      :required="required"
       min-height="12rem"
       :show-toolbar="true"
       :single-line="false"
@@ -23,6 +25,8 @@ import { MAX_LENGTH_CONVERSATION_BODY } from "src/shared/shared";
 defineProps<{
   placeholder: string;
   disabled: boolean;
+  labelledBy: string | undefined;
+  required: boolean;
 }>();
 
 const body = defineModel<string>({ required: true });

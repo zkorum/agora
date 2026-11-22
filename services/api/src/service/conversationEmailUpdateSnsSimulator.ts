@@ -61,7 +61,7 @@ async function loadSimulatorCorrelation({
                 )
                 .limit(1)
         ).at(0);
-        if (row === undefined) return { kind: "attempt_not_found" };
+        if (row?.destinationEmail == null) return { kind: "attempt_not_found" };
         if (row.providerMessageId === null) {
             return { kind: "provider_message_not_available" };
         }

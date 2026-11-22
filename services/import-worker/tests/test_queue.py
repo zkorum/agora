@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from unittest.mock import Mock
 from uuid import UUID
@@ -14,6 +15,84 @@ from import_worker.queue import (
     pop_import_requests,
     serialize_import_event,
 )
+
+
+class LegacyQueue:
+    def __init__(self, *, unexpected_key: bool = False, raw_payload: str | None = None) -> None:
+        self.unexpected_key = unexpected_key
+        self.raw_payload = raw_payload
+
+    def lpop(self, name: str, count: int | None = None) -> str:
+        if self.raw_payload is not None:
+            return self.raw_payload
+        form_data: dict[str, object] = {
+            "participationMode": "email_verification",
+            "isIndexed": False,
+            "requiresEventTicket": "devconnect-2025",
+            "languageTargetPolicy": {
+                "source": "conversation_override",
+                "dynamicTranslationEnabled": False,
+                "manualTargetLanguageCodes": [],
+            },
+        }
+        if self.unexpected_key:
+            form_data["misspelledSetting"] = True
+        return json.dumps(
+            {
+                "type": "url",
+                "importSlugId": "abc12345",
+                "userId": "00000000-0000-4000-8000-000000000001",
+                "actorUserId": "00000000-0000-4000-8000-000000000001",
+                "projectId": 1,
+                "didWrite": "did:key:guest",
+                "polisUrl": "https://pol.is/example",
+                "formData": form_data,
+            }
+        )
+
+    def llen(self, name: str) -> int:
+        return 1
+
+    def rpush(self, name: str, *values: str) -> int:
+        return 0
+
+    def zadd(self, name: str, mapping: dict[str, int], nx: bool = False) -> int:
+        return 0
+
+    def close(self) -> None:
+        pass
+
+
+def test_legacy_import_discards_only_the_retired_ticket_setting() -> None:
+    batch = pop_import_requests(LegacyQueue(), count=1)
+    assert not batch.invalid_items
+    assert len(batch.requests) == 1
+    request = batch.requests[0]
+    assert request.form_data.participation_mode == "email_verification"
+    assert request.form_data.is_indexed is False
+    assert "requiresEventTicket" not in request.form_data.model_dump(by_alias=True)
+
+
+def test_legacy_normalization_keeps_unknown_settings_invalid() -> None:
+    batch = pop_import_requests(LegacyQueue(unexpected_key=True), count=1)
+    assert not batch.requests
+    assert len(batch.invalid_items) == 1
+
+
+@pytest.mark.parametrize("raw_payload", ["{", "[]", "null", '"not an import"'])
+def test_invalid_payloads_are_reported_without_crashing_the_consumer(raw_payload: str) -> None:
+    batch = pop_import_requests(LegacyQueue(raw_payload=raw_payload), count=1)
+    assert not batch.requests
+    assert len(batch.invalid_items) == 1
+
+
+@pytest.mark.parametrize(
+    "raw_payload", ['{"private": "private-import-text"', '{"formData": "private-import-text"}']
+)
+def test_validation_diagnostics_do_not_expose_imported_content(raw_payload: str) -> None:
+    batch = pop_import_requests(LegacyQueue(raw_payload=raw_payload), count=1)
+    assert len(batch.invalid_items) == 1
+    assert "private-import-text" not in batch.invalid_items[0].error_message
 
 
 def test_extract_minimal_import_request_from_partial_payload() -> None:

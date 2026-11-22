@@ -14,8 +14,6 @@ export interface ConversationSurveyOnboardingTranslations {
   surveyStatusNoSurvey: string;
   surveyUnavailableTitle: string;
   verifyAccountTitle: string;
-  verifyTicketTitle: string;
-  ticketVerifiedTitle: string;
   surveyCompleteTitle: string;
   surveyUpdateTitle: string;
   surveyWithdrawnTitle: string;
@@ -24,8 +22,6 @@ export interface ConversationSurveyOnboardingTranslations {
   requiredSurveyTitle: string;
   surveyUnavailableDescription: string;
   verifyAccountDescription: string;
-  verifyTicketDescription: string;
-  ticketVerifiedDescription: string;
   surveyCompleteDescription: string;
   surveyUpdateDescription: string;
   surveyWithdrawnDescription: string;
@@ -35,7 +31,6 @@ export interface ConversationSurveyOnboardingTranslations {
   surveyNotStartedRequiredDescription: string;
   backToConversationLabel: string;
   continueLabel: string;
-  verifyTicketLabel: string;
   reviewAnswersLabel: string;
   updateAnswersLabel: string;
   resumeSurveyLabel: string;
@@ -62,8 +57,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "No survey",
     surveyUnavailableTitle: "Survey unavailable",
     verifyAccountTitle: "Verify your account first",
-    verifyTicketTitle: "Verify your ticket first",
-    ticketVerifiedTitle: "Ticket verified",
     surveyCompleteTitle: "Survey complete",
     surveyUpdateTitle: "Update your survey",
     surveyWithdrawnTitle: "Resume your survey",
@@ -74,10 +67,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "This conversation does not currently have a survey.",
     verifyAccountDescription:
       "Complete the required sign-in or verification step before opening the survey.",
-    verifyTicketDescription:
-      "Verify your event ticket before continuing into the survey.",
-    ticketVerifiedDescription:
-      "Your event ticket is verified for this conversation.",
     surveyCompleteDescription:
       "Your saved answers are valid for this conversation.",
     surveyUpdateDescription:
@@ -94,7 +83,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Complete the survey before you participate in this conversation.",
     backToConversationLabel: "Back to conversation",
     continueLabel: "Continue",
-    verifyTicketLabel: "Verify ticket",
     reviewAnswersLabel: "Review answers",
     updateAnswersLabel: "Update answers",
     resumeSurveyLabel: "Resume survey",
@@ -116,8 +104,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "لا يوجد استبيان",
     surveyUnavailableTitle: "الاستبيان غير متاح",
     verifyAccountTitle: "تحقق من حسابك أولاً",
-    verifyTicketTitle: "تحقق من تذكرتك أولاً",
-    ticketVerifiedTitle: "تم التحقق من التذكرة",
     surveyCompleteTitle: "الاستبيان مكتمل",
     surveyUpdateTitle: "حدّث استبيانك",
     surveyWithdrawnTitle: "استأنف استبيانك",
@@ -127,9 +113,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyUnavailableDescription: "لا يوجد حالياً استبيان لهذه المحادثة.",
     verifyAccountDescription:
       "أكمِل خطوة تسجيل الدخول أو التحقق المطلوبة قبل فتح الاستبيان.",
-    verifyTicketDescription: "تحقق من تذكرة الحدث قبل متابعة الاستبيان.",
-    ticketVerifiedDescription:
-      "تم التحقق من تذكرة الحدث الخاصة بك لهذه المحادثة.",
     surveyCompleteDescription: "إجاباتك المحفوظة صالحة لهذه المحادثة.",
     surveyUpdateDescription: "تغير هذا الاستبيان منذ آخر إجابات محفوظة لك.",
     surveyWithdrawnDescription:
@@ -144,7 +127,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "أكمِل الاستبيان قبل أن تشارك في هذه المحادثة.",
     backToConversationLabel: "العودة إلى المحادثة",
     continueLabel: "متابعة",
-    verifyTicketLabel: "تحقق من التذكرة",
     reviewAnswersLabel: "مراجعة الإجابات",
     updateAnswersLabel: "تحديث الإجابات",
     resumeSurveyLabel: "استئناف الاستبيان",
@@ -166,8 +148,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "Sin encuesta",
     surveyUnavailableTitle: "Encuesta no disponible",
     verifyAccountTitle: "Verifique su cuenta primero",
-    verifyTicketTitle: "Verifique su boleto primero",
-    ticketVerifiedTitle: "Boleto verificado",
     surveyCompleteTitle: "Encuesta completada",
     surveyUpdateTitle: "Actualice su encuesta",
     surveyWithdrawnTitle: "Reanude su encuesta",
@@ -178,10 +158,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Esta conversación no tiene actualmente una encuesta.",
     verifyAccountDescription:
       "Complete el inicio de sesión o la verificación requerida antes de abrir la encuesta.",
-    verifyTicketDescription:
-      "Verifique su boleto del evento antes de continuar a la encuesta.",
-    ticketVerifiedDescription:
-      "Su boleto del evento está verificado para esta conversación.",
     surveyCompleteDescription:
       "Sus respuestas guardadas son válidas para esta conversación.",
     surveyUpdateDescription:
@@ -198,7 +174,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Complete la encuesta antes de participar en esta conversación.",
     backToConversationLabel: "Volver a la conversación",
     continueLabel: "Continuar",
-    verifyTicketLabel: "Verificar boleto",
     reviewAnswersLabel: "Revisar respuestas",
     updateAnswersLabel: "Actualizar respuestas",
     resumeSurveyLabel: "Reanudar encuesta",
@@ -220,8 +195,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "بدون نظرسنجی",
     surveyUnavailableTitle: "نظرسنجی در دسترس نیست",
     verifyAccountTitle: "ابتدا حساب خود را تأیید کنید",
-    verifyTicketTitle: "ابتدا بلیت خود را تأیید کنید",
-    ticketVerifiedTitle: "بلیت تأیید شد",
     surveyCompleteTitle: "نظرسنجی کامل شد",
     surveyUpdateTitle: "نظرسنجی خود را به‌روزرسانی کنید",
     surveyWithdrawnTitle: "نظرسنجی خود را از سر بگیرید",
@@ -231,9 +204,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyUnavailableDescription: "این گفتگو در حال حاضر نظرسنجی ندارد.",
     verifyAccountDescription:
       "پیش از باز کردن نظرسنجی، مرحله ورود یا تأیید لازم را کامل کنید.",
-    verifyTicketDescription:
-      "پیش از ادامه به نظرسنجی، بلیت رویداد خود را تأیید کنید.",
-    ticketVerifiedDescription: "بلیت رویداد شما برای این گفتگو تأیید شده است.",
     surveyCompleteDescription:
       "پاسخ‌های ذخیره‌شده شما برای این گفتگو معتبر هستند.",
     surveyUpdateDescription:
@@ -250,7 +220,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "پیش از مشارکت در این گفتگو، نظرسنجی را کامل کنید.",
     backToConversationLabel: "بازگشت به گفتگو",
     continueLabel: "ادامه",
-    verifyTicketLabel: "تأیید بلیت",
     reviewAnswersLabel: "مرور پاسخ‌ها",
     updateAnswersLabel: "به‌روزرسانی پاسخ‌ها",
     resumeSurveyLabel: "ادامه نظرسنجی",
@@ -272,8 +241,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "Aucun questionnaire",
     surveyUnavailableTitle: "Questionnaire indisponible",
     verifyAccountTitle: "Vérifiez d'abord votre compte",
-    verifyTicketTitle: "Vérifiez d'abord votre billet",
-    ticketVerifiedTitle: "Billet vérifié",
     surveyCompleteTitle: "Questionnaire terminé",
     surveyUpdateTitle: "Mettez votre questionnaire à jour",
     surveyWithdrawnTitle: "Reprenez votre questionnaire",
@@ -284,10 +251,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Cette conversation n'a actuellement pas de questionnaire.",
     verifyAccountDescription:
       "Terminez la connexion ou la vérification requise avant d'ouvrir le questionnaire.",
-    verifyTicketDescription:
-      "Vérifiez votre billet d'événement avant de continuer vers le questionnaire.",
-    ticketVerifiedDescription:
-      "Votre billet d'événement est vérifié pour cette conversation.",
     surveyCompleteDescription:
       "Vos réponses enregistrées sont valides pour cette conversation.",
     surveyUpdateDescription:
@@ -304,7 +267,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Terminez le questionnaire avant de participer à cette conversation.",
     backToConversationLabel: "Retour à la conversation",
     continueLabel: "Continuer",
-    verifyTicketLabel: "Vérifier le billet",
     reviewAnswersLabel: "Voir les réponses",
     updateAnswersLabel: "Mettre à jour les réponses",
     resumeSurveyLabel: "Reprendre le questionnaire",
@@ -326,8 +288,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "אין סקר",
     surveyUnavailableTitle: "הסקר לא זמין",
     verifyAccountTitle: "אמתו קודם את החשבון שלכם",
-    verifyTicketTitle: "אמתו קודם את הכרטיס שלכם",
-    ticketVerifiedTitle: "הכרטיס אומת",
     surveyCompleteTitle: "הסקר הושלם",
     surveyUpdateTitle: "עדכנו את הסקר שלכם",
     surveyWithdrawnTitle: "חזרו לסקר שלכם",
@@ -337,8 +297,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyUnavailableDescription: "לשיחה הזו אין כרגע סקר.",
     verifyAccountDescription:
       "השלימו את שלב ההתחברות או האימות הנדרש לפני פתיחת הסקר.",
-    verifyTicketDescription: "אמתו את כרטיס האירוע לפני שתמשיכו לסקר.",
-    ticketVerifiedDescription: "כרטיס האירוע שלכם אומת עבור השיחה הזו.",
     surveyCompleteDescription: "התשובות השמורות שלכם תקפות לשיחה הזו.",
     surveyUpdateDescription:
       "הסקר הזה השתנה מאז התשובות השמורות האחרונות שלכם.",
@@ -353,7 +311,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "השלימו את הסקר לפני שתשתתפו בשיחה הזו.",
     backToConversationLabel: "חזרה לשיחה",
     continueLabel: "המשך",
-    verifyTicketLabel: "אימות כרטיס",
     reviewAnswersLabel: "עיון בתשובות",
     updateAnswersLabel: "עדכון תשובות",
     resumeSurveyLabel: "המשך הסקר",
@@ -375,8 +332,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "アンケートなし",
     surveyUnavailableTitle: "アンケートは利用できません",
     verifyAccountTitle: "先にアカウントを確認してください",
-    verifyTicketTitle: "先にチケットを確認してください",
-    ticketVerifiedTitle: "チケット確認済み",
     surveyCompleteTitle: "アンケート完了",
     surveyUpdateTitle: "アンケートを更新してください",
     surveyWithdrawnTitle: "アンケートを再開してください",
@@ -386,9 +341,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyUnavailableDescription: "この会話には現在アンケートがありません。",
     verifyAccountDescription:
       "アンケートを開く前に、必要なログインまたは認証を完了してください。",
-    verifyTicketDescription:
-      "アンケートに進む前にイベントチケットを確認してください。",
-    ticketVerifiedDescription: "この会話ではイベントチケットが確認済みです。",
     surveyCompleteDescription: "保存された回答はこの会話に対して有効です。",
     surveyUpdateDescription:
       "このアンケートは、あなたの最後の保存済み回答以降に変更されました。",
@@ -404,7 +356,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "この会話に参加する前にアンケートを完了してください。",
     backToConversationLabel: "会話に戻る",
     continueLabel: "続ける",
-    verifyTicketLabel: "チケットを確認",
     reviewAnswersLabel: "回答を確認",
     updateAnswersLabel: "回答を更新",
     resumeSurveyLabel: "アンケートを再開",
@@ -426,8 +377,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "Сурамжылоо жок",
     surveyUnavailableTitle: "Сурамжылоо жеткиликсиз",
     verifyAccountTitle: "Адегенде аккаунтуңузду текшериңиз",
-    verifyTicketTitle: "Адегенде билетиңизди текшериңиз",
-    ticketVerifiedTitle: "Билет текшерилди",
     surveyCompleteTitle: "Сурамжылоо аяктады",
     surveyUpdateTitle: "Сурамжылоону жаңыртыңыз",
     surveyWithdrawnTitle: "Сурамжылоону кайра улантыңыз",
@@ -437,10 +386,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyUnavailableDescription: "Бул сүйлөшүүдө азырынча сурамжылоо жок.",
     verifyAccountDescription:
       "Сурамжылоону ачардан мурун талап кылынган кирүү же текшерүү кадамын бүтүрүңүз.",
-    verifyTicketDescription:
-      "Сурамжылоого өтүүдөн мурун иш-чара билетиңизди текшериңиз.",
-    ticketVerifiedDescription:
-      "Бул сүйлөшүү үчүн иш-чара билетиңиз текшерилди.",
     surveyCompleteDescription:
       "Сакталган жоопторуңуз бул сүйлөшүү үчүн жарактуу.",
     surveyUpdateDescription:
@@ -457,7 +402,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Бул сүйлөшүүгө катышардан мурун сурамжылоону бүтүрүңүз.",
     backToConversationLabel: "Сүйлөшүүгө кайтуу",
     continueLabel: "Улантуу",
-    verifyTicketLabel: "Билетти текшерүү",
     reviewAnswersLabel: "Жоопторду көрүү",
     updateAnswersLabel: "Жоопторду жаңыртуу",
     resumeSurveyLabel: "Сурамжылоону улантуу",
@@ -479,8 +423,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "Нет опроса",
     surveyUnavailableTitle: "Опрос недоступен",
     verifyAccountTitle: "Сначала подтвердите аккаунт",
-    verifyTicketTitle: "Сначала подтвердите билет",
-    ticketVerifiedTitle: "Билет подтверждён",
     surveyCompleteTitle: "Опрос завершён",
     surveyUpdateTitle: "Обновите опрос",
     surveyWithdrawnTitle: "Возобновите опрос",
@@ -490,10 +432,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyUnavailableDescription: "У этой беседы сейчас нет опроса.",
     verifyAccountDescription:
       "Завершите необходимый вход или проверку перед открытием опроса.",
-    verifyTicketDescription:
-      "Подтвердите билет на событие перед переходом к опросу.",
-    ticketVerifiedDescription:
-      "Ваш билет на событие подтверждён для этой беседы.",
     surveyCompleteDescription:
       "Ваши сохранённые ответы действительны для этой беседы.",
     surveyUpdateDescription:
@@ -510,7 +448,6 @@ export const conversationSurveyOnboardingTranslations: Record<
       "Завершите опрос перед участием в этой беседе.",
     backToConversationLabel: "Вернуться к беседе",
     continueLabel: "Продолжить",
-    verifyTicketLabel: "Проверить билет",
     reviewAnswersLabel: "Просмотреть ответы",
     updateAnswersLabel: "Обновить ответы",
     resumeSurveyLabel: "Возобновить опрос",
@@ -532,8 +469,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "没有问卷",
     surveyUnavailableTitle: "问卷不可用",
     verifyAccountTitle: "请先验证你的账户",
-    verifyTicketTitle: "请先验证你的门票",
-    ticketVerifiedTitle: "门票已验证",
     surveyCompleteTitle: "问卷已完成",
     surveyUpdateTitle: "更新你的问卷",
     surveyWithdrawnTitle: "恢复你的问卷",
@@ -542,8 +477,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     requiredSurveyTitle: "必须完成问卷",
     surveyUnavailableDescription: "这场对话当前没有问卷。",
     verifyAccountDescription: "打开问卷前，请先完成所需的登录或验证步骤。",
-    verifyTicketDescription: "继续进入问卷前，请先验证你的活动门票。",
-    ticketVerifiedDescription: "你的活动门票已为这场对话完成验证。",
     surveyCompleteDescription: "你保存的回答对这场对话仍然有效。",
     surveyUpdateDescription: "此问卷在你上次保存回答之后已经发生变化。",
     surveyWithdrawnDescription: "你可以随时重新打开问卷并再次作答。",
@@ -555,7 +488,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyNotStartedRequiredDescription: "请先完成问卷，再参与这场对话。",
     backToConversationLabel: "返回对话",
     continueLabel: "继续",
-    verifyTicketLabel: "验证门票",
     reviewAnswersLabel: "查看回答",
     updateAnswersLabel: "更新回答",
     resumeSurveyLabel: "继续问卷",
@@ -577,8 +509,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyStatusNoSurvey: "沒有問卷",
     surveyUnavailableTitle: "問卷不可用",
     verifyAccountTitle: "請先驗證你的帳戶",
-    verifyTicketTitle: "請先驗證你的門票",
-    ticketVerifiedTitle: "門票已驗證",
     surveyCompleteTitle: "問卷已完成",
     surveyUpdateTitle: "更新你的問卷",
     surveyWithdrawnTitle: "恢復你的問卷",
@@ -587,8 +517,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     requiredSurveyTitle: "必須完成問卷",
     surveyUnavailableDescription: "這場對話目前沒有問卷。",
     verifyAccountDescription: "開啟問卷前，請先完成所需的登入或驗證步驟。",
-    verifyTicketDescription: "繼續進入問卷前，請先驗證你的活動門票。",
-    ticketVerifiedDescription: "你的活動門票已為這場對話完成驗證。",
     surveyCompleteDescription: "你儲存的回答對這場對話仍然有效。",
     surveyUpdateDescription: "此問卷在你上次儲存回答之後已經發生變更。",
     surveyWithdrawnDescription: "你可以隨時重新開啟問卷並再次作答。",
@@ -600,7 +528,6 @@ export const conversationSurveyOnboardingTranslations: Record<
     surveyNotStartedRequiredDescription: "請先完成問卷，再參與這場對話。",
     backToConversationLabel: "返回對話",
     continueLabel: "繼續",
-    verifyTicketLabel: "驗證門票",
     reviewAnswersLabel: "查看回答",
     updateAnswersLabel: "更新回答",
     resumeSurveyLabel: "繼續問卷",

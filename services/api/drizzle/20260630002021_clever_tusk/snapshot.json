@@ -1,0 +1,5465 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "a02e9d84-e1b4-4c7f-bc93-c4d8f9ff9df3",
+  "prevIds": [
+    "42337e48-2d6d-4ba7-9e26-7d0f7811c944"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_content_translation_source_kind"
+      ],
+      "writes": [
+        "s|enum|public.project_content_translation_source_kind",
+        "n|enum|public.project_content_translation_source_kind",
+        "e|enum|public.project_content_translation_source_kind",
+        "n|type|public.project_content_translation_source_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_language_setting_mode"
+      ],
+      "writes": [
+        "s|enum|public.project_language_setting_mode",
+        "n|enum|public.project_language_setting_mode",
+        "e|enum|public.project_language_setting_mode",
+        "n|type|public.project_language_setting_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "project_organization_attribution_role"
+      ],
+      "writes": [
+        "s|enum|public.project_organization_attribution_role",
+        "n|enum|public.project_organization_attribution_role",
+        "e|enum|public.project_organization_attribution_role",
+        "n|type|public.project_organization_attribution_role"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "content_translation_source_kind"
+      ],
+      "writes": [
+        "s|enum|public.content_translation_source_kind"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "conversation_language_setting_mode"
+      ],
+      "writes": [
+        "s|enum|public.conversation_language_setting_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_localization"
+      ],
+      "writes": [
+        "s|tbl|public.organization_localization",
+        "n|tbl|public.organization_localization",
+        "e|tbl|public.organization_localization",
+        "n|rel|public.organization_localization",
+        "n|type|public.organization_localization",
+        "n|rel|public.organization_localization_pkey",
+        "n|rel|public.organization_localization_organization_language_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_contact"
+      ],
+      "writes": [
+        "s|tbl|public.project_contact",
+        "n|tbl|public.project_contact",
+        "e|tbl|public.project_contact",
+        "n|rel|public.project_contact",
+        "n|type|public.project_contact",
+        "n|rel|public.project_contact_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content_banner_localization"
+      ],
+      "writes": [
+        "s|tbl|public.project_content_banner_localization",
+        "n|tbl|public.project_content_banner_localization",
+        "e|tbl|public.project_content_banner_localization",
+        "n|rel|public.project_content_banner_localization",
+        "n|type|public.project_content_banner_localization",
+        "n|rel|public.project_content_banner_localization_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content"
+      ],
+      "writes": [
+        "s|tbl|public.project_content",
+        "n|tbl|public.project_content",
+        "e|tbl|public.project_content",
+        "n|rel|public.project_content",
+        "n|type|public.project_content",
+        "n|rel|public.project_content_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content_translation"
+      ],
+      "writes": [
+        "s|tbl|public.project_content_translation",
+        "n|tbl|public.project_content_translation",
+        "e|tbl|public.project_content_translation",
+        "n|rel|public.project_content_translation",
+        "n|type|public.project_content_translation",
+        "n|rel|public.project_content_translation_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.project_content_translation_source_kind",
+        "n|enum|public.language_detection_provider"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_external_organization_localization"
+      ],
+      "writes": [
+        "s|tbl|public.project_external_organization_localization",
+        "n|tbl|public.project_external_organization_localization",
+        "e|tbl|public.project_external_organization_localization",
+        "n|rel|public.project_external_organization_localization",
+        "n|type|public.project_external_organization_localization",
+        "n|rel|public.project_external_organization_localization_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_external_organization"
+      ],
+      "writes": [
+        "s|tbl|public.project_external_organization",
+        "n|tbl|public.project_external_organization",
+        "e|tbl|public.project_external_organization",
+        "n|rel|public.project_external_organization",
+        "n|type|public.project_external_organization",
+        "n|rel|public.project_external_organization_pkey",
+        "n|rel|public.project_external_organization_project_id_id_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_language_setting"
+      ],
+      "writes": [
+        "s|tbl|public.project_language_setting",
+        "n|tbl|public.project_language_setting",
+        "e|tbl|public.project_language_setting",
+        "n|rel|public.project_language_setting",
+        "n|type|public.project_language_setting",
+        "n|rel|public.project_language_setting_pkey",
+        "n|rel|public.project_language_setting_project_unique"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.project_language_setting_mode"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_attribution"
+      ],
+      "writes": [
+        "s|tbl|public.project_organization_attribution",
+        "n|tbl|public.project_organization_attribution",
+        "e|tbl|public.project_organization_attribution",
+        "n|rel|public.project_organization_attribution",
+        "n|type|public.project_organization_attribution",
+        "n|rel|public.project_organization_attribution_pkey"
+      ],
+      "reads": [
+        "n|sch|public",
+        "n|enum|public.project_organization_attribution_role"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_participant_display_language"
+      ],
+      "writes": [
+        "s|tbl|public.project_participant_display_language",
+        "n|tbl|public.project_participant_display_language",
+        "e|tbl|public.project_participant_display_language",
+        "n|rel|public.project_participant_display_language",
+        "n|type|public.project_participant_display_language",
+        "n|rel|public.project_participant_display_language_pkey",
+        "n|rel|public.project_participant_display_language_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_translation_target_language"
+      ],
+      "writes": [
+        "s|tbl|public.project_translation_target_language",
+        "n|tbl|public.project_translation_target_language",
+        "e|tbl|public.project_translation_target_language",
+        "n|rel|public.project_translation_target_language",
+        "n|type|public.project_translation_target_language",
+        "n|rel|public.project_translation_target_language_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language_current"
+      ],
+      "writes": [
+        "s|tbl|public.user_display_language_current",
+        "n|tbl|public.user_display_language_current",
+        "e|tbl|public.user_display_language_current",
+        "n|rel|public.user_display_language_current",
+        "n|type|public.user_display_language_current",
+        "n|rel|public.user_display_language_current_pkey"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|uq|public.project.project_slug_unique",
+        "n|uq|public.project.project_slug_unique",
+        "e|uq|public.project.project_slug_unique",
+        "n|con|public.project.project_slug_unique",
+        "n|rel|public.project_slug_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "e|col|public.project.slug"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.project.slug"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_moderation"
+      ],
+      "writes": [
+        "s|uq|public.conversation_moderation.conversation_moderation_conversation_id_unique",
+        "n|uq|public.conversation_moderation.conversation_moderation_conversation_id_unique",
+        "e|uq|public.conversation_moderation.conversation_moderation_conversation_id_unique",
+        "n|con|public.conversation_moderation.conversation_moderation_conversation_id_unique",
+        "n|rel|public.conversation_moderation_conversation_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_moderation",
+        "n|sch|public",
+        "e|col|public.conversation_moderation.conversation_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.conversation_moderation.conversation_id"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_moderation"
+      ],
+      "writes": [
+        "s|uq|public.opinion_moderation.opinion_moderation_opinion_id_unique",
+        "n|uq|public.opinion_moderation.opinion_moderation_opinion_id_unique",
+        "e|uq|public.opinion_moderation.opinion_moderation_opinion_id_unique",
+        "n|con|public.opinion_moderation.opinion_moderation_opinion_id_unique",
+        "n|rel|public.opinion_moderation_opinion_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_moderation",
+        "n|sch|public",
+        "e|col|public.opinion_moderation.opinion_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.opinion_moderation.opinion_id"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_mute_preference"
+      ],
+      "writes": [
+        "s|uq|public.user_mute_preference.user_unique_mute",
+        "n|uq|public.user_mute_preference.user_unique_mute",
+        "e|uq|public.user_mute_preference.user_unique_mute",
+        "n|con|public.user_mute_preference.user_unique_mute",
+        "n|rel|public.user_unique_mute"
+      ],
+      "reads": [
+        "n|tbl|public.user_mute_preference",
+        "n|sch|public",
+        "e|col|public.user_mute_preference.source_user_id",
+        "e|col|public.user_mute_preference.target_user_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.user_mute_preference.source_user_id.target_user_id"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "followed_topic"
+      ],
+      "writes": [
+        "s|uq|public.followed_topic.followed_topic_unique",
+        "n|uq|public.followed_topic.followed_topic_unique",
+        "e|uq|public.followed_topic.followed_topic_unique",
+        "n|con|public.followed_topic.followed_topic_unique",
+        "n|rel|public.followed_topic_unique"
+      ],
+      "reads": [
+        "n|tbl|public.followed_topic",
+        "n|sch|public",
+        "e|col|public.followed_topic.user_id",
+        "e|col|public.followed_topic.topic_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.followed_topic.topic_id.user_id"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_target_language"
+      ],
+      "writes": [
+        "s|uq|public.conversation_translation_target_language.conversation_translation_target_language_unique",
+        "n|uq|public.conversation_translation_target_language.conversation_translation_target_language_unique",
+        "e|uq|public.conversation_translation_target_language.conversation_translation_target_language_unique",
+        "n|con|public.conversation_translation_target_language.conversation_translation_target_language_unique",
+        "n|rel|public.conversation_translation_target_language_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "e|col|public.conversation_translation_target_language.translation_setting_id",
+        "e|col|public.conversation_translation_target_language.language_code"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.conversation_translation_target_language.language_code.translation_setting_id"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_membership"
+      ],
+      "writes": [
+        "s|uq|public.organization_membership.organization_membership_user_organization_unique",
+        "n|uq|public.organization_membership.organization_membership_user_organization_unique",
+        "e|uq|public.organization_membership.organization_membership_user_organization_unique",
+        "n|con|public.organization_membership.organization_membership_user_organization_unique",
+        "n|rel|public.organization_membership_user_organization_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "e|col|public.organization_membership.user_id",
+        "e|col|public.organization_membership.organization_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.organization_membership.organization_id.user_id"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization"
+      ],
+      "writes": [
+        "s|uq|public.organization.organization_slug_unique",
+        "n|uq|public.organization.organization_slug_unique",
+        "e|uq|public.organization.organization_slug_unique",
+        "n|con|public.organization.organization_slug_unique",
+        "n|rel|public.organization_slug_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "e|col|public.organization.slug"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.organization.slug"
+      ]
+    },
+    {
+      "statementType": "drop_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_ownership"
+      ],
+      "writes": [
+        "s|uq|public.project_organization_ownership.project_organization_ownership_project_org_unique",
+        "n|uq|public.project_organization_ownership.project_organization_ownership_project_org_unique",
+        "e|uq|public.project_organization_ownership.project_organization_ownership_project_org_unique",
+        "n|con|public.project_organization_ownership.project_organization_ownership_project_org_unique",
+        "n|rel|public.project_organization_ownership_project_org_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_ownership",
+        "n|sch|public",
+        "e|col|public.project_organization_ownership.project_id",
+        "e|col|public.project_organization_ownership.organization_id"
+      ],
+      "sharedWrites": [
+        "e|uniqueness|public.project_organization_ownership.organization_id.project_id"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "content_translation_work",
+        "project_content_id"
+      ],
+      "writes": [
+        "s|col|public.content_translation_work.project_content_id",
+        "n|col|public.content_translation_work.project_content_id",
+        "e|col|public.content_translation_work.project_content_id"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_language_setting",
+        "dynamic_translation_enabled"
+      ],
+      "writes": [
+        "s|col|public.conversation_language_setting.dynamic_translation_enabled",
+        "n|col|public.conversation_language_setting.dynamic_translation_enabled",
+        "e|col|public.conversation_language_setting.dynamic_translation_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_language_setting",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_moderation",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.conversation_moderation.deleted_at",
+        "n|col|public.conversation_moderation.deleted_at",
+        "e|col|public.conversation_moderation.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_moderation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "dynamic_translation_enabled"
+      ],
+      "writes": [
+        "s|col|public.conversation.dynamic_translation_enabled",
+        "n|col|public.conversation.dynamic_translation_enabled",
+        "e|col|public.conversation.dynamic_translation_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_translation_target_language",
+        "conversation_id"
+      ],
+      "writes": [
+        "s|col|public.conversation_translation_target_language.conversation_id",
+        "n|col|public.conversation_translation_target_language.conversation_id",
+        "e|col|public.conversation_translation_target_language.conversation_id"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_translation_target_language",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.conversation_translation_target_language.deleted_at",
+        "n|col|public.conversation_translation_target_language.deleted_at",
+        "e|col|public.conversation_translation_target_language.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "followed_topic",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.followed_topic.deleted_at",
+        "n|col|public.followed_topic.deleted_at",
+        "e|col|public.followed_topic.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.followed_topic",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_moderation",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.opinion_moderation.deleted_at",
+        "n|col|public.opinion_moderation.deleted_at",
+        "e|col|public.opinion_moderation.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_moderation",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization_membership",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.organization_membership.deleted_at",
+        "n|col|public.organization_membership.deleted_at",
+        "e|col|public.organization_membership.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "default_language_code"
+      ],
+      "writes": [
+        "s|col|public.organization.default_language_code",
+        "n|col|public.organization.default_language_code",
+        "e|col|public.organization.default_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organization",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.organization.deleted_at",
+        "n|col|public.organization.deleted_at",
+        "e|col|public.organization.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_organization_ownership",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.project_organization_ownership.deleted_at",
+        "n|col|public.project_organization_ownership.deleted_at",
+        "e|col|public.project_organization_ownership.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_ownership",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "title"
+      ],
+      "writes": [
+        "s|col|public.project.title",
+        "n|col|public.project.title",
+        "e|col|public.project.title"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "current_content_id"
+      ],
+      "writes": [
+        "s|col|public.project.current_content_id",
+        "n|col|public.project.current_content_id",
+        "e|col|public.project.current_content_id"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "dynamic_translation_enabled"
+      ],
+      "writes": [
+        "s|col|public.project.dynamic_translation_enabled",
+        "n|col|public.project.dynamic_translation_enabled",
+        "e|col|public.project.dynamic_translation_enabled"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.project.deleted_at",
+        "n|col|public.project.deleted_at",
+        "e|col|public.project.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "user_mute_preference",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|col|public.user_mute_preference.deleted_at",
+        "n|col|public.user_mute_preference.deleted_at",
+        "e|col|public.user_mute_preference.deleted_at"
+      ],
+      "reads": [
+        "n|tbl|public.user_mute_preference",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "display_name"
+      ],
+      "writes": [
+        "s|col|public.project.display_name",
+        "n|col|public.project.display_name",
+        "e|col|public.project.display_name"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "content_translation_work",
+        "conversation_id"
+      ],
+      "writes": [
+        "s|colprop|public.content_translation_work.conversation_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.conversation_id"
+      ],
+      "sqlHash": "f66586c4ff98eded"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_translation_setting",
+        "conversation_id"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_translation_setting.conversation_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_setting",
+        "n|sch|public",
+        "n|col|public.conversation_translation_setting.conversation_id"
+      ],
+      "sqlHash": "da2841a6239be971"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_translation_target_language",
+        "translation_setting_id"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_translation_target_language.translation_setting_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "n|col|public.conversation_translation_target_language.translation_setting_id"
+      ],
+      "sqlHash": "62c1786debda88bc"
+    },
+    {
+      "statementType": "add_unique",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|uq|public.project.project_current_content_id_unique",
+        "n|uq|public.project.project_current_content_id_unique",
+        "e|uq|public.project.project_current_content_id_unique",
+        "n|con|public.project.project_current_content_id_unique",
+        "n|rel|public.project_current_content_id_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project.current_content_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "content_translation_work",
+        "content_translation_work_project_unique"
+      ],
+      "writes": [
+        "s|idx|public.content_translation_work_project_unique",
+        "n|idx|public.content_translation_work_project_unique",
+        "e|idx|public.content_translation_work_project_unique",
+        "n|rel|public.content_translation_work_project_unique"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.project_content_id",
+        "n|col|public.content_translation_work.display_language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_moderation",
+        "conversation_moderation_active_conversation_unique"
+      ],
+      "writes": [
+        "s|idx|public.conversation_moderation_active_conversation_unique",
+        "n|idx|public.conversation_moderation_active_conversation_unique",
+        "e|idx|public.conversation_moderation_active_conversation_unique",
+        "n|rel|public.conversation_moderation_active_conversation_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_moderation",
+        "n|sch|public",
+        "n|col|public.conversation_moderation.conversation_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_translation_target_language",
+        "conversation_translation_target_language_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.conversation_translation_target_language_active_unique",
+        "n|idx|public.conversation_translation_target_language_active_unique",
+        "e|idx|public.conversation_translation_target_language_active_unique",
+        "n|rel|public.conversation_translation_target_language_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "n|col|public.conversation_translation_target_language.conversation_id",
+        "n|col|public.conversation_translation_target_language.language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_translation_target_language",
+        "conversation_translation_target_language_legacy_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.conversation_translation_target_language_legacy_active_unique",
+        "n|idx|public.conversation_translation_target_language_legacy_active_unique",
+        "e|idx|public.conversation_translation_target_language_legacy_active_unique",
+        "n|rel|public.conversation_translation_target_language_legacy_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "n|col|public.conversation_translation_target_language.translation_setting_id",
+        "n|col|public.conversation_translation_target_language.language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "followed_topic",
+        "followed_topic_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.followed_topic_active_unique",
+        "n|idx|public.followed_topic_active_unique",
+        "e|idx|public.followed_topic_active_unique",
+        "n|rel|public.followed_topic_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.followed_topic",
+        "n|sch|public",
+        "n|col|public.followed_topic.user_id",
+        "n|col|public.followed_topic.topic_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_moderation",
+        "opinion_moderation_active_opinion_unique"
+      ],
+      "writes": [
+        "s|idx|public.opinion_moderation_active_opinion_unique",
+        "n|idx|public.opinion_moderation_active_opinion_unique",
+        "e|idx|public.opinion_moderation_active_opinion_unique",
+        "n|rel|public.opinion_moderation_active_opinion_unique"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_moderation",
+        "n|sch|public",
+        "n|col|public.opinion_moderation.opinion_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "organization_membership",
+        "organization_membership_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.organization_membership_active_unique",
+        "n|idx|public.organization_membership_active_unique",
+        "e|idx|public.organization_membership_active_unique",
+        "n|rel|public.organization_membership_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization_membership",
+        "n|sch|public",
+        "n|col|public.organization_membership.user_id",
+        "n|col|public.organization_membership.organization_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "organization",
+        "organization_active_slug_unique"
+      ],
+      "writes": [
+        "s|idx|public.organization_active_slug_unique",
+        "n|idx|public.organization_active_slug_unique",
+        "e|idx|public.organization_active_slug_unique",
+        "n|rel|public.organization_active_slug_unique"
+      ],
+      "reads": [
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization.slug"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_contact",
+        "project_contact_project_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_contact_project_active_unique",
+        "n|idx|public.project_contact_project_active_unique",
+        "e|idx|public.project_contact_project_active_unique",
+        "n|rel|public.project_contact_project_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|col|public.project_contact.project_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_content_banner_localization",
+        "project_content_banner_localization_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_content_banner_localization_active_unique",
+        "n|idx|public.project_content_banner_localization_active_unique",
+        "e|idx|public.project_content_banner_localization_active_unique",
+        "n|rel|public.project_content_banner_localization_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_content_banner_localization",
+        "n|sch|public",
+        "n|col|public.project_content_banner_localization.project_content_id",
+        "n|col|public.project_content_banner_localization.language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_content_translation",
+        "project_content_translation_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_content_translation_active_unique",
+        "n|idx|public.project_content_translation_active_unique",
+        "e|idx|public.project_content_translation_active_unique",
+        "n|rel|public.project_content_translation_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_content_translation",
+        "n|sch|public",
+        "n|col|public.project_content_translation.project_content_id",
+        "n|col|public.project_content_translation.display_language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_external_organization_localization",
+        "project_external_org_loc_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_external_org_loc_active_unique",
+        "n|idx|public.project_external_org_loc_active_unique",
+        "e|idx|public.project_external_org_loc_active_unique",
+        "n|rel|public.project_external_org_loc_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_external_organization_localization",
+        "n|sch|public",
+        "n|col|public.project_external_organization_localization.external_organization_id",
+        "n|col|public.project_external_organization_localization.language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_organization_attribution",
+        "project_organization_attribution_order_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_organization_attribution_order_active_unique",
+        "n|idx|public.project_organization_attribution_order_active_unique",
+        "e|idx|public.project_organization_attribution_order_active_unique",
+        "n|rel|public.project_organization_attribution_order_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_attribution",
+        "n|sch|public",
+        "n|col|public.project_organization_attribution.project_id",
+        "n|col|public.project_organization_attribution.role",
+        "n|col|public.project_organization_attribution.sort_order"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_organization_attribution",
+        "project_organization_attribution_real_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_organization_attribution_real_active_unique",
+        "n|idx|public.project_organization_attribution_real_active_unique",
+        "e|idx|public.project_organization_attribution_real_active_unique",
+        "n|rel|public.project_organization_attribution_real_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_attribution",
+        "n|sch|public",
+        "n|col|public.project_organization_attribution.project_id",
+        "n|col|public.project_organization_attribution.role",
+        "n|col|public.project_organization_attribution.organization_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_organization_attribution",
+        "project_organization_attribution_external_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_organization_attribution_external_active_unique",
+        "n|idx|public.project_organization_attribution_external_active_unique",
+        "e|idx|public.project_organization_attribution_external_active_unique",
+        "n|rel|public.project_organization_attribution_external_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_attribution",
+        "n|sch|public",
+        "n|col|public.project_organization_attribution.project_id",
+        "n|col|public.project_organization_attribution.role",
+        "n|col|public.project_organization_attribution.external_organization_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_organization_ownership",
+        "project_organization_ownership_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_organization_ownership_active_unique",
+        "n|idx|public.project_organization_ownership_active_unique",
+        "e|idx|public.project_organization_ownership_active_unique",
+        "n|rel|public.project_organization_ownership_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_ownership",
+        "n|sch|public",
+        "n|col|public.project_organization_ownership.project_id",
+        "n|col|public.project_organization_ownership.organization_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_participant_display_language",
+        "project_participant_display_language_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.project_participant_display_language_user_idx",
+        "n|idx|public.project_participant_display_language_user_idx",
+        "e|idx|public.project_participant_display_language_user_idx",
+        "n|rel|public.project_participant_display_language_user_idx"
+      ],
+      "reads": [
+        "n|tbl|public.project_participant_display_language",
+        "n|sch|public",
+        "n|col|public.project_participant_display_language.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project",
+        "project_active_slug_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_active_slug_unique",
+        "n|idx|public.project_active_slug_unique",
+        "e|idx|public.project_active_slug_unique",
+        "n|rel|public.project_active_slug_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project.slug"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "project_translation_target_language",
+        "project_translation_target_language_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.project_translation_target_language_active_unique",
+        "n|idx|public.project_translation_target_language_active_unique",
+        "e|idx|public.project_translation_target_language_active_unique",
+        "n|rel|public.project_translation_target_language_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.project_translation_target_language",
+        "n|sch|public",
+        "n|col|public.project_translation_target_language.project_id",
+        "n|col|public.project_translation_target_language.language_code"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_mute_preference",
+        "user_mute_preference_active_unique"
+      ],
+      "writes": [
+        "s|idx|public.user_mute_preference_active_unique",
+        "n|idx|public.user_mute_preference_active_unique",
+        "e|idx|public.user_mute_preference_active_unique",
+        "n|rel|public.user_mute_preference_active_unique"
+      ],
+      "reads": [
+        "n|tbl|public.user_mute_preference",
+        "n|sch|public",
+        "n|col|public.user_mute_preference.source_user_id",
+        "n|col|public.user_mute_preference.target_user_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|fk|public.content_translation_work.content_translation_work_project_content_id_project_content_id_",
+        "n|fk|public.content_translation_work.content_translation_work_project_content_id_project_content_id_",
+        "e|fk|public.content_translation_work.content_translation_work_project_content_id_project_content_id_",
+        "n|con|public.content_translation_work.content_translation_work_project_content_id_project_content_id_"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|col|public.content_translation_work.project_content_id",
+        "n|col|public.project_content.id",
+        "e|uniqueness|public.project_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "conversation_translation_target_language"
+      ],
+      "writes": [
+        "s|fk|public.conversation_translation_target_language.conversation_translation_target_language_conversation_id_conver",
+        "n|fk|public.conversation_translation_target_language.conversation_translation_target_language_conversation_id_conver",
+        "e|fk|public.conversation_translation_target_language.conversation_translation_target_language_conversation_id_conver",
+        "n|con|public.conversation_translation_target_language.conversation_translation_target_language_conversation_id_conver"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_translation_target_language",
+        "n|sch|public",
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation_translation_target_language.conversation_id",
+        "n|col|public.conversation.id",
+        "e|uniqueness|public.conversation.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "organization_localization"
+      ],
+      "writes": [
+        "s|fk|public.organization_localization.organization_localization_organization_id_organization_id_fk",
+        "n|fk|public.organization_localization.organization_localization_organization_id_organization_id_fk",
+        "e|fk|public.organization_localization.organization_localization_organization_id_organization_id_fk",
+        "n|con|public.organization_localization.organization_localization_organization_id_organization_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.organization_localization",
+        "n|sch|public",
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.organization_localization.organization_id",
+        "n|col|public.organization.id",
+        "e|uniqueness|public.organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_contact"
+      ],
+      "writes": [
+        "s|fk|public.project_contact.project_contact_project_id_project_id_fk",
+        "n|fk|public.project_contact.project_contact_project_id_project_id_fk",
+        "e|fk|public.project_contact.project_contact_project_id_project_id_fk",
+        "n|con|public.project_contact.project_contact_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_contact.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_contact"
+      ],
+      "writes": [
+        "s|fk|public.project_contact.project_contact_organization_id_organization_id_fk",
+        "n|fk|public.project_contact.project_contact_organization_id_organization_id_fk",
+        "e|fk|public.project_contact.project_contact_organization_id_organization_id_fk",
+        "n|con|public.project_contact.project_contact_organization_id_organization_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.project_contact.organization_id",
+        "n|col|public.organization.id",
+        "e|uniqueness|public.organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_contact"
+      ],
+      "writes": [
+        "s|fk|public.project_contact.project_contact_external_project_fk",
+        "n|fk|public.project_contact.project_contact_external_project_fk",
+        "e|fk|public.project_contact.project_contact_external_project_fk",
+        "n|con|public.project_contact.project_contact_external_project_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|tbl|public.project_external_organization",
+        "n|sch|public",
+        "n|col|public.project_contact.project_id",
+        "n|col|public.project_contact.external_organization_id",
+        "n|col|public.project_external_organization.project_id",
+        "n|col|public.project_external_organization.id",
+        "e|uniqueness|public.project_external_organization.id.project_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content_banner_localization"
+      ],
+      "writes": [
+        "s|fk|public.project_content_banner_localization.project_content_banner_localization_project_content_id_project_",
+        "n|fk|public.project_content_banner_localization.project_content_banner_localization_project_content_id_project_",
+        "e|fk|public.project_content_banner_localization.project_content_banner_localization_project_content_id_project_",
+        "n|con|public.project_content_banner_localization.project_content_banner_localization_project_content_id_project_"
+      ],
+      "reads": [
+        "n|tbl|public.project_content_banner_localization",
+        "n|sch|public",
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|col|public.project_content_banner_localization.project_content_id",
+        "n|col|public.project_content.id",
+        "e|uniqueness|public.project_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content"
+      ],
+      "writes": [
+        "s|fk|public.project_content.project_content_project_id_project_id_fk",
+        "n|fk|public.project_content.project_content_project_id_project_id_fk",
+        "e|fk|public.project_content.project_content_project_id_project_id_fk",
+        "n|con|public.project_content.project_content_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_content.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_content_translation"
+      ],
+      "writes": [
+        "s|fk|public.project_content_translation.project_content_translation_project_content_id_project_content_",
+        "n|fk|public.project_content_translation.project_content_translation_project_content_id_project_content_",
+        "e|fk|public.project_content_translation.project_content_translation_project_content_id_project_content_",
+        "n|con|public.project_content_translation.project_content_translation_project_content_id_project_content_"
+      ],
+      "reads": [
+        "n|tbl|public.project_content_translation",
+        "n|sch|public",
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|col|public.project_content_translation.project_content_id",
+        "n|col|public.project_content.id",
+        "e|uniqueness|public.project_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_external_organization_localization"
+      ],
+      "writes": [
+        "s|fk|public.project_external_organization_localization.project_external_organization_localization_external_organizatio",
+        "n|fk|public.project_external_organization_localization.project_external_organization_localization_external_organizatio",
+        "e|fk|public.project_external_organization_localization.project_external_organization_localization_external_organizatio",
+        "n|con|public.project_external_organization_localization.project_external_organization_localization_external_organizatio"
+      ],
+      "reads": [
+        "n|tbl|public.project_external_organization_localization",
+        "n|sch|public",
+        "n|tbl|public.project_external_organization",
+        "n|sch|public",
+        "n|col|public.project_external_organization_localization.external_organization_id",
+        "n|col|public.project_external_organization.id",
+        "e|uniqueness|public.project_external_organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_external_organization"
+      ],
+      "writes": [
+        "s|fk|public.project_external_organization.project_external_organization_project_id_project_id_fk",
+        "n|fk|public.project_external_organization.project_external_organization_project_id_project_id_fk",
+        "e|fk|public.project_external_organization.project_external_organization_project_id_project_id_fk",
+        "n|con|public.project_external_organization.project_external_organization_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_external_organization",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_external_organization.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_language_setting"
+      ],
+      "writes": [
+        "s|fk|public.project_language_setting.project_language_setting_project_id_project_id_fk",
+        "n|fk|public.project_language_setting.project_language_setting_project_id_project_id_fk",
+        "e|fk|public.project_language_setting.project_language_setting_project_id_project_id_fk",
+        "n|con|public.project_language_setting.project_language_setting_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_language_setting",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_language_setting.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_attribution"
+      ],
+      "writes": [
+        "s|fk|public.project_organization_attribution.project_organization_attribution_project_id_project_id_fk",
+        "n|fk|public.project_organization_attribution.project_organization_attribution_project_id_project_id_fk",
+        "e|fk|public.project_organization_attribution.project_organization_attribution_project_id_project_id_fk",
+        "n|con|public.project_organization_attribution.project_organization_attribution_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_attribution",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_organization_attribution.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_attribution"
+      ],
+      "writes": [
+        "s|fk|public.project_organization_attribution.project_organization_attribution_organization_id_organization_i",
+        "n|fk|public.project_organization_attribution.project_organization_attribution_organization_id_organization_i",
+        "e|fk|public.project_organization_attribution.project_organization_attribution_organization_id_organization_i",
+        "n|con|public.project_organization_attribution.project_organization_attribution_organization_id_organization_i"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_attribution",
+        "n|sch|public",
+        "n|tbl|public.organization",
+        "n|sch|public",
+        "n|col|public.project_organization_attribution.organization_id",
+        "n|col|public.organization.id",
+        "e|uniqueness|public.organization.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_organization_attribution"
+      ],
+      "writes": [
+        "s|fk|public.project_organization_attribution.project_organization_attribution_external_project_fk",
+        "n|fk|public.project_organization_attribution.project_organization_attribution_external_project_fk",
+        "e|fk|public.project_organization_attribution.project_organization_attribution_external_project_fk",
+        "n|con|public.project_organization_attribution.project_organization_attribution_external_project_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_organization_attribution",
+        "n|sch|public",
+        "n|tbl|public.project_external_organization",
+        "n|sch|public",
+        "n|col|public.project_organization_attribution.project_id",
+        "n|col|public.project_organization_attribution.external_organization_id",
+        "n|col|public.project_external_organization.project_id",
+        "n|col|public.project_external_organization.id",
+        "e|uniqueness|public.project_external_organization.id.project_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_participant_display_language"
+      ],
+      "writes": [
+        "s|fk|public.project_participant_display_language.project_participant_display_language_project_id_project_id_fk",
+        "n|fk|public.project_participant_display_language.project_participant_display_language_project_id_project_id_fk",
+        "e|fk|public.project_participant_display_language.project_participant_display_language_project_id_project_id_fk",
+        "n|con|public.project_participant_display_language.project_participant_display_language_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_participant_display_language",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_participant_display_language.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_participant_display_language"
+      ],
+      "writes": [
+        "s|fk|public.project_participant_display_language.project_participant_display_language_user_id_user_id_fk",
+        "n|fk|public.project_participant_display_language.project_participant_display_language_user_id_user_id_fk",
+        "e|fk|public.project_participant_display_language.project_participant_display_language_user_id_user_id_fk",
+        "n|con|public.project_participant_display_language.project_participant_display_language_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_participant_display_language",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.project_participant_display_language.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project"
+      ],
+      "writes": [
+        "s|fk|public.project.project_current_content_id_project_content_id_fk",
+        "n|fk|public.project.project_current_content_id_project_content_id_fk",
+        "e|fk|public.project.project_current_content_id_project_content_id_fk",
+        "n|con|public.project.project_current_content_id_project_content_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|col|public.project.current_content_id",
+        "n|col|public.project_content.id",
+        "e|uniqueness|public.project_content.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "project_translation_target_language"
+      ],
+      "writes": [
+        "s|fk|public.project_translation_target_language.project_translation_target_language_project_id_project_id_fk",
+        "n|fk|public.project_translation_target_language.project_translation_target_language_project_id_project_id_fk",
+        "e|fk|public.project_translation_target_language.project_translation_target_language_project_id_project_id_fk",
+        "n|con|public.project_translation_target_language.project_translation_target_language_project_id_project_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.project_translation_target_language",
+        "n|sch|public",
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project_translation_target_language.project_id",
+        "n|col|public.project.id",
+        "e|uniqueness|public.project.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language_current"
+      ],
+      "writes": [
+        "s|fk|public.user_display_language_current.user_display_language_current_user_id_user_id_fk",
+        "n|fk|public.user_display_language_current.user_display_language_current_user_id_user_id_fk",
+        "e|fk|public.user_display_language_current.user_display_language_current_user_id_user_id_fk",
+        "n|con|public.user_display_language_current.user_display_language_current_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.user_display_language_current",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.user_display_language_current.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "alter_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "content_translation_work"
+      ],
+      "writes": [
+        "s|ck|public.content_translation_work.content_translation_work_source_check"
+      ],
+      "reads": [
+        "n|tbl|public.content_translation_work",
+        "n|sch|public",
+        "n|col|public.content_translation_work.source_kind",
+        "n|col|public.content_translation_work.conversation_id",
+        "n|col|public.content_translation_work.project_content_id",
+        "n|col|public.content_translation_work.conversation_content_id",
+        "n|col|public.content_translation_work.opinion_content_id",
+        "n|col|public.content_translation_work.survey_question_content_id",
+        "n|col|public.content_translation_work.survey_question_option_content_ids",
+        "e|col|public.content_translation_work.source_kind",
+        "e|col|public.content_translation_work.conversation_content_id",
+        "e|col|public.content_translation_work.opinion_content_id",
+        "e|col|public.content_translation_work.survey_question_content_id",
+        "e|col|public.content_translation_work.survey_question_option_content_ids"
+      ],
+      "sqlHash": "67a135fb595c59e7"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "organization_localization",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_contact",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_content_banner_localization",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_content",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_content_translation",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_external_organization_localization",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_external_organization",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_language_setting",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_organization_attribution",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_participant_display_language",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_translation_target_language",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "user_display_language_current",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_content_translation_source_kind",
+        "values": [
+          "manual",
+          "machine"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_language_setting_mode",
+        "values": [
+          "auto",
+          "manual"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "project_organization_attribution_role",
+        "values": [
+          "project_owner",
+          "sponsor",
+          "partner"
+        ],
+        "entityType": "enums"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "project_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_language_setting",
+        "name": "dynamic_translation_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_moderation",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation",
+        "name": "dynamic_translation_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_moderation",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "organization_localization_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "display_name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "description",
+        "type": "varchar(280)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "website_url",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "image_path",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "is_full_image_path",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "default_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_contact_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "role_label",
+        "type": "varchar(140)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "email",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "external_organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_content_banner_localization_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "project_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "banner_path",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "banner_is_full_path",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_content_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "title",
+        "type": "varchar(140)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "subtitle",
+        "type": "varchar(140)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "body",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "body_plain_text",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "banner_path",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "banner_is_full_path",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_content_translation_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "project_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "display_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "translated_title",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "translated_subtitle",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "translated_body",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "source_kind",
+        "type": "project_content_translation_source_kind",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": "'machine'",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "source_language_code",
+        "type": "spoken_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "source_raw_language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "source_language_provider",
+        "type": "language_detection_provider",
+        "typeSchema": "public",
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "source_language_confidence",
+        "type": "real",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_external_organization_localization_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "external_organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "display_name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "description",
+        "type": "varchar(280)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "website_url",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "image_path",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "is_full_image_path",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_external_organization_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "display_name",
+        "type": "varchar(65)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "default_language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "description",
+        "type": "varchar(280)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "image_path",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "is_full_image_path",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "website_url",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_language_setting_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "mode",
+        "type": "project_language_setting_mode",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "dynamic_translation_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_organization_attribution_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "role",
+        "type": "project_organization_attribution_role",
+        "typeSchema": "public",
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "sort_order",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "0",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "external_organization_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_participant_display_language_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "title",
+        "type": "varchar(140)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "current_content_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "dynamic_translation_enabled",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "project_translation_target_language_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "project_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language_current",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language_current",
+        "name": "language_code",
+        "type": "display_language_code",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language_current",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language_current",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_mute_preference",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_project_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "display_language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "(\"content_translation_work\".\"source_kind\" = 'project' AND \"content_translation_work\".\"project_content_id\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_moderation",
+        "name": "conversation_moderation_active_conversation_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"conversation_moderation\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_translation_target_language_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"conversation_translation_target_language\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_translation_target_language_legacy_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "translation_setting_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"conversation_translation_target_language\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "followed_topic",
+        "name": "followed_topic_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "topic_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"followed_topic\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_moderation",
+        "name": "opinion_moderation_active_opinion_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "opinion_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"opinion_moderation\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_membership",
+        "name": "organization_membership_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"organization_membership\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization",
+        "name": "organization_active_slug_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "slug",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"organization\".\"deleted_at\" IS NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_project_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_contact\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "project_content_banner_localization_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_content_banner_localization\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "project_content_translation_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_content_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "display_language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_content_translation\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "project_external_org_loc_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "external_organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_external_organization_localization\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_order_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "role",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "sort_order",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_organization_attribution\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_real_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "role",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "(\"project_organization_attribution\".\"organization_id\" is not null AND \"project_organization_attribution\".\"deleted_at\" is null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_external_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "role",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "external_organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "(\"project_organization_attribution\".\"external_organization_id\" is not null AND \"project_organization_attribution\".\"deleted_at\" is null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_ownership",
+        "name": "project_organization_ownership_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_organization_ownership\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "project_participant_display_language_user_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_active_slug_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "slug",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project\".\"deleted_at\" IS NULL",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "project_translation_target_language_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "project_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "language_code",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"project_translation_target_language\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_mute_preference",
+        "name": "user_mute_preference_active_unique",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "source_user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "target_user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"user_mute_preference\".\"deleted_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "content_translation_work",
+        "name": "content_translation_work_project_content_id_project_content_id_",
+        "nameExplicit": false,
+        "columns": [
+          "project_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_translation_target_language",
+        "name": "conversation_translation_target_language_conversation_id_conver",
+        "nameExplicit": false,
+        "columns": [
+          "conversation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "conversation",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "organization_localization_organization_id_organization_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_organization_id_organization_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_external_project_fk",
+        "nameExplicit": true,
+        "columns": [
+          "project_id",
+          "external_organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_external_organization",
+        "columnsTo": [
+          "project_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "project_content_banner_localization_project_content_id_project_",
+        "nameExplicit": false,
+        "columns": [
+          "project_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "project_content_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "project_content_translation_project_content_id_project_content_",
+        "nameExplicit": false,
+        "columns": [
+          "project_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "project_external_organization_localization_external_organizatio",
+        "nameExplicit": false,
+        "columns": [
+          "external_organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_external_organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "project_external_organization_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "project_language_setting_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_organization_id_organization_i",
+        "nameExplicit": false,
+        "columns": [
+          "organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "organization",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_external_project_fk",
+        "nameExplicit": true,
+        "columns": [
+          "project_id",
+          "external_organization_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_external_organization",
+        "columnsTo": [
+          "project_id",
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "project_participant_display_language_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "project_participant_display_language_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_current_content_id_project_content_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "current_content_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project_content",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "project_translation_target_language_project_id_project_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "project_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "project",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language_current",
+        "name": "user_display_language_current_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "organization_localization_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_banner_localization",
+        "name": "project_content_banner_localization_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "project_content_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "project_content_translation_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization_localization",
+        "name": "project_external_organization_localization_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "project_external_organization_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "project_language_setting_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "project_participant_display_language_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_translation_target_language",
+        "name": "project_translation_target_language_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language_current",
+        "name": "user_display_language_current_pkey",
+        "columns": [
+          "user_id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organization_localization",
+        "name": "organization_localization_organization_language_unique",
+        "nameExplicit": true,
+        "columns": [
+          "organization_id",
+          "language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_external_organization",
+        "name": "project_external_organization_project_id_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "project_id",
+          "id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "project_language_setting_project_unique",
+        "nameExplicit": true,
+        "columns": [
+          "project_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_participant_display_language",
+        "name": "project_participant_display_language_unique",
+        "nameExplicit": true,
+        "columns": [
+          "project_id",
+          "user_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project",
+        "name": "project_current_content_id_unique",
+        "nameExplicit": false,
+        "columns": [
+          "current_content_id"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_contact",
+        "name": "project_contact_affiliation_source_check",
+        "value": "num_nonnulls(\"project_contact\".\"organization_id\", \"project_contact\".\"external_organization_id\") <= 1",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content",
+        "name": "project_content_source_metadata_check",
+        "value": "((\"project_content\".\"source_language_provider\" IS NULL AND \"project_content\".\"source_raw_language_code\" IS NULL) OR (\"project_content\".\"source_language_provider\" IS NOT NULL AND \"project_content\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_content_translation",
+        "name": "project_content_translation_source_metadata_check",
+        "value": "((\"project_content_translation\".\"source_language_provider\" IS NULL AND \"project_content_translation\".\"source_raw_language_code\" IS NULL) OR (\"project_content_translation\".\"source_language_provider\" IS NOT NULL AND \"project_content_translation\".\"source_raw_language_code\" IS NOT NULL))",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_language_setting",
+        "name": "project_language_setting_manual_language_check",
+        "value": "(\"project_language_setting\".\"mode\" <> 'manual') OR (\"project_language_setting\".\"language_code\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "project_organization_attribution",
+        "name": "project_organization_attribution_source_xor_check",
+        "value": "num_nonnulls(\"project_organization_attribution\".\"organization_id\", \"project_organization_attribution\".\"external_organization_id\") = 1",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"project\",\"display_name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"conversation_moderation\",\"conversation_moderation_conversation_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"opinion_moderation\",\"opinion_moderation_opinion_id_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"user_mute_preference\",\"user_unique_mute\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"followed_topic\",\"followed_topic_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"conversation_translation_target_language\",\"conversation_translation_target_language_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"organization_membership\",\"organization_membership_user_organization_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"organization\",\"organization_slug_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"project_organization_ownership\",\"project_organization_ownership_project_org_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"project\",\"project_slug_unique\"]"
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"content_translation_source_kind\"]",
+      "set": {
+        "values": [
+          "conversation",
+          "opinion",
+          "survey_question",
+          "project"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"conversation_language_setting_mode\"]",
+      "set": {
+        "values": [
+          "inherit",
+          "auto",
+          "manual"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"content_translation_work\",\"conversation_id\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_translation_setting\",\"conversation_id\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_translation_target_language\",\"translation_setting_id\"]",
+      "set": {
+        "notNull": false
+      }
+    },
+    {
+      "op": "alter",
+      "key": "checks\u0000[\"public\",\"content_translation_work\",\"content_translation_work_source_check\"]",
+      "set": {
+        "value": "((\"content_translation_work\".\"source_kind\" = 'conversation' AND \"content_translation_work\".\"conversation_id\" is not null AND \"content_translation_work\".\"project_content_id\" is null AND \"content_translation_work\".\"conversation_content_id\" is not null AND \"content_translation_work\".\"opinion_content_id\" is null AND \"content_translation_work\".\"survey_question_content_id\" is null AND \"content_translation_work\".\"survey_question_option_content_ids\" is null) OR (\"content_translation_work\".\"source_kind\" = 'project' AND \"content_translation_work\".\"conversation_id\" is null AND \"content_translation_work\".\"project_content_id\" is not null AND \"content_translation_work\".\"conversation_content_id\" is null AND \"content_translation_work\".\"opinion_content_id\" is null AND \"content_translation_work\".\"survey_question_content_id\" is null AND \"content_translation_work\".\"survey_question_option_content_ids\" is null) OR (\"content_translation_work\".\"source_kind\" = 'opinion' AND \"content_translation_work\".\"conversation_id\" is not null AND \"content_translation_work\".\"project_content_id\" is null AND \"content_translation_work\".\"conversation_content_id\" is null AND \"content_translation_work\".\"opinion_content_id\" is not null AND \"content_translation_work\".\"survey_question_content_id\" is null AND \"content_translation_work\".\"survey_question_option_content_ids\" is null) OR (\"content_translation_work\".\"source_kind\" = 'survey_question' AND \"content_translation_work\".\"conversation_id\" is not null AND \"content_translation_work\".\"project_content_id\" is null AND \"content_translation_work\".\"conversation_content_id\" is null AND \"content_translation_work\".\"opinion_content_id\" is null AND \"content_translation_work\".\"survey_question_content_id\" is not null AND \"content_translation_work\".\"survey_question_option_content_ids\" is not null))"
+      }
+    }
+  ]
+}

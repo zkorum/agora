@@ -42,16 +42,14 @@ export async function canManageOpinion({
     db,
     userId,
     opinion,
-    lockAuthorization = false,
 }: {
     db: PostgresJsDatabase;
     userId: string;
     opinion: {
-        readonly authorId: string;
+        readonly authorId: string | null;
         readonly isSeed: boolean;
         readonly projectId: number;
     };
-    lockAuthorization?: boolean;
 }): Promise<boolean> {
     if (!opinion.isSeed) return opinion.authorId === userId;
     const capabilities = await getProjectCapabilitiesById({
@@ -59,7 +57,6 @@ export async function canManageOpinion({
         userId,
         projectIds: [opinion.projectId],
         requestedCapabilities: ["conversation_edit"],
-        lockAuthorization,
     });
     return (
         capabilities.get(opinion.projectId)?.has("conversation_edit") === true
@@ -87,12 +84,10 @@ export async function getOpinionManagementCapabilities({
     db,
     opinionSlugIds,
     userId,
-    lockAuthorization = false,
 }: {
     db: PostgresJsDatabase;
     opinionSlugIds: readonly string[];
     userId: string | undefined;
-    lockAuthorization?: boolean;
 }): Promise<ReadonlyMap<string, OpinionManagementCapabilities>> {
     const capabilities = new Map<string, OpinionManagementCapabilities>();
     if (userId === undefined || opinionSlugIds.length === 0)
@@ -142,15 +137,8 @@ export async function getOpinionManagementCapabilities({
     const projectCapabilities = await getProjectCapabilitiesById({
         db,
         userId,
-        projectIds: [
-            ...new Set(
-                opinions
-                    .filter((opinion) => opinion.isSeed)
-                    .map((opinion) => opinion.projectId),
-            ),
-        ],
-        requestedCapabilities: ["conversation_edit"],
-        lockAuthorization,
+        projectIds: [...new Set(opinions.map((opinion) => opinion.projectId))],
+        requestedCapabilities: ["conversation_edit", "conversation_moderate"],
     });
     const canManage = (opinion: (typeof opinions)[number]): boolean =>
         opinion.isSeed
@@ -194,6 +182,10 @@ export async function getOpinionManagementCapabilities({
                 ? { allowed: false, reason: "has_votes" }
                 : opinion.editing,
             canDelete: opinion.canDelete,
+            canModerate:
+                projectCapabilities
+                    .get(opinion.projectId)
+                    ?.has("conversation_moderate") === true,
         });
     }
     return capabilities;

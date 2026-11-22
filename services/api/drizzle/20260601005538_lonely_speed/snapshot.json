@@ -1,0 +1,1744 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0ad00cbb-77f5-434e-9cca-389e5d0084d2",
+  "prevIds": [
+    "6b6d58a8-3179-4c3e-b91b-c299bb5c8fe5"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "analysis_insufficient_data_reason_enum"
+      ],
+      "writes": [
+        "s|enum|public.analysis_insufficient_data_reason_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "opinion_group_candidate_hidden_reason_enum"
+      ],
+      "writes": [
+        "s|enum|public.opinion_group_candidate_hidden_reason_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_group_candidate_description_locale_request"
+      ],
+      "writes": [
+        "s|tbl|public.opinion_group_candidate_description_locale_request",
+        "n|tbl|public.opinion_group_candidate_description_locale_request",
+        "e|tbl|public.opinion_group_candidate_description_locale_request",
+        "n|rel|public.opinion_group_candidate_description_locale_request",
+        "n|type|public.opinion_group_candidate_description_locale_request",
+        "n|rel|public.opinion_group_candidate_description_locale_request_pkey",
+        "n|rel|public.opinion_group_candidate_description_locale_request_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_group_description_locale_status"
+      ],
+      "writes": [
+        "s|tbl|public.opinion_group_description_locale_status",
+        "n|tbl|public.opinion_group_description_locale_status",
+        "e|tbl|public.opinion_group_description_locale_status",
+        "n|rel|public.opinion_group_description_locale_status",
+        "n|type|public.opinion_group_description_locale_status"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_createdAt_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_createdAt_idx",
+        "n|idx|public.opinion_createdAt_idx",
+        "e|idx|public.opinion_createdAt_idx",
+        "n|rel|public.opinion_createdAt_idx"
+      ],
+      "reads": [
+        "e|tbl|public.opinion",
+        "n|sch|public",
+        "e|col|public.opinion.created_at"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_slugId_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_slugId_idx",
+        "n|idx|public.opinion_slugId_idx",
+        "e|idx|public.opinion_slugId_idx",
+        "n|rel|public.opinion_slugId_idx"
+      ],
+      "reads": [
+        "e|tbl|public.opinion",
+        "n|sch|public",
+        "e|col|public.opinion.slug_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_mute_preference",
+        "user_idx_mute"
+      ],
+      "writes": [
+        "s|idx|public.user_idx_mute",
+        "n|idx|public.user_idx_mute",
+        "e|idx|public.user_idx_mute",
+        "n|rel|public.user_idx_mute"
+      ],
+      "reads": [
+        "e|tbl|public.user_mute_preference",
+        "n|sch|public",
+        "e|col|public.user_mute_preference.source_user_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_organization_mapping",
+        "user_idx_organization"
+      ],
+      "writes": [
+        "s|idx|public.user_idx_organization",
+        "n|idx|public.user_idx_organization",
+        "e|idx|public.user_idx_organization",
+        "n|rel|public.user_idx_organization"
+      ],
+      "reads": [
+        "e|tbl|public.user_organization_mapping",
+        "n|sch|public",
+        "e|col|public.user_organization_mapping.user_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_topic",
+        "conversation_topic_index"
+      ],
+      "writes": [
+        "s|idx|public.conversation_topic_index",
+        "n|idx|public.conversation_topic_index",
+        "e|idx|public.conversation_topic_index",
+        "n|rel|public.conversation_topic_index"
+      ],
+      "reads": [
+        "e|tbl|public.conversation_topic",
+        "n|sch|public",
+        "e|col|public.conversation_topic.conversation_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "followed_topic",
+        "followed_topic_index"
+      ],
+      "writes": [
+        "s|idx|public.followed_topic_index",
+        "n|idx|public.followed_topic_index",
+        "e|idx|public.followed_topic_index",
+        "n|rel|public.followed_topic_index"
+      ],
+      "reads": [
+        "e|tbl|public.followed_topic",
+        "n|sch|public",
+        "e|col|public.followed_topic.user_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_display_language",
+        "user_display_language_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_display_language_user_idx",
+        "n|idx|public.user_display_language_user_idx",
+        "e|idx|public.user_display_language_user_idx",
+        "n|rel|public.user_display_language_user_idx"
+      ],
+      "reads": [
+        "e|tbl|public.user_display_language",
+        "n|sch|public",
+        "e|col|public.user_display_language.user_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_spoken_languages",
+        "user_spoken_languages_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_spoken_languages_user_idx",
+        "n|idx|public.user_spoken_languages_user_idx",
+        "e|idx|public.user_spoken_languages_user_idx",
+        "n|rel|public.user_spoken_languages_user_idx"
+      ],
+      "reads": [
+        "e|tbl|public.user_spoken_languages",
+        "n|sch|public",
+        "e|col|public.user_spoken_languages.user_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_moderation",
+        "conversation_moderation_conversation_id_moderation_action_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_moderation_conversation_id_moderation_action_idx",
+        "n|idx|public.conversation_moderation_conversation_id_moderation_action_idx",
+        "e|idx|public.conversation_moderation_conversation_id_moderation_action_idx",
+        "n|rel|public.conversation_moderation_conversation_id_moderation_action_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conversation_moderation",
+        "n|sch|public",
+        "e|col|public.conversation_moderation.conversation_id",
+        "e|col|public.conversation_moderation.moderation_action"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user",
+        "user_isDeleted_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_isDeleted_idx",
+        "n|idx|public.user_isDeleted_idx",
+        "e|idx|public.user_isDeleted_idx",
+        "n|rel|public.user_isDeleted_idx"
+      ],
+      "reads": [
+        "e|tbl|public.user",
+        "n|sch|public",
+        "e|col|public.user.is_deleted"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_import",
+        "conversation_import_conversation_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_import_conversation_idx",
+        "n|idx|public.conversation_import_conversation_idx",
+        "e|idx|public.conversation_import_conversation_idx",
+        "n|rel|public.conversation_import_conversation_idx"
+      ],
+      "reads": [
+        "e|tbl|public.conversation_import",
+        "n|sch|public",
+        "e|col|public.conversation_import.conversation_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item",
+        "maxdiff_item_slug_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_item_slug_idx",
+        "n|idx|public.maxdiff_item_slug_idx",
+        "e|idx|public.maxdiff_item_slug_idx",
+        "n|rel|public.maxdiff_item_slug_idx"
+      ],
+      "reads": [
+        "e|tbl|public.maxdiff_item",
+        "n|sch|public",
+        "e|col|public.maxdiff_item.slug_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_item_external_source",
+        "maxdiff_external_source_external_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_external_source_external_id_idx",
+        "n|idx|public.maxdiff_external_source_external_id_idx",
+        "e|idx|public.maxdiff_external_source_external_id_idx",
+        "n|rel|public.maxdiff_external_source_external_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.maxdiff_item_external_source",
+        "n|sch|public",
+        "e|col|public.maxdiff_item_external_source.external_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "ranking_score_entity",
+        "ranking_score_entity_score_idx"
+      ],
+      "writes": [
+        "s|idx|public.ranking_score_entity_score_idx",
+        "n|idx|public.ranking_score_entity_score_idx",
+        "e|idx|public.ranking_score_entity_score_idx",
+        "n|rel|public.ranking_score_entity_score_idx"
+      ],
+      "reads": [
+        "e|tbl|public.ranking_score_entity",
+        "n|sch|public",
+        "e|col|public.ranking_score_entity.ranking_score_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "analysis_work_state",
+        "analysis_work_state_due_idx"
+      ],
+      "writes": [
+        "s|idx|public.analysis_work_state_due_idx",
+        "n|idx|public.analysis_work_state_due_idx",
+        "e|idx|public.analysis_work_state_due_idx",
+        "n|rel|public.analysis_work_state_due_idx"
+      ],
+      "reads": [
+        "e|tbl|public.analysis_work_state",
+        "n|sch|public",
+        "e|col|public.analysis_work_state.next_run_at",
+        "e|col|public.analysis_work_state.conversation_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_description_translation_work",
+        "opinion_group_description_translation_work_due_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_description_translation_work_due_idx",
+        "n|idx|public.opinion_group_description_translation_work_due_idx",
+        "e|idx|public.opinion_group_description_translation_work_due_idx",
+        "n|rel|public.opinion_group_description_translation_work_due_idx"
+      ],
+      "reads": [
+        "e|tbl|public.opinion_group_description_translation_work",
+        "n|sch|public",
+        "e|col|public.opinion_group_description_translation_work.next_run_at"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_lineage_description_work",
+        "opinion_group_lineage_description_work_due_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_lineage_description_work_due_idx",
+        "n|idx|public.opinion_group_lineage_description_work_due_idx",
+        "e|idx|public.opinion_group_lineage_description_work_due_idx",
+        "n|rel|public.opinion_group_lineage_description_work_due_idx"
+      ],
+      "reads": [
+        "e|tbl|public.opinion_group_lineage_description_work",
+        "n|sch|public",
+        "e|col|public.opinion_group_lineage_description_work.next_run_at"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "analysis_work_state",
+        "next_run_at"
+      ],
+      "writes": [
+        "s|col|public.analysis_work_state.next_run_at",
+        "n|col|public.analysis_work_state.next_run_at",
+        "e|col|public.analysis_work_state.next_run_at"
+      ],
+      "reads": [
+        "n|tbl|public.analysis_work_state",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_description_translation_work",
+        "next_run_at"
+      ],
+      "writes": [
+        "s|col|public.opinion_group_description_translation_work.next_run_at",
+        "n|col|public.opinion_group_description_translation_work.next_run_at",
+        "e|col|public.opinion_group_description_translation_work.next_run_at"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_description_translation_work",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_group_lineage_description_work",
+        "next_run_at"
+      ],
+      "writes": [
+        "s|col|public.opinion_group_lineage_description_work.next_run_at",
+        "n|col|public.opinion_group_lineage_description_work.next_run_at",
+        "e|col|public.opinion_group_lineage_description_work.next_run_at"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_lineage_description_work",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_feed_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_feed_idx",
+        "n|idx|public.conversation_feed_idx",
+        "e|idx|public.conversation_feed_idx",
+        "n|rel|public.conversation_feed_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "d363cbab98517a31"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_author_timeline_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_author_timeline_idx",
+        "n|idx|public.conversation_author_timeline_idx",
+        "e|idx|public.conversation_author_timeline_idx",
+        "n|rel|public.conversation_author_timeline_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.author_id",
+        "n|col|public.conversation.is_importing"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "ecca0b432844d82a"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation",
+        "conversation_organization_timeline_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_organization_timeline_idx",
+        "n|idx|public.conversation_organization_timeline_idx",
+        "e|idx|public.conversation_organization_timeline_idx",
+        "n|rel|public.conversation_organization_timeline_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.organization_id",
+        "n|col|public.conversation.is_importing"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "e69709c05d8ac3ec"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_view_snapshot",
+        "conversation_view_snapshot_latest_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_view_snapshot_latest_idx",
+        "n|idx|public.conversation_view_snapshot_latest_idx",
+        "e|idx|public.conversation_view_snapshot_latest_idx",
+        "n|rel|public.conversation_view_snapshot_latest_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_view_snapshot",
+        "n|sch|public",
+        "n|col|public.conversation_view_snapshot.conversation_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "442cf9730904505a"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_view_snapshot",
+        "conversation_view_snapshot_latest_active_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_view_snapshot_latest_active_idx",
+        "n|idx|public.conversation_view_snapshot_latest_active_idx",
+        "e|idx|public.conversation_view_snapshot_latest_active_idx",
+        "n|rel|public.conversation_view_snapshot_latest_active_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_view_snapshot",
+        "n|sch|public",
+        "n|col|public.conversation_view_snapshot.conversation_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "4e58fa9bfcefdc3d"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "conversation_view_snapshot",
+        "conversation_view_snapshot_latest_spec_active_idx"
+      ],
+      "writes": [
+        "s|idx|public.conversation_view_snapshot_latest_spec_active_idx",
+        "n|idx|public.conversation_view_snapshot_latest_spec_active_idx",
+        "e|idx|public.conversation_view_snapshot_latest_spec_active_idx",
+        "n|rel|public.conversation_view_snapshot_latest_spec_active_idx"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_view_snapshot",
+        "n|sch|public",
+        "n|col|public.conversation_view_snapshot.conversation_id",
+        "n|col|public.conversation_view_snapshot.opinion_group_spec_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "233e86ce022425e7"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notification",
+        "notification_user_created_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.notification_user_created_id_idx",
+        "n|idx|public.notification_user_created_id_idx",
+        "e|idx|public.notification_user_created_id_idx",
+        "n|rel|public.notification_user_created_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.notification",
+        "n|sch|public",
+        "n|col|public.notification.user_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "0c5a6ba8eb03fae1"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_author_active_created_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_author_active_created_id_idx",
+        "n|idx|public.opinion_author_active_created_id_idx",
+        "e|idx|public.opinion_author_active_created_id_idx",
+        "n|rel|public.opinion_author_active_created_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.author_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "7f800e99d12d258c"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion",
+        "opinion_conversation_active_created_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_conversation_active_created_id_idx",
+        "n|idx|public.opinion_conversation_active_created_id_idx",
+        "e|idx|public.opinion_conversation_active_created_id_idx",
+        "n|rel|public.opinion_conversation_active_created_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion",
+        "n|sch|public",
+        "n|col|public.opinion.conversation_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "81efb80cd9693627"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "vote",
+        "vote_author_active_updated_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.vote_author_active_updated_id_idx",
+        "n|idx|public.vote_author_active_updated_id_idx",
+        "e|idx|public.vote_author_active_updated_id_idx",
+        "n|rel|public.vote_author_active_updated_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.vote",
+        "n|sch|public",
+        "n|col|public.vote.author_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "14e4be1df3e0e4f4"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "maxdiff_user_entity_score",
+        "maxdiff_user_entity_score_result_score_idx"
+      ],
+      "writes": [
+        "s|idx|public.maxdiff_user_entity_score_result_score_idx",
+        "n|idx|public.maxdiff_user_entity_score_result_score_idx",
+        "e|idx|public.maxdiff_user_entity_score_result_score_idx",
+        "n|rel|public.maxdiff_user_entity_score_result_score_idx"
+      ],
+      "reads": [
+        "n|tbl|public.maxdiff_user_entity_score",
+        "n|sch|public",
+        "n|col|public.maxdiff_user_entity_score.maxdiff_result_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_candidate_description_locale_request",
+        "opinion_group_candidate_description_locale_request_updated_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_candidate_description_locale_request_updated_idx",
+        "n|idx|public.opinion_group_candidate_description_locale_request_updated_idx",
+        "e|idx|public.opinion_group_candidate_description_locale_request_updated_idx",
+        "n|rel|public.opinion_group_candidate_description_locale_request_updated_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_candidate_description_locale_request",
+        "n|sch|public",
+        "n|col|public.opinion_group_candidate_description_locale_request.updated_at",
+        "n|col|public.opinion_group_candidate_description_locale_request.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_candidate_description_locale_request",
+        "og_candidate_desc_locale_request_translation_updated_idx"
+      ],
+      "writes": [
+        "s|idx|public.og_candidate_desc_locale_request_translation_updated_idx",
+        "n|idx|public.og_candidate_desc_locale_request_translation_updated_idx",
+        "e|idx|public.og_candidate_desc_locale_request_translation_updated_idx",
+        "n|rel|public.og_candidate_desc_locale_request_translation_updated_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_candidate_description_locale_request",
+        "n|sch|public",
+        "n|col|public.opinion_group_candidate_description_locale_request.updated_at",
+        "n|col|public.opinion_group_candidate_description_locale_request.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_opinion_stats",
+        "opinion_group_opinion_stats_representative_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_opinion_stats_representative_idx",
+        "n|idx|public.opinion_group_opinion_stats_representative_idx",
+        "e|idx|public.opinion_group_opinion_stats_representative_idx",
+        "n|rel|public.opinion_group_opinion_stats_representative_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_opinion_stats",
+        "n|sch|public",
+        "n|col|public.opinion_group_opinion_stats.group_id",
+        "n|col|public.opinion_group_opinion_stats.representative_probability_agreement",
+        "n|col|public.opinion_group_opinion_stats.analysis_snapshot_opinion_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_description_translation_work",
+        "opinion_group_description_translation_work_claim_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_description_translation_work_claim_idx",
+        "n|idx|public.opinion_group_description_translation_work_claim_idx",
+        "e|idx|public.opinion_group_description_translation_work_claim_idx",
+        "n|rel|public.opinion_group_description_translation_work_claim_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_description_translation_work",
+        "n|sch|public",
+        "n|col|public.opinion_group_description_translation_work.conversation_id",
+        "n|col|public.opinion_group_description_translation_work.updated_at",
+        "n|col|public.opinion_group_description_translation_work.id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "opinion_group_lineage_description_work",
+        "opinion_group_lineage_description_work_claim_idx"
+      ],
+      "writes": [
+        "s|idx|public.opinion_group_lineage_description_work_claim_idx",
+        "n|idx|public.opinion_group_lineage_description_work_claim_idx",
+        "e|idx|public.opinion_group_lineage_description_work_claim_idx",
+        "n|rel|public.opinion_group_lineage_description_work_claim_idx"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_lineage_description_work",
+        "n|sch|public",
+        "n|col|public.opinion_group_lineage_description_work.conversation_id",
+        "n|col|public.opinion_group_lineage_description_work.updated_at",
+        "n|col|public.opinion_group_lineage_description_work.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_group_candidate_description_locale_request"
+      ],
+      "writes": [
+        "s|fk|public.opinion_group_candidate_description_locale_request.opinion_group_candidate_description_locale_request_candidate_id",
+        "n|fk|public.opinion_group_candidate_description_locale_request.opinion_group_candidate_description_locale_request_candidate_id",
+        "e|fk|public.opinion_group_candidate_description_locale_request.opinion_group_candidate_description_locale_request_candidate_id",
+        "n|con|public.opinion_group_candidate_description_locale_request.opinion_group_candidate_description_locale_request_candidate_id"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_group_candidate_description_locale_request",
+        "n|sch|public",
+        "n|tbl|public.opinion_group_candidate",
+        "n|sch|public",
+        "n|col|public.opinion_group_candidate_description_locale_request.candidate_id",
+        "n|col|public.opinion_group_candidate.id",
+        "e|uniqueness|public.opinion_group_candidate.id"
+      ]
+    },
+    {
+      "statementType": "drop_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "ai_description_locale_status_enum"
+      ],
+      "writes": [
+        "s|enum|public.ai_description_locale_status_enum",
+        "n|enum|public.ai_description_locale_status_enum",
+        "e|enum|public.ai_description_locale_status_enum",
+        "n|type|public.ai_description_locale_status_enum"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "opinion_group_candidate_description_locale_request",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": {
+          "name": "opinion_group_candidate_description_locale_request_id_seq",
+          "type": "always",
+          "startWith": "1",
+          "minValue": "1",
+          "maxValue": "2147483647",
+          "increment": "1",
+          "cache": 1,
+          "cycle": false
+        },
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "candidate_id",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "locale",
+        "type": "varchar(10)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "updated_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "maxdiff_user_entity_score",
+        "name": "maxdiff_user_entity_score_result_score_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "maxdiff_result_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"score\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "opinion_group_candidate_description_locale_request_updated_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "og_candidate_desc_locale_request_translation_updated_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"opinion_group_candidate_description_locale_request\".\"locale\" <> 'en'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_opinion_stats",
+        "name": "opinion_group_opinion_stats_representative_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "group_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "representative_probability_agreement",
+            "isExpression": false,
+            "asc": false,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "analysis_snapshot_opinion_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "(\"opinion_group_opinion_stats\".\"representative_agreement_type\" is not null AND \"opinion_group_opinion_stats\".\"representative_probability_agreement\" is not null)",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "opinion_group_candidate_description_locale_request_candidate_id",
+        "nameExplicit": false,
+        "columns": [
+          "candidate_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "opinion_group_candidate",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "opinion_group_candidate_description_locale_request_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_group_candidate_description_locale_request",
+        "name": "opinion_group_candidate_description_locale_request_unique",
+        "nameExplicit": true,
+        "columns": [
+          "candidate_id",
+          "locale"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"opinion_group_description_locale_status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "enums\u0000[\"public\",\"ai_description_locale_status_enum\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"analysis_work_state\",\"next_run_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"conversation_view_snapshot_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"conversation_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_spec_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"analysis_snapshot_result_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"locale\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"status\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"ai_generation_expected\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"translation_expected\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"attempt_count\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"next_run_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"lease_owner\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"lease_token\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"lease_expires_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"non_retryable_ai_description_epoch\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"last_error_code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"last_error_message\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_locale_status\",\"updated_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_description_translation_work\",\"next_run_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"opinion_group_lineage_description_work\",\"next_run_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"opinion_createdAt_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"opinion_slugId_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_idx_mute\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_idx_organization\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_topic_index\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"followed_topic_index\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_display_language_user_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_spoken_languages_user_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_moderation_conversation_id_moderation_action_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_isDeleted_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"conversation_import_conversation_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"maxdiff_item_slug_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"maxdiff_external_source_external_id_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"ranking_score_entity_score_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"analysis_work_state_due_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"opinion_group_description_locale_status_due_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"opinion_group_description_translation_work_due_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"opinion_group_lineage_description_work_due_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_conversation_view_snaps\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_conversation_id_convers\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_opinion_group_spec_id_o\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_analysis_snapshot_resul\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_unique\"]"
+    },
+    {
+      "op": "drop",
+      "key": "checks\u0000[\"public\",\"opinion_group_description_locale_status\",\"opinion_group_description_locale_status_running_lease_check\"]"
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"analysis_insufficient_data_reason_enum\"]",
+      "set": {
+        "values": [
+          "empty_vote_matrix",
+          "not_enough_clusterable_participants",
+          "not_enough_unique_points",
+          "not_enough_samples_for_group_count",
+          "other"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"opinion_group_candidate_hidden_reason_enum\"]",
+      "set": {
+        "values": [
+          "singleton_group",
+          "duplicate_representative_opinions",
+          "missing_representative_opinions",
+          "invalid_candidate_output"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_feed_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_author_timeline_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "is_importing",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_organization_timeline_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "is_importing",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_view_snapshot_latest_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_view_snapshot_latest_active_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"conversation_view_snapshot_latest_spec_active_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "opinion_group_spec_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"notification_user_created_id_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"opinion_author_active_created_id_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"opinion_conversation_active_created_id_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"created_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"vote_author_active_updated_id_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "author_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"updated_at\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "\"id\" DESC",
+            "isExpression": true,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"opinion_group_description_translation_work_claim_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "where": "\"opinion_group_description_translation_work\".\"lease_token\" is null"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"opinion_group_lineage_description_work_claim_idx\"]",
+      "set": {
+        "columns": [
+          {
+            "value": "conversation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "updated_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "where": "\"opinion_group_lineage_description_work\".\"lease_token\" is null"
+      }
+    }
+  ]
+}

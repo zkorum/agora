@@ -1,21 +1,32 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from scoring_worker.db import ComparisonRow
     from scoring_worker.entity_mapping import EntityIdMapper
 
 
 @dataclass(frozen=True)
-class MaxDiffObservation:
+class ComparisonObservation:
     user_id: int
     best_slug_id: str
     worst_slug_id: str
     candidate_set: tuple[str, ...]
+
+
+def build_participant_counts(observations: Sequence[ComparisonObservation]) -> dict[str, int]:
+    voters: defaultdict[str, set[int]] = defaultdict(set)
+    for observation in observations:
+        for slug in observation.candidate_set:
+            voters[slug].add(observation.user_id)
+    return {slug: len(users) for slug, users in voters.items()}
 
 
 @dataclass(frozen=True)
@@ -34,57 +45,61 @@ class PairwiseObservation:
     comparison_max: float
 
 
-def comparison_rows_to_maxdiff_observations(
+def comparison_rows_to_observations(
     *,
     entity_ids: list[str],
     comparisons: list[ComparisonRow],
-) -> list[MaxDiffObservation]:
-    """Filter stored MaxDiff comparison rows down to active entities only."""
+) -> list[ComparisonObservation]:
+    """Filter stored comparison answers down to active entities only."""
 
     active_entities = set(entity_ids)
-    observations: list[MaxDiffObservation] = []
+    observations: list[ComparisonObservation] = []
 
     for comparison in comparisons:
-        if (
-            comparison.best_slug_id not in active_entities
-            or comparison.worst_slug_id not in active_entities
-            or comparison.best_slug_id == comparison.worst_slug_id
-        ):
-            continue
-
-        filtered_candidate_set: list[str] = []
-        seen_candidate_ids: set[str] = set()
-        for candidate_id in comparison.candidate_set:
-            if candidate_id not in active_entities or candidate_id in seen_candidate_ids:
-                continue
-            seen_candidate_ids.add(candidate_id)
-            filtered_candidate_set.append(candidate_id)
-
-        if (
-            len(filtered_candidate_set) < 2
-            or comparison.best_slug_id not in seen_candidate_ids
-            or comparison.worst_slug_id not in seen_candidate_ids
-        ):
-            continue
-
-        observations.append(
-            MaxDiffObservation(
-                user_id=comparison.user_idx,
-                best_slug_id=comparison.best_slug_id,
-                worst_slug_id=comparison.worst_slug_id,
-                candidate_set=tuple(filtered_candidate_set),
-            )
+        observation = comparison_row_to_observation(
+            comparison=comparison, active_entities=active_entities
         )
+        if observation is not None:
+            observations.append(observation)
 
     return observations
 
 
-def maxdiff_observations_to_tasks_frame(
+def comparison_row_to_observation(
+    *, comparison: ComparisonRow, active_entities: set[str]
+) -> ComparisonObservation | None:
+    """One shared normalization rule for computation and its retained evidence."""
+    if (
+        comparison.best_slug_id not in active_entities
+        or comparison.worst_slug_id not in active_entities
+        or comparison.best_slug_id == comparison.worst_slug_id
+    ):
+        return None
+    filtered_candidate_set = tuple(
+        dict.fromkeys(
+            candidate for candidate in comparison.candidate_set if candidate in active_entities
+        )
+    )
+    if (
+        len(filtered_candidate_set) < 2
+        or comparison.best_slug_id not in filtered_candidate_set
+        or comparison.worst_slug_id not in filtered_candidate_set
+    ):
+        return None
+    return ComparisonObservation(
+        user_id=comparison.user_idx,
+        best_slug_id=comparison.best_slug_id,
+        worst_slug_id=comparison.worst_slug_id,
+        candidate_set=filtered_candidate_set,
+    )
+
+
+def comparison_observations_to_tasks_frame(
     *,
-    observations: list[MaxDiffObservation],
+    observations: Sequence[ComparisonObservation],
     mapper: EntityIdMapper,
 ) -> pd.DataFrame:
-    """Convert MaxDiff observations to the int-keyed task format used by the learner."""
+    """Convert comparison observations to the int-keyed task format used by the learner."""
 
     return pd.DataFrame(
         [

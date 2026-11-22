@@ -168,12 +168,6 @@ const baseConfigSchema = sharedConfigSchema.extend({
         .pipe(z.string().min(16).array().nonempty()),
     VERIFICATOR_SVC_BASE_URL: z.url(),
     BASE_EVENT_ID: z.string().min(20).default("63957849393154643868"),
-    // Zupass public key for verifying event ticket PCDs
-    // This is the official Devcon Podbox pipeline public key
-    // Source: https://github.com/efdevcon/monorepo/blob/main/devcon-api/src/utils/zupass.ts
-    ZUPASS_PUBLIC_KEY: z
-        .string()
-        .default("YwahfUdUYehkGMaWh0+q3F8itx2h8mybjPmt8CmTJSs"),
     REACHER_BASE_URL: z.url().optional(),
     VOTE_NOTIF_MILESTONES: z
         .string()

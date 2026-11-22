@@ -1,0 +1,612 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ba4d7e60-a03e-41dc-b402-4dfb67aad9e5",
+  "prevIds": [
+    "1aa2cda0-1838-4301-b8e6-db84fbb7ba28"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language"
+      ],
+      "writes": [
+        "s|tbl|public.user_display_language",
+        "n|tbl|public.user_display_language",
+        "e|tbl|public.user_display_language",
+        "n|rel|public.user_display_language",
+        "n|type|public.user_display_language",
+        "n|rel|public.user_display_language_pkey",
+        "n|rel|public.user_display_language_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_spoken_languages"
+      ],
+      "writes": [
+        "s|tbl|public.user_spoken_languages",
+        "n|tbl|public.user_spoken_languages",
+        "e|tbl|public.user_spoken_languages",
+        "n|rel|public.user_spoken_languages",
+        "n|type|public.user_spoken_languages",
+        "n|rel|public.user_spoken_languages_pkey",
+        "n|rel|public.user_spoken_languages_unique"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_language_preference"
+      ],
+      "writes": [
+        "s|fk|public.user_language_preference.user_language_preference_lang_id_user_language_id_fk",
+        "n|fk|public.user_language_preference.user_language_preference_lang_id_user_language_id_fk",
+        "e|fk|public.user_language_preference.user_language_preference_lang_id_user_language_id_fk",
+        "n|con|public.user_language_preference.user_language_preference_lang_id_user_language_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.user_language_preference",
+        "n|sch|public",
+        "e|col|public.user_language_preference.lang_id"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_language_preference"
+      ],
+      "writes": [
+        "s|tbl|public.user_language_preference",
+        "n|tbl|public.user_language_preference",
+        "e|tbl|public.user_language_preference",
+        "n|rel|public.user_language_preference",
+        "n|type|public.user_language_preference"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_language"
+      ],
+      "writes": [
+        "s|tbl|public.user_language",
+        "n|tbl|public.user_language",
+        "e|tbl|public.user_language",
+        "n|rel|public.user_language",
+        "n|type|public.user_language"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_display_language",
+        "user_display_language_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_display_language_user_idx",
+        "n|idx|public.user_display_language_user_idx",
+        "e|idx|public.user_display_language_user_idx",
+        "n|rel|public.user_display_language_user_idx"
+      ],
+      "reads": [
+        "n|tbl|public.user_display_language",
+        "n|sch|public",
+        "n|col|public.user_display_language.user_id"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "user_spoken_languages",
+        "user_spoken_languages_user_idx"
+      ],
+      "writes": [
+        "s|idx|public.user_spoken_languages_user_idx",
+        "n|idx|public.user_spoken_languages_user_idx",
+        "e|idx|public.user_spoken_languages_user_idx",
+        "n|rel|public.user_spoken_languages_user_idx"
+      ],
+      "reads": [
+        "n|tbl|public.user_spoken_languages",
+        "n|sch|public",
+        "n|col|public.user_spoken_languages.user_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_display_language"
+      ],
+      "writes": [
+        "s|fk|public.user_display_language.user_display_language_user_id_user_id_fk",
+        "n|fk|public.user_display_language.user_display_language_user_id_user_id_fk",
+        "e|fk|public.user_display_language.user_display_language_user_id_user_id_fk",
+        "n|con|public.user_display_language.user_display_language_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.user_display_language",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.user_display_language.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "user_spoken_languages"
+      ],
+      "writes": [
+        "s|fk|public.user_spoken_languages.user_spoken_languages_user_id_user_id_fk",
+        "n|fk|public.user_spoken_languages.user_spoken_languages_user_id_user_id_fk",
+        "e|fk|public.user_spoken_languages.user_spoken_languages_user_id_user_id_fk",
+        "n|con|public.user_spoken_languages.user_spoken_languages_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.user_spoken_languages",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.user_spoken_languages.user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "user_display_language",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "user_spoken_languages",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "id",
+        "type": "serial",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "is_deleted",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "id",
+        "type": "serial",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "language_code",
+        "type": "varchar(35)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "is_deleted",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "deleted_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "created_at",
+        "type": "timestamp (0)",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_user_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "user_spoken_languages_user_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "user_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "user_spoken_languages_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "user_spoken_languages_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_display_language",
+        "name": "user_display_language_unique",
+        "nameExplicit": true,
+        "columns": [
+          "user_id",
+          "language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "user_spoken_languages",
+        "name": "user_spoken_languages_unique",
+        "nameExplicit": true,
+        "columns": [
+          "user_id",
+          "language_code"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"user_language_preference\"]"
+    },
+    {
+      "op": "drop",
+      "key": "tables\u0000[\"public\",\"user_language\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language_preference\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language_preference\",\"user_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language_preference\",\"lang_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language_preference\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language\",\"id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language\",\"name\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language\",\"code\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"user_language\",\"created_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"user_idx_lang\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_language_preference\",\"user_language_preference_user_id_user_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"user_language_preference\",\"user_language_preference_lang_id_user_language_id_fk\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"user_language_preference\",\"user_language_preference_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "pks\u0000[\"public\",\"user_language\",\"user_language_pkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "uniques\u0000[\"public\",\"user_language_preference\",\"user_unique_language\"]"
+    }
+  ]
+}

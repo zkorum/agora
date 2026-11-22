@@ -1,4 +1,4 @@
-# WARNING: GENERATED FROM ../shared/src/languages.ts, ../shared/src/shared.ts. DO NOT EDIT.
+# WARNING: GENERATED FROM ../shared/src/languages.ts, ../shared/src/shared.ts, ../shared/src/organizationAccess.ts. DO NOT EDIT.
 from __future__ import annotations
 
 from .generated_models import DisplayLanguageCode
@@ -40,6 +40,9 @@ LEGACY_MAX_LENGTH_CONVERSATION_BODY_HTML_OUTPUT: int = 60000
 MAX_CONVERSATION_LANGUAGE_DETECTION_BODY_CHARS: int = 1000
 MIN_CONVERSATION_LANGUAGE_DETECTION_CHARS: int = 2
 MAX_LENGTH_OPINION_HTML_OUTPUT: int = 3000
+
+# Organization Roles
+CONVERSATION_CREATE_ORGANIZATION_ROLES: tuple[str, ...] = ("admin", "manager",)
 
 # Import Lifecycle
 MAX_CONVERSATION_IMPORT_DURATION_MS: int = 3600000

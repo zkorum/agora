@@ -16,8 +16,6 @@ import type {
   AnalysisFrameKey,
   AnalysisFrameManifest,
   AnalysisFrameOpinionList,
-  AnalysisFreshnessRequest,
-  FetchCommentStatsResponse,
 } from "src/shared/types/dto";
 import type { Dto } from "src/shared/types/dto";
 import type {
@@ -30,7 +28,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
 import { useUserStore } from "src/stores/user";
 import {
-  buildAnalysisFreshnessRequest,
+  type AnalysisRefreshScope,
   LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS,
 } from "src/utils/analysis/analysisFreshness";
 import { useParticipationViewerLifetime } from "src/utils/api/participation/useParticipationViewerLifetime";
@@ -75,46 +73,6 @@ import {
   useCommentQueriesTranslations,
 } from "./useCommentQueries.i18n";
 
-export function useCommentStatsQuery({
-  conversationSlugId,
-  enabled = true,
-}: {
-  conversationSlugId: MaybeRefOrGetter<string>;
-  enabled?: MaybeRefOrGetter<boolean>;
-}) {
-  const { fetchCommentStatsForPost } = useBackendCommentApi();
-
-  return useQuery({
-    queryKey: ["commentStats", computed(() => toValue(conversationSlugId))],
-    queryFn: () => fetchCommentStatsForPost(toValue(conversationSlugId)),
-    enabled: computed(
-      () => toValue(enabled) && toValue(conversationSlugId) !== ""
-    ),
-    placeholderData: (previousData) => previousData,
-    staleTime: 30_000,
-    retry: false,
-  });
-}
-
-export function pickCommentStatsForActionBar(
-  stats: FetchCommentStatsResponse
-): Pick<
-  FetchCommentStatsResponse,
-  | "opinionCount"
-  | "participantCount"
-  | "voteCount"
-  | "totalParticipantCount"
-  | "totalVoteCount"
-> {
-  return {
-    opinionCount: stats.opinionCount,
-    participantCount: stats.participantCount,
-    voteCount: stats.voteCount,
-    totalParticipantCount: stats.totalParticipantCount,
-    totalVoteCount: stats.totalVoteCount,
-  };
-}
-
 /**
  * Calculate optimal stale time based on conversation size
  * After this time, data is considered stale and will refetch on next access
@@ -149,10 +107,8 @@ type BackendCommentApi = ReturnType<typeof useBackendCommentApi>;
 type AnalysisQueryKey = readonly unknown[];
 
 const LABEL_CATCH_UP_MAX_ATTEMPTS = 5;
-const labelCatchUpStateByKey = new Map<
-  string,
-  { attemptCount: number; timeout: ReturnType<typeof setTimeout> | undefined }
->();
+// Retry state lives only as long as its viewer/language-scoped assembled query.
+const labelCatchUpFrames = new WeakMap<object, AnalysisFrameKey>();
 
 type CompleteAnalysisData = AnalysisData & {
   manifest: AnalysisFrameManifest & {
@@ -220,83 +176,6 @@ function isGroupLabelDisplayFresh({
   );
 }
 
-function expectedLabelLocales(
-  displayLanguage: SupportedDisplayLanguageCodes
-): SupportedDisplayLanguageCodes[] {
-  return displayLanguage === "en" ? ["en"] : ["en", displayLanguage];
-}
-
-function labelCatchUpKey({
-  conversationSlugId,
-  frameKey,
-  aiLabelingEnabled,
-  displayLanguage,
-}: {
-  conversationSlugId: string;
-  frameKey: AnalysisFrameKey;
-  aiLabelingEnabled: boolean | undefined;
-  displayLanguage: SupportedDisplayLanguageCodes;
-}): string {
-  return JSON.stringify([
-    conversationSlugId,
-    frameKey.mode,
-    frameKey.conversationViewSnapshotId,
-    frameKey.analysisSnapshotId,
-    frameKey.candidateId,
-    aiLabelingEnabled,
-    displayLanguage,
-  ]);
-}
-
-function getManifestStaleTime({
-  freshness,
-  voteCount,
-}: {
-  freshness: AnalysisFreshnessRequest | null;
-  voteCount: number | undefined;
-}): number {
-  if (
-    freshness === null ||
-    freshness.minimumConversationViewSnapshotId === null
-  ) {
-    return getAnalysisStaleTime(voteCount);
-  }
-
-  return 0;
-}
-
-function shouldRefreshFrameSections({
-  freshness,
-}: {
-  freshness: AnalysisFreshnessRequest | null;
-}): boolean {
-  return (
-    freshness !== null && freshness.minimumConversationViewSnapshotId !== null
-  );
-}
-
-function getFrameSectionStaleTime({
-  freshness,
-  voteCount,
-}: {
-  freshness: AnalysisFreshnessRequest | null;
-  voteCount: number | undefined;
-}): number {
-  return shouldRefreshFrameSections({ freshness })
-    ? 0
-    : getAnalysisStaleTime(voteCount);
-}
-
-function getLabelStaleTime({
-  freshness,
-  voteCount,
-}: {
-  freshness: AnalysisFreshnessRequest | null;
-  voteCount: number | undefined;
-}): number {
-  return freshness === null ? getAnalysisStaleTime(voteCount) : 0;
-}
-
 interface FrameLabelCatchUpParams {
   queryClient: QueryClient;
   fetchAnalysisFrameGroupLabels: BackendCommentApi["fetchAnalysisFrameGroupLabels"];
@@ -308,11 +187,6 @@ interface FrameLabelCatchUpParams {
   analysisQueryKey: AnalysisQueryKey;
 }
 
-interface FrameLabelCatchUpAttemptParams extends FrameLabelCatchUpParams {
-  catchUpKey: string;
-  supportedDisplayLanguage: SupportedDisplayLanguageCodes;
-}
-
 interface FetchFrameGroupLabelsParams {
   queryClient: QueryClient;
   fetchAnalysisFrameGroupLabels: BackendCommentApi["fetchAnalysisFrameGroupLabels"];
@@ -320,7 +194,6 @@ interface FetchFrameGroupLabelsParams {
   frameKey: AnalysisFrameKey;
   aiLabelingEnabled: boolean | undefined;
   displayLanguage: string;
-  freshness: AnalysisFreshnessRequest | null;
   labelStaleTime: number;
 }
 
@@ -331,116 +204,40 @@ async function fetchFrameGroupLabels({
   frameKey,
   aiLabelingEnabled,
   displayLanguage,
-  freshness,
   labelStaleTime,
 }: FetchFrameGroupLabelsParams): Promise<AnalysisFrameGroupLabels> {
-  const frameKeyPart = frameKeyQueryPart(frameKey);
-  const labelQueryKey = [
-    "analysisFrameGroupLabels",
-    conversationSlugId,
-    frameKeyPart,
-    aiLabelingEnabled,
-    displayLanguage,
-  ];
   return await queryClient.fetchQuery({
-    queryKey: labelQueryKey,
-    queryFn: () =>
+    queryKey: [
+      "analysisFrameGroupLabels",
+      conversationSlugId,
+      frameKeyQueryPart(frameKey),
+      aiLabelingEnabled,
+      displayLanguage,
+    ],
+    queryFn: ({ signal }) =>
       fetchAnalysisFrameGroupLabels({
         conversationSlugId,
         frameKey,
-        freshness,
+        displayLanguage,
+        signal,
       }),
     staleTime: labelStaleTime,
     retry: false,
   });
 }
 
-async function runFrameLabelCatchUpAttempt({
-  queryClient,
-  fetchAnalysisFrameGroupLabels,
-  conversationSlugId,
-  frameKey,
-  aiLabelingEnabled,
-  displayLanguage,
-  analysisQueryKey,
-  catchUpKey,
-  supportedDisplayLanguage,
-}: FrameLabelCatchUpAttemptParams): Promise<void> {
-  const frameKeyPart = frameKeyQueryPart(frameKey);
-  const labelQueryKey = [
-    "analysisFrameGroupLabels",
-    conversationSlugId,
-    frameKeyPart,
-    aiLabelingEnabled,
-    displayLanguage,
-  ];
-  const freshness: AnalysisFreshnessRequest = {
-    enablePrimaryFallback: true,
-    minimumConversationViewSnapshotId: null,
-    expectedDescriptionLocales: expectedLabelLocales(supportedDisplayLanguage),
-  };
-  await queryClient.invalidateQueries({
-    queryKey: labelQueryKey,
-    exact: true,
-    refetchType: "none",
-  });
-  const refreshedGroupLabels = await queryClient.fetchQuery({
-    queryKey: labelQueryKey,
-    queryFn: () =>
-      fetchAnalysisFrameGroupLabels({
-        conversationSlugId,
-        frameKey,
-        freshness,
-      }),
-    staleTime: 0,
-    retry: false,
-  });
-
-  queryClient.setQueryData<AnalysisData>(analysisQueryKey, (current) => {
-    if (
-      !hasCompleteAnalysisFrame(current) ||
-      !isSameFrameKey({ left: current.manifest.frameKey, right: frameKey })
-    ) {
-      return current;
-    }
-    return buildAnalysisDataFromFrame({
-      manifest: current.manifest,
-      groups: current.groups,
-      groupLabels: refreshedGroupLabels,
-      agreements: current.agreements,
-      disagreements: current.disagreements,
-      divisive: current.divisive,
-    });
-  });
-
-  if (
-    isGroupLabelDisplayFresh({
-      groupLabels: refreshedGroupLabels,
-      displayLanguage: supportedDisplayLanguage,
-    })
-  ) {
-    labelCatchUpStateByKey.delete(catchUpKey);
-    return;
-  }
-
-  // A frame-section request cannot discover that live analysis moved to a
-  // newer frame. Refresh the active analysis query before retrying this frame.
-  await queryClient.invalidateQueries({
-    queryKey: analysisQueryKey,
-    exact: true,
-    refetchType: "active",
-  });
-  labelCatchUpStateByKey.delete(catchUpKey);
-}
-
 function scheduleFrameLabelCatchUp(params: FrameLabelCatchUpParams): void {
   const {
-    conversationSlugId,
+    queryClient,
+    analysisQueryKey,
     frameKey,
-    aiLabelingEnabled,
     displayLanguage,
     groupLabels,
   } = params;
+  const query = queryClient
+    .getQueryCache()
+    .find({ queryKey: analysisQueryKey, exact: true });
+  if (query === undefined) return;
   const parsedDisplayLanguage =
     ZodSupportedDisplayLanguageCodes.safeParse(displayLanguage);
   if (!parsedDisplayLanguage.success) {
@@ -453,84 +250,89 @@ function scheduleFrameLabelCatchUp(params: FrameLabelCatchUpParams): void {
       displayLanguage: supportedDisplayLanguage,
     })
   ) {
-    labelCatchUpStateByKey.delete(
-      labelCatchUpKey({
-        conversationSlugId,
-        frameKey,
-        aiLabelingEnabled,
-        displayLanguage: supportedDisplayLanguage,
-      })
-    );
+    labelCatchUpFrames.delete(query);
     return;
   }
 
-  const catchUpKey = labelCatchUpKey({
-    conversationSlugId,
-    frameKey,
-    aiLabelingEnabled,
-    displayLanguage: supportedDisplayLanguage,
-  });
-  const currentState = labelCatchUpStateByKey.get(catchUpKey) ?? {
-    attemptCount: 0,
-    timeout: undefined,
-  };
+  const pending = labelCatchUpFrames.get(query);
   if (
-    currentState.timeout !== undefined ||
-    currentState.attemptCount >= LABEL_CATCH_UP_MAX_ATTEMPTS
-  ) {
-    labelCatchUpStateByKey.set(catchUpKey, currentState);
+    pending !== undefined &&
+    isSameFrameKey({ left: pending, right: frameKey })
+  )
     return;
-  }
-
-  currentState.timeout = setTimeout(() => {
-    currentState.timeout = undefined;
-    currentState.attemptCount += 1;
-    labelCatchUpStateByKey.set(catchUpKey, currentState);
-
-    const query = params.queryClient.getQueryCache().find({
-      queryKey: params.analysisQueryKey,
-    });
-    if (query === undefined || !query.isActive()) {
-      labelCatchUpStateByKey.delete(catchUpKey);
+  labelCatchUpFrames.set(query, frameKey);
+  const isCurrent = () =>
+    query.isActive() &&
+    labelCatchUpFrames.get(query) === frameKey &&
+    queryClient.getQueryCache().get(query.queryHash) === query;
+  let attempts = 0;
+  const attempt = async (): Promise<void> => {
+    if (!isCurrent()) {
+      if (labelCatchUpFrames.get(query) === frameKey)
+        labelCatchUpFrames.delete(query);
       return;
     }
-
-    const currentAnalysis = params.queryClient.getQueryData<AnalysisData>(
-      params.analysisQueryKey
-    );
-    if (
-      hasCompleteAnalysisFrame(currentAnalysis) &&
-      !isSameFrameKey({
-        left: currentAnalysis.manifest.frameKey,
-        right: params.frameKey,
-      })
-    ) {
-      labelCatchUpStateByKey.delete(catchUpKey);
-      scheduleFrameLabelCatchUp({
+    attempts++;
+    try {
+      const labels = await fetchFrameGroupLabels({
         ...params,
-        frameKey: currentAnalysis.manifest.frameKey,
-        groupLabels: currentAnalysis.groupLabels,
+        labelStaleTime: 0,
       });
-      return;
+      if (!isCurrent()) return;
+      const current = queryClient.getQueryData<AnalysisData>(analysisQueryKey);
+      if (
+        !hasCompleteAnalysisFrame(current) ||
+        !isSameFrameKey({ left: current.manifest.frameKey, right: frameKey })
+      ) {
+        labelCatchUpFrames.delete(query);
+        return;
+      }
+      queryClient.setQueryData(
+        analysisQueryKey,
+        buildAnalysisDataFromFrame({ ...current, groupLabels: labels })
+      );
+      if (
+        isGroupLabelDisplayFresh({
+          groupLabels: labels,
+          displayLanguage: supportedDisplayLanguage,
+        })
+      ) {
+        labelCatchUpFrames.delete(query);
+        return;
+      }
+      // A label read cannot discover a replacement frame. Refresh its manifest
+      // before asking the active view to assemble itself again.
+      await queryClient.invalidateQueries({
+        queryKey: ["analysisFrameManifest", ...analysisQueryKey.slice(1)],
+        exact: true,
+        refetchType: "none",
+      });
+      if (isCurrent())
+        await queryClient.invalidateQueries({
+          queryKey: analysisQueryKey,
+          exact: true,
+        });
+    } catch {
+      // Transient label failures share the same bounded retry budget.
+    } finally {
+      if (!query.isActive() && labelCatchUpFrames.get(query) === frameKey)
+        labelCatchUpFrames.delete(query);
     }
-
-    void runFrameLabelCatchUpAttempt({
-      ...params,
-      catchUpKey,
-      supportedDisplayLanguage,
-    }).catch(() => {
-      scheduleFrameLabelCatchUp(params);
-    });
-  }, LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS);
-  labelCatchUpStateByKey.set(catchUpKey, currentState);
+    if (isCurrent() && attempts < LABEL_CATCH_UP_MAX_ATTEMPTS) schedule();
+  };
+  function schedule(): void {
+    setTimeout(() => {
+      void attempt();
+    }, LIVE_ANALYSIS_CATCH_UP_INTERVAL_MS);
+  }
+  schedule();
 }
 
 export async function fetchAnalysisDataWithCache({
   queryClient,
   fetchAnalysisFrameManifest,
-  fetchAnalysisFrameGroups,
+  fetchAnalysisFrameContent,
   fetchAnalysisFrameGroupLabels,
-  fetchAnalysisFrameOpinionList,
   conversationSlugId,
   analysisView,
   checkpointViewSnapshotId,
@@ -538,15 +340,15 @@ export async function fetchAnalysisDataWithCache({
   displayLanguage,
   spokenLanguages,
   voteCount,
-  freshness,
+  refreshScope,
   analysisQueryKey,
   viewerScope,
+  refreshManifest = false,
 }: {
   queryClient: QueryClient;
   fetchAnalysisFrameManifest: BackendCommentApi["fetchAnalysisFrameManifest"];
-  fetchAnalysisFrameGroups: BackendCommentApi["fetchAnalysisFrameGroups"];
+  fetchAnalysisFrameContent: BackendCommentApi["fetchAnalysisFrameContent"];
   fetchAnalysisFrameGroupLabels: BackendCommentApi["fetchAnalysisFrameGroupLabels"];
-  fetchAnalysisFrameOpinionList: BackendCommentApi["fetchAnalysisFrameOpinionList"];
   conversationSlugId: string;
   analysisView: AnalysisView | undefined;
   checkpointViewSnapshotId: number | undefined;
@@ -554,10 +356,13 @@ export async function fetchAnalysisDataWithCache({
   displayLanguage: string;
   spokenLanguages: readonly string[];
   voteCount: number | undefined;
-  freshness: AnalysisFreshnessRequest | null;
+  refreshScope: AnalysisRefreshScope;
   analysisQueryKey: AnalysisQueryKey | undefined;
   viewerScope: ViewerQueryScope;
+  refreshManifest?: boolean;
 }): Promise<AnalysisData> {
+  const frameSectionStaleTime =
+    refreshScope === "frame" ? 0 : getAnalysisStaleTime(voteCount);
   const manifest = await queryClient.fetchQuery({
     queryKey: [
       "analysisFrameManifest",
@@ -565,15 +370,20 @@ export async function fetchAnalysisDataWithCache({
       analysisView,
       checkpointViewSnapshotId,
       aiLabelingEnabled,
+      displayLanguage,
+      spokenLanguages,
+      viewerScope,
     ],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       fetchAnalysisFrameManifest({
         conversationSlugId,
         analysisView,
         checkpointViewSnapshotId,
-        freshness,
+        displayLanguage,
+        viewerUserId: viewerScope.userId,
+        signal,
       }),
-    staleTime: getManifestStaleTime({ freshness, voteCount }),
+    staleTime: refreshManifest ? 0 : frameSectionStaleTime,
     retry: false,
   });
 
@@ -583,102 +393,38 @@ export async function fetchAnalysisDataWithCache({
 
   const frameKey = manifest.frameKey;
   const frameKeyPart = frameKeyQueryPart(frameKey);
-  const frameSectionStaleTime = getFrameSectionStaleTime({
-    freshness,
-    voteCount,
-  });
-  const labelStaleTime = getLabelStaleTime({ freshness, voteCount });
-  const [groups, groupLabels, agreements, disagreements, divisive] =
-    await Promise.all([
-      queryClient.fetchQuery({
-        queryKey: [
-          "analysisFrameGroups",
-          conversationSlugId,
-          frameKeyPart,
-          displayLanguage,
-          spokenLanguages,
-          viewerScope,
-        ],
-        queryFn: () =>
-          fetchAnalysisFrameGroups({
-            conversationSlugId,
-            frameKey,
-            freshness,
-          }),
-        staleTime: frameSectionStaleTime,
-        retry: false,
-      }),
-      fetchFrameGroupLabels({
-        queryClient,
-        fetchAnalysisFrameGroupLabels,
+  const labelStaleTime = refreshScope === null ? frameSectionStaleTime : 0;
+  const scope = { displayLanguage, viewerUserId: viewerScope.userId };
+  const [content, groupLabels] = await Promise.all([
+    queryClient.fetchQuery({
+      queryKey: [
+        "analysisFrameContent",
         conversationSlugId,
-        frameKey,
-        aiLabelingEnabled,
+        frameKeyPart,
         displayLanguage,
-        freshness,
-        labelStaleTime,
-      }),
-      queryClient.fetchQuery({
-        queryKey: [
-          "analysisFrameOpinionList",
+        spokenLanguages,
+        viewerScope,
+      ],
+      queryFn: ({ signal }) =>
+        fetchAnalysisFrameContent({
           conversationSlugId,
-          frameKeyPart,
-          "agreements",
-          displayLanguage,
-          spokenLanguages,
-          viewerScope,
-        ],
-        queryFn: () =>
-          fetchAnalysisFrameOpinionList({
-            conversationSlugId,
-            frameKey,
-            kind: "agreements",
-            freshness,
-          }),
-        staleTime: frameSectionStaleTime,
-        retry: false,
-      }),
-      queryClient.fetchQuery({
-        queryKey: [
-          "analysisFrameOpinionList",
-          conversationSlugId,
-          frameKeyPart,
-          "disagreements",
-          displayLanguage,
-          spokenLanguages,
-          viewerScope,
-        ],
-        queryFn: () =>
-          fetchAnalysisFrameOpinionList({
-            conversationSlugId,
-            frameKey,
-            kind: "disagreements",
-            freshness,
-          }),
-        staleTime: frameSectionStaleTime,
-        retry: false,
-      }),
-      queryClient.fetchQuery({
-        queryKey: [
-          "analysisFrameOpinionList",
-          conversationSlugId,
-          frameKeyPart,
-          "divisive",
-          displayLanguage,
-          spokenLanguages,
-          viewerScope,
-        ],
-        queryFn: () =>
-          fetchAnalysisFrameOpinionList({
-            conversationSlugId,
-            frameKey,
-            kind: "divisive",
-            freshness,
-          }),
-        staleTime: frameSectionStaleTime,
-        retry: false,
-      }),
-    ]);
+          frameKey,
+          ...scope,
+          signal,
+        }),
+      staleTime: frameSectionStaleTime,
+      retry: false,
+    }),
+    fetchFrameGroupLabels({
+      queryClient,
+      fetchAnalysisFrameGroupLabels,
+      conversationSlugId,
+      frameKey,
+      aiLabelingEnabled,
+      displayLanguage,
+      labelStaleTime,
+    }),
+  ]);
 
   if (manifest.aiLabelsExpected && analysisQueryKey !== undefined) {
     scheduleFrameLabelCatchUp({
@@ -695,11 +441,8 @@ export async function fetchAnalysisDataWithCache({
 
   return buildAnalysisDataFromFrame({
     manifest,
-    groups,
+    ...content,
     groupLabels,
-    agreements,
-    disagreements,
-    divisive,
   });
 }
 
@@ -720,9 +463,8 @@ export function useAnalysisQuery({
 }) {
   const {
     fetchAnalysisFrameManifest,
-    fetchAnalysisFrameGroups,
+    fetchAnalysisFrameContent,
     fetchAnalysisFrameGroupLabels,
-    fetchAnalysisFrameOpinionList,
   } = useBackendCommentApi();
   const queryClient = useQueryClient();
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
@@ -762,18 +504,11 @@ export function useAnalysisQuery({
       ];
       const previousAnalysis =
         queryClient.getQueryData<AnalysisData>(resolvedQueryKey);
-      const freshness = buildAnalysisFreshnessRequest({
-        previousAnalysis,
-        expectedSnapshotId: null,
-        expectedDescriptionLocales: [],
-        enablePrimaryFallback: true,
-      });
       const analysisData = await fetchAnalysisDataWithCache({
         queryClient,
         fetchAnalysisFrameManifest,
-        fetchAnalysisFrameGroups,
+        fetchAnalysisFrameContent,
         fetchAnalysisFrameGroupLabels,
-        fetchAnalysisFrameOpinionList,
         conversationSlugId: resolvedConversationSlugId,
         analysisView: resolvedAnalysisView,
         checkpointViewSnapshotId: resolvedCheckpointViewSnapshotId,
@@ -781,15 +516,19 @@ export function useAnalysisQuery({
         displayLanguage: resolvedDisplayLanguage,
         spokenLanguages: resolvedSpokenLanguages,
         voteCount: resolvedVoteCount,
-        freshness,
+        refreshScope: null,
         analysisQueryKey: resolvedQueryKey,
         viewerScope: resolvedViewerScope,
+        refreshManifest:
+          previousAnalysis?.manifest?.closedAnalysisSelection?.status ===
+          "pending",
       });
 
       const snapshot = analysisData.conversationViewSnapshot;
       if (
         resolvedCheckpointViewSnapshotId === undefined &&
-        snapshot !== undefined
+        snapshot !== undefined &&
+        analysisData.manifest?.closedAnalysisSelection === undefined
       ) {
         updateConversationQueryCache({
           queryClient,
@@ -816,6 +555,12 @@ export function useAnalysisQuery({
       () => toValue(enabled) && toValue(conversationSlugId) !== ""
     ),
     staleTime: () => getAnalysisStaleTime(toValue(voteCount)),
+    // Poll only an active pending read as a fallback for missed events and
+    // terminal worker failures. The backend alone decides whether to retry.
+    refetchInterval: (query) =>
+      query.state.data?.manifest?.closedAnalysisSelection?.status === "pending"
+        ? 10_000
+        : false,
     // Note: When votes/comments happen, markAnalysisAsStale() is called
     // This marks data as stale immediately, so next access will refetch
     retry: false, // Disable auto-retry
@@ -1149,9 +894,36 @@ export function useEditOpinionMutation(conversationSlugId: string) {
   });
 }
 
-// Utility function to invalidate comment-related queries
+const analysisFamilies = new Set([
+  "analysis",
+  "analysisCheckpoints",
+  "analysisFrameManifest",
+  "analysisFrameContent",
+  "analysisFrameGroupLabels",
+]);
+
 export function useInvalidateCommentQueries() {
   const queryClient = useQueryClient();
+  // Invalidate the assembled view and its dependencies together. Otherwise its
+  // refetch can immediately reassemble the same stale manifest or statement text.
+  function invalidateAnalysisQueries({
+    conversationSlugId,
+    refetchType,
+    includeComments = false,
+  }: {
+    conversationSlugId: string;
+    refetchType: "active" | "none";
+    includeComments?: boolean;
+  }) {
+    return queryClient.invalidateQueries({
+      predicate: ({ queryKey: [family, slug] }) =>
+        slug === conversationSlugId &&
+        typeof family === "string" &&
+        (analysisFamilies.has(family) ||
+          (includeComments && family === "comments")),
+      refetchType,
+    });
+  }
 
   return {
     invalidateComments: (conversationSlugId: string) => {
@@ -1159,73 +931,11 @@ export function useInvalidateCommentQueries() {
         queryKey: ["comments", conversationSlugId],
       });
     },
-    invalidateAnalysis: (conversationSlugId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["analysis", conversationSlugId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisMetadata", conversationSlugId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisContent", conversationSlugId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisCheckpoints", conversationSlugId],
-      });
-    },
-    invalidateAnalysisCheckpoints: (conversationSlugId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisCheckpoints", conversationSlugId],
-      });
-    },
-    forceRefreshAnalysis: (conversationSlugId: string) => {
-      // Force immediate refetch bypassing staleTime completely
-      void queryClient.invalidateQueries({
-        queryKey: ["analysis", conversationSlugId],
-        refetchType: "active", // Force active queries to refetch immediately
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisMetadata", conversationSlugId],
-        refetchType: "active",
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisContent", conversationSlugId],
-        refetchType: "active",
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisCheckpoints", conversationSlugId],
-        refetchType: "active",
-      });
-
-      // Also trigger immediate refetch for any matching queries
-      void queryClient.refetchQueries({
-        queryKey: ["analysis", conversationSlugId],
-      });
-      void queryClient.refetchQueries({
-        queryKey: ["analysisMetadata", conversationSlugId],
-      });
-      void queryClient.refetchQueries({
-        queryKey: ["analysisContent", conversationSlugId],
-      });
-      void queryClient.refetchQueries({
-        queryKey: ["analysisCheckpoints", conversationSlugId],
-      });
-    },
+    invalidateAnalysis: (conversationSlugId: string) =>
+      invalidateAnalysisQueries({ conversationSlugId, refetchType: "active" }),
     markAnalysisAsStale: (conversationSlugId: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["analysis", conversationSlugId],
-        refetchType: "none", // Mark as stale but don't refetch immediately
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisMetadata", conversationSlugId],
-        refetchType: "none",
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisContent", conversationSlugId],
-        refetchType: "none",
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["analysisCheckpoints", conversationSlugId],
+      void invalidateAnalysisQueries({
+        conversationSlugId,
         refetchType: "none",
       });
     },
@@ -1235,24 +945,11 @@ export function useInvalidateCommentQueries() {
         refetchType: "none", // Mark as stale but don't refetch immediately
       });
     },
-    invalidateAll: (conversationSlugId: string) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["comments", conversationSlugId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["analysis", conversationSlugId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["analysisMetadata", conversationSlugId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["analysisContent", conversationSlugId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["analysisCheckpoints", conversationSlugId],
-        }),
-      ]);
-    },
+    invalidateAll: (conversationSlugId: string) =>
+      invalidateAnalysisQueries({
+        conversationSlugId,
+        refetchType: "active",
+        includeComments: true,
+      }),
   };
 }

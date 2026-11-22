@@ -33,11 +33,10 @@ import {
 import { getConversationMultilingualSetting } from "./conversationMultilingual.js";
 import { createConversationViewSnapshotsFromCurrentState } from "./conversationViewSnapshot.js";
 import {
-    canManageOpinion,
     getOpinionEditingAvailability,
     hasBlockingOpinionVotes,
 } from "./opinionPermissions.js";
-import { queueOpinionUpdatedEvent } from "./realtimeEventOutbox.js";
+import { queueOpinionSourceChangedEvent } from "./realtimeEventOutbox.js";
 import { normalizeUserRichTextInput } from "./richText.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 
@@ -79,7 +78,7 @@ async function loadOpinion({
             conversationTable,
             eq(conversationTable.id, opinionTable.conversationId),
         )
-        .innerJoin(userTable, eq(userTable.id, opinionTable.authorId))
+        .leftJoin(userTable, eq(userTable.id, opinionTable.authorId))
         .leftJoin(
             conversationModerationTable,
             and(
@@ -112,22 +111,18 @@ type EditableOpinion = NonNullable<Awaited<ReturnType<typeof loadOpinion>>>;
 async function validateEdit({
     db,
     opinion,
-    userId,
     sourceVersion,
     voteBuffer,
-    lockAuthorization = false,
+    checkBufferedVotes = true,
 }: {
     db: PostgresJsDatabase;
     opinion: EditableOpinion;
-    userId: string;
     sourceVersion: string;
     voteBuffer: VoteBuffer;
-    lockAuthorization?: boolean;
+    checkBufferedVotes?: boolean;
 }): Promise<EditOpinionFailure | undefined> {
     if (opinion.conversationContentId === null || opinion.isImporting)
         return { success: false, reason: "not_found" };
-    if (!(await canManageOpinion({ db, opinion, userId, lockAuthorization })))
-        return { success: false, reason: "not_allowed" };
     if (opinion.sourceVersion !== sourceVersion)
         return { success: false, reason: "version_conflict" };
     const hasVotes =
@@ -136,7 +131,7 @@ async function validateEdit({
             opinionId: opinion.id,
             conversationId: opinion.conversationId,
         })) ||
-        (!lockAuthorization &&
+        (checkBufferedVotes &&
             (await voteBuffer.hasBlockingVotes({
                 db,
                 opinionId: opinion.id,
@@ -200,7 +195,6 @@ export async function editOpinion({
     const rejection = await validateEdit({
         db: writer,
         opinion: initial,
-        userId,
         sourceVersion: request.sourceVersion,
         voteBuffer,
     });
@@ -264,10 +258,9 @@ export async function editOpinion({
             const failure = await validateEdit({
                 db: tx,
                 opinion,
-                userId,
                 sourceVersion: request.sourceVersion,
                 voteBuffer,
-                lockAuthorization: true,
+                checkBufferedVotes: false,
             });
             if (failure !== undefined)
                 return { response: failure, translationWorkIds: [] };
@@ -339,16 +332,13 @@ export async function editOpinion({
                     viewReason: "conversation_content_updated",
                     emitCommentStatsRealtimeEvent: true,
                 });
-                await queueOpinionUpdatedEvent({
+                await queueOpinionSourceChangedEvent({
                     db: tx,
                     data: {
                         conversationSlugId: opinion.conversationSlugId,
                         opinionSlugId: opinion.slugId,
                         previousSourceVersion: opinion.sourceVersion,
                         sourceVersion: content.publicId,
-                        opinion: normalized.content.html,
-                        sourceLanguageCode:
-                            prepared.language.sourceLanguageCode,
                         timestamp: Date.now(),
                     },
                 });

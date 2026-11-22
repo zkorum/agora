@@ -8,4 +8,6 @@ export default defineConfig({
     env: { VITE_SENTRY_ENABLED: "false" },
   },
   testDir: "tests",
+  testMatch: "**/*.test.ts",
+  testIgnore: "**/projects-mock.test.ts",
 });

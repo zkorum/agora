@@ -1,5 +1,6 @@
 import { asc, and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { getPrimaryDatabase } from "@/shared-backend/db.js";
 import {
     analysisSnapshotResultTable,
     conversationTable,
@@ -10,6 +11,7 @@ import {
 } from "@/shared-backend/schema.js";
 import { calculateConversationCounters } from "@/shared-backend/conversationCounters.js";
 import type { FetchAnalysisCheckpointsResponse } from "@/shared/types/dto.js";
+import { readableAnalysisConversationCondition } from "./closedAnalysisQueries.js";
 import {
     queueConversationAnalysisUpdatedEventsForViewSnapshots,
     queueConversationCommentStatsUpdatedEventsForViewSnapshots,
@@ -36,7 +38,8 @@ export async function fetchAnalysisCheckpointsByConversationSlugId({
     db: PostgresJsDatabase;
     conversationSlugId: string;
 }): Promise<FetchAnalysisCheckpointsResponse> {
-    const rows = await db
+    const primary = getPrimaryDatabase(db);
+    const rows = await primary
         .select({
             conversationViewSnapshotId: conversationViewSnapshotTable.id,
             createdAt: conversationViewSnapshotTable.createdAt,
@@ -85,8 +88,7 @@ export async function fetchAnalysisCheckpointsByConversationSlugId({
         .where(
             and(
                 eq(conversationTable.slugId, conversationSlugId),
-                eq(conversationTable.isImporting, false),
-                isNotNull(conversationTable.currentContentId),
+                readableAnalysisConversationCondition(primary),
                 isNotNull(conversationViewSnapshotTable.activatedAt),
             ),
         )

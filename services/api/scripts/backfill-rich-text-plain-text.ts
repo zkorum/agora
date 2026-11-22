@@ -659,7 +659,7 @@ async function main(): Promise<void> {
         log,
     });
     const client = await createPostgresClient(config, log);
-    const db = drizzle(client);
+    const db = drizzle({ client });
 
     try {
         for (const target of targets) {

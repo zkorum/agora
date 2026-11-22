@@ -5,7 +5,9 @@ import { buildRankingDiagnosticsQuery } from "./ranking-diagnostics-queries.js";
 import { buildQueryStatisticsQuery } from "./ranking-diagnostics-postgres.js";
 
 // postgres-js connects lazily; compiling a Drizzle query does not open a socket.
-const db = drizzle(postgres("postgres://unused:unused@127.0.0.1:1/unused"));
+const db = drizzle({
+    client: postgres("postgres://unused:unused@127.0.0.1:1/unused"),
+});
 describe("ranking diagnostics Drizzle queries", () => {
     it("queries existing PostgreSQL statistics views with typed selections and bound filters", () => {
         const query = buildQueryStatisticsQuery(db).toSQL();
@@ -42,10 +44,10 @@ describe("ranking diagnostics Drizzle queries", () => {
             },
         }).toSQL();
         expect(history.sql).toContain(
-            '"maxdiff_comparison"."deleted_at" is null',
+            '"comparison_answer"."deleted_at" is null',
         );
         expect(history.sql).toContain(
-            '"maxdiff_comparison"."deleted_at" is not null',
+            '"comparison_answer"."deleted_at" is not null',
         );
         const scores = buildRankingDiagnosticsQuery({
             db,
@@ -72,7 +74,7 @@ describe("ranking diagnostics Drizzle queries", () => {
                     conversationId: 7,
                 },
             }).toSQL();
-            expect(query.sql).toMatch(/^select /);
+            expect(query.sql).toMatch(/^(select|with) /);
             expect(query.params).toContain(7);
         }
     });

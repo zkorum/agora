@@ -1,10 +1,11 @@
 <script lang="ts">
-  import * as m from "$lib/paraglide/messages.js";
-  import { getLocale, localizeHref } from "$lib/paraglide/runtime";
+  import * as m from "#lib/paraglide/messages.js";
+  import { getLocale, localizeHref } from "#lib/paraglide/runtime.js";
+  import FaqDisclosure from "$ui/landing/faq-disclosure.svelte";
   import GradientText from "$ui/shared/gradient-text.svelte";
   import Text from "$ui/shared/text.svelte";
 
-  import { getFaqContent } from "./faq-content";
+  import { getFaqContent } from "./faq-content.js";
 
   interface AnswerSegment {
     text: string;
@@ -64,39 +65,21 @@
 
     <div class="max-w-[1040px] border-y border-border">
       {#each faqGroups as group (group.title)}
-        <details
-          class="
-            border-b border-border py-2
-            last:border-b-0
-          "
-        >
-          <summary
-            class="
-              flex cursor-pointer list-none items-center justify-between gap-4
-              rounded-lg bg-gradient-light-purple/20 p-5
-              sm:px-6
-            "
-          >
-            <div>
-              <Text size="xl" weight="bold" element="span">
-                <GradientText>{group.title}</GradientText>
-              </Text>
-              <Text size="xs" weight="bold" class="mt-1 text-muted-foreground">
-                {group.items.length}
-                {faqContent.questionCountLabel}
-              </Text>
-            </div>
-            <span
-              class="
-                inline-flex size-8 shrink-0 items-center justify-center
-                rounded-full border border-border text-lg leading-none
-                text-brand-purple
-              "
-              aria-hidden="true"
-            >
-              +
+        <FaqDisclosure level="group" label={group.title}>
+          {#snippet heading()}
+            <span>
+              <Text size="xl" weight="bold" element="span"
+                ><GradientText>{group.title}</GradientText></Text
+              >
+              <Text
+                size="xs"
+                weight="bold"
+                element="span"
+                class="mt-1 block text-muted-foreground"
+                >{group.items.length} {faqContent.questionCountLabel}</Text
+              >
             </span>
-          </summary>
+          {/snippet}
 
           <div
             class="
@@ -105,32 +88,12 @@
             "
           >
             {#each group.items as item (item.question)}
-              <details
-                class="
-                  border-t border-border py-5
-                  first:border-t-0
-                "
-              >
-                <summary
-                  class="
-                    flex cursor-pointer list-none items-start justify-between
-                    gap-4
-                  "
-                >
-                  <Text size="base" weight="semibold" element="span">
-                    {item.question}
-                  </Text>
-                  <span
-                    class="
-                      mt-1 inline-flex size-7 shrink-0 items-center
-                      justify-center rounded-full border border-border text-base
-                      leading-none text-primary-base
-                    "
-                    aria-hidden="true"
-                  >
-                    +
-                  </span>
-                </summary>
+              <FaqDisclosure level="question" label={item.question}>
+                {#snippet heading()}<Text
+                    size="base"
+                    weight="semibold"
+                    element="span">{item.question}</Text
+                  >{/snippet}
                 <Text
                   size="base"
                   class="mt-4 max-w-[820px] text-secondary-foreground"
@@ -224,25 +187,11 @@
                     </table>
                   </div>
                 {/if}
-              </details>
+              </FaqDisclosure>
             {/each}
           </div>
-        </details>
+        </FaqDisclosure>
       {/each}
     </div>
   </div>
 </section>
-
-<style>
-  summary::-webkit-details-marker {
-    display: none;
-  }
-
-  details > summary > span[aria-hidden="true"] {
-    transition: transform 150ms ease;
-  }
-
-  details[open] > summary > span[aria-hidden="true"] {
-    transform: rotate(45deg);
-  }
-</style>

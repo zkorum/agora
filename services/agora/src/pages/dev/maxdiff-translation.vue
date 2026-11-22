@@ -1,6 +1,6 @@
 <template>
   <Teleport v-if="isActive" to="#page-header">
-    <StandardMenuBar title="MaxDiff translation test" :center-content="true" />
+    <StandardMenuBar title="Comparison translation test" :center-content="true" />
   </Teleport>
 
   <div class="container">
@@ -27,9 +27,9 @@
 
     <q-card flat bordered class="section-card">
       <q-card-section>
-        <div class="section-title">Active MaxDiff round snapshot</div>
+        <div class="section-title">Active comparison round snapshot</div>
         <p class="section-copy">
-          These cards use the same snapshot helper as active MaxDiff voting.
+          These cards use the same snapshot helper as active comparison voting.
           They refresh when background translation completes while no choice is
           active.
         </p>
@@ -66,7 +66,7 @@
           This list intentionally updates immediately. Results are read-only, so
           they can show the current translated display content.
         </p>
-        <MaxDiffItemListSection
+        <ComparisonItemListSection
           conversation-slug-id="dev-maxdiff-translation"
           section-title="Community ranking"
           subtitle="Read-only list should update immediately when translation completes."
@@ -81,7 +81,7 @@
       </q-card-section>
     </q-card>
 
-    <MaxDiffStatementDialog
+    <ComparisonStatementDialog
       v-model="showDialog"
       conversation-slug-id="dev-maxdiff-translation"
       :item-slug-id="dialogItemSlugId"
@@ -93,16 +93,16 @@
 
 <script setup lang="ts">
 import { StandardMenuBar } from "src/components/navigation/header/variants";
-import type { MaxDiffListItem } from "src/components/post/maxdiff/MaxDiffItemListSection.vue";
-import MaxDiffItemListSection from "src/components/post/maxdiff/MaxDiffItemListSection.vue";
-import MaxDiffStatementDialog from "src/components/post/maxdiff/MaxDiffStatementDialog.vue";
+import type { ComparisonListItem } from "src/components/post/comparison/ComparisonItemListSection.vue";
+import ComparisonItemListSection from "src/components/post/comparison/ComparisonItemListSection.vue";
+import ComparisonStatementDialog from "src/components/post/comparison/ComparisonStatementDialog.vue";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import {
-  createMaxDiffCandidateDisplaySnapshot,
-  type MaxDiffCandidateDisplayItem,
-} from "src/utils/maxdiffCandidateDisplay";
+  type ComparisonCandidateDisplayItem,
+  createComparisonCandidateDisplaySnapshot,
+} from "src/utils/comparisonCandidateDisplay";
 import { getRankingItemDisplayText } from "src/utils/translation/rankingItemDisplayText";
 import { computed, ref, watch } from "vue";
 
@@ -118,7 +118,7 @@ const dialogItemSlugId = ref<string | undefined>(undefined);
 
 const candidateSlugIds = ["item-a", "item-b", "item-c"] as const;
 
-const liveItems = computed<MaxDiffCandidateDisplayItem[]>(() =>
+const liveItems = computed<ComparisonCandidateDisplayItem[]>(() =>
   candidateSlugIds.map((slugId, index) => {
     const displayContent = getDisplayContent({ slugId });
     const displayText = getRankingItemDisplayText({ displayContent });
@@ -133,16 +133,16 @@ const liveItems = computed<MaxDiffCandidateDisplayItem[]>(() =>
 );
 
 const liveItemBySlugId = computed(() => {
-  const map = new Map<string, MaxDiffCandidateDisplayItem>();
+  const map = new Map<string, ComparisonCandidateDisplayItem>();
   for (const item of liveItems.value) {
     map.set(item.slugId, item);
   }
   return map;
 });
 
-const candidateSnapshot = ref<MaxDiffCandidateDisplayItem[]>([]);
+const candidateSnapshot = ref<ComparisonCandidateDisplayItem[]>([]);
 
-const resultItems = computed<MaxDiffListItem[]>(() =>
+const resultItems = computed<ComparisonListItem[]>(() =>
   liveItems.value.map((item, index) => ({
     ...item,
     score: 0.92 - index * 0.2,
@@ -213,7 +213,7 @@ function getDisplayContent({
 }
 
 function refreshCandidateSnapshot(): void {
-  candidateSnapshot.value = createMaxDiffCandidateDisplaySnapshot({
+  candidateSnapshot.value = createComparisonCandidateDisplaySnapshot({
     candidateSlugIds,
     itemBySlugId: liveItemBySlugId.value,
   });

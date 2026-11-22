@@ -56,6 +56,13 @@ export function useVerificationComplete() {
     if (router.currentRoute.value !== verificationRoute) return;
     resetEmailVerification();
     resetPhoneVerification();
+    if (
+      verificationRoute.path === "/recover" ||
+      verificationRoute.path === "/recover/"
+    ) {
+      await replaceVerificationRoute({ name: "/" });
+      return;
+    }
 
     // The route survives refresh and back/forward navigation; a leftover global
     // onboarding session must not redirect unrelated account verification.

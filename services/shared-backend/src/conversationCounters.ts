@@ -11,12 +11,14 @@
  * survey eligibility is applied to those participant aggregates.
  */
 
-import { eq, isNotNull, isNull, and, count, sql } from "drizzle-orm";
+import { eq, isNotNull, isNull, and, count, sql, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationTable,
     opinionTable,
     voteTable,
+    voteContentTable,
     userTable,
     opinionModerationTable,
 } from "./schema.js";
@@ -25,6 +27,9 @@ import type { BaseLogger } from "pino";
 import { getEligibleParticipantIdsForAnalysis } from "./surveyAnalysis.js";
 import { nowZeroMs } from "./util.js";
 import { currentOpinionSourceCondition } from "./opinionEligibility.js";
+import type { PostgresTransaction } from "./db.js";
+
+const OPINION_COUNTER_BATCH_SIZE = 1_000;
 
 interface AllConversationCounters {
     opinionCount: number;
@@ -41,7 +46,7 @@ type AnalysisQueueStrategy = "caller_will_enqueue" | "db_reconciliation_only";
 
 /**
  * Reconcile all conversation counters from actual database records (internal helper).
- * Returns both unmoderated and total counts using FILTER clauses — 3 queries total.
+ * Shares voter aggregates across totals; required-survey gating adds its own reads.
  */
 export async function calculateConversationCounters({
     db,
@@ -50,6 +55,7 @@ export async function calculateConversationCounters({
     db: PostgresJsDatabase;
     conversationId: number;
 }): Promise<AllConversationCounters> {
+    const voter = alias(userTable, "counter_voter");
     const activeVoteParticipantRows = await db
         .select({
             authorId: voteTable.authorId,
@@ -63,7 +69,11 @@ export async function calculateConversationCounters({
         })
         .from(voteTable)
         .innerJoin(opinionTable, eq(voteTable.opinionId, opinionTable.id))
-        .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
+        .leftJoin(userTable, eq(opinionTable.authorId, userTable.id))
+        .innerJoin(
+            voter,
+            and(eq(voter.id, voteTable.authorId), eq(voter.isDeleted, false)),
+        )
         .leftJoin(
             opinionModerationTable,
             and(
@@ -120,7 +130,7 @@ export async function calculateConversationCounters({
                     .as("hidden_opinion_count"),
         })
         .from(opinionTable)
-        .innerJoin(userTable, eq(opinionTable.authorId, userTable.id))
+        .leftJoin(userTable, eq(opinionTable.authorId, userTable.id))
         .leftJoin(
             opinionModerationTable,
             and(
@@ -154,6 +164,72 @@ export async function calculateConversationCounters({
     };
 }
 
+/** The caller holds the affected conversation locks; frozen statistics stay fixed. */
+export async function reconcileOpinionVoteCounters({
+    db,
+    opinionIds,
+}: {
+    db: PostgresTransaction;
+    opinionIds: readonly number[];
+}): Promise<void> {
+    if (opinionIds.length === 0) return;
+    const affectedOpinionIds = [...new Set(opinionIds)];
+    // Bound parameters even for accounts with more than PostgreSQL's 65,535
+    // parameter limit. The account mutation already owns the full lock scope.
+    for (
+        let offset = 0;
+        offset < affectedOpinionIds.length;
+        offset += OPINION_COUNTER_BATCH_SIZE
+    ) {
+        const opinionBatch = affectedOpinionIds.slice(
+            offset,
+            offset + OPINION_COUNTER_BATCH_SIZE,
+        );
+        const voter = alias(userTable, "tally_voter");
+        const tallies = db
+            .select({
+                opinionId: opinionTable.id,
+                // PostgreSQL FILTER computes all three tallies in one grouped scan,
+                // including zero-vote statements through the left joins.
+                agrees: sql<number>`count(*) FILTER (WHERE ${voter.isDeleted} = false AND ${voteContentTable.vote} = 'agree')`
+                    .mapWith(Number)
+                    .as("agrees"),
+                disagrees:
+                    sql<number>`count(*) FILTER (WHERE ${voter.isDeleted} = false AND ${voteContentTable.vote} = 'disagree')`
+                        .mapWith(Number)
+                        .as("disagrees"),
+                passes: sql<number>`count(*) FILTER (WHERE ${voter.isDeleted} = false AND ${voteContentTable.vote} = 'pass')`
+                    .mapWith(Number)
+                    .as("passes"),
+            })
+            .from(opinionTable)
+            .leftJoin(
+                voteTable,
+                and(
+                    eq(voteTable.opinionId, opinionTable.id),
+                    isNotNull(voteTable.currentContentId),
+                ),
+            )
+            .leftJoin(voter, eq(voter.id, voteTable.authorId))
+            .leftJoin(
+                voteContentTable,
+                eq(voteContentTable.id, voteTable.currentContentId),
+            )
+            .where(inArray(opinionTable.id, opinionBatch))
+            .groupBy(opinionTable.id)
+            .as("current_vote_tallies");
+        await db
+            .update(opinionTable)
+            .set({
+                numAgrees: sql`${tallies.agrees}::integer`,
+                numDisagrees: sql`${tallies.disagrees}::integer`,
+                numPasses: sql`${tallies.passes}::integer`,
+            })
+            .from(tallies)
+            .where(eq(opinionTable.id, tallies.opinionId));
+    }
+}
+
 /**
  * Schedule analysis after a mutation that changes counts.
  *
@@ -166,12 +242,14 @@ export async function scheduleConversationAnalysisRefresh({
     log,
     doUpdateLastReactedAt = false,
     queueStrategy = "db_reconciliation_only",
+    moderationChanged,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     log: Pick<BaseLogger, "info" | "error">;
     doUpdateLastReactedAt?: boolean;
     queueStrategy?: AnalysisQueueStrategy;
+    moderationChanged?: boolean;
 }): Promise<void> {
     // Ranking counters are owned by ranking/scoring workers, not the Pol.is math updater.
     const convType = await db
@@ -179,7 +257,7 @@ export async function scheduleConversationAnalysisRefresh({
         .from(conversationTable)
         .where(eq(conversationTable.id, conversationId));
 
-    if (convType[0]?.conversationType === "ranking") {
+    if (convType[0]?.conversationType === "prioritizing") {
         return;
     }
 
@@ -190,7 +268,12 @@ export async function scheduleConversationAnalysisRefresh({
             .where(eq(conversationTable.id, conversationId));
     }
 
-    const schedule = await scheduleAnalysisUpdate({ db, conversationId, log });
+    const schedule = await scheduleAnalysisUpdate({
+        db,
+        conversationId,
+        log,
+        moderationChanged,
+    });
     log.info(
         {
             event: "analysis_schedule",

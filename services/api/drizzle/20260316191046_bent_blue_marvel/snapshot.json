@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ed3d7d5e-361d-41c8-a86d-57aad4fe974f",
+  "prevIds": [
+    "c3e0767f-f836-4635-87b2-11678182b60e"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "participation_mode"
+      ],
+      "writes": [
+        "s|enum|public.participation_mode"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation",
+        "participation_mode"
+      ],
+      "writes": [
+        "s|colprop|public.conversation.participation_mode.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation",
+        "n|sch|public",
+        "n|col|public.conversation.participation_mode",
+        "n|enum|public.participation_mode"
+      ],
+      "sqlHash": "1f0802d7e6f447ff"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"participation_mode\"]",
+      "set": {
+        "values": [
+          "account_required",
+          "strong_verification",
+          "email_verification",
+          "guest"
+        ]
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation\",\"participation_mode\"]",
+      "set": {
+        "default": "'account_required'"
+      }
+    }
+  ]
+}

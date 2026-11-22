@@ -1,8 +1,8 @@
 <script lang="ts">
-  import agoraIcon from "$lib/assets/agora-icon.svg";
-  import agoraText from "$lib/assets/agora-text.svg";
-  import * as m from "$lib/paraglide/messages.js";
-  import { localizeHref } from "$lib/paraglide/runtime";
+  import agoraIcon from "#lib/assets/agora-icon.svg";
+  import agoraText from "#lib/assets/agora-text.svg";
+  import * as m from "#lib/paraglide/messages.js";
+  import { localizeHref } from "#lib/paraglide/runtime.js";
   import GradientLink from "$ui/shared/gradient-link.svelte";
   import SocialIcons from "$ui/shared/social-icons.svelte";
   import Text from "$ui/shared/text.svelte";
@@ -26,7 +26,7 @@
     "
   >
     <enhanced:img
-      src="$lib/assets/hero-bg-base.png"
+      src="#lib/assets/hero-bg-base.png"
       alt=""
       sizes="min(1376px, 100vw)"
       class="absolute inset-0 size-full rounded-3xl object-cover"
@@ -37,7 +37,7 @@
       "
     >
       <enhanced:img
-        src="$lib/assets/hero-overlay.png"
+        src="#lib/assets/hero-overlay.png"
         alt=""
         class="size-full object-cover"
       />

@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Agora's foundation decision brief: Brussels, Zurich, Zug, France and the US. Donations, SaaS, founder compensation, governance and decentralised protocols." />
+    <title>Agora — Choosing a foundation home</title>
+    <style>
+      :root { color-scheme: light; --paper: #f6f5ef; --white: #fffefa; --ink: #19372f; --muted: #53675e; --line: #d7ded4; --green: #245e49; --mint: #e4eddf; --gold: #ecd598; --amber: #765015; --blue: #e6edf1; --radius: 16px; }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      a { color: var(--green); text-underline-offset: 3px; }
+      a:hover { text-decoration-thickness: 2px; }
+      button, input, select { font: inherit; }
+      button, select { cursor: pointer; }
+      button { border: 1px solid var(--line); background: var(--white); color: var(--ink); border-radius: 9px; padding: 9px 14px; }
+      button:hover { background: var(--mint); }
+      :focus-visible { outline: 3px solid #ab701e; outline-offset: 4px; }
+      .skip { position: absolute; inset-inline-start: 16px; top: -80px; padding: 12px; background: var(--white); z-index: 10; }
+      .skip:focus { top: 12px; }
+      .topbar { position: sticky; top: 0; z-index: 5; background: #f6f5eff5; border-bottom: 1px solid var(--line); }
+      .topbar-inner { max-width: 1380px; margin: auto; padding: 13px 30px; display: flex; align-items: center; gap: 28px; }
+      .brand { font-weight: 800; letter-spacing: -.05em; font-size: 25px; text-decoration: none; color: var(--ink); }
+      .brand span { color: #6a8770; }
+      nav { display: flex; gap: 20px; flex: 1; overflow-x: auto; }
+      nav a { white-space: nowrap; color: var(--muted); font-size: 13px; font-weight: 650; text-decoration: none; padding-block: 5px; }
+      .print-button { font-size: 12px; white-space: nowrap; }
+      main, footer { max-width: 1320px; padding-inline: 30px; margin-inline: auto; }
+      .eyebrow { color: var(--green); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .16em; }
+      .hero { padding-block: 62px 36px; display: grid; grid-template-columns: 1.6fr 1fr; gap: 54px; align-items: center; }
+      h1, h2, .big-number { font-family: Georgia, "Times New Roman", serif; font-weight: 400; letter-spacing: -.045em; }
+      h1 { font-size: clamp(42px, 5vw, 70px); line-height: 1.06; margin: 18px 0 24px; max-width: 800px; }
+      h1 em { color: var(--green); }
+      h2 { font-size: clamp(30px, 3vw, 42px); line-height: 1.16; margin: 10px 0 16px; }
+      h3 { font-size: 18px; line-height: 1.35; margin: 0 0 12px; }
+      h4 { font-size: 15px; margin: 22px 0 8px; }
+      p { margin: 0 0 15px; }
+      p:last-child { margin-bottom: 0; }
+      .lead { color: var(--muted); max-width: 740px; font-size: 18px; line-height: 1.7; }
+      .context { padding: 25px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
+      .context dl { margin: 15px 0 0; }
+      .context dl div { display: grid; grid-template-columns: 100px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
+      dt { color: var(--muted); } dd { margin: 0; font-weight: 600; }
+      .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 20px 0; }
+      .pill, .tag { border: 1px solid var(--line); border-radius: 30px; padding: 4px 10px; font-size: 11px; font-weight: 650; display: inline-block; }
+      .tag { background: var(--mint); border-color: transparent; color: var(--green); }
+      .tag.amber { background: #f5e8cc; color: var(--amber); }
+      section { padding-block: 36px; border-top: 1px solid var(--line); }
+      .section-head { display: flex; align-items: end; justify-content: space-between; gap: 25px; margin-bottom: 22px; }
+      .section-head p { color: var(--muted); max-width: 480px; font-size: 14px; }
+      .recommendation { border-radius: 20px; padding: 32px; background: var(--ink); color: #f6f5ef; display: grid; grid-template-columns: 1.3fr 1fr; gap: 35px; }
+      .recommendation .eyebrow { color: var(--gold); }
+      .recommendation h2 { font-size: 36px; }
+      .recommendation p { color: #d9e3d8; }
+      .recommendation a { color: var(--gold); }
+      .recommendation ol { margin: 0; padding-inline-start: 22px; font-size: 14px; }
+      .recommendation li { padding: 5px 0 12px 5px; }
+      .grid { display: grid; gap: 16px; }
+      .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card { background: var(--white); border: 1px solid var(--line); padding: 25px; border-radius: var(--radius); min-width: 0; }
+      .card p, .card li { font-size: 14px; }
+      .card .eyebrow { margin-bottom: 12px; }
+      .card.highlight { background: var(--mint); }
+      .card.blue { background: var(--blue); }
+      .note { border-inline-start: 3px solid #bc9a4a; background: #f1ecdd; padding: 16px 20px; font-size: 14px; margin-block: 20px; }
+      .note.green { border-color: var(--green); background: var(--mint); }
+      .small, .table-note { font-size: 12px; color: var(--muted); }
+      .source-link { font-size: 11px; font-weight: 750; white-space: nowrap; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: start; }
+      caption { text-align: start; padding: 14px 18px; font-weight: 650; background: var(--mint); }
+      th, td { padding: 16px; vertical-align: top; border-bottom: 1px solid var(--line); text-align: start; }
+      thead th { background: #e8ece3; font-size: 12px; }
+      tbody th { font-size: 12px; min-width: 145px; background: #f4f5ef; }
+      tr:last-child > * { border-bottom: 0; }
+      .matrix { min-width: 1090px; }
+      .matrix td { min-width: 176px; }
+      .matrix strong { display: block; margin-bottom: 6px; }
+      .table-note { margin-top: 10px; }
+      .scenario-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+      .scenario-buttons button { font-size: 13px; }
+      .scenario-buttons button[aria-pressed="true"] { background: var(--green); color: white; border-color: var(--green); }
+      .scenario-result { padding: 24px; border-radius: var(--radius); background: var(--mint); }
+      .scenario-result h3 { font-size: 22px; }
+      .timeline { counter-reset: phase; }
+      .timeline .card { border-top: 4px solid var(--green); }
+      .timeline h3::before { counter-increment: phase; content: "0" counter(phase) " / "; color: #6a8770; }
+      ul, ol { padding-inline-start: 20px; margin: 8px 0 16px; }
+      li { margin-block: 7px; }
+      .details-list { display: grid; gap: 12px; }
+      details { background: var(--white); border: 1px solid var(--line); border-radius: 12px; }
+      summary { padding: 20px 22px; cursor: pointer; font-size: 16px; font-weight: 700; }
+      summary small { font-weight: 400; color: var(--muted); margin-inline-start: 12px; font-size: 12px; }
+      details[open] summary { border-bottom: 1px solid var(--line); }
+      .detail-body { padding: 24px; font-size: 14px; }
+      .detail-body h3 { margin-top: 22px; }
+      .detail-body h3:first-child { margin-top: 0; }
+      .detail-body .card { padding: 20px; }
+      .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .field { display: grid; gap: 6px; margin-block: 15px; }
+      .field label { font-size: 13px; font-weight: 650; }
+      input, select { width: 100%; background: white; border: 1px solid #a8b8a9; color: var(--ink); border-radius: 7px; padding: 10px 12px; min-width: 0; }
+      .result { padding-block: 18px 8px; margin-top: 18px; border-top: 1px solid var(--line); }
+      .big-number { font-size: 40px; line-height: 1.2; display: block; }
+      .result p { font-size: 13px; }
+      .flow { display: flex; align-items: stretch; gap: 12px; flex-wrap: wrap; margin-block: 20px; }
+      .flow .node { flex: 1 1 180px; border: 1px solid var(--line); padding: 18px; border-radius: 10px; background: var(--mint); text-align: center; font-size: 13px; }
+      .flow .arrow { align-self: center; font-size: 22px; color: var(--green); }
+      .decision { padding: 26px; background: var(--gold); border-radius: var(--radius); }
+      .decision h3 { font-size: 22px; }
+      .sources { column-count: 2; column-gap: 45px; font-size: 13px; }
+      .sources li { break-inside: avoid; margin: 0 0 18px; padding-inline-start: 3px; }
+      .sources small { display: block; color: var(--muted); margin-top: 4px; }
+      .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 12px; color: var(--muted); margin-block: 18px; }
+      .legend b { color: var(--ink); }
+      footer { padding-block: 25px 45px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+      [hidden] { display: none; }
+      @media (max-width: 950px) {
+        .hero { grid-template-columns: 1fr; gap: 25px; padding-block-start: 35px; }
+        .hero .context { max-width: none; }
+        .grid.three { grid-template-columns: 1fr; }
+        .recommendation { grid-template-columns: 1fr; gap: 20px; }
+        .topbar-inner { gap: 20px; }
+        .topbar-inner, main, footer { padding-inline: 20px; }
+        .section-head { display: block; }
+        .section-head p { max-width: none; }
+      }
+      @media (max-width: 650px) {
+        .grid.two, .tools { grid-template-columns: 1fr; }
+        .topbar-inner { flex-wrap: wrap; gap: 8px 18px; padding-block: 8px; }
+        nav { order: 3; flex-basis: 100%; gap: 18px; }
+        .print-button { margin-inline-start: auto; }
+        html { scroll-padding-top: 120px; }
+        .recommendation { padding: 24px; }
+        .card { padding: 20px; }
+        .sources { column-count: 1; }
+        summary small { display: block; margin-inline-start: 0; margin-top: 5px; }
+        .detail-body { padding: 18px; }
+        .flow .arrow { display: none; }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      @media print {
+        body { background: white; font-size: 10pt; color: #152c24; }
+        .topbar, .skip, .no-print, .scenario-buttons { display: none; }
+        main, footer { max-width: none; padding-inline: 0; }
+        .hero { padding-top: 0; gap: 20px; }
+        h1 { font-size: 36pt; } h2 { font-size: 24pt; }
+        section { padding-block: 20px; }
+        .table-wrap { overflow: visible; }
+        .matrix { min-width: 0; font-size: 8pt; }
+        .matrix td, tbody th { min-width: 0; }
+        th, td { padding: 7px; }
+        .recommendation, .card, details { background: white; color: #152c24; border: 1px solid #9cae9e; }
+        .recommendation p, .recommendation .eyebrow { color: #152c24; }
+        .grid.three { grid-template-columns: 1fr; }
+        .tools { grid-template-columns: 1fr; }
+        .card, summary, h2, h3 { break-inside: avoid; }
+        h2, h3, summary { break-after: avoid; }
+        .sources { column-count: 1; }
+        a { color: inherit; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to comparison</a>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#main">agora<span>.</span></a>
+        <nav aria-label="Sections">
+          <a href="#summary">The short answer</a><a href="#comparison">Compare 5 homes</a><a href="#funding">Funding & costs</a><a href="#people">Pay & control</a><a href="#crypto">SaaS & crypto</a><a href="#details">Details</a><a href="#sources">Sources</a>
+        </nav>
+        <button class="print-button" id="print" type="button" hidden>Print / save PDF</button>
+      </div>
+    </header>
+    <main id="main">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Agora / structure decision brief / 15 October 2026</div>
+          <h1>A home for the mission.<br /><em>Room to build a business.</em></h1>
+          <p class="lead">Brussels, Zurich, Zug, France or the US? A summary first, with the funding, compensation, governance and protocol details underneath.</p>
+          <div class="pills"><span class="pill">3 working cofounders</span><span class="pill">US-heavy fundraising</span><span class="pill">SaaS + grants</span><span class="pill">Possible crypto later</span></div>
+        </div>
+        <aside class="context" aria-label="Planning assumptions">
+          <div class="eyebrow">Built around your situation</div>
+          <dl>
+            <div><dt>Today</dt><dd>2 founders in France; 1 in Switzerland</dd></div>
+            <div><dt>Mobility</dt><dd>Brussels is an option; no US move assumed</dd></div>
+            <div><dt>Ambition</dt><dd>Comfortable salaries, hires, retained earnings</dd></div>
+            <div><dt>Governance</dt><dd>Founder minority, independent majority</dd></div>
+            <div><dt>Funding case</dt><dd>Up to $10m; spendable grant unless stated otherwise</dd></div>
+          </dl>
+        </aside>
+      </div>
+
+      <section id="summary">
+        <div class="recommendation">
+          <div>
+            <div class="eyebrow">The 60-second answer · planning judgment</div>
+            <h2>Shortlist Brussels and Zurich.<br />Choose the US funding route separately.</h2>
+            <p><strong>Brussels</strong> is attractive if two of you genuinely relocate and build an EU operating team. <strong>Zurich</strong> is attractive if the Swiss founder anchors real governance and you want a supervised mission institution. <strong>Zug</strong> gains weight when a token/protocol project becomes concrete.</p>
+            <p>At $10m, compare a Belgian <strong>public-benefit foundation (FUP)</strong> with a Swiss charitable foundation. A Belgian private foundation is not automatically the cheapest answer once reserve taxation is included.</p>
+          </div>
+          <ol>
+            <li><strong>Mostly US foundation grants?</strong> Ask about direct international grants before paying an intermediary.</li>
+            <li><strong>Mostly US individuals / donor-advised funds?</strong> Use an eligible US charity route; compare a hosted fund with your own 501(c)(3).</li>
+            <li><strong>SaaS becomes substantial?</strong> Evaluate a taxable subsidiary owned by the mission entity.</li>
+            <li><strong>Crypto later?</strong> Keep the option open. A Swiss subsidiary can be added; a second foundation has independent duties and no shares.</li>
+          </ol>
+        </div>
+        <div class="grid three" style="margin-top: 18px">
+          <article class="card"><div class="eyebrow">Pay</div><h3>Good salaries are possible.</h3><p>Belgium, Switzerland and a US public charity can pay founders for real work at defensible market rates. A $10m grant is funding capacity, not a salary entitlement. <a class="source-link" href="#s1">[1]</a> <a class="source-link" href="#s3">[3]</a> <a class="source-link" href="#s8">[8]</a></p></article>
+          <article class="card"><div class="eyebrow">Control</div><h3>Influence without ownership.</h3><p>Three seats out of seven plus delegated executive authority fits your stated goal. Mission assets and a foundation-owned subsidiary belong to the organisation, not the founders.</p></article>
+          <article class="card"><div class="eyebrow">Your location</div><h3>Work location drives payroll.</h3><p>A Swiss or US employer does not turn work performed from France into Swiss or US payroll economics. Genuine relocation matters more than the address on the foundation deed. <a class="source-link" href="#s12">[12]</a></p></article>
+        </div>
+        <div class="note"><strong>Three distinct questions:</strong> Can the entity legally do it? Will it retain charitable/tax privileges? Will a donor or intermediary accept it? “Foundation”, open-source software and decentralisation do not automatically answer all three.</div>
+      </section>
+
+      <section id="comparison">
+        <div class="section-head"><div><div class="eyebrow">01 / Side by side</div><h2>Five homes. Different strengths.</h2></div><p>Qualitative fit for Agora, not a numerical legal score. Zurich and Zug share Swiss foundation law and FINMA rules; their ecosystem and cantonal tax practice differ.</p></div>
+        <div class="table-wrap" role="region" aria-label="Jurisdiction comparison, scroll horizontally on small screens" tabindex="0">
+          <table class="matrix">
+            <caption>Operating nonprofit with paid founders, US donors and a possible commercial arm</caption>
+            <thead><tr><th scope="col">Decision factor</th><th scope="col">Brussels · Belgium</th><th scope="col">Zurich · Switzerland</th><th scope="col">Zug · Switzerland</th><th scope="col">France</th><th scope="col">United States</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Relevant legal form</th><td><strong>Private foundation or FUP</strong>FUP requires royal recognition. ASBL/AISBL are member-based alternatives.</td><td><strong>Charitable foundation</strong>Non-charitable foundations also exist; exemption is a separate determination.</td><td><strong>Same Swiss foundation</strong>A “crypto foundation” is not its own legal or tax category.</td><td><strong>Association / fonds de dotation / FRUP</strong>Different forms, not interchangeable “foundations”.</td><td><strong>Nonprofit corporation + 501(c)(3)</strong>Public charity vs private foundation is a tax classification. 501(c)(6) is a different model.</td></tr>
+              <tr><th scope="row">Best reason to choose</th><td><strong>Real EU operating base</strong>Team relocation, civil-society partners and EU institutional proximity.</td><td><strong>Mission stewardship</strong>Existing Swiss founder, Swiss philanthropy and explicit Zurich pay guidance.</td><td><strong>Protocol ecosystem</strong>Specialist advisers, networks and experience with token projects.</td><td><strong>Stay where you work</strong>A lean association can align the entity with two founders’ current location.</td><td><strong>US fundraising at scale</strong>Direct deductible gifts once recognised and eligible; no external donation percentage.</td></tr>
+              <tr><th scope="row">US individual gifts</th><td>Normally need a US intermediary or separate US charity for a US deduction.</td><td>Same US barrier.</td><td>Same US barrier.</td><td>Same US barrier.</td><td><strong>Strongest direct route</strong>Domestic qualifying 501(c)(3); donor-specific limits still apply.</td></tr>
+              <tr><th scope="row">US foundation grants</th><td>Direct grants may be possible with equivalency determination or expenditure responsibility.</td><td>Same mechanisms.</td><td>Same mechanisms; commercial/token activities can complicate charitable equivalency.</td><td>Same mechanisms for an eligible recipient/project.</td><td>Usually simpler for a recognised public charity. A concentrated funding base needs classification analysis.</td></tr>
+              <tr><th scope="row">Founder compensation</th><td><strong>Flexible, justified pay</strong>No general statutory euro ceiling identified for foundation remuneration; private-benefit limits apply.</td><td><strong>Reasonable pay accepted</strong>Zurich explicitly permits reasonable board remuneration alongside exemption.</td><td><strong>Reasonable pay</strong>Do not import Zurich’s tax practice without confirming Zug’s position.</td><td><strong>More sensitive for leaders</strong>Tax-exempt leadership remuneration regimes are constrained; genuine salaried staff are a separate analysis.</td><td><strong>Reasonable compensation</strong>Large nonprofit salaries exist; public charities face excess-benefit rules and public disclosure.</td></tr>
+              <tr><th scope="row">Substantial SaaS</th><td>Legally possible; commercial activity can trigger corporate tax and affect gift eligibility. Subsidiary worth modelling.</td><td>Must fit purpose; entrepreneurial purpose is not itself charitable. Assess separation and exemption.</td><td>Same issue. Lower company tax only matters for taxable profit allocated to genuine Swiss activity.</td><td>Commercial taxes / sectorisation / subsidiary analysis. Nonprofit status alone does not exempt SaaS.</td><td>Related-purpose earned income may be exempt; unrelated business income can be taxable, and substantial non-exempt activity can threaten status.</td></tr>
+              <tr><th scope="row">Administration</th><td><strong>Moderate</strong>Notary, filings, UBO, accounts, tax and payroll; more setup for FUP; audit depends on size.</td><td><strong>Moderate–high</strong>Foundation supervision, annual report, compensation disclosure and normally an auditor.</td><td><strong>Moderate–high</strong>Same foundation duties; token operations add specialist work.</td><td><strong>Form-dependent</strong>Association light to form; FRUP heavy; fonds de dotation has a low audit trigger.</td><td><strong>Moderate–high cross-border</strong>IRS + state obligations, fundraising registrations, Form 990 and overseas employment.</td></tr>
+              <tr><th scope="row">Large reserves</th><td><strong>Private foundation asset tax</strong>Up to 0.45% marginally; FUP excluded. Investment income may still be taxed.</td><td>Recognised charitable exemption can cover dedicated profit/capital; non-exempt activities need analysis.</td><td>Same principle; token treasury is not automatically charitable or exempt.</td><td>Endowment consumption and investment taxation depend on form/statutes.</td><td>Public charities differ from private foundations, which have investment excise tax and payout rules.</td></tr>
+              <tr><th scope="row">Crypto/protocol</th><td><strong>MiCA / EU framework</strong>Viable for nonfinancial software; token issuance and services need activity-based review.</td><td><strong>FINMA / Swiss framework</strong>Function of token and actual control matter.</td><td><strong>Ecosystem advantage</strong>Same FINMA test, not a regulatory exemption.</td><td><strong>MiCA / EU framework</strong>AMF expertise; old national transition is over by this brief’s date.</td><td><strong>Multi-regulator analysis</strong>Securities, commodities, money transmission and sanctions; no generic “DAO nonprofit” exemption.</td></tr>
+              <tr><th scope="row">Fit for your locations</th><td>Strong if two genuinely move. Swiss founder can remain on Swiss employment arrangements.</td><td>One local founder helps; two France-based founders still need French arrangements.</td><td>Swiss resident is not necessarily Zug resident. A Zug address does not relocate management.</td><td>Strongest immediate geographic alignment; Swiss employment still separate.</td><td>No US team assumed: adds an administration layer without removing European payroll.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">Legal/tax basis: Belgium <a href="#s1">[1–2]</a>; Switzerland <a href="#s3">[3–4]</a>; France <a href="#s9">[9–11]</a>; US <a href="#s5">[5–8, 17–18]</a>; crypto <a href="#s13">[13–16, 21]</a>. Detailed qualifications follow.</p>
+      </section>
+
+      <section id="scenarios">
+        <div class="section-head"><div><div class="eyebrow">02 / What changes the answer?</div><h2>Start with the funding reality.</h2></div><p>The same country can be a good or poor choice depending on who funds you and where the team actually works.</p></div>
+        <div class="scenario-buttons" id="scenario-buttons" aria-label="Choose a funding scenario" hidden>
+          <button type="button" data-scenario="grants" aria-pressed="true">US foundation grants</button><button type="button" data-scenario="individuals" aria-pressed="false">US individuals & DAFs</button><button type="button" data-scenario="saas" aria-pressed="false">SaaS-led growth</button><button type="button" data-scenario="protocol" aria-pressed="false">Token / protocol-led</button>
+        </div>
+        <div class="scenario-result" aria-live="polite" aria-atomic="true"><h3 id="scenario-title">US foundation grants → Brussels or Zurich can work directly.</h3><p id="scenario-text">For a few large institutional grants, ask funders whether they support foreign grantees using equivalency determination or expenditure responsibility. This can remove the need for a donation-percentage intermediary. Choose the operating home around the team, governance and tax treatment of reserves.</p><p class="small" id="scenario-trigger">Decision trigger: get the largest likely funder’s grantee requirements before incorporating.</p></div>
+        <noscript><p class="note">Other scenarios: US individuals/DAFs favour a hosted US charity or your own US 501(c)(3); SaaS-led growth favours modelling a taxable commercial arm; a token-led project makes Zug worth comparing once its activities are defined. The sections below cover each in detail.</p></noscript>
+        <div class="grid three timeline" style="margin-top: 22px">
+          <article class="card"><div class="eyebrow">Short term · 0–12 months</div><h3>One operating home</h3><ul><li>Confirm charitable purpose for open civic infrastructure and research.</li><li>Choose Brussels if moving is real; compare Zurich if Swiss stewardship is preferred; price a French association if staying.</li><li>Set up local payroll, independent board and the first grant agreement.</li><li>Use a US hosted route only where the donor channel needs it.</li></ul><p><strong>At low funding:</strong> a suitable fiscal sponsor may be cheaper than forming and running a standalone foundation.</p></article>
+          <article class="card"><div class="eyebrow">Mid term · 1–3 years</div><h3>Separate actual activities</h3><ul><li>At recurring US individual fundraising, compare your own US charity with hosted fees.</li><li>At material SaaS revenue, model a taxable subsidiary and shared-cost/IP agreements.</li><li>With multi-million reserves, revisit Belgian private foundation vs FUP.</li><li>Expand salary comparisons and governance as the organisation grows.</li></ul><p><strong>Trigger:</strong> recurring income and a specific operating need, rather than a round funding number alone.</p></article>
+          <article class="card"><div class="eyebrow">Long term · 3+ years</div><h3>Institution + operating arms</h3><ul><li>Mission entity stewards grants, open-source assets and public-benefit programmes.</li><li>Commercial arm runs enterprise hosting, support and contracts where appropriate.</li><li>Swiss protocol company or separate foundation only if activities and governance justify it.</li><li>Review treasury, recurring revenue and executive pay using comparable institutions.</li></ul><p><strong>Tradeoff:</strong> more entities add boards, accounts, intercompany tax work and operational substance requirements.</p></article>
+        </div>
+      </section>
+
+      <section id="funding">
+        <div class="section-head"><div><div class="eyebrow">03 / Funding & economics</div><h2>Donation size is only half the story.</h2></div><p>A single $10m grant, $10m of small gifts, and $10m paid over five years have different costs and obligations.</p></div>
+        <div class="grid three">
+          <article class="card"><span class="tag">Direct international grant</span><h3 style="margin-top: 15px">US grantmaking foundation</h3><p>For a US private foundation, an eligible foreign grantee can be supported through <strong>equivalency determination</strong> or <strong>expenditure responsibility</strong>. These require documentation/oversight; they are not automatic.</p><p>No mandatory intermediary percentage. One major donor may complicate public-charity equivalency; expenditure responsibility can still be a route for a qualifying charitable project. <a class="source-link" href="#s6">[6]</a></p></article>
+          <article class="card"><span class="tag">US charitable recipient</span><h3 style="margin-top: 15px">Individuals, companies & DAFs</h3><p>Direct gifts to Belgian, French or Swiss entities generally do not give US individuals a federal charitable deduction. A US public charity intermediary can accept eligible gifts, issue receipts and approve overseas grants.</p><p>A DAF sponsor has its own foreign-grant policies. Do not assume every DAF will fund a foreign entity directly or accept every intermediary. <a class="source-link" href="#s5">[5–7]</a></p></article>
+          <article class="card"><span class="tag">Own US institution</span><h3 style="margin-top: 15px">501(c)(3) main / friends entity</h3><p>Can be the main charity or an additional US fundraising organisation. It needs genuine governance, charitable discretion and a defensible public-charity classification—not a receipt-issuing conduit.</p><p>Costs: formation, $600 full Form 1023 fee, accounting, annual federal/state filings and applicable solicitation registrations, plus overseas arrangements. <a class="source-link" href="#s17">[17–18]</a></p></article>
+        </div>
+        <div class="table-wrap" style="margin-top: 22px">
+          <table><caption>Myriad USA published marginal schedule · management fee before setup / processing / FX</caption><thead><tr><th scope="col">Annual contributions</th><th scope="col">Schedule fee</th><th scope="col">Effective rate</th><th scope="col">What it suggests</th></tr></thead><tbody>
+            <tr><th scope="row">$100,000</th><td>$5,000</td><td>5.0%</td><td>Hosted route can avoid fixed US entity administration.</td></tr>
+            <tr><th scope="row">$250,000</th><td>$9,500</td><td>3.8%</td><td>Compare recurring compliance quotes; no universal break-even.</td></tr>
+            <tr><th scope="row">$500,000</th><td>$17,000</td><td>3.4%</td><td>An own US entity becomes worth pricing if fundraising repeats.</td></tr>
+            <tr><th scope="row">$1,000,000</th><td>$22,000</td><td>2.2%</td><td>Direct foundation grants may still avoid the hosted route.</td></tr>
+            <tr><th scope="row">$3,000,000</th><td>$32,000</td><td>1.07%</td><td>Important reference for the provider’s large-single-gift cap.</td></tr>
+            <tr><th scope="row">$10,000,000</th><td>$67,000 uncapped schedule</td><td>0.67%</td><td>A single $10m gift can be different: see the cap qualification below.</td></tr>
+          </tbody></table>
+        </div>
+        <div class="note"><strong>Correction to the earlier fee comparison:</strong> Myriad currently publishes a <strong>$1,500 one-time setup fee</strong>, no annual maintenance fee, and a cap for a single donation above $3m. For one $10m donation, applying the schedule to a capped $3m contribution base gives <strong>$32,000</strong>, not $67,000. Confirm that interpretation and its interaction with other gifts in writing. Its published minimum grant distribution is $5,000 and normal processing is 3–4 weeks. <a class="source-link" href="#s7">[7]</a></div>
+        <div class="tools">
+          <article class="card highlight" id="us-calculator">
+            <div class="eyebrow">Interactive / US channel</div><h3>Hosted fund vs own US charity</h3>
+            <p>Model only the <strong>additional US fundraising layer</strong>. The Belgian/French/Swiss operating organisation’s costs remain on both sides.</p>
+            <div class="field"><label for="donations">US contributions received this calendar year · USD</label><input id="donations" type="number" min="0" max="1000000000000" step="1000" value="1000000" /></div>
+            <div class="field"><label for="gift-pattern">Gift pattern</label><select id="gift-pattern"><option value="many">Multiple gifts · show uncapped schedule</option><option value="single">One gift · model $3m contribution-base cap</option></select></div>
+            <div class="field"><label for="us-admin">Own US entity: additional annual administration · USD</label><input id="us-admin" type="number" min="0" max="1000000000" step="1000" value="20000" /></div>
+            <p class="small">$20,000 is an editable scenario assumption, not a provider quote. Annual admin excludes both options’ setup and transaction costs.</p>
+            <div class="result" aria-live="polite" aria-atomic="true"><span class="big-number" id="us-fee">$22,000</span><p id="us-rate">Hosted management fee · 2.20% effective</p><p id="us-comparison">Own-entity assumption is $2,000 lower per year, before setup and differences in services.</p><p class="small" id="us-first-year">Hosted first year: $23,500 including $1,500 setup.</p></div>
+          </article>
+          <article class="card" id="be-calculator">
+            <div class="eyebrow">Interactive / Belgian reserves</div><h3>The hidden cost of holding assets</h3>
+            <p>Private foundations and many associations can owe annual patrimonial tax. A <strong>FUP is excluded</strong>. This can reverse the “Belgium is cheaper” conclusion. <a class="source-link" href="#s1">[1–2]</a></p>
+            <div class="field"><label for="assets">Taxable assets on 1 January · EUR</label><input id="assets" type="number" min="0" max="1000000000000" step="10000" value="10000000" /></div>
+            <p class="small">Enter the taxable base <strong>after applicable exclusions</strong>. Cash/working capital intended to be spent during the year may be excluded. A multi-year grant reserve is not automatically all excluded. No USD/EUR conversion is assumed.</p>
+            <div class="result" aria-live="polite" aria-atomic="true"><span class="big-number" id="asset-tax">€43,800</span><p id="asset-rate">Annual patrimonial tax · 0.438% of taxable assets</p><p>For comparison: €1m taxable → €3,300/year; €5m → €21,300/year. FUP exclusion concerns this tax, not every tax.</p></div>
+            <p class="small">Marginal brackets: 0% to €50k; 0.15% for €50k–€250k; 0.30% for €250k–€500k; 0.45% above €500k. Sector-specific relief is not assumed.</p>
+          </article>
+        </div>
+        <noscript><p class="small">Calculators require JavaScript. The displayed defaults and tables remain readable without it.</p></noscript>
+        <details style="margin-top: 20px"><summary>What can we honestly say about setup and annual costs?<small>Capital ≠ fees ≠ payroll ≠ taxes</small></summary><div class="detail-body">
+          <div class="table-wrap"><table><thead><tr><th scope="col">Home / form</th><th scope="col">Capital / assets committed</th><th scope="col">Verified fixed-cost anchors</th><th scope="col">Quote separately</th></tr></thead><tbody>
+            <tr><th scope="row">Belgian foundation</th><td>No fixed statutory minimum; sufficient assets for the purpose.</td><td>Notarial formation; FUP adds recognition. Private-foundation asset tax model above.</td><td>Notary, purpose/US eligibility review, accounts, UBO, tax, payroll and size-dependent audit.</td></tr>
+            <tr><th scope="row">Swiss foundation · either canton</th><td>Federal supervisor’s practice: CHF 50k initial net cash, justified exceptions. Not a fee.</td><td>ASF establishment authority fees normally CHF 2,500–5,000. Annual report review CHF 750 / 1,300 / 2,000 by complexity.</td><td>Notary/register, tax ruling, accounting, auditor, board/representation, payroll. Fees are ASF-specific, not a canton-wide all-in price.</td></tr>
+            <tr><th scope="row">France</th><td>Association: no foundation-style endowment. Fonds de dotation: €15k initial cash. FRUP: official guidance €1.5m initial endowment.</td><td>Fonds de dotation creation publication is free; auditor required above €10k annual resources.</td><td>Association vs fund vs FRUP legal/tax fit, accounts/audit, payroll and commercial structuring.</td></tr>
+            <tr><th scope="row">US 501(c)(3)</th><td>No general federal $50k foundation-style minimum; state/form rules differ.</td><td>Full IRS Form 1023 fee $600. This is not the whole formation cost.</td><td>State formation, exemptions, legal advice, 990, solicitation registrations, accounting, overseas reporting and payroll.</td></tr>
+          </tbody></table></div>
+          <p class="table-note">Sources <a href="#s1">[1]</a>, <a href="#s4">[4]</a>, <a href="#s9">[9–10]</a>, <a href="#s17">[17]</a>. At $10m with an international team, basic local incorporation/bookkeeping packages are not comparable all-in quotes.</p>
+          <p><strong>Ask every adviser for the same scope:</strong> first-year setup and tax eligibility, annual accounts/returns/audit, three-founder employment in the actual countries, US donor route, and a separate optional SaaS/crypto arm. Price each added entity incrementally.</p>
+        </div></details>
+      </section>
+
+      <section id="people">
+        <div class="section-head"><div><div class="eyebrow">04 / Founders, pay & decision rights</div><h2>Comfortable pay. Real oversight.</h2></div><p>Your executive job, your board seat and your ownership of assets are separate things.</p></div>
+        <div class="grid two">
+          <article class="card"><h3>Initial salary model for discussion</h3><p>For genuinely senior, full-time roles, a starting <strong>budget assumption</strong> could be <strong>€120k–€170k gross in Brussels</strong> and <strong>CHF 160k–CHF 220k gross in Switzerland</strong>. The earlier €150k / CHF 190k examples are proposals to benchmark, not verified market medians or legal safe harbours.</p><p>Location and function matter: CEO, CTO and partnerships lead need not be paid equally. Define annual gross consistently, including contractual holiday/13th-month pay, and add employer contributions, pension, insurance and benefits.</p><p><strong>No common payroll uplift:</strong> obtain an actual quote for each worker. A Belgian director’s mandate may have self-employed treatment; a separate employee role requires real employment conditions.</p></article>
+          <article class="card blue"><h3>Can that become $700k?</h3><p><strong>Possible in some large organisations; not an automatic growth right.</strong> Belgium and Swiss charitable structures do not provide a universal salary ceiling that makes $700k categorically impossible, but the package must remain justified for the work, market and organisation. A US public charity also requires reasonable compensation.</p><p>At Agora’s proposed stage, paying each founder $700k is a very different proposition from hiring three senior people comfortably. Review total salary, bonuses, retirement benefits and related-entity pay together.</p><p><strong>Commercial income does not make excess founder benefits permissible.</strong> A taxable subsidiary still needs defensible related-party compensation and contracts.</p></article>
+        </div>
+        <div class="note green"><strong>The Linux Foundation comparison needs a different frame.</strong> The Linux Foundation is a <strong>501(c)(6) business league</strong>, with approximately <strong>$220.7m revenue in FY2024</strong>, predominantly programme-service revenue. Its filing reports James Zemlin at <strong>$952,166 reportable compensation + $451,018 other compensation</strong>. These are filing categories, not a simple cash base salary. It shows that large nonprofit packages exist; it does not establish a Belgian/Swiss charitable salary benchmark or give US donors a charitable deduction. <a class="source-link" href="#s19">[19]</a></div>
+        <details><summary>What does $700k per founder do to a $10m grant?<small>Runway arithmetic, not a reasonableness test</small></summary><div class="detail-body">
+          <p>For a three-year spendable grant, all figures below are <strong>USD</strong>. No conversion to Belgian or Swiss payroll is implied.</p>
+          <div class="table-wrap"><table><thead><tr><th scope="col">Founder-pay assumption</th><th scope="col">Three founders × three years</th><th scope="col">Grant remaining before other hires / costs</th></tr></thead><tbody><tr><th scope="row">$240k total employer cost each/year</th><td>$2.16m</td><td>$7.84m</td></tr><tr><th scope="row">$700k gross cash each/year</th><td>$6.30m <em>before employer costs</em></td><td>$3.70m <em>before employer costs</em></td></tr></tbody></table></div>
+          <p class="table-note">These are deliberately different pay definitions: employer cost vs gross cash. The $700k case consumes at least 63% of the grant on founder cash pay alone; the actual percentage is higher with employer costs.</p>
+          <p>A durable high-pay institution needs recurring funding and role/market evidence. A one-time grant and board approval do not independently prove reasonable compensation.</p>
+        </div></details>
+        <div class="grid two" style="margin-top: 20px">
+          <article class="card highlight"><div class="eyebrow">Illustrative governance design</div><h3>7 directors = 3 founders + 4 independents</h3><ul><li>Independent chair and an unconflicted remuneration committee.</li><li>Founders set product, research and hiring direction within delegated authority and an approved budget.</li><li>All affected founders leave deliberation and voting on a joint founder-pay decision.</li><li>Document roles, external compensation comparisons, approval and total benefits.</li><li>Reserved board decisions: executive appointment/removal, budget, major IP transfers, subsidiary creation and mission changes.</li></ul><p><strong>Influence is real; employment is not guaranteed.</strong> An independent board must be able to disagree and replace executives.</p></article>
+          <article class="card"><div class="eyebrow">Your actual location scenarios</div><h3>Three people can mean three payroll files</h3><ul><li><strong>Stay 2 France + 1 Switzerland:</strong> French arrangements for French work, Swiss arrangements for Swiss work, regardless of parent’s address.</li><li><strong>Move 2 to Brussels:</strong> Belgian residence/work and local payroll become relevant; the Swiss founder need not move.</li><li><strong>Choose US parent:</strong> European work obligations remain; no US relocation or work authorisation is assumed.</li><li><strong>Multi-state work:</strong> travel/remote-working patterns can change social-security allocation and need separate assessment.</li></ul><p>French foreign-employer registration can avoid forming a French subsidiary solely for payroll, but does not resolve corporate effective-management or permanent-establishment questions. <a class="source-link" href="#s12">[12]</a></p></article>
+        </div>
+        <p class="table-note">Founder seat/appointment rights must be drafted for the chosen form. Three of seven is a minority of seats; special vetoes, appointment powers or supermajority thresholds can still produce effective control.</p>
+      </section>
+
+      <section id="crypto">
+        <div class="section-head"><div><div class="eyebrow">05 / Earned income & protocols</div><h2>Define the activity before the entity.</h2></div><p>Charging for Agora, receiving crypto donations and operating a token-based financial service are three different cases.</p></div>
+        <div class="grid two">
+          <article class="card"><h3>Can a Belgian foundation sell SaaS?</h3><p><strong>Yes, under entity law.</strong> It can carry out economic activities and retain surplus for its purpose. It cannot distribute profits to founders. This does <strong>not</strong> guarantee exemption from corporate tax, VAT or donor-eligibility restrictions. <a class="source-link" href="#s1">[1, pp. 8, 22–25]</a></p><p>Public-benefit hosting or educational services may be easier to connect to the mission than ordinary enterprise software sold at market rates. “We spend the profits on good causes” is not by itself a complete exemption argument.</p><p><strong>If SaaS becomes a major engine:</strong> model a wholly foundation-owned taxable company with appropriately priced IP licences/services, cost allocation and clear staffing. Check parent taxation, dividend withholding and VAT; profits do not flow back tax-free by default.</p></article>
+          <article class="card"><h3>Is Zug better than Brussels for crypto?</h3><p><strong>Often for ecosystem access; not automatically for the law.</strong> Zug has a recognised protocol/crypto network. Zurich has significant technical and financial expertise. Both use Swiss federal financial-market law and FINMA supervision.</p><p>Belgium and France operate under MiCA for activities in its scope, with an EU-authorisation/passport framework. A Swiss licence does not provide an EU MiCA passport. At this brief’s date, the maximum MiCA transition ending <strong>1 July 2026</strong> has passed. <a class="source-link" href="#s15">[15–16]</a></p><p>A Swiss token foundation can be taxable. Building an ecosystem that enriches tokenholders is not automatically the same as advancing a tax-exempt charitable purpose.</p></article>
+        </div>
+        <div class="table-wrap" style="margin-top: 20px"><table><caption>Protocol activity map · regulatory complexity depends on functions and actual control</caption><thead><tr><th scope="col">What Agora does</th><th scope="col">Belgium / France</th><th scope="col">Zurich / Zug</th><th scope="col">US</th></tr></thead><tbody>
+          <tr><th scope="row">Publish open-source code / nonfinancial civic protocol</th><td>Not automatically a crypto-asset service. Data protection, platform and ordinary tax rules still matter.</td><td>Not automatically FINMA-regulated solely because software uses cryptography/blockchain.</td><td>Software publication differs from operating financial services; analyse the actual implementation.</td></tr>
+          <tr><th scope="row">Accept donated BTC/ETH and convert through a provider</th><td>Different from issuing a token or providing custody to users. Provider, records and treasury policy matter.</td><td>Same distinction; receiving donations does not itself justify a Swiss crypto entity.</td><td>A US intermediary may accept crypto; donor valuation/substantiation rules remain separate.</td></tr>
+          <tr><th scope="row">Issue a transferable governance / utility token</th><td>Assess MiCA offering/white-paper rules and any securities classification. “Governance” is not an exemption.</td><td>FINMA considers payment, utility and asset functions, including hybrids and issue-time functionality.</td><td>Review current federal/state securities and other applicable rules; a nonprofit wrapper does not settle classification.</td></tr>
+          <tr><th scope="row">Hold user assets; exchange, route orders or run a trading interface</th><td>Potential CASP activity; consider custody, transfer, execution and platform functions individually.</td><td>Potential AML / banking / securities / infrastructure obligations depending on the business.</td><td>Potential FinCEN/state money-transmission and market-regulator obligations.</td></tr>
+          <tr><th scope="row">“Fully decentralised” service</th><td>MiCA recital 22 concerns services provided fully decentralised without an intermediary. Case-specific; offering rules need their own analysis.</td><td>FINMA applies substance over form: identify who actually runs, influences or controls the project.</td><td>No blanket assumption from calling it a DAO; identify operators, control and functions.</td></tr>
+        </tbody></table></div>
+        <div class="note"><strong>The control/decentralisation tension:</strong> if a foundation appoints the operator, controls upgrade or pause keys, runs the main front end, sets fees and dominates governance, claiming “no intermediary” becomes harder. Foundation independence and protocol decentralisation are also different questions. Analyse powers and functions, not just tokenholder counts. <a class="source-link" href="#s13">[13–14]</a></div>
+        <details><summary>Can a Belgian foundation control a Swiss entity?<small>Company ownership vs foundation governance</small></summary><div class="detail-body">
+          <div class="flow"><div class="node"><strong>Belgian mission foundation</strong><br />Purpose, grants, public-benefit assets</div><span class="arrow" aria-hidden="true">→</span><div class="node"><strong>100%-owned Swiss GmbH / AG</strong><br />Defined business, staff and contracts</div><span class="arrow" aria-hidden="true">→</span><div class="node"><strong>Activity-specific regulation</strong><br />Swiss + markets actually served</div></div>
+          <p><strong>A Swiss company:</strong> a Belgian foundation can generally be its shareholder, including sole shareholder, subject to its own purpose and duties. Share ownership provides appointment/voting rights; directors still owe the company legal duties. A Swiss GmbH requires CHF 20k paid capital; an AG requires CHF 100k nominal capital, normally at least CHF 50k paid. Both need Swiss-resident representation. <a class="source-link" href="#s20">[20]</a></p>
+          <p><strong>A Swiss foundation:</strong> a foreign legal entity can in principle establish one. The founding documents may shape board appointments, but there are <strong>no shares or shareholder ownership</strong>. Its assets are irreversibly dedicated to its purpose, and its board is subject to that purpose and supervision. A reserved appointment power is not a right to reclaim assets or give unlawful instructions. <a class="source-link" href="#s4">[4]</a></p>
+          <p><strong>Which fits Agora?</strong> A company better matches your request for an owned operating subsidiary. A separate foundation better matches deliberate independent protocol stewardship. That second choice reduces unilateral parent direction and duplicates foundation administration.</p>
+          <p><strong>Cross-border economics:</strong> price IP licences, development services and funding appropriately; analyse Belgian parent tax, Swiss taxable profit, dividend withholding/treaty eligibility and real management. Holding a Swiss company does not automatically remove Belgian patrimonial tax on the value of the shares.</p>
+        </div></details>
+      </section>
+
+      <section id="details">
+        <div class="section-head"><div><div class="eyebrow">06 / Open the details</div><h2>The points that can change the choice.</h2></div><p>Read only the jurisdictions and issues relevant to your next decision.</p></div>
+        <div class="no-print" style="margin-bottom: 16px"><button id="expand" type="button" hidden>Expand all details</button> <button id="collapse" type="button" hidden>Collapse all details</button></div>
+        <div class="details-list">
+          <details id="brussels"><summary>Brussels — private foundation, FUP, or association?<small>Operational flexibility vs reserve tax</small></summary><div class="detail-body">
+            <p><strong>Private foundation:</strong> notarial deed, no members/shareholders, no fixed statutory minimum endowment, purpose-based assets and flexible statutory board arrangements. “Private” is a legal form, not permission to treat assets as founder wealth.</p>
+            <p><strong>FUP:</strong> public-benefit recognition by royal decree adds setup and purpose-change formalities. It is excluded from annual patrimonial tax. That makes it important to price from the outset for a multi-million grant reserve.</p>
+            <p><strong>ASBL/AISBL:</strong> legitimate member-based operating alternatives if you want a membership/consortium model. They do not generally eliminate patrimonial tax. A member-controlled organisation is a different governance design from a memberless foundation.</p>
+            <p><strong>Tax layers:</strong> exemption from corporate income tax, Belgian deductible-gift approval, FUP status and VAT treatment are separate. Legal-entities tax can still tax investment income. Substantial commercial operations or active subsidiary management can require further tax analysis.</p>
+            <p><strong>Pay/governance:</strong> reasonable compensation for actual work; statutory financial-conflict procedures require disclosure, recusal and minutes. Approval by friends who are economically dependent on you is weak evidence of independence.</p>
+            <p><strong>Belgian donor approval:</strong> Philea’s 2024 profile reports specific administration/fundraising limits for approved deductible-gift institutions (20% / 30% respectively). These are not a general ceiling on all programme salaries or all foundations. Have advisers confirm applicability, current rules and programme-cost allocation before seeking that approval.</p>
+            <p><strong>At $10m:</strong> calculate the real 1 January taxable reserve, FUP eligibility and recognition timing. Charity form does not make every grant receipt tax-free under every possible activity profile; review the planned grant and business model together. <a class="source-link" href="#s1">[1–2]</a></p>
+          </div></details>
+          <details id="zurich"><summary>Zurich — the credible Swiss charitable option<small>Explicit pay guidance; real supervision</small></summary><div class="detail-body">
+            <p><strong>Charity status is not automatic.</strong> A foundation is an asset-dedication form. Cantonal/federal exemption requires qualifying public/charitable purposes and irrevocable dedication. Open-source civic infrastructure needs a public-benefit case based on actual beneficiaries and activities.</p>
+            <p><strong>Compensation:</strong> Zurich’s practice note, effective 1 February 2024, explicitly permits reasonable remuneration of foundation-board members. Foundation supervision reviews reasonableness; the tax authority may intervene when it is doubtful. Executive employee pay should be documented separately from board fees. This does not establish any particular salary as acceptable.</p>
+            <p><strong>Supervision:</strong> national/international scope normally means federal ASF supervision, even with a Zurich seat. Annual reporting and an auditor normally apply; exemption from audit is narrow and unsuitable to assume for a $10m case. Compensation totals must be disclosed to the supervisor under its requirements.</p>
+            <p><strong>Presence:</strong> ASF’s published practice requires a Swiss-domiciled board member with individual signature, or a compliant pair of Swiss-domiciled joint signatories including a board member. One Swiss founder can help, but signature arrangements must be designed expressly.</p>
+            <p><strong>Commercial expansion:</strong> subsidiary holdings may be possible, but Swiss charitable exemption has constraints where an entrepreneurial purpose or management role predominates. Zurich’s favourable rules for entrepreneurial grantmaking models are not a blanket exemption for commercial SaaS subsidiaries.</p>
+            <p><strong>Fit:</strong> choose for genuine Swiss anchoring and stewardship, not merely to pay Swiss salaries to people working in France. <a class="source-link" href="#s3">[3–4]</a></p>
+          </div></details>
+          <details id="zug"><summary>Zug — protocol ecosystem, same federal rules<small>A tax-exempt crypto foundation is not the default</small></summary><div class="detail-body">
+            <p><strong>Main advantage:</strong> a concentrated network of crypto/protocol organisations, advisers and service providers. This is an ecosystem judgment, not proof of easier licensing or banking for a specific project.</p>
+            <p><strong>Same federal foundation and FINMA framework as Zurich.</strong> International activity may still mean federal ASF supervision. Cantonal tax practice and taxable-company rates differ; request a Zug-specific charitable/tax assessment rather than relying on the Zurich practice note.</p>
+            <p><strong>Token treasury:</strong> determine whether sale proceeds are donations, service/prepayment revenue, capital-like funding or another category; classification follows rights and obligations. Valuation and volatile treasury holdings affect runway. A governance token can have payment/investment functions.</p>
+            <p><strong>What to locate there:</strong> an owned Swiss company for a defined operating business, or a foundation for genuinely independent stewardship. Taxable profit should reflect functions, people, assets and risks—not just a registered seat.</p>
+            <p><strong>Fit:</strong> becomes compelling when Swiss protocol operations, funding relationships or a local team are substantive. “We might do crypto someday” is not yet a strong incorporation reason. <a class="source-link" href="#s4">[4]</a> <a class="source-link" href="#s13">[13, 16, 20]</a></p>
+          </div></details>
+          <details id="france"><summary>France — compare the practical forms, not just a FRUP<small>Cheap to start can coexist with stricter leadership tax rules</small></summary><div class="detail-body">
+            <p><strong>Association loi 1901:</strong> natural lean operating comparator if two founders stay in France. It can employ people and earn revenue. Grant eligibility, donation receipts and commercial-tax status depend on purpose and activities.</p>
+            <p><strong>Fonds de dotation:</strong> a memberless mission/endowment vehicle, with at least €15k initial cash contribution during the first accounting year and at least three directors. It can conduct a public-interest mission or fund another nonprofit. Annual resources above €10k trigger a statutory auditor; public subsidy funding is generally prohibited, with exceptional statutory routes requiring separate review. Public fundraising requires authorisation. Draft whether and how endowment principal can be spent.</p>
+            <p><strong>FRUP:</strong> recognised by decree after a substantial process; official guidance calls for at least €1.5m initial endowment. A $10m grant does not make this the simplest operating form, nor mean all grant money must become permanently locked endowment.</p>
+            <p><strong>Leadership compensation:</strong> preserving “gestion désintéressée” involves rules for legal and de facto leaders. The ¾-SMIC tolerance and the larger-resource regime are not ordinary employee salary bands. The latter has limits on the number of paid leaders, resource history, transparency and remuneration (linked to three social-security ceilings). Exact indexed amounts change.</p>
+            <p><strong>Your hybrid role matters:</strong> a founder who is a genuine employee under independent direction is not identical to a paid controlling leader. Removing a board title does not by itself prevent “dirigeant de fait” treatment. Do not assume three newly created, founder-run paid leadership jobs fit an exemption immediately.</p>
+            <p><strong>Fit:</strong> strongest case is location alignment and a lean association; less attractive for the combination of founder direction plus very high charitable executive pay. SaaS may be taxed/sectorised or placed in a subsidiary. <a class="source-link" href="#s9">[9–11]</a></p>
+          </div></details>
+          <details id="usa"><summary>US — public charity, private foundation, or Linux-style trade association?<small>Classification can matter more than the word “foundation”</small></summary><div class="detail-body">
+            <p><strong>501(c)(3) public charity:</strong> the usual target for deductible public donations. State incorporation is separate from IRS recognition. An open civic-tech project must show a qualifying charitable, educational or scientific purpose; free/open-source software alone does not establish one.</p>
+            <p><strong>Public support:</strong> reliance on one private donor for $10m can affect classification. Public-support calculations, possible unusual-grant treatment, initial years and the donor’s own status matter. One grant does not automatically make you a private foundation, but an independent majority board alone does not make you a public charity.</p>
+            <p><strong>Private foundation:</strong> a valid charitable category, but with a different regime: self-dealing rules, investment-income excise tax, distribution requirements and restrictions on holdings/expenditures. A private operating foundation is another possible category for qualifying direct activities, not a shortcut to assume.</p>
+            <p><strong>Pay:</strong> for a public charity, the IRS rebuttable-presumption procedure uses advance unconflicted approval, appropriate comparable data and contemporaneous documentation. Form 990/Schedule J disclosures make senior compensation visible. Private-foundation self-dealing exceptions need their own analysis.</p>
+            <p><strong>Earned income:</strong> mission-related programme revenue may be compatible with exemption. An unrelated regular business may owe UBIT; using its profits for the mission does not make the activity related. A taxable subsidiary may help separate commercial operations.</p>
+            <p><strong>501(c)(6):</strong> a business league/trade association serving a common industry interest can fit a membership-led ecosystem organisation. It is not a substitute for a 501(c)(3) charitable donation channel. The Linux Foundation parent is this type; member dues/services and charity donations should not be conflated.</p>
+            <p><strong>Fit:</strong> strong for recurring US donor access and a substantive US institution. A purely European team should budget overseas payroll and cross-border reporting rather than treating Delaware incorporation as the complete structure. <a class="source-link" href="#s5">[5–8, 17–19]</a></p>
+          </div></details>
+          <details><summary>Other issues worth deciding early<small>IP, neutrality, treasury, grants, banking and future funding</small></summary><div class="detail-body"><div class="grid two">
+            <div><h3>Protect the public-benefit core</h3><ul><li><strong>IP and licences:</strong> establish who owns existing code, trademarks, data rights and new work. Open-source licences already granted may not be withdrawable. Transfers into a foundation may be difficult to reverse.</li><li><strong>Civic neutrality:</strong> distinguish deliberation/research infrastructure from candidate or party support. US 501(c)(3) campaign intervention is prohibited; lobbying is limited. Donor grants can impose additional limits.</li><li><strong>Restricted grants:</strong> clarify allowed salaries, overhead, regranting, endowment consumption, token spending and commercial development.</li><li><strong>Control over time:</strong> appointment terms, vacancies, removal, deadlocks and mission amendments matter as much as the initial 3/7 split.</li></ul></div>
+            <div><h3>Make the operating model durable</h3><ul><li><strong>Cash vs promise:</strong> a $10m commitment paid in instalments is not $10m available cash. Plan budget and fee timing from actual receipts.</li><li><strong>FX and treasury:</strong> USD grants vs EUR/CHF salaries create exchange risk. Crypto holdings add volatility and valuation complexity.</li><li><strong>Banking:</strong> verify a bank/payment processor accepts the real donor countries, source of funds and token plans before relying on it.</li><li><strong>Hiring:</strong> local labour law, immigration, pension and employer obligations follow real arrangements.</li><li><strong>Equity finance:</strong> a foundation has no founder equity to sell. Outside investment into a subsidiary can dilute its control; charitable assets cannot subsidise founder-owned value without proper terms.</li><li><strong>Digital regulation:</strong> GDPR, applicable Swiss/US privacy law, platform responsibilities and public-sector procurement are separate from foundation law.</li></ul></div>
+          </div></div></details>
+          <details><summary>What the earlier discussion got too simple<small>Corrections consolidated</small></summary><div class="detail-body"><ol>
+            <li><strong>Belgium is not categorically cheaper.</strong> A private foundation with large taxable reserves can pay tens of thousands annually in asset tax. FUP status is a serious comparator at $10m.</li>
+            <li><strong>“Can sell SaaS” does not mean “SaaS is tax-exempt”.</strong> Belgian entity law permits business; tax and donor rules have their own tests.</li>
+            <li><strong>The salary ranges were planning proposals.</strong> They were not legal allowances or sufficiently verified role/location compensation studies.</li>
+            <li><strong>Linux Foundation is not a 501(c)(3) salary precedent.</strong> Its parent is a much larger 501(c)(6), with different funding economics and filing compensation categories.</li>
+            <li><strong>Myriad publishes a large-single-donation cap.</strong> A straight $67k calculation for one $10m gift misses it; obtain the provider’s written calculation.</li>
+            <li><strong>A Swiss foundation is not an owned subsidiary.</strong> Appointment rights can create influence; its purpose, assets and directors’ duties remain its own.</li>
+            <li><strong>“Decentralised” does not switch regulation off.</strong> Actual token rights, control, services and markets served determine the analysis.</li>
+            <li><strong>A mixed-country team is feasible, not administratively free.</strong> Foreign-employer registration and effective-management/tax-substance questions are distinct.</li>
+          </ol></div></details>
+        </div>
+      </section>
+
+      <section id="decision">
+        <div class="decision"><div class="eyebrow">07 / Practical conclusion</div><h3>For your next decision, compare two complete structures.</h3><p><strong>A · Brussels:</strong> private foundation vs FUP, with two genuine Brussels-based founders and one Swiss worker; direct US institutional grants and a hosted US route where needed.</p><p><strong>B · Zurich:</strong> Swiss charitable foundation with real Swiss governance; two France-based or genuinely relocated founders; the same separately selected US funding route.</p><p>Keep <strong>Zug</strong> as a concrete protocol-operation option; keep a <strong>French association</strong> in the comparison if the two founders stay in France; put an <strong>own US public charity</strong> on the table if sustained US individual fundraising or a funder requirement justifies it.</p><p><strong>The decisive inputs:</strong> the first major donor’s requirements, where you will actually live/work, the taxable reserve, the commercial activity forecast, and the specific powers of any future protocol operator.</p></div>
+      </section>
+
+      <section id="sources">
+        <div class="section-head"><div><div class="eyebrow">08 / Evidence & assumptions</div><h2>Sources you can follow.</h2></div><p>Accessed 15 October 2026. Linked official guidance and provider terms support the rules/costs; recommendations and salary budgets are explicitly planning judgments.</p></div>
+        <div class="legend"><span><b>Rule</b> · official guidance / legal framework</span><span><b>Published fee</b> · provider schedule</span><span><b>Model</b> · stated assumptions, not a quote</span></div>
+        <ol class="sources">
+          <li id="s1"><a href="https://philea.eu/wp-content/uploads/2024/11/Belgium-Philea-2024-Legal-Environment-for-Philanthropy-in-Europe.pdf">Philea — Belgium legal & fiscal profile (2024, PDF)</a><small>Specialist secondary source by Ludwig Forrest and Francis Houben. Forms/minimum assets pp. 3–5; governance pp. 5–7; business/shareholdings p. 8; pay p. 19; tax pp. 22–25. Not an official ruling; time-sensitive tax conclusions need current confirmation.</small></li>
+          <li id="s2"><a href="https://finance.belgium.be/en/npos/taxes-vat/annual-tax-npos">Belgian FPS Finance — Annual patrimonial tax on NPOs</a><small>Official taxable-assets scope, marginal brackets and exclusions. FUP exclusion also discussed in source 1, pp. 15 and 24.</small></li>
+          <li id="s3"><a href="https://www.zh.ch/de/steuern-finanzen/steuern/treuhaender/steuerbuch/steuerbuch-definition/zstb-61-1.html">Canton Zurich — Charitable exemption practice note 61.1</a><small>Effective 1 February 2024: reasonable board remuneration, foreign activities and entrepreneurial grantmaking models. Applies to Zurich practice, not automatically Zug.</small></li>
+          <li id="s4"><a href="https://www.esa.admin.ch/fr/questions-et-reponses">Swiss federal foundation supervisor ASF — Questions & answers</a><small>Purpose dedication, capital practice, signature/residence, creating another foundation, supervision, audit, compensation disclosure and authority fees. Expand relevant questions on the source page.</small></li>
+          <li id="s5"><a href="https://www.irs.gov/charities-non-profits/charitable-organizations/charitable-contribution-deductions">IRS — Charitable contribution deductions</a><small>Domestic-organisation rule and foreign-organisation limitation. Donor-specific deduction limits are outside this model.</small></li>
+          <li id="s6"><a href="https://www.irs.gov/charities-non-profits/grants-to-foreign-organizations-by-private-foundations">IRS — Grants to foreign organisations by private foundations</a><small>Equivalency determination, expenditure responsibility, charitable-use restrictions and qualifying distributions.</small></li>
+          <li id="s7"><a href="https://myriadusa.org/american-friends-funds/">Myriad USA — American Friends Funds</a><small>Published $1,500 setup, marginal management fees, large-single-gift cap, grant minimum/timing; charity equivalency review and acceptance of crypto gifts.</small></li>
+          <li id="s8"><a href="https://www.irs.gov/charities-non-profits/charitable-organizations/rebuttable-presumption-intermediate-sanctions">IRS — Rebuttable presumption / reasonable compensation</a><small>Advance independent approval, comparable data and timely documentation for applicable exempt organisations.</small></li>
+          <li id="s9"><a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F24469">France Service Public — Fonds de dotation</a><small>€15k initial cash, board, public fundraising, annual reporting, audit trigger and financing rules.</small></li>
+          <li id="s10"><a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F31023">France Service Public — Fondation reconnue d’utilité publique</a><small>Recognition process, €1.5m initial endowment guidance, governance/transparency and revenue possibilities.</small></li>
+          <li id="s11"><a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F1927">France Service Public — Association leader remuneration</a><small>Nonprofit tax-management conditions, distinct paid work, resource-history regime and remuneration limits. Consult the linked BOFiP for legal/de facto leadership analysis.</small></li>
+          <li id="s12"><a href="https://www.cleiss.fr/employeurs/empl_etranger_embaucheenfrance.html">CLEISS — Foreign employer hiring a worker in France</a><small>French social security and foreign-employer formalities; TFE where eligible. Personal tax treaties and effective management need separate analysis.</small></li>
+          <li id="s13"><a href="https://www.finma.ch/en/documentation/dossier/dossier-fintech/decentralized-finance-defi-2022/">FINMA — Decentralized finance</a><small>Economic substance, actual influence/control and “same business, same risks, same rules”. Foundational guidance, not a comprehensive 2026 launch assessment.</small></li>
+          <li id="s14"><a href="https://www.esma.europa.eu/publications-data/questions-answers/2671">ESMA / European Commission — MiCA Q&A 2671</a><small>Answer updated 21 May 2026: offers, trading and case-specific fully-decentralised services assessment under recital 22.</small></li>
+          <li id="s15"><a href="https://www.fsma.be/fr/crypto-asset-service-provider-casp">Belgian FSMA — Crypto Asset Service Provider</a><small>MiCA authorisation/supervision responsibilities, including Belgian law of 11 December 2025.</small></li>
+          <li id="s16"><a href="https://www.amf-france.org/en/news-publications/news/end-mica-transitional-period-esma-sets-out-its-expectations-professionals-and-warns-retail-investors">French AMF — End of the MiCA transitional period</a><small>Maximum EU transition ends 1 July 2026; authorisation and cross-border service-provider distinctions.</small></li>
+          <li id="s17"><a href="https://www.irs.gov/charities-non-profits/form-1023-and-1023-ez-amount-of-user-fee">IRS — Form 1023 user fees</a><small>Full Form 1023 $600; eligibility for the simplified form is a separate question.</small></li>
+          <li id="s18"><a href="https://www.irs.gov/charities-non-profits/charitable-organizations/public-charities">IRS — Public charities</a> · <a href="https://www.irs.gov/charities-non-profits/unrelated-business-income-tax">Unrelated business income tax</a><small>Public charity vs private foundation and the distinct treatment of unrelated business income.</small></li>
+          <li id="s19"><a href="https://projects.propublica.org/nonprofits/organizations/460503801">Linux Foundation — IRS Form 990 data via ProPublica</a><small>FY2024 revenue, 501(c)(6) classification and compensation columns; underlying filings linked on the page. Do not treat “other compensation” as base cash salary.</small></li>
+          <li id="s20"><a href="https://www.kmu.admin.ch/en/legal-form-limited-liability-company">Swiss SME portal — GmbH/Sàrl</a> · <a href="https://www.kmu.admin.ch/en/legal-form-the-limited-company">AG/SA</a><small>Shareholders, capital, incorporation and Swiss-resident representation. Cross-border parent tax is not established by these formation rules.</small></li>
+          <li id="s21"><a href="https://www.finma.ch/en/news/2018/02/20180216-mm-ico-wegleitung/">FINMA — Token/ICO classification guidance</a> · <a href="https://eur-lex.europa.eu/eli/reg/2023/1114/oj/eng">EU MiCA Regulation</a><small>Payment/utility/asset token functions and EU legal framework. Launch-time analysis must include subsequent law and guidance.</small></li>
+        </ol>
+      </section>
+    </main>
+    <footer><strong>Agora · Foundation options / working decision brief.</strong> Illustrations assume lawful mission activity and a spendable grant, not a permanently preserved endowment. Salary ranges, administrative-cost inputs and strategic preferences are planning assumptions. Currency amounts retain their stated currencies. Open directly in a browser; no network connection is needed except to follow source links.</footer>
+    <script>
+      const moneyUsd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+      const moneyEur = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+      function marginalFee(amount) {
+        return Math.min(amount, 100000) * 0.05
+          + Math.min(Math.max(amount - 100000, 0), 400000) * 0.03
+          + Math.min(Math.max(amount - 500000, 0), 500000) * 0.01
+          + Math.max(amount - 1000000, 0) * 0.005;
+      }
+
+      function patrimonialTax(amount) {
+        return Math.min(Math.max(amount - 50000, 0), 200000) * 0.0015
+          + Math.min(Math.max(amount - 250000, 0), 250000) * 0.003
+          + Math.max(amount - 500000, 0) * 0.0045;
+      }
+
+      function readAmount(id) {
+        const field = document.getElementById(id);
+        if (!(field instanceof HTMLInputElement) || !field.validity.valid) return undefined;
+        const amount = field.valueAsNumber;
+        return Number.isFinite(amount) && amount >= 0 ? amount : undefined;
+      }
+
+      function setText({ id, text }) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = text;
+      }
+
+      function updateFunding() {
+        const amount = readAmount("donations");
+        const admin = readAmount("us-admin");
+        const pattern = document.getElementById("gift-pattern");
+        if (amount === undefined || admin === undefined || !(pattern instanceof HTMLSelectElement)) {
+          setText({ id: "us-fee", text: "Enter valid amounts" });
+          setText({ id: "us-rate", text: "Use non-negative numbers within the input limits." });
+          setText({ id: "us-comparison", text: "" });
+          setText({ id: "us-first-year", text: "" });
+          return;
+        }
+        // The single-gift cap is an explicit model assumption requiring provider confirmation.
+        const base = pattern.value === "single" ? Math.min(amount, 3000000) : amount;
+        const fee = marginalFee(base);
+        const difference = fee - admin;
+        const rate = amount === 0 ? 0 : fee / amount * 100;
+        setText({ id: "us-fee", text: moneyUsd.format(fee) });
+        setText({ id: "us-rate", text: `Hosted management fee · ${rate.toFixed(2)}% effective${base < amount ? " · single-gift cap model" : ""}` });
+        setText({ id: "us-comparison", text: difference === 0 ? "Annual amounts match under these assumptions, before setup and differences in services." : `Own-entity assumption is ${moneyUsd.format(Math.abs(difference))} ${difference > 0 ? "lower" : "higher"} per year, before setup and differences in services.` });
+        setText({ id: "us-first-year", text: `Hosted first year: ${moneyUsd.format(fee + 1500)} including $1,500 setup, even if contributions are zero.` });
+      }
+
+      function updateAssets() {
+        const amount = readAmount("assets");
+        if (amount === undefined) {
+          setText({ id: "asset-tax", text: "Enter a valid amount" });
+          setText({ id: "asset-rate", text: "Use a non-negative taxable base within the input limit." });
+          return;
+        }
+        const tax = patrimonialTax(amount);
+        setText({ id: "asset-tax", text: moneyEur.format(tax) });
+        setText({ id: "asset-rate", text: `Annual patrimonial tax · ${(amount === 0 ? 0 : tax / amount * 100).toFixed(3)}% of taxable assets` });
+      }
+
+      const scenarios = new Map([
+        ["grants", { title: "US foundation grants → Brussels or Zurich can work directly.", text: "For a few large institutional grants, ask funders whether they support foreign grantees using equivalency determination or expenditure responsibility. This can remove the need for a donation-percentage intermediary. Choose the operating home around the team, governance and tax treatment of reserves.", trigger: "Decision trigger: get the largest likely funder’s grantee requirements before incorporating." }],
+        ["individuals", { title: "US individuals & DAFs → add an eligible US charitable route.", text: "Brussels, Zurich, Zug and France face broadly the same US individual-deduction barrier. A hosted American Friends Fund can be a practical start. Compare an own US public charity when fundraising repeats or donor relationships require it; DAF sponsors have their own acceptance policies. An own US organisation can be the main entity or an additional fundraising institution.", trigger: "Decision trigger: recurring US contribution volume, gift pattern and donor policies—not total worldwide revenue alone." }],
+        ["saas", { title: "SaaS-led growth → compare a mission entity plus taxable operating company.", text: "Belgium permits business under entity law, but this does not settle corporate tax, VAT or charitable gift eligibility. The same mission/commercial distinction matters in Switzerland, France and the US. Model an owned company for substantial enterprise services, with properly priced IP and development agreements. Locate it where real functions and management belong.", trigger: "Decision trigger: a defined commercial offering, projected margin, contracts and staffing; no universal revenue percentage forces a subsidiary." }],
+        ["protocol", { title: "Token / protocol-led → Zug enters the shortlist for a concrete reason.", text: "Compare Zug and Zurich for genuine Swiss protocol operations and specialist expertise. They use the same federal financial-market framework. Belgium and France offer an EU MiCA pathway for in-scope services. Decide whether you want an owned operator or independent protocol stewardship; retaining central control weakens an assumption that services are fully decentralised.", trigger: "Decision trigger: token rights, custody, upgrade powers, front-end operation, fees and target users; a Swiss address does not exempt EU or US activity." }],
+      ]);
+
+      for (const button of document.querySelectorAll("[data-scenario]")) {
+        if (!(button instanceof HTMLButtonElement)) continue;
+        button.addEventListener("click", () => {
+          const key = button.dataset.scenario;
+          const scenario = key === undefined ? undefined : scenarios.get(key);
+          if (!scenario) return;
+          for (const sibling of document.querySelectorAll("[data-scenario]")) sibling.setAttribute("aria-pressed", String(sibling === button));
+          setText({ id: "scenario-title", text: scenario.title });
+          setText({ id: "scenario-text", text: scenario.text });
+          setText({ id: "scenario-trigger", text: scenario.trigger });
+        });
+      }
+
+      for (const id of ["donations", "us-admin", "gift-pattern"]) document.getElementById(id)?.addEventListener("input", updateFunding);
+      document.getElementById("assets")?.addEventListener("input", updateAssets);
+      document.getElementById("expand")?.addEventListener("click", () => { for (const detail of document.querySelectorAll("details")) detail.open = true; });
+      document.getElementById("collapse")?.addEventListener("click", () => { for (const detail of document.querySelectorAll("details")) detail.open = false; });
+      document.getElementById("print")?.addEventListener("click", () => window.print());
+
+      const printState = new Map();
+      window.addEventListener("beforeprint", () => {
+        printState.clear();
+        for (const detail of document.querySelectorAll("details")) { printState.set(detail, detail.open); detail.open = true; }
+      });
+      window.addEventListener("afterprint", () => { for (const [detail, open] of printState) detail.open = open; printState.clear(); });
+
+      // Internal links into closed source/details sections should reveal their destination.
+      function revealTarget() {
+        const target = document.getElementById(window.location.hash.slice(1));
+        if (!target) return;
+        const detail = target instanceof HTMLDetailsElement ? target : target.closest("details");
+        if (detail) detail.open = true;
+      }
+      window.addEventListener("hashchange", revealTarget);
+      for (const id of ["print", "scenario-buttons", "expand", "collapse"]) {
+        const element = document.getElementById(id);
+        if (element) element.hidden = false;
+      }
+      updateFunding();
+      updateAssets();
+      revealTarget();
+    </script>
+  </body>
+</html>

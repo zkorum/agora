@@ -2,8 +2,6 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import legacy from "@vitejs/plugin-legacy";
@@ -19,7 +17,6 @@ import { envSchema, validateEnv } from "./src/utils/processEnv";
 // TODO: add env var to use TLS/SSL
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEV_BROWSER_LOG_ENDPOINT = "/__agora_dev_browser_log";
 const DEV_BROWSER_LOG_MAX_BYTES = 64_000;
 
@@ -220,22 +217,14 @@ export default defineConfig((ctx) => {
           viteConf.plugins = [];
         }
 
-        // Configure resolve.alias to stub out Node.js built-in modules
-        // The @pcd/gpc library (server-side only) has dependencies on Node.js modules
-        // We point them to our stub files since they're never actually called in the browser
-        if (!viteConf.resolve) {
-          viteConf.resolve = {};
-        }
-        if (!viteConf.resolve.alias) {
-          viteConf.resolve.alias = {};
-        }
-
         if (ctx.dev) {
           viteConf.plugins.push(devBrowserLogPlugin());
         }
 
         viteConf.build = {
           ...viteConf.build,
+          // Oxc can reintroduce modern syntax after the legacy Babel transform.
+          minify: "terser",
           // Vite does not read Browserslist for CSS syntax lowering.
           // Keep these engine floors aligned with .browserslistrc.
           cssTarget: ["chrome51", "edge15", "firefox54", "ios10", "safari10"],
@@ -254,17 +243,6 @@ export default defineConfig((ctx) => {
             })
           );
         }
-
-        // Point Node.js modules to stub files
-        viteConf.resolve.alias = {
-          ...viteConf.resolve.alias,
-          constants: resolve(__dirname, "src/stubs/constants.js"),
-          fs: resolve(__dirname, "src/stubs/fs.js"),
-          path: resolve(__dirname, "src/stubs/path.js"),
-          crypto: resolve(__dirname, "src/stubs/crypto.js"),
-          "source-map-js": resolve(__dirname, "src/stubs/source-map-js.js"),
-          url: resolve(__dirname, "src/stubs/url.js"),
-        };
 
         // Add bundle visualizer in production builds
         if (ctx.prod) {
@@ -345,7 +323,7 @@ export default defineConfig((ctx) => {
     devServer: {
       // https: {},
       open: true, // opens browser window automatically
-      port: 3200, // Use whitelisted port for Zupass Devconnect ARG collection
+      port: 3200,
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

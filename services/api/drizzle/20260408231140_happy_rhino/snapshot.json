@@ -1,0 +1,115 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f47a5d99-6259-4248-965d-d96dc7a1f18e",
+  "prevIds": [
+    "c1ce41b4-d278-4a9c-aec0-14f32c28134b"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_export",
+        "bundle_file_name"
+      ],
+      "writes": [
+        "s|col|public.conversation_export.bundle_file_name",
+        "n|col|public.conversation_export.bundle_file_name",
+        "e|col|public.conversation_export.bundle_file_name"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_export",
+        "bundle_file_size"
+      ],
+      "writes": [
+        "s|col|public.conversation_export.bundle_file_size",
+        "n|col|public.conversation_export.bundle_file_size",
+        "e|col|public.conversation_export.bundle_file_size"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_export",
+        "bundle_s3_key"
+      ],
+      "writes": [
+        "s|col|public.conversation_export.bundle_s3_key",
+        "n|col|public.conversation_export.bundle_s3_key",
+        "e|col|public.conversation_export.bundle_s3_key"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_export",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "bundle_file_name",
+        "type": "varchar(160)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "bundle_file_size",
+        "type": "integer",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "conversation_export",
+        "name": "bundle_s3_key",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

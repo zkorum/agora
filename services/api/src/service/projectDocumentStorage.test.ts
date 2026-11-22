@@ -1,4 +1,4 @@
-import { pushSchema } from "drizzle-kit/api";
+import { pushSchema } from "drizzle-kit/api-postgres";
 import { eq, isNull, sql } from "drizzle-orm";
 import { drizzle as drizzleNodePostgres } from "drizzle-orm/node-postgres";
 import { withReplicas } from "drizzle-orm/pg-core";
@@ -19,7 +19,6 @@ import {
 } from "vitest";
 import * as schema from "@/shared-backend/schema.js";
 import {
-    organizationMembershipAllProjectCapabilityTable,
     organizationMembershipTable,
     organizationTable,
     projectContentTable,
@@ -138,11 +137,14 @@ describe("project document representation lifecycle", () => {
             onnotice: () => undefined,
         });
         clients.push(client);
-        db = drizzle(client);
+        db = drizzle({ client });
         const pool = new Pool(connection);
         try {
             // Test-only schema in a disposable container; no migration files.
-            const setup = await pushSchema(schema, drizzleNodePostgres(pool));
+            const setup = await pushSchema(
+                schema,
+                drizzleNodePostgres({ client: pool }),
+            );
             await setup.apply();
         } finally {
             await pool.end();
@@ -522,16 +524,10 @@ describe("project document representation lifecycle", () => {
                 .values({
                     userId: ownerId,
                     organizationId: organization.id,
+                    role: "admin",
                 })
                 .returning(),
         );
-        await db
-            .insert(organizationMembershipAllProjectCapabilityTable)
-            .values({
-                organizationMembershipId: membership.id,
-                capability: "project_update",
-                grantedByUserId: ownerId,
-            });
         await db
             .insert(projectOrganizationOwnershipTable)
             .values({ projectId, organizationId: organization.id });
@@ -568,8 +564,9 @@ describe("project document representation lifecycle", () => {
         expect(participant.url).toContain("/participant/representations/");
         expect(participant.url).not.toBe(owner.url);
         await db
-            .update(organizationMembershipAllProjectCapabilityTable)
-            .set({ deletedAt: new Date(), revokedByUserId: ownerId });
+            .update(organizationMembershipTable)
+            .set({ role: "moderator" })
+            .where(eq(organizationMembershipTable.id, membership.id));
         mocks.sign.mockClear();
         await expect(
             accessProjectDocument({
@@ -662,7 +659,7 @@ describe("project document representation lifecycle", () => {
         await db
             .update(projectDocumentFileTable)
             .set({ deletedAt: new Date() });
-        const replica = drizzle(client);
+        const replica = drizzle({ client });
         const replicaRead = vi
             .spyOn(replica, "select")
             .mockImplementation(() => {

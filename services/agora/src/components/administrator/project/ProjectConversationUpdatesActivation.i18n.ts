@@ -46,13 +46,10 @@ export const projectConversationUpdatesActivationTranslations: Record<
     configurationUnavailable:
       "إعداد تحديثات البريد الإلكتروني غير متاح لهذا المشروع.",
     defaultAriaLabel: "تشغيل تحديثات البريد الإلكتروني افتراضيًا",
-    defaultDisabledSaved:
-      "تم إيقاف تحديثات البريد الإلكتروني افتراضيًا.",
-    defaultEnabledSaved:
-      "تم تشغيل تحديثات البريد الإلكتروني افتراضيًا.",
+    defaultDisabledSaved: "تم إيقاف تحديثات البريد الإلكتروني افتراضيًا.",
+    defaultEnabledSaved: "تم تشغيل تحديثات البريد الإلكتروني افتراضيًا.",
     defaultLabel: "مفعّلة افتراضيًا",
-    defaultSaveError:
-      "تعذر حفظ الإعداد الافتراضي لتحديثات البريد الإلكتروني.",
+    defaultSaveError: "تعذر حفظ الإعداد الافتراضي لتحديثات البريد الإلكتروني.",
     editParticipantContact: "تعديل جهة اتصال المشاركين",
     listedDefaultDescription:
       "ترث محادثات هذا المشروع هذا الإعداد ما لم يتجاوزه أحد المالكين.",
@@ -98,8 +95,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
     defaultEnabledSaved:
       "به‌روزرسانی‌های ایمیلی اکنون به‌طور پیش‌فرض روشن هستند.",
     defaultLabel: "به‌طور پیش‌فرض روشن",
-    defaultSaveError:
-      "پیش‌فرض به‌روزرسانی ایمیلی ذخیره نشد.",
+    defaultSaveError: "پیش‌فرض به‌روزرسانی ایمیلی ذخیره نشد.",
     editParticipantContact: "ویرایش راه ارتباطی شرکت‌کنندگان",
     listedDefaultDescription:
       "گفتگوهای این پروژه این تنظیم را به ارث می‌برند، مگر اینکه یکی از مالکان آن را تغییر دهد.",
@@ -137,8 +133,7 @@ export const projectConversationUpdatesActivationTranslations: Record<
     title: "Nouvelles par e-mail",
   },
   he: {
-    configurationUnavailable:
-      "הגדרת עדכוני הדוא״ל אינה זמינה לפרויקט הזה.",
+    configurationUnavailable: "הגדרת עדכוני הדוא״ל אינה זמינה לפרויקט הזה.",
     defaultAriaLabel: "עדכוני דוא״ל מופעלים כברירת מחדל",
     defaultDisabledSaved: "עדכוני דוא״ל כבויים כעת כברירת מחדל.",
     defaultEnabledSaved: "עדכוני דוא״ל מופעלים כעת כברירת מחדל.",
@@ -179,10 +174,8 @@ export const projectConversationUpdatesActivationTranslations: Record<
     configurationUnavailable:
       "Бул долбоор үчүн электрондук жаңыртуу жөндөөсү жеткиликсиз.",
     defaultAriaLabel: "Электрондук жаңыртуулар демейки боюнча күйүк",
-    defaultDisabledSaved:
-      "Электрондук жаңыртуулар эми демейки боюнча өчүк.",
-    defaultEnabledSaved:
-      "Электрондук жаңыртуулар эми демейки боюнча күйүк.",
+    defaultDisabledSaved: "Электрондук жаңыртуулар эми демейки боюнча өчүк.",
+    defaultEnabledSaved: "Электрондук жаңыртуулар эми демейки боюнча күйүк.",
     defaultLabel: "Демейки боюнча күйүк",
     defaultSaveError:
       "Электрондук жаңыртуулардын демейки жөндөөсү сакталган жок.",
@@ -203,10 +196,8 @@ export const projectConversationUpdatesActivationTranslations: Record<
     configurationUnavailable:
       "Настройка почтовых обновлений недоступна для этого проекта.",
     defaultAriaLabel: "Почтовые обновления включены по умолчанию",
-    defaultDisabledSaved:
-      "Почтовые обновления теперь выключены по умолчанию.",
-    defaultEnabledSaved:
-      "Почтовые обновления теперь включены по умолчанию.",
+    defaultDisabledSaved: "Почтовые обновления теперь выключены по умолчанию.",
+    defaultEnabledSaved: "Почтовые обновления теперь включены по умолчанию.",
     defaultLabel: "Включены по умолчанию",
     defaultSaveError:
       "Не удалось сохранить настройку почтовых обновлений по умолчанию.",

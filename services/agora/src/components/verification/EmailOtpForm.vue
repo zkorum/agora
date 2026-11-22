@@ -1,5 +1,9 @@
 <template>
   <div>
+    <AccountRecoveryNotice
+      v-if="recoveryReason !== undefined"
+      :unavailable="recoveryReason === 'recovery_unavailable'"
+    />
     <div>
       {{ t("instructions") }}
       <span class="emailStyle">{{ displayedVerificationEmail }}</span
@@ -60,20 +64,22 @@ import { authenticateEmail200, verifyOtp200 } from "src/shared/types/dto-auth";
 import { emailVerificationStore } from "src/stores/onboarding/email";
 import { useAuthEmailApi } from "src/utils/api/auth-email";
 import { useNotify } from "src/utils/ui/notify";
-import { computed, onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 import ZKButton from "../ui-library/ZKButton.vue";
 import ZKInputOtp from "../ui-library/ZKInputOtp.vue";
+import AccountRecoveryNotice from "./AccountRecoveryNotice.vue";
 import {
   type EmailOtpFormTranslations,
   emailOtpFormTranslations,
 } from "./EmailOtpForm.i18n";
 
+const props = defineProps<{ recoverAccount: boolean }>();
 const emit = defineEmits<{
   verified: [accountMerged: boolean];
   changeIdentifier: [];
 }>();
-
+const recoveryReason = ref<"recovery_required" | "recovery_unavailable">();
 const { t } = useComponentI18n<EmailOtpFormTranslations>(
   emailOtpFormTranslations
 );
@@ -162,6 +168,7 @@ async function nextButtonClicked() {
 
   try {
     const response = await verifyEmailOtp({
+      recoverAccount: props.recoverAccount,
       code: validatedCode,
       email: displayedVerificationEmail,
     });
@@ -183,6 +190,11 @@ async function nextButtonClicked() {
         await finishVerification();
       } else {
         switch (data.reason) {
+          case "recovery_required":
+          case "recovery_unavailable":
+            recoveryReason.value = data.reason;
+            codeExpired();
+            break;
           case "expired_code":
             codeExpired();
             showNotifyMessage(t("codeExpiredResend"));

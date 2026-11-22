@@ -22,10 +22,12 @@ export function useRankingItemDisplayContent({
   conversationSlugId,
   itemSlugId,
   displayContent,
+  followPendingServerTranslation = true,
 }: {
   conversationSlugId: MaybeRefOrGetter<string>;
   itemSlugId: MaybeRefOrGetter<string | undefined>;
   displayContent: MaybeRefOrGetter<RankingItemDisplayedContent | undefined>;
+  followPendingServerTranslation?: MaybeRefOrGetter<boolean>;
 }) {
   const { displayLanguage, spokenLanguages } = storeToRefs(useLanguageStore());
   const requestedTranslationSourceVersion = ref<string | undefined>();
@@ -44,6 +46,7 @@ export function useRankingItemDisplayContent({
   const pendingServerTranslationMode = computed<
     ContentTranslationDisplayMode | undefined
   >(() => {
+    if (!toValue(followPendingServerTranslation)) return undefined;
     const translationControl = toValue(displayContent)?.translationControl;
     if (
       translationControl === undefined ||

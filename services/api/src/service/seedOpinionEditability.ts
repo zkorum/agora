@@ -10,8 +10,8 @@ import {
 } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
-    maxdiffComparisonTable,
-    maxdiffResultTable,
+    comparisonAnswerTable,
+    comparisonResponseTable,
     rankingItemTable,
     userTable,
 } from "@/shared-backend/schema.js";
@@ -32,24 +32,27 @@ export async function rankingSeedHasVotes({
         candidateParticipantIds: async () => {
             const voters = await db
                 .selectDistinct({
-                    participantId: maxdiffResultTable.participantId,
+                    participantId: userTable.id,
                 })
-                .from(maxdiffResultTable)
+                .from(comparisonResponseTable)
                 .innerJoin(
-                    maxdiffComparisonTable,
+                    comparisonAnswerTable,
                     eq(
-                        maxdiffComparisonTable.maxdiffResultId,
-                        maxdiffResultTable.id,
+                        comparisonAnswerTable.comparisonResponseId,
+                        comparisonResponseTable.id,
                     ),
                 )
                 .innerJoin(
                     userTable,
-                    eq(userTable.id, maxdiffResultTable.participantId),
+                    eq(userTable.id, comparisonResponseTable.participantId),
                 )
                 .where(
                     and(
-                        eq(maxdiffResultTable.conversationId, conversationId),
-                        isNull(maxdiffComparisonTable.deletedAt),
+                        eq(
+                            comparisonResponseTable.conversationId,
+                            conversationId,
+                        ),
+                        isNull(comparisonAnswerTable.deletedAt),
                         eq(userTable.isDeleted, false),
                     ),
                 );
@@ -61,31 +64,31 @@ export async function rankingSeedHasVotes({
     const candidate = sql`ARRAY[${slugId}::text]`;
     return exists(
         db
-            .select({ id: maxdiffComparisonTable.id })
-            .from(maxdiffComparisonTable)
+            .select({ id: comparisonAnswerTable.id })
+            .from(comparisonAnswerTable)
             .innerJoin(
-                maxdiffResultTable,
+                comparisonResponseTable,
                 eq(
-                    maxdiffResultTable.id,
-                    maxdiffComparisonTable.maxdiffResultId,
+                    comparisonResponseTable.id,
+                    comparisonAnswerTable.comparisonResponseId,
                 ),
             )
             .innerJoin(
                 userTable,
-                eq(userTable.id, maxdiffResultTable.participantId),
+                eq(userTable.id, comparisonResponseTable.participantId),
             )
             .where(
                 and(
-                    eq(maxdiffResultTable.conversationId, conversationId),
-                    isNull(maxdiffComparisonTable.deletedAt),
+                    eq(comparisonResponseTable.conversationId, conversationId),
+                    isNull(comparisonAnswerTable.deletedAt),
                     eq(userTable.isDeleted, false),
                     eligibleParticipantIds === undefined
                         ? undefined
-                        : inArray(maxdiffResultTable.participantId, [
+                        : inArray(comparisonResponseTable.participantId, [
                               ...eligibleParticipantIds,
                           ]),
                     arrayContains(
-                        maxdiffComparisonTable.candidateSet,
+                        comparisonAnswerTable.candidateSet,
                         candidate,
                     ),
                 ),

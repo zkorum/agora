@@ -38,20 +38,20 @@ export function useComponentI18n<T extends { [K in keyof T]: string }>(
   translations: ComponentTranslations<T>
 ) {
   const { locale } = useI18n();
+  const localeChain = computed(() =>
+    getDisplayLanguageFallbackChain({
+      languageCode:
+        parseSupportedDisplayLanguageOrUndefined(locale.value) ?? "en",
+    })
+  );
 
   const t = (
     key: keyof T,
     params?: Record<string, string | number>
   ): string => {
-    const currentLocale = parseSupportedDisplayLanguageOrUndefined(
-      locale.value
-    );
-    const localeChain = currentLocale === undefined
-      ? ["en" as const]
-      : [...getDisplayLanguageFallbackChain({ languageCode: currentLocale }), "en" as const];
     let translation = String(key);
 
-    for (const languageCode of localeChain) {
+    for (const languageCode of localeChain.value) {
       const localeTranslations = translations[languageCode];
       const nextTranslation = localeTranslations?.[key];
       if (nextTranslation !== undefined) {
@@ -60,17 +60,12 @@ export function useComponentI18n<T extends { [K in keyof T]: string }>(
       }
     }
 
-    // Replace placeholders with parameter values if provided
-    if (params) {
-      Object.entries(params).forEach(([paramKey, paramValue]) => {
-        translation = translation.replace(
-          new RegExp(`\\{${paramKey}\\}`, "g"),
-          () => String(paramValue)
+    // Inserted user text is literal, even if it contains another placeholder.
+    return params === undefined
+      ? translation
+      : translation.replace(/\{(\w+)\}/g, (token: string, name: string) =>
+          Object.hasOwn(params, name) ? String(params[name]) : token
         );
-      });
-    }
-
-    return translation;
   };
 
   return {

@@ -1,0 +1,417 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ed839503-838a-40fe-971b-46e838a73a20",
+  "prevIds": [
+    "3c57fe07-0992-424f-88da-10106c79cb71"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "is_edited"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.is_edited",
+        "n|col|public.opinion_content.is_edited",
+        "e|col|public.opinion_content.is_edited"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "opinion_content",
+        "edited_by_user_id"
+      ],
+      "writes": [
+        "s|col|public.opinion_content.edited_by_user_id",
+        "n|col|public.opinion_content.edited_by_user_id",
+        "e|col|public.opinion_content.edited_by_user_id"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_content",
+        "title"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_content.title.type",
+        "s|colprop|public.conversation_content.title.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_content",
+        "n|sch|public",
+        "n|col|public.conversation_content.title"
+      ],
+      "sqlHash": "ca9550db542c13e9"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_contact",
+        "role_label"
+      ],
+      "writes": [
+        "s|colprop|public.project_contact.role_label.type",
+        "s|colprop|public.project_contact.role_label.default"
+      ],
+      "reads": [
+        "n|tbl|public.project_contact",
+        "n|sch|public",
+        "n|col|public.project_contact.role_label"
+      ],
+      "sqlHash": "bb2575b0f5afb522"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_content",
+        "title"
+      ],
+      "writes": [
+        "s|colprop|public.project_content.title.type",
+        "s|colprop|public.project_content.title.default"
+      ],
+      "reads": [
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|col|public.project_content.title"
+      ],
+      "sqlHash": "c8c7a90a7aba443d"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_content",
+        "subtitle"
+      ],
+      "writes": [
+        "s|colprop|public.project_content.subtitle.type",
+        "s|colprop|public.project_content.subtitle.default"
+      ],
+      "reads": [
+        "n|tbl|public.project_content",
+        "n|sch|public",
+        "n|col|public.project_content.subtitle"
+      ],
+      "sqlHash": "30cd0b973c96bb9e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project",
+        "title"
+      ],
+      "writes": [
+        "s|colprop|public.project.title.type",
+        "s|colprop|public.project.title.default"
+      ],
+      "reads": [
+        "n|tbl|public.project",
+        "n|sch|public",
+        "n|col|public.project.title"
+      ],
+      "sqlHash": "7be0167210527b85"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "project_document_localization",
+        "name"
+      ],
+      "writes": [
+        "s|colprop|public.project_document_localization.name.type",
+        "s|colprop|public.project_document_localization.name.default"
+      ],
+      "reads": [
+        "n|tbl|public.project_document_localization",
+        "n|sch|public",
+        "n|col|public.project_document_localization.name"
+      ],
+      "sqlHash": "e68e3205eea81372"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_email_update_conversation",
+        "conversation_title_snapshot"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_email_update_conversation.conversation_title_snapshot.type",
+        "s|colprop|public.conversation_email_update_conversation.conversation_title_snapshot.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_email_update_conversation",
+        "n|sch|public",
+        "n|col|public.conversation_email_update_conversation.conversation_title_snapshot"
+      ],
+      "sqlHash": "6ddcb2502e7859f4"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_email_update",
+        "project_title_snapshot"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_email_update.project_title_snapshot.type",
+        "s|colprop|public.conversation_email_update.project_title_snapshot.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_email_update",
+        "n|sch|public",
+        "n|col|public.conversation_email_update.project_title_snapshot"
+      ],
+      "sqlHash": "585abc540704092a"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "conversation_email_update",
+        "reply_to_name_snapshot"
+      ],
+      "writes": [
+        "s|colprop|public.conversation_email_update.reply_to_name_snapshot.type",
+        "s|colprop|public.conversation_email_update.reply_to_name_snapshot.default"
+      ],
+      "reads": [
+        "n|tbl|public.conversation_email_update",
+        "n|sch|public",
+        "n|col|public.conversation_email_update.reply_to_name_snapshot"
+      ],
+      "sqlHash": "ec4386f82aeda50d"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "realtime_event_outbox",
+        "realtime_event_outbox_conversation_replay_idx"
+      ],
+      "writes": [
+        "s|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "n|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "e|idx|public.realtime_event_outbox_conversation_replay_idx",
+        "n|rel|public.realtime_event_outbox_conversation_replay_idx"
+      ],
+      "reads": [
+        "n|tbl|public.realtime_event_outbox",
+        "n|sch|public",
+        "n|col|public.realtime_event_outbox.id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "b0c2c0a6189f086b"
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content"
+      ],
+      "writes": [
+        "s|fk|public.opinion_content.opinion_content_edited_by_user_id_user_id_fk",
+        "n|fk|public.opinion_content.opinion_content_edited_by_user_id_user_id_fk",
+        "e|fk|public.opinion_content.opinion_content_edited_by_user_id_user_id_fk",
+        "n|con|public.opinion_content.opinion_content_edited_by_user_id_user_id_fk"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.opinion_content.edited_by_user_id",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    },
+    {
+      "statementType": "add_check",
+      "statementTarget": [
+        "table",
+        "public",
+        "opinion_content"
+      ],
+      "writes": [
+        "s|ck|public.opinion_content.opinion_content_edit_attribution_check",
+        "n|ck|public.opinion_content.opinion_content_edit_attribution_check",
+        "e|ck|public.opinion_content.opinion_content_edit_attribution_check",
+        "n|con|public.opinion_content.opinion_content_edit_attribution_check"
+      ],
+      "reads": [
+        "n|tbl|public.opinion_content",
+        "n|sch|public",
+        "n|col|public.opinion_content.is_edited",
+        "n|col|public.opinion_content.edited_by_user_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "is_edited",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "edited_by_user_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "opinion_content_edited_by_user_id_user_id_fk",
+        "nameExplicit": false,
+        "columns": [
+          "edited_by_user_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "NO ACTION",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "opinion_content",
+        "name": "opinion_content_edit_attribution_check",
+        "value": "\"opinion_content\".\"is_edited\" = (\"opinion_content\".\"edited_by_user_id\" IS NOT NULL)",
+        "entityType": "checks"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_content\",\"title\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"project_contact\",\"role_label\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"project_content\",\"title\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"project_content\",\"subtitle\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"project\",\"title\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"project_document_localization\",\"name\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_email_update_conversation\",\"conversation_title_snapshot\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_email_update\",\"project_title_snapshot\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"conversation_email_update\",\"reply_to_name_snapshot\"]",
+      "set": {
+        "type": "varchar(150)"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"realtime_event_outbox_conversation_replay_idx\"]",
+      "set": {
+        "where": "\"realtime_event_outbox\".\"event_type\" IN ('conversation_analysis_updated', 'conversation_settings_updated', 'conversation_survey_updated', 'opinion_updated')"
+      }
+    }
+  ]
+}

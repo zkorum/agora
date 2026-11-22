@@ -37,10 +37,11 @@
   />
 
   <PostTypeDialog
+    v-if="!props.isEditMode"
     v-model="showPostTypeDialog"
     v-model:import-settings="importSettings"
     v-model:conversation-type-config="conversationTypeConfig"
-    :is-max-diff-allowed="isMaxDiffAllowed"
+    :is-prioritizing-allowed="true"
     :is-import-allowed="isImportAllowed"
     @mode-change-requested="handleModeChangeRequest"
   />
@@ -51,8 +52,8 @@
     v-model:voting-presentation="votingPresentation"
   />
 
-  <MaxDiffSourceDialog
-    v-model="showMaxDiffSourceDialog"
+  <ComparisonSourceDialog
+    v-model="showComparisonSourceDialog"
     :current-config="externalSourceConfig"
     :on-source-selected="handleSourceSelected"
   />
@@ -97,14 +98,6 @@
     v-model:show-dialog="showLoginRequirementDialog"
     v-model:participation-mode="participationMode"
   />
-
-  <EventTicketRequirementDialog
-    v-model:show-dialog="showEventTicketRequirementDialog"
-    v-model:requires-event-ticket="requiresEventTicket"
-    :can-add-event-ticket="canAddEventTicket"
-    :can-change-event-ticket="canChangeEventTicket"
-    :can-remove-event-ticket="canRemoveEventTicket"
-  />
 </template>
 
 <script setup lang="ts">
@@ -114,7 +107,6 @@ import ConversationControlButton from "src/components/newConversation/Conversati
 import AiLabelingOptionsDialog from "src/components/newConversation/dialog/AiLabelingOptionsDialog.vue";
 import AnalysisPreferenceDialog from "src/components/newConversation/dialog/AnalysisPreferenceDialog.vue";
 import ConversationLanguageSettingDialog from "src/components/newConversation/dialog/ConversationLanguageSettingDialog.vue";
-import EventTicketRequirementDialog from "src/components/newConversation/dialog/EventTicketRequirementDialog.vue";
 import LoginRequirementDialog from "src/components/newConversation/dialog/LoginRequirementDialog.vue";
 import ModeChangeConfirmationDialog from "src/components/newConversation/dialog/ModeChangeConfirmationDialog.vue";
 import PostAsAccountDialog from "src/components/newConversation/dialog/PostAsAccountDialog.vue";
@@ -133,7 +125,6 @@ import type {
   AutoLanguageDetectionStatus,
   ConversationMultilingualSetting,
   ConversationTypeConfig,
-  EventSlug,
   ExternalSourceConfig,
   ParticipationMode,
   PreferredOpinionGroupCount,
@@ -143,10 +134,6 @@ import {
   DEFAULT_FEATURE_ALLOWED_ORGS,
   DEFAULT_FEATURE_ALLOWED_USERS,
 } from "src/shared-app-api/featureAccess";
-import {
-  DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
-  DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS,
-} from "src/shared-app-api/maxdiffLogic";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useUserStore } from "src/stores/user";
 import { usePremiumFeatureApi } from "src/utils/api/premiumFeature";
@@ -154,8 +141,8 @@ import { processEnv } from "src/utils/processEnv";
 import { computed, ref, watch } from "vue";
 
 import { formatLanguageControlLabel } from "./conversationLanguageControlLabel";
+import ComparisonSourceDialog from "./dialog/ComparisonSourceDialog.vue";
 import { getLanguageLabel } from "./dialog/conversationLanguageSettings.utils";
-import MaxDiffSourceDialog from "./dialog/MaxDiffSourceDialog.vue";
 import PostTypeDialog from "./dialog/PostTypeDialog.vue";
 import {
   type VotingPresentationTranslations,
@@ -166,6 +153,7 @@ import {
   type NewConversationControlBarTranslations,
   newConversationControlBarTranslations,
 } from "./NewConversationControlBar.i18n";
+import { qvItemsTranslations } from "./QvItems.i18n";
 
 interface ControlButton {
   id: string;
@@ -178,10 +166,7 @@ interface ControlButton {
 
 interface Props {
   allowedPostAs: readonly PostAsSettings[] | undefined;
-  isEditMode?: boolean;
-  canAddEventTicket?: boolean;
-  canChangeEventTicket?: boolean;
-  canRemoveEventTicket?: boolean;
+  isEditMode: boolean;
   canUseAnalysisVariantsPreference?: boolean;
   canUseDynamicTranslation?: boolean;
   detectedLanguageCode?: SupportedDisplayLanguageCodes | null;
@@ -192,9 +177,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  canAddEventTicket: true,
-  canChangeEventTicket: true,
-  canRemoveEventTicket: true,
   canUseAnalysisVariantsPreference: false,
   canUseDynamicTranslation: false,
   detectedLanguageCode: undefined,
@@ -207,6 +189,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { t, locale } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
 );
+const { t: typeT } = useComponentI18n(qvItemsTranslations);
 const { t: tVotingPresentation } =
   useComponentI18n<VotingPresentationTranslations>(
     votingPresentationTranslations
@@ -220,10 +203,6 @@ const isPrivate = defineModel<boolean>("isPrivate", { required: true });
 const participationMode = defineModel<ParticipationMode>("participationMode", {
   required: true,
 });
-const requiresEventTicket = defineModel<EventSlug | undefined>(
-  "requiresEventTicket",
-  { required: true }
-);
 const postAs = defineModel<PostAsSettings>("postAs", { required: true });
 const conversationTypeConfig = defineModel<ConversationTypeConfig>(
   "conversationTypeConfig",
@@ -246,9 +225,10 @@ const votingPresentation = computed({
 const conversationType = computed(
   () => conversationTypeConfig.value.conversationType
 );
-const rankingMode = computed(() =>
-  conversationTypeConfig.value.conversationType === "ranking"
-    ? conversationTypeConfig.value.rankingMode
+const comparisonMethod = computed(() =>
+  conversationTypeConfig.value.conversationType === "prioritizing" &&
+  conversationTypeConfig.value.prioritizationType === "comparisons"
+    ? conversationTypeConfig.value.comparisonMethod
     : undefined
 );
 const supportsOpinionGroupAnalysis = computed(
@@ -312,7 +292,6 @@ const showAiLabelingDialog = ref(false);
 const showAnalysisPreferenceDialog = ref(false);
 const showLanguageSettingDialog = ref(false);
 const showLoginRequirementDialog = ref(false);
-const showEventTicketRequirementDialog = ref(false);
 
 watch(supportsOpinionGroupAnalysis, (isSupported) => {
   if (!isSupported) {
@@ -350,27 +329,11 @@ interface ModeChangeConfig {
   conversationTypeConfig: ConversationTypeConfig;
 }
 
-const pendingModeChangeConfig = ref<ModeChangeConfig | null>(null);
+const pendingModeChangeConfig = ref<ModeChangeConfig>();
 
 const handleModeChangeRequest = (config: ModeChangeConfig): void => {
-  conversationTypeConfig.value = config.conversationTypeConfig;
-
-  if (
-    config.conversationTypeConfig.conversationType === "ranking" &&
-    config.conversationTypeConfig.rankingMode === "bws"
-  ) {
-    // Auto-open source dialog if GitHub is allowed
-    if (isMaxDiffGitHubAllowed.value) {
-      showMaxDiffSourceDialog.value = true;
-    }
-  } else {
-    // Clear external source config when switching away from maxdiff
-    externalSourceConfig.value = null;
-  }
-
+  if (props.isEditMode) return;
   const currentType = importSettings.value.importType;
-
-  // If switching from manual to import type and might have content, show confirmation
   if (
     currentType === null &&
     config.importType !== null &&
@@ -379,21 +342,39 @@ const handleModeChangeRequest = (config: ModeChangeConfig): void => {
     pendingModeChangeConfig.value = config;
     showImportModeChangeConfirmation.value = true;
   } else {
-    // Directly apply the change
-    setImportTypeWithClearing(config.importType);
+    applyModeChange(config);
   }
 };
 
+function applyModeChange(config: ModeChangeConfig): void {
+  conversationTypeConfig.value = config.conversationTypeConfig;
+
+  if (
+    config.conversationTypeConfig.conversationType === "prioritizing" &&
+    config.conversationTypeConfig.prioritizationType === "comparisons"
+  ) {
+    // Auto-open source dialog if GitHub is allowed
+    if (isComparisonGitHubAllowed.value) {
+      showComparisonSourceDialog.value = true;
+    }
+  } else {
+    // Clear external source config when switching away from comparisons.
+    externalSourceConfig.value = null;
+  }
+
+  setImportTypeWithClearing(config.importType);
+}
+
 const handleModeChangeConfirm = (): void => {
   if (pendingModeChangeConfig.value) {
-    setImportTypeWithClearing(pendingModeChangeConfig.value.importType);
-    pendingModeChangeConfig.value = null;
+    applyModeChange(pendingModeChangeConfig.value);
+    pendingModeChangeConfig.value = undefined;
   }
   showImportModeChangeConfirmation.value = false;
 };
 
 const handleModeChangeCancel = (): void => {
-  pendingModeChangeConfig.value = null;
+  pendingModeChangeConfig.value = undefined;
   showImportModeChangeConfirmation.value = false;
 };
 
@@ -442,16 +423,6 @@ const toggleLoginRequirement = (): void => {
   showLoginRequirementDialog.value = true;
 };
 
-const toggleEventTicketRequirement = (): void => {
-  if (!canOpenEventTicketRequirementDialog.value) {
-    return;
-  }
-
-  showEventTicketRequirementDialog.value = true;
-};
-
-const isMaxDiffAllowed = computed(() => true);
-
 const isImportAllowed = computed(() => {
   const result = checkFeatureAccess({
     featureEnabled: true,
@@ -467,16 +438,16 @@ const isImportAllowed = computed(() => {
   return result.allowed;
 });
 
-const isMaxDiffGitHubAllowed = computed(() => {
+const isComparisonGitHubAllowed = computed(() => {
   const result = checkFeatureAccess({
     featureEnabled: true,
     isOrgOnly: processEnv.VITE_IS_MAXDIFF_GITHUB_ORG_ONLY === "true",
     allowedOrgs:
       processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_ORGS ??
-      DEFAULT_MAXDIFF_GITHUB_ALLOWED_ORGS,
+      DEFAULT_FEATURE_ALLOWED_ORGS,
     allowedUsers:
       processEnv.VITE_MAXDIFF_GITHUB_ALLOWED_USERS ??
-      DEFAULT_MAXDIFF_GITHUB_ALLOWED_USERS,
+      DEFAULT_FEATURE_ALLOWED_USERS,
     postAsOrganization: postAs.value.postAsOrganization,
     organizationName: postAs.value.organizationName,
     userId: userId.value ?? "",
@@ -486,7 +457,6 @@ const isMaxDiffGitHubAllowed = computed(() => {
 
 const { checkPremiumFeatureAccess } = usePremiumFeatureApi();
 const createModeCanUseAnalysisVariantsPreference = ref<boolean | null>(null);
-const createModeCanAddEventTicket = ref<boolean | null>(null);
 const createModeCanUseDynamicTranslation = ref<boolean | null>(null);
 let createModePremiumAccessRequestId = 0;
 
@@ -496,26 +466,10 @@ const canUseAnalysisVariantsPreference = computed(() => {
     : createModeCanUseAnalysisVariantsPreference.value === true;
 });
 
-const canAddEventTicket = computed(() => {
-  return props.isEditMode
-    ? props.canAddEventTicket
-    : createModeCanAddEventTicket.value === true;
-});
-
 const canUseDynamicTranslation = computed(() => {
   return props.isEditMode
     ? props.canUseDynamicTranslation
     : createModeCanUseDynamicTranslation.value === true;
-});
-
-const canChangeEventTicket = computed(() => {
-  return props.isEditMode
-    ? props.canChangeEventTicket
-    : canAddEventTicket.value;
-});
-
-const canRemoveEventTicket = computed(() => {
-  return props.isEditMode ? props.canRemoveEventTicket : true;
 });
 
 watch(
@@ -534,13 +488,11 @@ watch(
     }
 
     if (!isLoggedIn.value) {
-      createModeCanAddEventTicket.value = false;
       createModeCanUseAnalysisVariantsPreference.value = null;
       createModeCanUseDynamicTranslation.value = null;
       return;
     }
 
-    createModeCanAddEventTicket.value = null;
     createModeCanUseAnalysisVariantsPreference.value = null;
     createModeCanUseDynamicTranslation.value = null;
 
@@ -548,30 +500,22 @@ watch(
       const postAsOrganization = postAs.value.postAsOrganization
         ? postAs.value.organizationName
         : undefined;
-      const [
-        eventTicketAccess,
-        analysisVariantsAccess,
-        dynamicTranslationAccess,
-      ] = await Promise.all([
-        checkPremiumFeatureAccess({
-          feature: "event_ticket",
-          postAsOrganization,
-        }),
-        checkPremiumFeatureAccess({
-          feature: "analysis_variants",
-          postAsOrganization,
-        }),
-        checkPremiumFeatureAccess({
-          feature: "dynamic_translation",
-          postAsOrganization,
-        }),
-      ]);
+      const [analysisVariantsAccess, dynamicTranslationAccess] =
+        await Promise.all([
+          checkPremiumFeatureAccess({
+            feature: "analysis_variants",
+            postAsOrganization,
+          }),
+          checkPremiumFeatureAccess({
+            feature: "dynamic_translation",
+            postAsOrganization,
+          }),
+        ]);
 
       if (requestId !== createModePremiumAccessRequestId) {
         return;
       }
 
-      createModeCanAddEventTicket.value = eventTicketAccess.hasAccess;
       createModeCanUseAnalysisVariantsPreference.value =
         analysisVariantsAccess.hasAccess;
       createModeCanUseDynamicTranslation.value =
@@ -581,24 +525,11 @@ watch(
         return;
       }
 
-      createModeCanAddEventTicket.value = false;
       createModeCanUseAnalysisVariantsPreference.value = false;
       createModeCanUseDynamicTranslation.value = false;
     }
   },
   { immediate: true }
-);
-
-watch(
-  () => ({
-    isEditMode: props.isEditMode,
-    canAddEventTicket: createModeCanAddEventTicket.value,
-  }),
-  ({ isEditMode, canAddEventTicket }) => {
-    if (!isEditMode && canAddEventTicket === false) {
-      requiresEventTicket.value = undefined;
-    }
-  }
 );
 
 watch(
@@ -626,32 +557,11 @@ watch(
   { immediate: true }
 );
 
-const canOpenEventTicketRequirementDialog = computed(() => {
-  if (requiresEventTicket.value === undefined) {
-    return canAddEventTicket.value;
-  }
-
-  return canChangeEventTicket.value || canRemoveEventTicket.value;
-});
-
-const showMaxDiffSourceDialog = ref(false);
+const showComparisonSourceDialog = ref(false);
 
 function handleSourceSelected(config: ExternalSourceConfig | null): void {
   externalSourceConfig.value = config;
 }
-
-const getEventTicketLabel = (): string => {
-  const eventSlug = requiresEventTicket.value;
-
-  if (eventSlug === undefined) {
-    return t("noVerification");
-  }
-
-  switch (eventSlug) {
-    case "devconnect-2025":
-      return t("devconnect2025");
-  }
-};
 
 const analysisPreferenceLabel = computed(() => {
   return preferredOpinionGroupCount.value === null
@@ -694,17 +604,21 @@ const controlButtons = computed((): ControlButton[] => [
   {
     id: "post-type",
     label:
-      conversationType.value === "ranking" && rankingMode.value === "bws"
-        ? t("typeMaxDiff")
+      conversationType.value === "prioritizing"
+        ? `${t("typePrioritizing")} · ${comparisonMethod.value === undefined ? "QV" : comparisonMethod.value === "bws" ? "BWS" : typeT("pairwise")}`
         : importSettings.value.importType === "polis-url"
           ? t("importFromPolisUrl")
           : importSettings.value.importType === "csv-import"
             ? t("importFromCsv")
             : t("newConversation"),
-    icon: showPostTypeDialog.value ? "pi pi-chevron-up" : "pi pi-chevron-down",
-    isVisible: !props.isEditMode,
+    icon: props.isEditMode
+      ? ""
+      : showPostTypeDialog.value
+        ? "pi pi-chevron-up"
+        : "pi pi-chevron-down",
+    isVisible: true,
     clickHandler: togglePostTypeDialog,
-    clickable: true,
+    clickable: !props.isEditMode,
   },
   {
     id: "visibility",
@@ -779,22 +693,10 @@ const controlButtons = computed((): ControlButton[] => [
     clickHandler: toggleLanguageSetting,
     clickable: true,
   },
-  {
-    id: "event-ticket-requirement",
-    label: getEventTicketLabel(),
-    icon: showEventTicketRequirementDialog.value
-      ? "pi pi-chevron-up"
-      : "pi pi-chevron-down",
-    isVisible: props.isEditMode
-      ? requiresEventTicket.value !== undefined
-      : canAddEventTicket.value,
-    clickHandler: toggleEventTicketRequirement,
-    clickable: canOpenEventTicketRequirementDialog.value,
-  },
 ]);
 
 const visibleControlButtons = computed(() =>
-  controlButtons.value.filter((button) => button.isVisible)
+  controlButtons.value.filter((button) => button.isVisible && button.clickable)
 );
 
 const extraControlsInsertionIndex = computed(() => {

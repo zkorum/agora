@@ -21,8 +21,7 @@ describe("project contact form", () => {
       roleLabel: "\u00a0\ufeff",
     });
     expect(state.validation).toEqual({ success: true, data: undefined });
-    expect(state.requiresChannel).toBe(false);
-    expect(state.requiresOrganization).toBe(false);
+    expect(state.requiresEmail).toBe(false);
   });
 
   it("passes the parsed organization-only contact to the save request", () => {
@@ -40,21 +39,30 @@ describe("project contact form", () => {
     });
   });
 
-  it("requires an identity when only a contact channel is entered", () => {
+  it("accepts an email without requiring a name or affiliation", () => {
     const state = getProjectContactFormState({
       ...emptyContact,
       email: "contact@example.com",
     });
-    expect(state.requiresOrganization).toBe(true);
+    expect(state.requiresEmail).toBe(true);
+    expect(state.validation.success).toBe(true);
+  });
+
+  it("requires email for a website-only contact", () => {
+    const state = getProjectContactFormState({
+      ...emptyContact,
+      websiteUrl: "https://example.com/contact",
+    });
+    expect(state.requiresEmail).toBe(true);
     expect(state.validation.success).toBe(false);
   });
 
-  it("requires a channel for a named organization", () => {
+  it("requires email for an affiliated contact", () => {
     const state = getProjectContactFormState({
       ...emptyContact,
       organizationSlug: "agrotoulouse",
     });
-    expect(state.requiresChannel).toBe(true);
+    expect(state.requiresEmail).toBe(true);
     expect(state.validation.success).toBe(false);
   });
 
@@ -66,10 +74,31 @@ describe("project contact form", () => {
     expect(
       getProjectContactFormState({
         ...emptyContact,
-        organizationSlug: "agrotoulouse",
+        email: "contact@example.com",
         websiteUrl,
       }).validation.success
     ).toBe(false);
+  });
+
+  it("requires a contact when asking and still accepts an email when not asking", () => {
+    expect(
+      getProjectContactFormState({
+        ...emptyContact,
+        asksParticipants: true,
+      })
+    ).toMatchObject({ requiresEmail: true, validation: { success: false } });
+    for (const asksParticipants of [true, false]) {
+      expect(
+        getProjectContactFormState({
+          ...emptyContact,
+          asksParticipants,
+          email: "contact@example.com",
+        }).validation
+      ).toMatchObject({
+        success: true,
+        data: { email: "contact@example.com" },
+      });
+    }
   });
 
   it("checks the API's name limits even for values inserted programmatically", () => {

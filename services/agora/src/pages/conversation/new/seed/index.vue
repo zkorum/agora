@@ -31,9 +31,31 @@
         project-context-title-mode="original"
       />
 
+      <ParticipantStatementsSetting
+        v-model="participantStatements"
+        :disabled="isSubmitButtonLoading || isNavigatingAway"
+      />
+      <section v-if="isQvDraft" class="seed-opinions-section">
+        <p class="section-description">
+          {{ qvT("budget", { credits: QV_CREDIT_BUDGET }) }}
+        </p>
+        <q-toggle
+          v-model="allowOpposition"
+          :label="qvT('opposition')"
+          :disable="isSubmitButtonLoading"
+        />
+        <p class="section-description">{{ qvT("oppositionHelp") }}</p>
+        <QvItemListEditor
+          ref="qvEditor"
+          v-model="qvItems"
+          :disabled="isSubmitButtonLoading || isNavigatingAway"
+          :allow-add="true"
+        />
+      </section>
+
       <!-- GitHub-linked: show read-only preview (items will sync from GitHub) -->
       <div
-        v-if="conversationDraft.externalSourceConfig !== null"
+        v-else-if="conversationDraft.externalSourceConfig !== null"
         class="seed-opinions-section"
       >
         <div class="section-title">{{ t("githubSyncTitle") }}</div>
@@ -77,12 +99,16 @@
       <!-- Manual: Add Seed Opinions Section -->
       <div v-else class="seed-opinions-section">
         <div class="section-title">
-          {{ isMaxDiffDraft ? t("addMaxDiffItems") : t("addSeedOpinions") }}
+          {{
+            isPrioritizingDraft
+              ? t("addPrioritizationItems")
+              : t("addSeedOpinions")
+          }}
         </div>
         <p class="section-description">
           {{
-            isMaxDiffDraft
-              ? t("maxDiffSeedDescription")
+            isPrioritizingDraft
+              ? t("prioritizationSeedDescription")
               : t("seedOpinionsDescription")
           }}
         </p>
@@ -127,6 +153,9 @@ import BackButton from "src/components/navigation/buttons/BackButton.vue";
 import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue";
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
+import ParticipantStatementsSetting from "src/components/newConversation/ParticipantStatementsSetting.vue";
+import QvItemListEditor from "src/components/newConversation/QvItemListEditor.vue";
+import { qvItemsTranslations } from "src/components/newConversation/QvItems.i18n";
 import SeedOpinionEditor from "src/components/newConversation/SeedOpinionEditor.vue";
 import {
   type SeedOpinionsTranslations,
@@ -139,9 +168,10 @@ import type { SeedOpinionCreateFailure } from "src/composables/conversation/useP
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateRichTextInput } from "src/shared/richText";
+import { QV_CREDIT_BUDGET } from "src/shared/utils/qv";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
-import { useMaxDiffApi } from "src/utils/api/maxdiff/maxdiff";
+import { useComparisonApi } from "src/utils/api/comparison/comparison";
 import {
   isHistoryBackToPath,
   navigateBackOrReplace,
@@ -161,17 +191,46 @@ const router = useRouter();
 const { showNotifyMessage } = useNotify();
 
 // Use composable for validation and draft management (with syncToStore: true since we're in create flow)
-const { validateForReview, isDraftModified, resetDraft } = useConversationDraft(
-  { syncToStore: true }
-);
+const {
+  validateForReview,
+  isDraftModified,
+  resetDraft,
+  qvItems,
+  conversationTypeConfig,
+  participantStatements,
+} = useConversationDraft({ syncToStore: true });
 const { conversationDraft } = storeToRefs(useNewPostDraftsStore());
-const isMaxDiffDraft = computed(
+const isPrioritizingDraft = computed(
   () =>
-    conversationDraft.value.conversationType === "ranking" &&
-    conversationDraft.value.rankingMode === "bws"
+    conversationDraft.value.conversationType === "prioritizing" &&
+    conversationDraft.value.prioritizationType === "comparisons"
 );
+const isQvDraft = computed(
+  () =>
+    conversationTypeConfig.value.conversationType === "prioritizing" &&
+    conversationTypeConfig.value.prioritizationType === "qv"
+);
+const allowOpposition = computed({
+  get: () =>
+    conversationTypeConfig.value.conversationType === "prioritizing" &&
+    conversationTypeConfig.value.prioritizationType === "qv"
+      ? conversationTypeConfig.value.allowOpposition
+      : true,
+  set: (value: boolean) => {
+    if (
+      conversationTypeConfig.value.conversationType === "prioritizing" &&
+      conversationTypeConfig.value.prioritizationType === "qv"
+    )
+      conversationTypeConfig.value = {
+        ...conversationTypeConfig.value,
+        allowOpposition: value,
+      };
+  },
+});
+const { t: qvT } = useComponentI18n(qvItemsTranslations);
+const qvEditor = ref<InstanceType<typeof QvItemListEditor>>();
 
-const { previewGitHubIssues } = useMaxDiffApi();
+const { previewGitHubIssues } = useComparisonApi();
 const { publishConversationDraft } = usePublishConversationDraft();
 const showLoginDialog = ref(false);
 const isSubmitButtonLoading = ref(false);
@@ -267,6 +326,7 @@ async function retryPreview(): Promise<void> {
 }
 
 function validateSeedOpinions(): boolean {
+  if (isQvDraft.value) return qvEditor.value?.validate() === true;
   // GitHub-linked conversations don't need manual seeds
   if (conversationDraft.value.externalSourceConfig !== null) {
     return true;
@@ -279,8 +339,8 @@ function validateSeedOpinions(): boolean {
     (result) => result.success || result.reason !== "plain_text_empty"
   ).length;
 
-  if (isMaxDiffDraft.value && visibleOpinionCount < 2) {
-    showNotifyMessage(t("needMinimumForMaxDiff"));
+  if (isPrioritizingDraft.value && visibleOpinionCount < 2) {
+    showNotifyMessage(t("needMinimumForPrioritization"));
     return false;
   }
 

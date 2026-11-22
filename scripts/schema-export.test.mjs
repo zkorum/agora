@@ -22,6 +22,7 @@ const models = [
   ["shared-analysis-worker", "agora_analysis_worker_shared"],
   ["import-worker", "import_worker"],
   ["content-translation-worker", "content_translation_worker"],
+  ["credit-voting-worker", "credit_voting_worker"],
 ];
 
 async function fixture(t) {
@@ -95,6 +96,10 @@ if (command === "pnpm") {
             assert.ok(Date.now() < deadline, "exports did not overlap");
             await delay(10);
         }
+    } else if (args[1] === "scripts/sync-qv-rules-cli.ts") {
+        assert.equal(args[0], "tsx");
+        record({ kind: "rules", stage: "credit-voting-rules", args });
+        fail("credit-voting-rules");
     } else {
         assert.equal(args[0], "tsx");
         assert.ok(["scripts/sync-schema-cli.ts", "scripts/sync-api-test-schema-fixtures-cli.ts"].includes(args[1]));
@@ -170,7 +175,7 @@ test("parallel targets use distinct exports after backend sync and preserve cons
   assert.equal(exports.length, 2);
   assert.notEqual(exports[0].sql, exports[1].sql);
   const consumers = result.events.filter((event) => event.kind === "consume");
-  assert.equal(consumers.length, 5);
+  assert.equal(consumers.length, models.length + 1);
   // Both exporters must reach the barrier before either target consumes SQL.
   assert.deepEqual(
     result.events.slice(1, 3).map((event) => event.kind),
@@ -204,6 +209,16 @@ test("parallel targets use distinct exports after backend sync and preserve cons
       `../${service}/src/${module}/generated_models.py`,
     ]);
   }
+  const rules = result.events.filter((event) => event.kind === "rules");
+  assert.equal(rules.length, 1);
+  assert.deepEqual(rules[0].args, [
+    "tsx",
+    "scripts/sync-qv-rules-cli.ts",
+    "--source",
+    "../shared/src/utils/qv.ts",
+    "--output",
+    "../credit-voting-worker/src/credit_voting_worker/generated_rules.py",
+  ]);
   assert.deepEqual(fixtures.args, [
     "tsx",
     "scripts/sync-api-test-schema-fixtures-cli.ts",
@@ -219,7 +234,7 @@ test("parallel targets use distinct exports after backend sync and preserve cons
 for (const target of targets) {
   const stages =
     target === "sync-python-models"
-      ? models.map(([service]) => service)
+      ? [...models.map(([service]) => service), "credit-voting-rules"]
       : ["fixtures"];
   for (const failStage of ["sync", "export", ...stages]) {
     test(`${target}: ${failStage} failure stops the recipe and cleans scratch SQL`, async (t) => {
@@ -231,7 +246,7 @@ for (const target of targets) {
         new RegExp(`Synthetic failure: ${failStage}`)
       );
       const consumers = result.events.filter(
-        (event) => event.kind === "consume"
+        (event) => event.kind === "consume" || event.kind === "rules"
       );
       assert.deepEqual(
         consumers.map((event) => event.stage),
@@ -257,7 +272,7 @@ for (const target of targets) {
     assert.equal(result.events[0].kind, "sync");
     assert.deepEqual(
       result.events
-        .filter((event) => event.kind === "consume")
+        .filter((event) => event.kind === "consume" || event.kind === "rules")
         .map((event) => event.stage),
       stages
     );

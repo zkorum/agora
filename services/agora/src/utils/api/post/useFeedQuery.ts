@@ -10,11 +10,20 @@ import type { FeedSortAlgorithm } from "src/shared/types/zod";
 import { useHomeFeedStore } from "src/stores/homeFeed";
 import { useLanguageStore } from "src/stores/language";
 import { useViewerQueryScope } from "src/utils/query/viewerScope";
-import { computed, type MaybeRefOrGetter, toValue, watch } from "vue";
+import { useQvStatsSubscriptions } from "src/utils/sse/qvStatsSubscriptions";
+import {
+  computed,
+  type MaybeRefOrGetter,
+  onActivated,
+  toValue,
+  watch,
+} from "vue";
 
 import { initialFeedRequest, nextFeedRequest } from "./feedPageBoundary";
 import { type FeedQueryKey, getFeedQueryKey } from "./feedQueryKey";
 import { useBackendPostApi } from "./post";
+import { reconcileQvCalculationLifecycle } from "./qvCalculationState";
+import { reconcileQvStats } from "./qvStatsUpdate";
 
 export function useFeedQuery({
   enabled = true,
@@ -60,7 +69,19 @@ export function useFeedQuery({
           ),
         });
       }
-      return page;
+      return {
+        ...page,
+        feedItemList: page.feedItemList.map((item) => ({
+          ...item,
+          conversationData: reconcileQvCalculationLifecycle({
+            queryClient,
+            conversation: reconcileQvStats({
+              queryClient,
+              conversation: item.conversationData,
+            }),
+          }),
+        })),
+      };
     },
     initialPageParam: computed(() =>
       initialFeedRequest(currentHomeFeedTab.value)
@@ -84,6 +105,33 @@ export function useFeedQuery({
     },
     { immediate: true }
   );
+  useQvStatsSubscriptions(() =>
+    toValue(enabled)
+      ? (query.data.value?.pages.flatMap((page) =>
+          page.feedItemList.flatMap(({ conversationData: { metadata } }) =>
+            metadata.conversationType === "prioritizing" &&
+            metadata.prioritizationType === "qv"
+              ? [metadata.conversationSlugId]
+              : []
+          )
+        ) ?? [])
+      : []
+  );
+  onActivated(() => {
+    // A global replay cursor can advance while this KeepAlive page is inactive.
+    // Keep cached cards visible, but recover participation missed before resubscription.
+    if (
+      toValue(enabled) &&
+      query.data.value?.pages.some((page) =>
+        page.feedItemList.some(
+          ({ conversationData: { metadata } }) =>
+            metadata.conversationType === "prioritizing" &&
+            metadata.prioritizationType === "qv"
+        )
+      )
+    )
+      void query.refetch();
+  });
 
   const refreshes = new Map<string, Promise<void>>();
   async function refreshFeed(): Promise<void> {

@@ -41,7 +41,7 @@ export const termsOfServiceContent: Record<
   SupportedDisplayLanguageCodes,
   TermsOfServiceContent
 > = {
-  // Rollout draft: publish with the implemented deletion lifecycle and reviewed legal bases.
+  // Multilingual review draft: legal-basis and operational checks remain publication gates.
   en: {
     termsOfService: "Terms of Service",
     automatedTranslationNoticeTitle: "Automated translation notice",
@@ -113,7 +113,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: ", or event-ticket eligibility proofs through Zupass. Agora receives the disclosed proof signals rather than the underlying passport or ticket through those flows. Rarimo registration is subject to its additional age requirement: you must be 18 years or older. The provider's applicable terms also govern its verification service.",
+                    text: ". Agora receives the disclosed proof signals rather than the underlying passport through this flow. Rarimo registration is subject to its additional age requirement: you must be 18 years or older. The provider's applicable terms also govern its verification service.",
                   },
                 ],
               },
@@ -325,7 +325,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "The content licence above does not override applicable data-protection or erasure rights or authorize bypassing a feature's access restrictions. Deleting a statement or your account removes the affected personal statements from current views and future analysis and replaces their text with '[deleted]' in our checkpoints, without their translations, username or profile link. We redact or invalidate affected exports and other controlled displays. Account deletion retains necessary recovery data privately for 15 days before permanent cleanup; explicit statement deletion has no recovery period. Account deletion removes unnecessary account/credential associations and does not itself withdraw lawfully retained agree/disagree/pass votes on other eligible statements. Safe historical checkpoint numbers may remain frozen; deletion does not rerun historical computations or regenerate historical AI descriptions. Where stored AI output itself requires erasure, existing output and affected translations are removed or redacted under the Privacy Policy without generating replacement descriptions. Other private participation records, retained inputs and personal mappings follow the Privacy Policy's purpose-based retention and withdrawal/erasure rules. Removing account links alone is not treated as anonymization. Export disclosure and copies already downloaded or independently republished are handled as explained in that Policy.",
+                text: "This licence does not override applicable data-protection or erasure rights or expand access to private participation. Accepted account deletion hides personal statements and makes participation ineligible for new live calculations. Necessary recovery data remain private during the 15-day recovery period. We keep saved results' individual numerical inputs (Polis matrices, BWS/pairwise choices and QV allocations) indefinitely for voting analysis and recalculation, removing account links during permanent cleanup. This is not a history of every save or QV calculation. Ordinary deletion does not recalculate saved numbers; separate corrections or re-analysis may change them. Historical AI descriptions are not automatically rewritten by ordinary deletion; applicable erasure rights remain. Existing-export downloads expire at most 30 days after generation; new exports use current deletion state. Unlinking does not guarantee anonymity.",
               },
             ],
           },
@@ -457,7 +457,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "You may terminate these Terms at any time and for any reason by requesting deletion of your Account and discontinuing use of the Services. Ordinary account access stops immediately. You may explicitly cancel an ordinary account-deletion request during the 15-day recovery window described below; permanent erasure and retained records follow the Privacy Policy.",
+                text: "You may request deletion of your Account and discontinue use of the Services at any time. Once your deletion request is accepted, ordinary account access stops and the 15-day recovery window starts. A refused request does not close your account or start that window. You may explicitly cancel an accepted ordinary account-deletion request during that window; permanent erasure and retained records follow the Privacy Policy.",
               },
             ],
           },
@@ -494,21 +494,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Use the available authenticated account-deletion control or contact legal@zkorum.com for assistance. We verify ownership using supported credentials or device-key proof as appropriate to the account type; this does not imply a requirement to send us a passport image or an indefinite collection of signed proofs.",
+                    text: "Use the available authenticated account-deletion control or contact legal@zkorum.com for assistance. If organization responsibilities prevent account deletion through those controls, contact us. We verify ownership using supported credentials or device-key proof as appropriate to the account type; this does not imply a requirement to send us a passport image or an indefinite collection of signed proofs.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "The account becomes inaccessible for ordinary use, existing sessions are revoked and personal statements are excluded from current views and analysis. Their text is replaced with '[deleted]' in our checkpoints without translations, username or profile link, and affected exports and other controlled displays are invalidated or redacted. Account closure alone does not withdraw lawfully retained votes on other eligible statements. Necessary source text, translations and account associations are retained privately for recovery and erased at permanent cleanup. The account is recoverable only strictly before the stored deadline, 15 days after the request. Recovery requires verified ownership and explicit confirmation cancelling deletion; reconnecting does not silently restore the account. Successful recovery establishes a fresh authorized session rather than reactivating all revoked sessions.",
+                    text: "Accepted deletion disables ordinary access, revokes sessions and hides personal statements. Open results may refresh asynchronously; retained numerical results and existing exports follow the Privacy Policy. Necessary recovery data remain private. Recovery requires explicit cancellation and verified ownership, strictly before the stored 15-day deadline and before irreversible purge starts. Guests need their original device keys; lost keys can prevent recovery. Successful recovery creates a fresh session, not renewed access through previously revoked sessions.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "At the 15-day deadline, recovery ends and permanent account purge becomes due. Cleanup starts through the next scheduled hourly sweep and proceeds without undue delay, normally completing within seven days of that deadline. We monitor failures and retry and escalate delayed or blocked work. Delayed sweeps and retries do not restart that period or extend recovery or applicable legal deadlines. Restricted disaster-recovery backups may retain erased data for at most another 30 days after actual hard deletion, and erasure is reapplied before a restore is exposed.",
+                    text: "Recovery ends at the 15-day deadline and private account data become eligible for permanent cleanup without undue delay. Cleanup delays do not extend recovery or restart applicable legal deadlines. Retained inputs, restricted records and backups follow the Privacy Policy. A later registration cannot reclaim detached participation.",
                   },
                 ],
               },
@@ -530,7 +530,7 @@ export const termsOfServiceContent: Record<
                 content: [
                   { text: "Individual content:", kind: "strong" },
                   {
-                    text: " Statements, conversations, documents and other content explicitly deleted through an authorized control are hidden immediately and eligible for prompt permanent cleanup. They do not receive the account's 15-day recovery window. Deleting a statement or your account uses the same '[deleted]' checkpoint display and text-redaction rule; you do not need to delete statements separately before account closure. Safe frozen numerical results follow the Privacy Policy. Use vote-withdrawal controls if you also want votes withdrawn. After permanent unlinking ordinary account-based management of retained voting records is unavailable, but applicable personal-data rights requests remain possible through the Privacy Policy's contact route.",
+                    text: " Authorized content deletion hides affected text, versions, translations and attribution immediately, including in retained checkpoints, without the account's recovery window. Account deletion hides personal statements from live views but may retain permitted historical text without public account attribution. Manage content separately before deleting your account if you want that text removed too; applicable erasure requests do not require manually deleting every contribution. Withdrawal controls follow the activity's open/closed rules and do not rewrite retained results. After permanent unlinking, account controls cannot retrieve, change or withdraw detached numerical records.",
                   },
                 ],
               },
@@ -546,7 +546,7 @@ export const termsOfServiceContent: Record<
                 content: [
                   { text: "Organizations and projects:", kind: "strong" },
                   {
-                    text: " Delete actions require the relevant permissions and are not reversible archives. Project deletion removes contained conversations, documents and owned historical reports. Before an organization is deleted, any remaining solely owned projects must be transferred to another surviving owner. Co-owned projects remain with their surviving owners, with the deleted organization's relationships removed. Separately authorized deletion of a project is handled as that project's own deletion, not an account-recovery action.",
+                    text: " Delete actions require the relevant permissions and are not reversible archives. Project deletion removes contained conversations, documents and exclusively owned retained numerical inputs and reports under the applicable cleanup rules. Before an organization is deleted, any remaining solely owned projects must be transferred to another surviving owner. Co-owned projects remain with their surviving owners, with the deleted organization's relationships removed. Separately authorized deletion of a project is handled as that project's own deletion, not an account-recovery action.",
                   },
                 ],
               },
@@ -556,7 +556,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "A separate applicable personal-data erasure request can be handled without the product recovery period, including requests about retained records after account deletion. Use the rights-request contact route in the Privacy Policy; we handle it without undue delay, subject to proportionate verification where necessary and narrowly applicable legal exceptions. Limited records may remain after deletion for the purposes described in the Privacy Policy:",
+                text: "Applicable personal-data requests follow the Privacy Policy's general rights provisions without requiring the product recovery period. Limited records may remain after deletion for the purposes described in the Privacy Policy:",
               },
             ],
           },
@@ -914,7 +914,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: "، أو إثباتات الأهلية المستندة إلى تذاكر الفعاليات من خلال Zupass. وتتلقى Agora إشارات الإثبات المكشوف عنها، بدلًا من جواز السفر الأصلي أو التذكرة الأصلية، من خلال تلك المسارات. ويخضع التسجيل لدى Rarimo لشرطها العمري الإضافي: يجب أن تبلغ 18 سنة أو أكثر. وتحكم شروط مقدّم الخدمة المنطبقة خدمة التحقّق الخاصة به أيضًا.",
+                    text: ". وتتلقى Agora إشارات الإثبات المكشوف عنها بدلًا من جواز السفر الأصلي. ويخضع التسجيل لدى Rarimo لشرطها العمري الإضافي: يجب أن تبلغ 18 سنة أو أكثر. وتحكم شروط مقدّم الخدمة المنطبقة خدمة التحقّق الخاصة به أيضًا.",
                   },
                 ],
               },
@@ -1142,7 +1142,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "لا يتجاوز ترخيص المحتوى الوارد أعلاه حقوق حماية البيانات أو المحو المنطبقة، ولا يجيز الالتفاف على قيود الوصول الخاصة بأي ميزة. ويؤدي حذف مقترح أو حسابك إلى إزالة المقترحات الشخصية المتأثرة من العروض الحالية والتحليل المستقبلي، واستبدال نصها بـ '[deleted]' في نقاط الحفظ لدينا، دون ترجماتها أو اسم المستخدم أو رابط الملف الشخصي. وننقّح أو نبطل الملفات المصدّرة المتأثرة والعروض الأخرى الخاضعة لسيطرتنا. ويحتفظ حذف الحساب بصورة خاصة ببيانات الاسترداد الضرورية لمدة 15 يومًا قبل التنظيف النهائي؛ ولا توجد فترة استرداد للحذف الصريح للمقترح. ويزيل حذف الحساب ارتباطات الحساب وبيانات الاعتماد غير الضرورية، ولا يسحب في ذاته أصوات الموافقة/عدم الموافقة/التجاوز المحتفظ بها بصورة مشروعة على مقترحات أخرى مستوفية للشروط. وقد تظل أرقام نقاط الحفظ التاريخية الآمنة ثابتة؛ ولا يعيد الحذف إجراء الحسابات التاريخية أو توليد أوصاف الذكاء الاصطناعي (AI) التاريخية. وعندما تستلزم مخرجات الذكاء الاصطناعي (AI) المخزّنة ذاتها المحو، تُزال المخرجات القائمة والترجمات المتأثرة أو تُنقّح بموجب سياسة الخصوصية، دون توليد أوصاف بديلة. وتخضع سجلات المشاركة الخاصة الأخرى والمدخلات المحتفظ بها وروابط المعرّفات الشخصية لقواعد الاحتفاظ بحسب الغرض والسحب والمحو الواردة في سياسة الخصوصية. ولا تُعامل إزالة روابط الحساب وحدها بوصفها إخفاءً للهوية. ويُعالج الكشف من خلال التصدير والنسخ التي سبق تنزيلها أو إعادة نشرها بصورة مستقلة على النحو الموضّح في تلك السياسة.",
+                text: "لا يتجاوز هذا الترخيص حقوق حماية البيانات أو المحو المنطبقة، ولا يوسّع الوصول إلى المشاركة الخاصة. ويؤدي قبول حذف الحساب إلى إخفاء المقترحات الشخصية واستبعاد المشاركة من الحسابات المباشرة الجديدة. وتبقى بيانات الاسترداد الضرورية خاصة خلال مهلة الاسترداد البالغة 15 يومًا. ونحتفظ بالمدخلات الرقمية الفردية للنتائج المحفوظة (مصفوفات Polis وخيارات BWS/pairwise وتوزيعات QV) إلى أجل غير مسمى لتحليل التصويت وإعادة الحساب، مع إزالة روابط الحساب أثناء التنظيف النهائي. وليس هذا سجلًا لكل عملية حفظ أو حساب QV. ولا يعيد الحذف المعتاد حساب الأرقام المحفوظة؛ وقد تغيّرها تصحيحات أو إعادة تحليل منفصلة. ولا يعيد الحذف المعتاد كتابة أوصاف الذكاء الاصطناعي التاريخية تلقائيًا؛ وتظل حقوق المحو المنطبقة سارية. وتنتهي صلاحية تنزيل الملفات المصدّرة القائمة خلال 30 يومًا على الأكثر من إنشائها؛ وتعتمد الصادرات الجديدة حالة الحذف الحالية. ولا يضمن فك الارتباط إخفاء الهوية.",
               },
             ],
           },
@@ -1292,7 +1292,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "يجوز لك إنهاء هذه الشروط في أي وقت ولأي سبب بطلب حذف حسابك والتوقف عن استخدام الخدمات. ويتوقف الوصول المعتاد إلى الحساب فورًا. ويمكنك إلغاء طلب حذف الحساب المعتاد صراحة خلال مهلة الاسترداد البالغة 15 يومًا والموضّحة أدناه؛ ويخضع المحو النهائي والسجلات المحتفظ بها لسياسة الخصوصية.",
+                text: "يجوز لك طلب حذف حسابك والتوقف عن استخدام الخدمات في أي وقت. وعند قبول طلب الحذف، يتوقف الوصول المعتاد إلى الحساب وتبدأ مهلة الاسترداد البالغة 15 يومًا. ولا يغلق الطلب المرفوض حسابك ولا يبدأ تلك المهلة. ويمكنك إلغاء طلب حذف الحساب المعتاد المقبول صراحة خلال تلك المهلة؛ ويخضع المحو النهائي والسجلات المحتفظ بها لسياسة الخصوصية.",
               },
             ],
           },
@@ -1367,21 +1367,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "استخدم أداة حذف الحساب المتاحة بعد المصادقة، أو تواصل مع legal@zkorum.com للحصول على المساعدة. ونتحقّق من الملكية باستخدام بيانات اعتماد مدعومة أو إثبات بمفتاح الجهاز، بحسب ما يلائم نوع الحساب؛ ولا يعني ذلك اشتراط إرسال صورة جواز سفر إلينا أو جمع إثباتات موقّعة إلى أجل غير مسمى.",
+                    text: "استخدم أداة حذف الحساب المتاحة بعد المصادقة، أو تواصل مع legal@zkorum.com للمساعدة. وإذا حالت مسؤولياتك في منظمة دون حذف الحساب عبر تلك الأدوات، فتواصل معنا. ونتحقق من الملكية باستخدام بيانات اعتماد مدعومة أو إثبات بمفتاح الجهاز بحسب نوع الحساب؛ ولا يعني ذلك اشتراط إرسال صورة جواز سفر إلينا أو جمع إثباتات موقّعة إلى أجل غير مسمى.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "يصبح الحساب غير قابل للوصول للاستخدام المعتاد، وتُلغى الجلسات القائمة، وتُستبعد المقترحات الشخصية من العروض الحالية والتحليل. ويُستبدل نصها بـ '[deleted]' في نقاط الحفظ لدينا دون ترجمات أو اسم مستخدم أو رابط ملف شخصي، وتُبطل الملفات المصدّرة المتأثرة والعروض الأخرى الخاضعة لسيطرتنا أو تُنقّح. ولا يسحب إغلاق الحساب وحده الأصوات المحتفظ بها بصورة مشروعة على مقترحات أخرى مستوفية للشروط. ويُحتفظ بصورة خاصة بالنص المصدر والترجمات والارتباطات بالحساب الضرورية للاسترداد، وتُمحى عند التنظيف النهائي. ولا يكون الحساب قابلًا للاسترداد إلا قبل الموعد النهائي المخزّن على نحو صارم، وهو 15 يومًا بعد الطلب. ويتطلب الاسترداد التحقّق من الملكية وتأكيدًا صريحًا يلغي الحذف؛ ولا تعيد إعادة الاتصال الحساب تلقائيًا دون تأكيد. وينشئ الاسترداد الناجح جلسة جديدة مصرّحًا بها بدلًا من إعادة تنشيط جميع الجلسات الملغاة.",
+                    text: "يعطّل الحذف المقبول الوصول المعتاد، ويلغي الجلسات ويخفي المقترحات الشخصية. وقد تتحدّث النتائج المفتوحة بصورة غير متزامنة؛ وتخضع النتائج الرقمية المحتفظ بها والصادرات القائمة لسياسة الخصوصية. وتبقى بيانات الاسترداد الضرورية خاصة. ويتطلب الاسترداد إلغاءً صريحًا والتحقق من الملكية، حصرًا قبل الموعد النهائي المخزّن البالغ 15 يومًا وقبل بدء المحو غير القابل للعكس. ويحتاج الضيوف إلى مفاتيح أجهزتهم الأصلية؛ وقد يمنع فقدانها الاسترداد. وينشئ الاسترداد الناجح جلسة جديدة، لا وصولًا متجددًا عبر الجلسات الملغاة سابقًا.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "عند حلول الموعد النهائي بعد 15 يومًا، ينتهي الاسترداد ويصبح المحو النهائي للحساب واجب التنفيذ. ويبدأ التنظيف خلال دورة التنظيف المجدولة التالية التي تُجرى كل ساعة ويستمر دون تأخير غير مبرر، ويكتمل عادة خلال سبعة أيام من ذلك الموعد النهائي. نراقب حالات الفشل ونعيد المحاولة ونصعّد معالجة الأعمال المتأخرة أو المتعذرة. ولا تعيد دورات التنظيف المتأخرة والمحاولات المتكررة بدء هذه المدة ولا تمدّد الاسترداد أو المهل القانونية السارية. وقد تحتفظ النسخ الاحتياطية المقيّدة للتعافي من الكوارث بالبيانات الممحوة لمدة لا تتجاوز 30 يومًا إضافيًا بعد الحذف الفعلي النهائي، ويُعاد تطبيق المحو قبل إتاحة البيانات المستعادة.",
+                    text: "ينتهي الاسترداد عند انقضاء مهلة 15 يومًا، وتصبح بيانات الحساب الخاصة مؤهلة للتنظيف النهائي دون تأخير غير مبرر. ولا تمدّد تأخيرات التنظيف الاسترداد ولا تعيد بدء المهل القانونية المنطبقة. وتخضع المدخلات المحتفظ بها والسجلات المقيّدة والنسخ الاحتياطية لسياسة الخصوصية. ولا يمكن لتسجيل لاحق استعادة المشاركة المفصولة عن الحساب.",
                   },
                 ],
               },
@@ -1406,7 +1406,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " تُخفى المقترحات والمحادثات والمستندات وغيرها من المحتوى المحذوف صراحة من خلال أداة مصرّح بها فورًا، وتصبح مستوفية لشروط التنظيف النهائي السريع. ولا تسري عليها مهلة استرداد الحساب البالغة 15 يومًا. ويخضع حذف مقترح أو حسابك لقاعدة العرض '[deleted]' في نقاط الحفظ وتنقيح النص نفسها؛ ولا يلزم حذف المقترحات بصورة منفصلة قبل إغلاق الحساب. وتخضع النتائج الرقمية الآمنة والثابتة لسياسة الخصوصية. واستخدم أدوات سحب الأصوات إذا أردت أيضًا سحب الأصوات. وبعد فك الارتباط نهائيًا، لا تعود الإدارة المعتادة لسجلات التصويت المحتفظ بها من خلال الحساب متاحة، لكن تظل طلبات حقوق البيانات الشخصية المنطبقة ممكنة عبر مسار التواصل الوارد في سياسة الخصوصية.",
+                    text: " يخفي حذف المحتوى المصرّح به النص ونسخه وترجماته ونسبته إلى صاحبه فورًا، بما في ذلك في نقاط التحقق المحفوظة، دون مهلة استرداد الحساب. يخفي حذف الحساب المقترحات الشخصية من العروض الحالية، لكنه قد يحتفظ بالنص التاريخي المسموح دون نسبته علنًا إلى الحساب. أدِر المحتوى منفصلًا قبل حذف الحساب إذا أردت إزالة ذلك النص أيضًا؛ ولا تتطلب طلبات المحو المنطبقة حذف كل مساهمة يدويًا. وتتبع أدوات سحب المشاركة قواعد النشاط المفتوح أو المغلق، ولا تعيد كتابة النتائج المحتفظ بها. وبعد فك الارتباط نهائيًا، لا تستطيع أدوات الحساب استرجاع السجلات الرقمية المفصولة أو تغييرها أو سحبها.",
                   },
                 ],
               },
@@ -1428,7 +1428,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " تتطلب إجراءات الحذف الصلاحيات ذات الصلة، وليست أرشفة قابلة للعكس. ويؤدي حذف المشروع إلى إزالة المحادثات والمستندات والتقارير التاريخية المملوكة له والمضمّنة فيه. وقبل حذف منظمة، يجب نقل أي مشاريع متبقية مملوكة لها وحدها إلى مالك آخر يستمر وجوده. وتبقى المشاريع المملوكة على نحو مشترك مع مالكيها المتبقين، مع إزالة علاقات المنظمة المحذوفة. ويُعالج الحذف المصرّح به بصورة منفصلة لمشروع بوصفه حذفًا لذلك المشروع ذاته، لا إجراءً لاسترداد الحساب.",
+                    text: " تتطلب إجراءات الحذف الصلاحيات ذات الصلة، وليست أرشفة قابلة للعكس. ويزيل حذف المشروع ما يحتويه من محادثات ومستندات ومدخلات رقمية محتفظ بها وتقارير يملكها حصريًا، وفق قواعد التنظيف المنطبقة. وقبل حذف منظمة، يجب نقل أي مشاريع متبقية مملوكة لها وحدها إلى مالك آخر يستمر وجوده. وتبقى المشاريع المشتركة مع مالكيها المتبقين، مع إزالة علاقات المنظمة المحذوفة. ويُعالج الحذف المصرّح به بصورة منفصلة لمشروع بوصفه حذفًا لذلك المشروع ذاته، لا إجراءً لاسترداد الحساب.",
                   },
                 ],
               },
@@ -1438,7 +1438,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "يمكن معالجة طلب مستقل منطبق لمحو البيانات الشخصية دون فترة الاسترداد الخاصة بالمنتج، بما في ذلك الطلبات المتعلقة بالسجلات المحتفظ بها بعد حذف الحساب. واستخدم مسار التواصل لطلبات الحقوق الوارد في سياسة الخصوصية؛ ونعالجه دون تأخير لا مبرّر له، مع مراعاة التحقّق المتناسب عند الضرورة والاستثناءات القانونية المنطبقة على نحو ضيّق. وقد تبقى سجلات محدودة بعد الحذف للأغراض الموضّحة في سياسة الخصوصية:",
+                text: "تخضع طلبات البيانات الشخصية المنطبقة لأحكام الحقوق العامة في سياسة الخصوصية دون اشتراط مهلة الاسترداد الخاصة بالمنتج. وقد تبقى سجلات محدودة بعد الحذف للأغراض الموضّحة في سياسة الخصوصية:",
               },
             ],
           },
@@ -1745,11 +1745,11 @@ export const termsOfServiceContent: Record<
     termsOfService: "Condiciones de servicio",
     automatedTranslationNoticeTitle: "Aviso de traducción automática",
     automatedTranslationNotice:
-      "Esta traducción se ha generado automáticamente. En caso de cualquier discrepancia, incoherencia o conflicto, prevalece exclusivamente la versión inglesa, que es la versión auténtica.",
-    viewAuthoritativeEnglishVersion: "Ver la versión inglesa auténtica",
+      "Esta traducción se ha generado automáticamente. En caso de discrepancia, incoherencia o conflicto, prevalece exclusivamente la versión en inglés, que es la versión autorizada.",
+    viewAuthoritativeEnglishVersion: "Ver la versión autorizada en inglés",
     returnToTranslatedVersion: "Volver a la versión traducida",
     lastUpdatedLabel: "Última actualización",
-    lastUpdatedDate: "2026/10/14 (AAAA/MM/DD)",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
         text: "¡Bienvenido a Agora Citizen Network («Agora»)! Estas condiciones generales («Condiciones») rigen su acceso a la plataforma Agora y su uso, incluidos nuestro sitio web, nuestras aplicaciones móviles y otros servicios (conjuntamente, los «Servicios»). Al acceder a los Servicios o utilizarlos, acepta quedar vinculado por estas Condiciones. Si no las acepta, no podrá acceder a los Servicios ni utilizarlos.",
@@ -1812,7 +1812,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: ", o pruebas de cumplimiento de requisitos basadas en entradas de eventos mediante Zupass. Agora recibe las señales reveladas por las pruebas, no el pasaporte ni la entrada subyacentes a través de esos procedimientos. El registro en Rarimo está sujeto a su requisito adicional de edad: debe tener 18 años o más. Las condiciones aplicables del proveedor también rigen su servicio de verificación.",
+                    text: ". Agora recibe las señales reveladas por las pruebas, no el pasaporte subyacente. El registro en Rarimo está sujeto a su requisito adicional de edad: debe tener 18 años o más. Las condiciones aplicables del proveedor también rigen su servicio de verificación.",
                   },
                 ],
               },
@@ -1847,7 +1847,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "No puede celebrar un contrato vinculante con Agora, o si no ha alcanzado la mayoría de edad en su jurisdicción, salvo que su representante legal haya revisado y aceptado estas Condiciones.",
+                    text: "No puede celebrar un contrato vinculante con Agora o, si no ha alcanzado la mayoría de edad en su jurisdicción, su tutor legal no ha revisado y aceptado estas Condiciones.",
                   },
                 ],
               },
@@ -2040,7 +2040,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "La licencia de contenido anterior no prevalece sobre los derechos aplicables de protección de datos o supresión ni autoriza a eludir las restricciones de acceso de una funcionalidad. Eliminar un enunciado o su cuenta retira los enunciados personales afectados de las vistas actuales y los análisis futuros y sustituye su texto por '[deleted]' en nuestros puntos de control, sin sus traducciones, nombre de usuario ni enlace al perfil. Ocultamos la información afectada en las exportaciones y las demás vistas bajo nuestro control, o las invalidamos. La eliminación de la cuenta conserva de forma privada los datos necesarios para la recuperación durante 15 días antes de la limpieza permanente; la eliminación explícita de un enunciado no tiene plazo de recuperación. La eliminación de la cuenta retira las asociaciones innecesarias con cuentas o credenciales y no retira por sí misma los votos de acuerdo, desacuerdo o abstención conservados lícitamente sobre otros enunciados que cumplan los requisitos. Las cifras de los puntos de control históricos que no comprometan la privacidad pueden permanecer congeladas; la eliminación no vuelve a ejecutar los cálculos históricos ni regenera las descripciones históricas de AI. Cuando los resultados almacenados de AI requieran por sí mismos supresión, los resultados existentes y las traducciones afectadas se retiran u ocultan conforme a la Política de privacidad, sin generar descripciones sustitutorias. Los demás registros privados de participación, los datos de entrada conservados y las correspondencias personales se rigen por las reglas de conservación según la finalidad y de retirada y supresión de la Política de privacidad. La mera eliminación de los vínculos con la cuenta no se considera anonimización. La comunicación mediante exportaciones y las copias ya descargadas o publicadas de nuevo de manera independiente se gestionan según se explica en dicha Política.",
+                text: "Esta licencia no prevalece sobre los derechos aplicables de protección de datos o supresión ni amplía el acceso a la participación privada. La eliminación aceptada de la cuenta oculta las proposiciones personales y excluye la participación de nuevos cálculos en vivo. Los datos necesarios para la recuperación permanecen privados durante el plazo de 15 días. Conservamos indefinidamente los datos numéricos individuales de entrada de los resultados guardados (matrices Polis, elecciones BWS/pairwise y asignaciones QV) para analizar las votaciones y recalcular los resultados, eliminando los vínculos con la cuenta durante la limpieza permanente. Esto no constituye un historial de cada guardado ni de cada cálculo QV. La eliminación ordinaria no recalcula las cifras guardadas; las correcciones o los nuevos análisis independientes pueden modificarlas. La eliminación ordinaria no reescribe automáticamente las descripciones históricas de IA; los derechos de supresión aplicables siguen vigentes. Las descargas de exportaciones existentes caducan como máximo 30 días después de su generación; las nuevas exportaciones utilizan el estado de eliminación actual. La desvinculación no garantiza el anonimato.",
               },
             ],
           },
@@ -2190,7 +2190,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Puede poner fin a estas Condiciones en cualquier momento y por cualquier motivo solicitando la eliminación de su Cuenta y dejando de utilizar los Servicios. El acceso ordinario a la cuenta cesa de inmediato. Puede cancelar de forma explícita una solicitud ordinaria de eliminación de cuenta durante el plazo de recuperación de 15 días descrito a continuación; la supresión permanente y los registros conservados se rigen por la Política de privacidad.",
+                text: "Puede solicitar la eliminación de su Cuenta y dejar de utilizar los Servicios en cualquier momento. Cuando se acepta su solicitud de eliminación, cesa el acceso ordinario a la cuenta y comienza el plazo de recuperación de 15 días. Una solicitud rechazada no cierra la cuenta ni inicia ese plazo. Durante dicho plazo puede cancelar explícitamente una solicitud ordinaria de eliminación de cuenta aceptada; la supresión permanente y los registros conservados se rigen por la Política de privacidad.",
               },
             ],
           },
@@ -2265,21 +2265,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Utilice el control autenticado de eliminación de cuenta disponible o contacte con legal@zkorum.com para obtener ayuda. Verificamos la titularidad mediante credenciales admitidas o una prueba basada en las claves del dispositivo, según corresponda al tipo de cuenta; esto no implica la obligación de enviarnos una imagen de su pasaporte ni una serie ilimitada de pruebas firmadas.",
+                    text: "Utilice el control autenticado de eliminación de cuenta disponible o contacte con legal@zkorum.com para obtener ayuda. Si sus responsabilidades en una organización impiden eliminar la cuenta mediante esos controles, contacte con nosotros. Verificamos la titularidad mediante credenciales admitidas o una prueba basada en las claves del dispositivo, según el tipo de cuenta; esto no implica la obligación de enviarnos una imagen de su pasaporte ni una colección indefinida de pruebas firmadas.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "La cuenta pasa a ser inaccesible para el uso ordinario, se revocan las sesiones existentes y los enunciados personales se excluyen de las vistas y los análisis actuales. Su texto se sustituye por '[deleted]' en nuestros puntos de control, sin traducciones, nombre de usuario ni enlace al perfil, y las exportaciones afectadas y las demás vistas bajo nuestro control se invalidan o se oculta en ellas la información afectada. El cierre de la cuenta por sí solo no retira los votos conservados lícitamente sobre otros enunciados que cumplan los requisitos. El texto de origen, las traducciones y las asociaciones con la cuenta necesarios se conservan de forma privada para la recuperación y se suprimen durante la limpieza permanente. La cuenta solo puede recuperarse estrictamente antes de la fecha límite almacenada, 15 días después de la solicitud. La recuperación exige verificar la titularidad y una confirmación explícita que cancele la eliminación; volver a conectarse no restaura la cuenta de forma implícita. La recuperación satisfactoria establece una nueva sesión autorizada, en lugar de reactivar todas las sesiones revocadas.",
+                    text: "La eliminación aceptada deshabilita el acceso ordinario, revoca las sesiones y oculta las proposiciones personales. Los resultados abiertos pueden actualizarse de forma asíncrona; los resultados numéricos conservados y las exportaciones existentes se rigen por la Política de privacidad. Los datos necesarios para la recuperación permanecen privados. La recuperación exige cancelar explícitamente la eliminación y verificar la titularidad, estrictamente antes del vencimiento almacenado de 15 días y antes del inicio de la supresión irreversible. Los invitados necesitan las claves originales de su dispositivo; perderlas puede impedir la recuperación. Una recuperación satisfactoria crea una nueva sesión, no restablece el acceso mediante sesiones ya revocadas.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "Al cumplirse el plazo de 15 días, finaliza la recuperación y debe procederse a la supresión permanente de la cuenta. La limpieza comienza con el siguiente ciclo horario programado y se realiza sin dilación indebida, normalmente en un plazo de siete días desde ese vencimiento. Supervisamos los fallos, reintentamos las tareas y escalamos las que se retrasan o bloquean. Los ciclos retrasados y los reintentos no reinician ese plazo ni amplían la recuperación o los plazos legales aplicables. Las copias de seguridad restringidas para recuperación ante desastres pueden conservar los datos suprimidos durante un máximo de otros 30 días tras la eliminación física efectiva, y la supresión se vuelve a aplicar antes de exponer una restauración a los usuarios.",
+                    text: "La recuperación finaliza al vencer el plazo de 15 días y los datos privados de la cuenta pueden someterse a limpieza permanente sin dilación indebida. Los retrasos en la limpieza no amplían la recuperación ni reinician los plazos legales aplicables. Los datos de entrada conservados, los registros restringidos y las copias de seguridad se rigen por la Política de privacidad. Un registro posterior no puede reclamar la participación desvinculada.",
                   },
                 ],
               },
@@ -2304,7 +2304,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Los enunciados, las conversaciones, los documentos y otros contenidos eliminados explícitamente mediante un control autorizado se ocultan de inmediato y pasan a poder someterse a una pronta limpieza permanente. No se les aplica el plazo de recuperación de 15 días de la cuenta. Eliminar un enunciado o su cuenta utiliza la misma visualización de '[deleted]' en los puntos de control y la misma regla de supresión del texto; no es necesario eliminar los enunciados por separado antes de cerrar la cuenta. Los resultados numéricos congelados que no comprometan la privacidad se rigen por la Política de privacidad. Utilice los controles de retirada de votos si también desea retirar los votos. Tras la desvinculación permanente, deja de estar disponible la gestión ordinaria de los registros de votación conservados mediante la cuenta, pero siguen siendo posibles las solicitudes de ejercicio de derechos sobre datos personales aplicables a través del canal de contacto de la Política de privacidad.",
+                    text: " La eliminación autorizada de contenido oculta inmediatamente el texto, sus versiones, traducciones y atribución, también en los puntos de control conservados, sin el plazo de recuperación de la cuenta. Eliminar la cuenta oculta las proposiciones personales en las vistas actuales, pero puede conservar el texto histórico permitido sin atribución pública a la cuenta. Gestione el contenido por separado antes de eliminar la cuenta si también desea retirar ese texto; las solicitudes de supresión aplicables no requieren eliminar manualmente cada contribución. Los controles de retirada siguen las reglas de apertura o cierre de la actividad y no reescriben los resultados conservados. Tras la desvinculación permanente, los controles de cuenta no pueden recuperar, modificar ni retirar los registros numéricos desvinculados.",
                   },
                 ],
               },
@@ -2315,7 +2315,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " La recuperación de la cuenta puede restablecer, cuando esté permitido, el texto de los enunciados ocultados únicamente por la eliminación de la cuenta, sus traducciones, su atribución y su aptitud actual para ser incluidos, incluso en nuestros puntos de control. No restablece contenido, proyectos o documentos eliminados de forma independiente, votos retirados, fusiones irreversibles de invitados, medidas de moderación adoptadas entretanto ni resultados suprimidos por separado, ni duplica los votos conservados. Los invitados deben conservar las claves originales del dispositivo para acreditar la titularidad. La recuperación no está disponible una vez cumplido el plazo exacto o cuando haya comenzado la supresión irreversible.",
+                    text: " La recuperación de la cuenta puede restablecer, cuando esté permitido, el texto, las traducciones, la atribución y la aptitud actual para su inclusión de las proposiciones ocultadas únicamente por eliminar la cuenta, incluso en nuestros puntos de control. No restablece contenido, proyectos o documentos eliminados de forma independiente, votos retirados, fusiones irreversibles de invitados, medidas de moderación posteriores ni resultados suprimidos por separado, ni duplica los votos conservados. Los invitados deben conservar las claves originales del dispositivo para acreditar la titularidad. La recuperación no está disponible una vez cumplido el plazo exacto o iniciada la supresión irreversible.",
                   },
                 ],
               },
@@ -2326,7 +2326,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Las acciones de eliminación requieren los permisos pertinentes y no constituyen un archivado reversible. La eliminación de un proyecto retira las conversaciones y los documentos que contiene, así como los informes históricos que le pertenecen. Antes de eliminar una organización, los proyectos restantes de los que sea propietaria exclusiva deben transferirse a otro propietario que siga existiendo. Los proyectos compartidos permanecen con los propietarios que sigan existiendo, y se retiran las relaciones de la organización eliminada. La eliminación de un proyecto autorizada por separado se gestiona como la eliminación de ese propio proyecto, no como una acción de recuperación de cuenta.",
+                    text: " Las acciones de eliminación requieren los permisos pertinentes y no constituyen un archivado reversible. Eliminar un proyecto elimina las conversaciones y los documentos que contiene y los datos numéricos de entrada conservados y los informes de su propiedad exclusiva, conforme a las reglas de limpieza aplicables. Antes de eliminar una organización, los proyectos restantes de su propiedad exclusiva deben transferirse a otro propietario que siga existiendo. Los proyectos compartidos permanecen con sus otros propietarios y se retiran las relaciones de la organización eliminada. La eliminación de un proyecto autorizada por separado se gestiona como la eliminación de ese proyecto, no como una acción de recuperación de cuenta.",
                   },
                 ],
               },
@@ -2336,7 +2336,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Una solicitud separada y aplicable de supresión de datos personales puede gestionarse sin el plazo de recuperación del producto, incluidas las solicitudes relativas a registros conservados tras la eliminación de la cuenta. Utilice el canal de contacto para solicitudes de ejercicio de derechos de la Política de privacidad; la gestionamos sin dilación indebida, con sujeción a una verificación proporcionada cuando sea necesaria y a excepciones legales de aplicación limitada. Tras la eliminación pueden permanecer registros limitados para las finalidades descritas en la Política de privacidad:",
+                text: "Las solicitudes aplicables sobre datos personales se rigen por las disposiciones generales sobre derechos de la Política de privacidad, sin exigir el plazo de recuperación del producto. Tras la eliminación pueden permanecer registros limitados para las finalidades descritas en la Política de privacidad:",
               },
             ],
           },
@@ -2640,17 +2640,17 @@ export const termsOfServiceContent: Record<
     ],
   },
   fa: {
-    termsOfService: "شرایط استفاده از خدمات",
+    termsOfService: "شرایط خدمات",
     automatedTranslationNoticeTitle: "اطلاعیهٔ ترجمهٔ خودکار",
     automatedTranslationNotice:
-      "این ترجمه به‌صورت خودکار تولید شده است. در صورت هرگونه مغایرت، ناسازگاری یا تعارض، منحصراً نسخهٔ انگلیسی حاکم است و همان نسخه، معتبر و ملاک خواهد بود.",
-    viewAuthoritativeEnglishVersion: "مشاهدهٔ نسخهٔ انگلیسی معتبر و ملاک",
+      "این ترجمه به‌صورت خودکار تولید شده است. در صورت هرگونه مغایرت، ناسازگاری یا تعارض، منحصراً نسخهٔ انگلیسی ملاک و نسخهٔ معتبر است.",
+    viewAuthoritativeEnglishVersion: "مشاهدهٔ نسخهٔ انگلیسی معتبر",
     returnToTranslatedVersion: "بازگشت به نسخهٔ ترجمه‌شده",
-    lastUpdatedLabel: "تاریخ آخرین به‌روزرسانی",
-    lastUpdatedDate: "2026/10/14 (سال/ماه/روز)",
+    lastUpdatedLabel: "آخرین به‌روزرسانی",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
-        text: "به Agora Citizen Network («Agora») خوش آمدید! این شرایط و مقررات («شرایط») بر دسترسی شما به پلتفرم Agora و استفاده از آن، از جمله وب‌سایت، برنامه‌های تلفن همراه و سایر خدمات ما (که مجموعاً «خدمات» نامیده می‌شوند)، حاکم‌اند. با دسترسی به خدمات یا استفاده از آن‌ها، می‌پذیرید که ملزم به رعایت این شرایط باشید. اگر موافق نیستید، مجاز به دسترسی به خدمات یا استفاده از آن‌ها نیستید.",
+        text: "به Agora Citizen Network («Agora») خوش آمدید! این شرایط و ضوابط («شرایط») بر دسترسی شما به پلتفرم Agora و استفاده از آن، از جمله وب‌سایت، برنامه‌های تلفن همراه و دیگر خدمات ما (مجموعاً «خدمات») حاکم است. با دسترسی به خدمات یا استفاده از آن‌ها، تعهد به این شرایط را می‌پذیرید. اگر موافق نیستید، مجاز به دسترسی به خدمات یا استفاده از آن‌ها نیستید.",
       },
     ],
     sections: [
@@ -2661,7 +2661,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora فقط برای کاربران 16 ساله یا بزرگ‌تر در دسترس است. با استفاده از Agora تأیید می‌کنید که این شرط سنی را دارید و سن شما بالاتر از حداقل سن مقرر در قوانین کشور محل اقامتتان برای دسترسی به خدمات و استفاده از آن‌هاست.",
+                text: "Agora فقط در دسترس کاربران 16 ساله و بالاتر است. با استفاده از Agora تأیید می‌کنید که این شرط سنی را دارید و سنتان از حداقل سن لازم طبق قوانین کشور محل اقامتتان برای دسترسی به خدمات و استفاده از آن‌ها بیشتر است.",
               },
             ],
           },
@@ -2669,7 +2669,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "می‌توانید محتوای منتشرشدهٔ Agora را بدون ثبت‌نام مرور کنید. مشارکت در گفت‌وگوها، نظرسنجی‌ها یا فعالیت‌های اولویت‌بندی («محتوا») ممکن است به حساب مهمانِ مبتنی بر دستگاه یا روش احراز مشخصی نیاز داشته باشد. روش‌های موجود عبارت‌اند از:",
+                text: "می‌توانید محتوای منتشرشدهٔ Agora را بدون ثبت‌نام مرور کنید. مشارکت در گفت‌وگوها، نظرسنجی‌ها یا فعالیت‌های اولویت‌بندی («محتوا») ممکن است به حساب مهمان مبتنی بر دستگاه یا روش تأیید خاصی نیاز داشته باشد. روش‌های موجود عبارت‌اند از:",
               },
             ],
           },
@@ -2680,28 +2680,28 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "مشارکت مهمانِ مبتنی بر دستگاه در موارد مجاز. دسترسی و بازیابی به نگهداری کلیدهای اصلی دستگاه بستگی دارد.",
+                    text: "مشارکت مهمان مبتنی بر دستگاه، در صورت مجاز بودن. دسترسی و بازیابی به نگهداری کلیدهای اصلی دستگاه بستگی دارد.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "تأیید رایانامه با کد یک‌بارمصرف. این روش اختیار داشتن نشانی رایانامه را اثبات می‌کند، نه هویت واقعی یا یکتایی را.",
+                    text: "تأیید ایمیل با کد یک‌بارمصرف. این روش اختیار داشتن نشانی ایمیل را اثبات می‌کند، نه هویت واقعی یا یکتایی شخص را.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "ورود از طریق شمارهٔ تلفن (تأییدشده با کد یک‌بارمصرف)",
+                    text: "ورود با شمارهٔ تلفن (تأییدشده با کد یک‌بارمصرف)",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "احراز واجد شرایط بودن بر پایهٔ گذرنامه از طریق ",
+                    text: "تأیید صلاحیت مبتنی بر گذرنامه از طریق ",
                   },
                   {
                     text: "Rarimo",
@@ -2710,7 +2710,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: "، یا اثبات‌های واجد شرایط بودن بر پایهٔ بلیت رویداد از طریق Zupass. Agora در این فرایندها سیگنال‌های افشاشدهٔ اثبات را دریافت می‌کند، نه خود گذرنامه یا بلیت را. ثبت‌نام Rarimo تابع شرط سنیِ اضافیِ آن است: باید 18 ساله یا بزرگ‌تر باشید. شرایط قابل اعمالِ ارائه‌دهنده نیز بر خدمت احراز آن حاکم‌اند.",
+                    text: ". در این فرایند Agora سیگنال‌های افشاشدهٔ اثبات را دریافت می‌کند، نه خود گذرنامه را. ثبت‌نام در Rarimo مشمول شرط سنی اضافی آن است: باید 18 ساله یا بالاتر باشید. شرایط قابل اعمال ارائه‌دهنده نیز بر خدمات تأیید آن حاکم است.",
                   },
                 ],
               },
@@ -2720,7 +2720,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "در موارد زیر نباید از خدمات استفاده کنید:",
+                text: "در این موارد نباید از خدمات استفاده کنید:",
               },
             ],
           },
@@ -2731,21 +2731,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "حساب شما در Agora تعلیق شده یا از Agora حذف شده‌اید.",
+                    text: "دسترسی شما به Agora تعلیق شده یا از آن حذف شده‌اید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "در حوزهٔ قضایی خود قانوناً از استفاده از خدمات منع شده‌اید.",
+                    text: "طبق قوانین حوزهٔ قضایی خود از استفاده از خدمات منع شده‌اید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "نمی‌توانید با Agora قراردادی الزام‌آور منعقد کنید، یا در حوزهٔ قضایی خود به سن قانونیِ بزرگ‌سالی نرسیده‌اید، مگر آنکه سرپرست قانونی شما این شرایط را بررسی کرده و پذیرفته باشد.",
+                    text: "اهلیت بستن قرارداد الزام‌آور با Agora را ندارید، یا در حوزهٔ قضایی خود به سن قانونی نرسیده‌اید، مگر آنکه سرپرست قانونی شما این شرایط را بررسی و تأیید کرده باشد.",
                   },
                 ],
               },
@@ -2760,7 +2760,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "سیاست حریم خصوصی Agora توضیح می‌دهد که داده‌های شخصی شما را چگونه گردآوری، استفاده و حفاظت می‌کنیم. با دسترسی به خدمات یا استفاده از آن‌ها، این شرایط را می‌پذیرید. داده‌های شخصی شما مطابق توضیحات سیاست حریم خصوصی پردازش می‌شوند و در مواردی که برای فعالیت‌های مشخصِ پردازش لازم باشد، رضایت شما را درخواست می‌کنیم. برای جزئیات بیشتر به این سند مراجعه کنید: ",
+                text: "سیاست حریم خصوصی Agora شیوهٔ گردآوری، استفاده و حفاظت از داده‌های شخصی شما را توضیح می‌دهد. با دسترسی به خدمات یا استفاده از آن‌ها، این شرایط را می‌پذیرید. داده‌های شخصی شما طبق سیاست حریم خصوصی پردازش می‌شوند و در صورت لزوم برای فعالیت‌های پردازشی مشخص رضایتتان را می‌خواهیم. برای جزئیات بیشتر، به این سند مراجعه کنید: ",
               },
               {
                 text: "سیاست حریم خصوصی Agora",
@@ -2781,7 +2781,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "با رعایت این شرایط، Agora مجوزی غیرانحصاری، غیرقابل انتقال و قابل لغو برای استفاده از خدمات به شما اعطا می‌کند. شما مجاز نیستید:",
+                text: "با رعایت این شرایط، Agora مجوزی غیرانحصاری، غیرقابل انتقال و قابل لغو برای استفاده از خدمات به شما می‌دهد. مجاز نیستید:",
               },
             ],
           },
@@ -2792,42 +2792,42 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "از Agora برای انتشار اطلاعات نادرست، نفرت‌پراکنی یا آزار استفاده کنید.",
+                    text: "از Agora برای انتشار اطلاعات نادرست، گفتار نفرت‌انگیز یا آزار استفاده کنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "در فعالیت‌های غیرقانونی مشارکت کنید.",
+                    text: "فعالیت غیرقانونی انجام دهید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "در فعالیت‌های متقلبانه، کلاهبرداری یا رویه‌های فریبکارانه مشارکت کنید یا آن‌ها را ترویج دهید.",
+                    text: "در فعالیت‌های متقلبانه، کلاهبرداری یا شیوه‌های فریبکارانه مشارکت یا آن‌ها را ترویج کنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "محتوای صریح جنسی، خشونت‌آمیز یا به هر صورت نامناسب را توزیع یا ترویج کنید.",
+                    text: "محتوای جنسی صریح، خشونت‌آمیز یا به هر شکل نامناسب را توزیع یا ترویج کنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "از Agora برای تعقیب آزاردهنده، مرعوب کردن یا تهدید اشخاص یا گروه‌ها استفاده کنید.",
+                    text: "از Agora برای تعقیب آزارگرانه، ارعاب یا تهدید افراد یا گروه‌ها استفاده کنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "برای کسب منفعت شخصی یا تجاری، تلاش کنید پلتفرم، الگوریتم‌ها یا قابلیت‌های Agora را دست‌کاری کنید یا از آن‌ها سوءاستفاده کنید.",
+                    text: "برای منفعت شخصی یا تجاری، به دست‌کاری یا بهره‌برداری از پلتفرم، الگوریتم‌ها یا قابلیت‌های Agora اقدام کنید.",
                   },
                 ],
               },
@@ -2841,49 +2841,49 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "حقوق مالکیت فکری را نقض کنید، از جمله با توزیع غیرمجازِ آثار تحت حمایت حق مؤلف.",
+                    text: "حقوق مالکیت فکری را نقض کنید، از جمله با توزیع غیرمجاز آثار دارای حق مؤلف.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "برای خدمات یا محتوا مجوز اعطا کنید، آن‌ها را بفروشید، منتقل یا واگذار کنید، توزیع یا میزبانی کنید، یا به هر شکل دیگر از آن‌ها بهره‌برداری تجاری کنید",
+                    text: "خدمات یا محتوا را مجوزدهی، فروش، انتقال، واگذاری، توزیع یا میزبانی کنید یا به شکل تجاری دیگری از آن‌ها بهره‌برداری کنید",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "تلاش کنید زیرساخت Agora را هک کنید، مختل کنید یا مهندسی معکوس کنید.",
+                    text: "برای هک، اختلال یا مهندسی معکوس زیرساخت Agora اقدام کنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "از ابزارهای خودکار برای دور زدن محدودیت‌های دسترسی یا استخراج سوءاستفاده‌آمیز محتوا استفاده کنید. این ممنوعیت، استفادهٔ مجاز از خروجی‌های فعال‌شده را منع نمی‌کند.",
+                    text: "از ابزارهای خودکار برای دور زدن محدودیت‌های دسترسی یا استخراج سوءاستفاده‌گرانهٔ محتوا استفاده کنید. این امر استفادهٔ مجاز از خروجی‌گیری فعال را منع نمی‌کند.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "خود را به‌جای کاربر، نهاد یا سازمان دیگری معرفی کنید.",
+                    text: "خود را به‌جای کاربر، نهاد یا سازمان دیگری جا بزنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "نرم‌افزار مخرب، تلاش‌های فیشینگ یا طرح‌های متقلبانه را به اشتراک بگذارید یا توزیع کنید.",
+                    text: "بدافزار، تلاش‌های فیشینگ یا طرح‌های کلاهبرداری را به اشتراک بگذارید یا توزیع کنید.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "با افشای اطلاعات شخصی یا حساس بدون رضایت، حریم خصوصی دیگر کاربران را نقض کنید؛ از جمله، بدون محدود شدن به این موارد، اشتراک‌گذاری نشانی‌های شخصی، شماره‌های تلفن، جزئیات مالی یا هر ارتباط خصوصی بدون اجازهٔ صریح.",
+                    text: "با افشای اطلاعات شخصی یا حساس بدون رضایت، حریم خصوصی دیگر کاربران را نقض کنید؛ از جمله انتشار نشانی‌های شخصی، شماره‌های تلفن، جزئیات مالی یا هر ارتباط خصوصی بدون اجازهٔ صریح.",
                   },
                 ],
               },
@@ -2893,7 +2893,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora حق تغییر یا حذف قابلیت‌ها در هر زمان و بدون اطلاع قبلی را برای خود محفوظ می‌دارد. هر بهبود، به‌روزرسانی یا افزودن آتی به خدمات تابع این شرایط خواهد بود که ممکن است به‌صورت دوره‌ای اصلاح شوند. می‌پذیرید که Agora در برابر شما یا هر شخص ثالث، بابت هر تغییر، تعلیق یا توقف خدمات یا هر جزء آن‌ها مسئول نیست.",
+                text: "Agora حق دارد در هر زمان و بدون اطلاع قبلی قابلیت‌ها را تغییر دهد یا حذف کند. هر بهبود، به‌روزرسانی یا افزودهٔ آیندهٔ خدمات تابع این شرایط است که ممکن است دوره‌ای بازبینی شوند. می‌پذیرید که Agora در برابر شما یا اشخاص ثالث بابت تغییر، تعلیق یا توقف خدمات یا هر جزء آن مسئول نیست.",
               },
             ],
           },
@@ -2906,7 +2906,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "خدمات ممکن است شامل انواع مختلف محتوا، از جمله متن، پیوند، تصویر، ویدئو، صوت و سایر مطالب ارسالی کاربران («محتوا») باشند. Agora صحت، کامل بودن یا قابلیت اتکای هیچ محتوایی را تضمین نمی‌کند و مسئولیتی در قبال آن نمی‌پذیرد.",
+                text: "خدمات ممکن است انواع محتوا، از جمله متن، پیوند، تصویر، ویدئو، صدا و دیگر مطالب ارسالی کاربران («محتوا») را داشته باشند. Agora درستی، کامل بودن یا قابل اعتماد بودن هیچ محتوایی را تضمین نمی‌کند و مسئولیتی در قبال آن ندارد.",
               },
             ],
           },
@@ -2914,7 +2914,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "با ارسال محتوا تأیید می‌کنید که همهٔ حقوق لازم برای به اشتراک گذاشتن آن را دارید و محتوا هیچ قانون قابل اعمال یا حق شخص ثالث را نقض نمی‌کند. شما به‌تنهایی مسئول محتوای خود و هر پیامد ناشی از اشتراک‌گذاری آن در Agora هستید.",
+                text: "با ارسال محتوا تأیید می‌کنید که همهٔ حقوق لازم برای اشتراک‌گذاری آن را دارید و محتوا ناقض قوانین قابل اعمال یا حقوق اشخاص ثالث نیست. مسئولیت محتوا و پیامدهای اشتراک‌گذاری آن در Agora تنها بر عهدهٔ شماست.",
               },
             ],
           },
@@ -2922,7 +2922,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "با استفاده از خدمات، مالکیت محتوای خود را حفظ می‌کنید، اما به Agora مجوزی جهانی، غیرانحصاری، بدون حق امتیاز، دائمی و قابل اعطای مجوز فرعی می‌دهید تا محتوای شما را برای کارکرد پلتفرم، رعایت الزامات و اهداف عملیاتی ذخیره، استفاده، اصلاح، توزیع و نمایش دهد. این مجوز شامل حق Agora برای در دسترس قرار دادن محتوای شما جهت بازنشر هماهنگ، توزیع، تجمیع یا انتشار توسط شرکای شخص ثالث نیز هست.",
+                text: "با استفاده از خدمات، مالکیت محتوای خود را حفظ می‌کنید، اما به Agora مجوزی جهانی، غیرانحصاری، بدون حق امتیاز، دائمی و قابل اعطای مجوز فرعی برای ذخیره، استفاده، تغییر، توزیع و نمایش محتوای خود به‌منظور کارکرد پلتفرم، رعایت الزامات و عملیات می‌دهید. این شامل حق Agora برای در دسترس گذاشتن محتوای شما جهت بازتوزیع، توزیع، تجمیع یا انتشار توسط شرکای ثالث است.",
               },
             ],
           },
@@ -2930,7 +2930,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora حق حذف یا محدود کردن محتوا را بنا به صلاحدید خود، در صورت نقض این شرایط، قوانین قابل اعمال یا سیاست‌های پلتفرم، برای خود محفوظ می‌دارد.",
+                text: "Agora حق دارد بنا به صلاحدید خود محتوای ناقض این شرایط، قوانین قابل اعمال یا سیاست‌های پلتفرم را حذف یا محدود کند.",
               },
             ],
           },
@@ -2938,7 +2938,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "مجوز محتوای فوق بر حقوق قابل اعمالِ حفاظت از داده یا محو غلبه نمی‌کند و اجازهٔ دور زدن محدودیت‌های دسترسیِ یک قابلیت را نمی‌دهد. حذف یک گزاره یا حساب شما، گزاره‌های شخصیِ مشمول حذف را از نماهای فعلی و تحلیل‌های آتی کنار می‌گذارد و متن آن‌ها را در نقاط ثبت تاریخی ما با '[deleted]' جایگزین می‌کند، بدون ترجمه‌ها، نام کاربری یا پیوند نمایهٔ آن‌ها. اطلاعات مربوط را در خروجی‌های متأثر و سایر نمایش‌های تحت کنترل می‌پوشانیم یا آن‌ها را باطل می‌کنیم. حذف حساب، داده‌های لازمِ بازیابی را پیش از پاک‌سازی دائمی برای 15 روز به‌صورت خصوصی نگه می‌دارد؛ حذف صریح گزاره دورهٔ بازیابی ندارد. حذف حساب ارتباطات غیرضروریِ حساب/اعتبارنامه را حذف می‌کند و به‌خودی‌خود رأی‌های موافق/مخالف/عبورِ قانونیِ نگهداری‌شده به سایر گزاره‌های واجد شرایط را پس نمی‌گیرد. اعداد ایمنِ نقاط ثبت تاریخی می‌توانند ثابت بمانند؛ حذف، محاسبات تاریخی را دوباره اجرا نمی‌کند و توصیف‌های تاریخی هوش مصنوعی را بازتولید نمی‌کند. اگر خود خروجی ذخیره‌شدهٔ هوش مصنوعی نیازمند محو باشد، خروجی موجود و ترجمه‌های متأثر طبق سیاست حریم خصوصی، بدون تولید توصیف جایگزین، حذف می‌شوند یا اطلاعات مربوط در آن‌ها پوشانده می‌شود. سایر سوابق خصوصیِ مشارکت، ورودی‌های نگهداری‌شده و نگاشت‌های شخصی تابع قواعد نگهداریِ مبتنی بر هدف، انصراف از مشارکت، پس‌گرفتن رضایت و محو در سیاست حریم خصوصی هستند. حذف پیوندهای حساب به‌تنهایی ناشناس‌سازی تلقی نمی‌شود. افشا از طریق خروجی‌ها و نسخه‌هایی که قبلاً دریافت یا مستقلاً بازنشر شده‌اند مطابق توضیحات همان سیاست رسیدگی می‌شوند.",
+                text: "این مجوز بر حقوق قابل اعمال حفاظت از داده‌ها یا محو آن‌ها مقدم نیست و دسترسی به مشارکت خصوصی را گسترش نمی‌دهد. پذیرش حذف حساب، گزاره‌های شخصی را پنهان و مشارکت را از محاسبات زندهٔ جدید خارج می‌کند. داده‌های ضروری بازیابی در مهلت 15 روزه خصوصی می‌مانند. ورودی‌های عددی فردی نتایج ذخیره‌شده (ماتریس‌های Polis، انتخاب‌های BWS/pairwise و تخصیص‌های QV) را برای تحلیل رأی‌دهی و محاسبهٔ مجدد به‌مدت نامحدود نگه می‌داریم و در پاک‌سازی دائمی پیوند حساب را قطع می‌کنیم. این سابقهٔ همهٔ ذخیره‌ها یا محاسبات QV نیست. حذف عادی اعداد ذخیره‌شده را دوباره محاسبه نمی‌کند؛ اصلاحات جداگانه یا تحلیل مجدد ممکن است آن‌ها را تغییر دهند. حذف عادی توصیف‌های تاریخی هوش مصنوعی را خودکار بازنویسی نمی‌کند؛ حقوق قابل اعمال محو پابرجاست. مهلت دانلود خروجی‌های موجود حداکثر 30 روز پس از تولید پایان می‌یابد؛ خروجی‌های جدید وضعیت فعلی حذف را لحاظ می‌کنند. قطع پیوند، ناشناس بودن را تضمین نمی‌کند.",
               },
             ],
           },
@@ -2951,7 +2951,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "مجاز به انتشار محتوایی نیستید که:",
+                text: "نباید محتوایی منتشر کنید که:",
               },
             ],
           },
@@ -2962,21 +2962,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "خشونت یا فعالیت‌های غیرقانونی را ترویج کند.",
+                    text: "خشونت یا فعالیت غیرقانونی را ترویج کند.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "شامل نفرت‌پراکنی، آزار یا حمله‌های شخصی باشد.",
+                    text: "شامل گفتار نفرت‌انگیز، آزار یا حملهٔ شخصی باشد.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "اطلاعات نادرست یا محتوای دست‌کاری‌گرانه را منتشر کند.",
+                    text: "اطلاعات نادرست یا محتوای دست‌کاری‌گرانه منتشر کند.",
                   },
                 ],
               },
@@ -2993,15 +2993,15 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora سامانه‌ای برای نظارت بر محتوا مبتنی بر گزارش کاربران، تشخیص خودکار و ",
+                text: "Agora از سامانهٔ نظارت بر محتوا بر پایهٔ گزارش کاربران، تشخیص خودکار و ",
               },
               {
-                text: "دستورالعمل‌های جامعه",
+                text: "رهنمودهای جامعه",
                 kind: "link",
                 href: "/legal/guidelines",
               },
               {
-                text: "به کار می‌گیرد. محتوای ناقض این شرایط ممکن است حذف شود و متخلفانِ تکرارکننده ممکن است با تعلیق یا ممنوعیت روبه‌رو شوند.",
+                text: " استفاده می‌کند. محتوای ناقض این شرایط ممکن است حذف شود و متخلفان تکراری با تعلیق یا ممنوعیت روبه‌رو شوند.",
               },
             ],
           },
@@ -3009,7 +3009,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "برای گزارش محتوای غیرقانونی یا طرح مسائل مربوط به نظارت بر محتوا و امور حقوقی، لطفاً از این نشانی با ما تماس بگیرید: ",
+                text: "برای گزارش محتوای غیرقانونی یا طرح نگرانی‌های نظارت بر محتوا و مسائل حقوقی، با ما تماس بگیرید: ",
               },
               {
                 text: "legal@zkorum.com",
@@ -3030,7 +3030,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora ممکن است شامل پیوندهایی به وب‌سایت‌ها، محصولات یا خدمات اشخاص ثالث باشد که تبلیغ‌کنندگان، شرکا، اشخاص وابسته یا سایر کاربران به اشتراک گذاشته‌اند («محتوای اشخاص ثالث»). Agora این منابع خارجی را کنترل یا تأیید نمی‌کند و هیچ مسئولیتی بابت صحت، قانونی بودن یا قابلیت اتکای آن‌ها نمی‌پذیرد.",
+                text: "Agora ممکن است پیوندهایی به وب‌سایت‌ها، محصولات یا خدمات اشخاص ثالث داشته باشد که تبلیغ‌دهندگان، شرکا، وابستگان یا دیگر کاربران به اشتراک می‌گذارند («محتوای اشخاص ثالث»). Agora این منابع خارجی را کنترل یا تأیید نمی‌کند و مسئولیتی در قبال درستی، قانونی بودن یا قابل اعتماد بودن آن‌ها ندارد.",
               },
             ],
           },
@@ -3038,7 +3038,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "دسترسی به محتوای اشخاص ثالث یا تعامل با آن با مسئولیت و پذیرش خطر از سوی خود شماست و توصیه می‌کنیم پیش از تعامل با منابع خارجی یا انجام معاملات، هر شرط، سیاست یا مقررات مرتبط را بررسی کنید.",
+                text: "دسترسی یا تعامل با محتوای اشخاص ثالث با مسئولیت خود شماست و توصیه می‌کنیم پیش از تعامل با منابع خارجی یا انجام معامله، شرایط و سیاست‌های مرتبط را بررسی کنید.",
               },
             ],
           },
@@ -3046,7 +3046,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora ممکن است تبلیغات یا محتوای حمایت‌شده نمایش دهد. نوع، هدف‌گیری و بسامد تبلیغات ممکن است تغییر کند و حق قراردادن تبلیغات در ارتباط با هر محتوا یا خدمت ارائه‌شده در Agora را برای خود محفوظ می‌داریم. تعامل شما با محتوای حمایت‌شده یا تبلیغات صرفاً با مسئولیت و پذیرش خطر از سوی خود شماست و صحت، کیفیت یا مشروعیت هیچ محصول یا خدمت تبلیغ‌شده‌ای را تضمین نمی‌کنیم.",
+                text: "Agora ممکن است تبلیغات یا محتوای حمایت‌شده نمایش دهد. نوع، هدف‌گیری و بسامد تبلیغات ممکن است تغییر کند و حق داریم تبلیغات را در ارتباط با هر محتوا یا خدمت ارائه‌شده در Agora قرار دهیم. تعامل شما با محتوای حمایت‌شده یا تبلیغات تنها با مسئولیت خودتان است و درستی، کیفیت یا مشروعیت محصولات یا خدمات تبلیغ‌شده را تضمین نمی‌کنیم.",
               },
             ],
           },
@@ -3059,7 +3059,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "همهٔ حقوق مالکیت فکریِ مرتبط با Agora، از جمله و نه محدود به حقوق اختراع، علائم تجاری، نام‌های تجاری، حقوق مؤلف، اسرار تجاری، داده‌های اختصاصی، دانش فنی، حقوق معنوی، حقوق پایگاه داده، حقوق طرح، الگوریتم‌ها، نرم‌افزار، کد رایانه‌ای، رابط‌های بصری و هر حق اختصاصی دیگر، اعم از ثبت‌شده یا ثبت‌نشده، متعلق به Agora هستند یا Agora مجوز استفاده از آن‌ها را دارد. این امر هر درخواست ثبت یا حق تقاضای ثبتِ چنین مالکیت فکری بر اساس قوانین هر حوزهٔ قضایی را نیز شامل می‌شود.",
+                text: "همهٔ حقوق مالکیت فکری مرتبط با Agora، از جمله اختراع‌ها، علائم تجاری، نام‌های تجاری، حقوق مؤلف، اسرار تجاری، داده‌های اختصاصی، دانش فنی، حقوق معنوی، حقوق پایگاه داده، حقوق طراحی، الگوریتم‌ها، نرم‌افزار، کد رایانه‌ای، رابط‌های بصری و دیگر حقوق اختصاصی، ثبت‌شده یا ثبت‌نشده، متعلق به Agora هستند یا مجوز آن‌ها در اختیار Agora است. این شامل هر درخواست ثبت یا حق درخواست ثبت چنین مالکیت فکری طبق قوانین هر حوزهٔ قضایی نیز می‌شود.",
               },
             ],
           },
@@ -3067,7 +3067,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "استفاده، تکثیر، اصلاح، توزیع یا بهره‌برداری غیرمجاز از مالکیت فکری Agora اکیداً ممنوع است. این ممنوعیت شامل موارد زیر است، اما به آن‌ها محدود نیست: مهندسی معکوس نرم‌افزار، فروش مطالب اختصاصی یا استفاده از هر محتوای اختصاصی بدون اجازهٔ کتبی قبلیِ Agora.",
+                text: "استفاده، تکثیر، تغییر، توزیع یا بهره‌برداری غیرمجاز از مالکیت فکری Agora اکیداً ممنوع است؛ از جمله مهندسی معکوس نرم‌افزار، فروش مطالب اختصاصی یا استفاده از محتوای اختصاصی بدون اجازهٔ کتبی قبلی Agora.",
               },
             ],
           },
@@ -3075,20 +3075,20 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "هر نقض این حقوق مالکیت فکری ممکن است به اقدام حقوقی منجر شود. Agora همهٔ حقوقی را که صریحاً طبق این شرایط اعطا نشده‌اند برای خود محفوظ می‌دارد.",
+                text: "نقض این حقوق مالکیت فکری ممکن است به اقدام قضایی منجر شود. همهٔ حقوقی که صریحاً در این شرایط اعطا نشده‌اند برای Agora محفوظ‌اند.",
               },
             ],
           },
         ],
       },
       {
-        heading: "8. خاتمهٔ خدمات",
+        heading: "8. پایان خدمات",
         blocks: [
           {
             type: "paragraph",
             content: [
               {
-                text: "می‌توانید در هر زمان و به هر دلیل، با درخواست حذف حساب خود و توقف استفاده از خدمات، به این شرایط خاتمه دهید. دسترسی معمول به حساب بلافاصله متوقف می‌شود. می‌توانید در مهلت 15 روزهٔ بازیابیِ توضیح‌داده‌شده در ادامه، درخواست معمولِ حذف حساب را صریحاً لغو کنید؛ محو دائمی و سوابق نگهداری‌شده تابع سیاست حریم خصوصی هستند.",
+                text: "هر زمان می‌توانید حذف حساب خود را درخواست و استفاده از خدمات را متوقف کنید. با پذیرش درخواست حذف، دسترسی عادی به حساب متوقف و مهلت بازیابی 15 روزه آغاز می‌شود. درخواست ردشده حساب شما را نمی‌بندد و این مهلت را آغاز نمی‌کند. در این مدت می‌توانید درخواست پذیرفته‌شدهٔ حذف عادی حساب را صریحاً لغو کنید؛ محو دائمی و سوابق نگهداری‌شده تابع سیاست حریم خصوصی‌اند.",
               },
             ],
           },
@@ -3096,7 +3096,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "بخش‌های زیر پس از هرگونه خاتمهٔ این شرایط یا حساب شما همچنان معتبر و لازم‌الاجرا خواهند ماند:",
+                text: "بخش‌های زیر پس از هرگونه پایان این شرایط یا حساب شما همچنان معتبر می‌مانند:",
               },
             ],
           },
@@ -3121,7 +3121,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "8. خاتمهٔ خدمات،",
+                    text: "8. پایان خدمات،",
                   },
                 ],
               },
@@ -3142,7 +3142,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "14. مقررات متفرقه.",
+                    text: "14. سایر مقررات.",
                   },
                 ],
               },
@@ -3152,7 +3152,7 @@ export const termsOfServiceContent: Record<
             type: "subheading",
             content: [
               {
-                text: "نحوهٔ حذف حساب:",
+                text: "روش حذف حساب:",
               },
             ],
           },
@@ -3163,21 +3163,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "از ابزار موجودِ حذف حساب پس از احراز هویت استفاده کنید یا برای کمک با legal@zkorum.com تماس بگیرید. مالکیت را با اعتبارنامه‌های پشتیبانی‌شده یا اثبات کلید دستگاه، متناسب با نوع حساب، تأیید می‌کنیم؛ این امر به معنای لزوم ارسال تصویر گذرنامه به ما یا گردآوری نامحدودِ اثبات‌های امضاشده نیست.",
+                    text: "از ابزار موجود حذف حساب پس از احراز هویت استفاده کنید یا برای کمک با legal@zkorum.com تماس بگیرید. اگر مسئولیت‌های سازمانی مانع حذف حساب از طریق این ابزارها هستند، با ما تماس بگیرید. مالکیت را بسته به نوع حساب با اعتبارنامه‌های پشتیبانی‌شده یا اثبات کلید دستگاه تأیید می‌کنیم؛ این به معنای الزام به ارسال تصویر گذرنامه یا گردآوری نامحدود اثبات‌های امضاشده نیست.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "حساب برای استفادهٔ معمول غیرقابل دسترسی می‌شود، نشست‌های موجود لغو می‌شوند و گزاره‌های شخصی از نماهای فعلی و تحلیل کنار گذاشته می‌شوند. متن آن‌ها در نقاط ثبت تاریخی ما با '[deleted]' جایگزین می‌شود، بدون ترجمه‌ها، نام کاربری یا پیوند نمایه، و خروجی‌های متأثر و سایر نمایش‌های تحت کنترل باطل می‌شوند یا اطلاعات مربوط در آن‌ها پوشانده می‌شود. بستن حساب به‌تنهایی رأی‌های قانونیِ نگهداری‌شده به سایر گزاره‌های واجد شرایط را پس نمی‌گیرد. متن منبع، ترجمه‌ها و ارتباطات حسابِ لازم برای بازیابی به‌صورت خصوصی نگهداری و هنگام پاک‌سازی دائمی محو می‌شوند. حساب فقط پیش از مهلت ثبت‌شده، یعنی 15 روز پس از درخواست، و بدون شمول خودِ لحظهٔ پایان مهلت، قابل بازیابی است. بازیابی به مالکیت تأییدشده و تأیید صریحِ لغو حذف نیاز دارد؛ اتصال مجدد، حساب را به‌طور پنهانی بازنمی‌گرداند. بازیابی موفق نشست مجازِ تازه‌ای ایجاد می‌کند، نه اینکه همهٔ نشست‌های لغوشده را دوباره فعال کند.",
+                    text: "پذیرش حذف، دسترسی عادی را غیرفعال، نشست‌ها را لغو و گزاره‌های شخصی را پنهان می‌کند. نتایج باز ممکن است به‌صورت ناهمگام به‌روز شوند؛ نتایج عددی نگهداری‌شده و خروجی‌های موجود تابع سیاست حریم خصوصی‌اند. داده‌های ضروری بازیابی خصوصی می‌مانند. بازیابی مستلزم لغو صریح درخواست و تأیید مالکیت، حتماً پیش از مهلت 15 روزهٔ ثبت‌شده و پیش از آغاز پاک‌سازی برگشت‌ناپذیر است. مهمانان به کلیدهای اصلی دستگاه خود نیاز دارند؛ گم شدن کلیدها ممکن است مانع بازیابی شود. بازیابی موفق نشست تازه‌ای ایجاد می‌کند، نه دسترسی دوباره از طریق نشست‌های لغوشدهٔ قبلی.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "در پایان مهلت 15 روزه، بازیابی پایان می‌یابد و زمان اجرای پاک‌سازی دائمی حساب فرامی‌رسد. پاک‌سازی در نوبت ساعتیِ برنامه‌ریزی‌شدهٔ بعدی آغاز می‌شود و بدون تأخیر ناموجه ادامه می‌یابد و معمولاً ظرف هفت روز پس از آن موعد تکمیل می‌شود. خطاها را پایش می‌کنیم، دوباره تلاش می‌کنیم و کارهای به‌تأخیرافتاده یا مسدودشده را برای رسیدگی بیشتر ارجاع می‌دهیم. تأخیر نوبت‌ها و تلاش‌های مجدد این مهلت را از نو آغاز نمی‌کنند و بازیابی یا مهلت‌های قانونی قابل‌اعمال را تمدید نمی‌کنند. پشتیبان‌های محدودشدهٔ بازیابی پس از بحران ممکن است داده‌های محوشده را حداکثر برای 30 روز دیگر پس از حذف قطعیِ واقعی نگه دارند و پیش از در دسترس قرار گرفتن بازگردانی، محو دوباره اعمال می‌شود.",
+                    text: "بازیابی در پایان مهلت 15 روزه تمام می‌شود و داده‌های خصوصی حساب مشمول پاک‌سازی دائمی بدون تأخیر ناروا می‌شوند. تأخیر پاک‌سازی، بازیابی را تمدید یا مهلت‌های قانونی قابل اعمال را از نو آغاز نمی‌کند. ورودی‌های نگهداری‌شده، سوابق با دسترسی محدود و پشتیبان‌ها تابع سیاست حریم خصوصی‌اند. ثبت‌نام بعدی نمی‌تواند مشارکت جداشده را دوباره به خود نسبت دهد.",
                   },
                 ],
               },
@@ -3187,7 +3187,7 @@ export const termsOfServiceContent: Record<
             type: "subheading",
             content: [
               {
-                text: "محتوای منفرد، اعتبارنامه‌ها و پروژه‌های مشترک:",
+                text: "محتوای فردی، اعتبارنامه‌ها و پروژه‌های مشترک:",
               },
             ],
           },
@@ -3198,11 +3198,11 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "محتوای منفرد:",
+                    text: "محتوای فردی:",
                     kind: "strong",
                   },
                   {
-                    text: " گزاره‌ها، گفت‌وگوها، اسناد و سایر محتواهایی که از طریق ابزار مجاز صریحاً حذف می‌شوند، بلافاصله پنهان و واجد شرایط پاک‌سازی دائمیِ سریع می‌شوند. مهلت 15 روزهٔ بازیابی حساب شامل آن‌ها نمی‌شود. حذف یک گزاره یا حساب شما از نمایش یکسانِ '[deleted]' و قاعدهٔ یکسانِ پوشاندن متن در نقاط ثبت تاریخی استفاده می‌کند؛ لازم نیست پیش از بستن حساب، گزاره‌ها را جداگانه حذف کنید. نتایج عددیِ ایمن و ثابت تابع سیاست حریم خصوصی هستند. اگر می‌خواهید رأی‌ها نیز پس گرفته شوند، از ابزارهای پس‌گرفتن رأی استفاده کنید. پس از قطع دائمی پیوند، مدیریت معمولِ سوابق رأی‌دهیِ نگهداری‌شده از طریق حساب دیگر ممکن نیست، اما درخواست‌های حقوق قابل اعمالِ داده‌های شخصی همچنان از مسیر تماسِ سیاست حریم خصوصی امکان‌پذیرند.",
+                    text: " حذف مجاز محتوا، متن، نسخه‌ها، ترجمه‌ها و انتساب را فوراً، از جمله در نقاط ثبت وضعیت نگهداری‌شده، بدون مهلت بازیابی حساب پنهان می‌کند. حذف حساب گزاره‌های شخصی را از نمایش‌های جاری پنهان می‌کند، اما ممکن است متن تاریخی مجاز را بدون انتساب عمومی به حساب نگه دارد. اگر حذف آن متن را نیز می‌خواهید، پیش از حذف حساب محتوا را جداگانه مدیریت کنید؛ درخواست‌های قابل اعمال محو، نیازمند حذف دستی تک‌تک مشارکت‌ها نیستند. ابزارهای پس‌گرفتن مشارکت تابع قواعد باز/بسته بودن فعالیت‌اند و نتایج نگهداری‌شده را بازنویسی نمی‌کنند. پس از قطع دائمی پیوند، ابزارهای حساب نمی‌توانند سوابق عددی جداشده را بازیابی، تغییر یا پس بگیرند.",
                   },
                 ],
               },
@@ -3213,7 +3213,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " بازیابی حساب می‌تواند متن مجاز، ترجمه‌ها، انتساب و واجد شرایط بودن فعلیِ گزاره‌هایی را که صرفاً بر اثر حذف حساب پنهان شده‌اند بازگرداند، از جمله در نقاط ثبت تاریخی ما. محتوا، پروژه‌ها یا اسنادِ مستقلاً حذف‌شده، رأی‌های پس‌گرفته‌شده یا خروجی‌های جداگانه محوشده را بازنمی‌گرداند، ادغام‌های برگشت‌ناپذیر مهمان یا اقدامات نظارت بر محتوا در فاصلهٔ حذف تا بازیابی را لغو نمی‌کند و رأی‌های نگهداری‌شده را تکثیر نمی‌کند. مهمانان باید کلیدهای اصلی دستگاه را برای اثبات مالکیت نگه دارند. پس از مهلت دقیق یا پس از آغاز پاک‌سازی برگشت‌ناپذیر، بازیابی ممکن نیست.",
+                    text: " بازیابی حساب می‌تواند متن، ترجمه‌ها، انتساب و صلاحیت فعلی مجازِ گزاره‌هایی را که فقط به‌دلیل حذف حساب پنهان شده‌اند، از جمله در نقاط ثبت وضعیت ما، برگرداند. محتوا/پروژه‌ها/اسناد مستقلاً حذف‌شده، رأی‌های پس‌گرفته‌شده، ادغام‌های برگشت‌ناپذیر مهمان، اقدامات نظارتی میانی یا خروجی‌های جداگانه محوشده را برنمی‌گرداند و رأی‌های نگهداری‌شده را دوبرابر نمی‌کند. مهمانان برای اثبات مالکیت باید کلیدهای اصلی دستگاه را نگه دارند. پس از مهلت دقیق یا آغاز پاک‌سازی برگشت‌ناپذیر، بازیابی ممکن نیست.",
                   },
                 ],
               },
@@ -3224,7 +3224,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " اقدامات حذف به مجوزهای مرتبط نیاز دارند و بایگانی‌سازی برگشت‌پذیر نیستند. حذف پروژه، گفت‌وگوها، اسناد و گزارش‌های تاریخیِ متعلق به آن را حذف می‌کند. پیش از حذف سازمان، هر پروژهٔ باقی‌مانده با مالکیت انحصاری آن باید به مالک دیگری که باقی می‌ماند منتقل شود. پروژه‌های با مالکیت مشترک نزد مالکان باقی‌مانده می‌مانند و روابط سازمان حذف‌شده برداشته می‌شوند. حذف پروژه با مجوز جداگانه، به‌عنوان حذف همان پروژه رسیدگی می‌شود، نه اقدام بازیابی حساب.",
+                    text: " عملیات حذف به مجوزهای مربوط نیاز دارند و بایگانی برگشت‌پذیر نیستند. حذف پروژه، گفت‌وگوها، اسناد و ورودی‌های عددی و گزارش‌های نگهداری‌شدهٔ تحت مالکیت انحصاری آن را طبق قواعد پاک‌سازی قابل اعمال حذف می‌کند. پیش از حذف سازمان، پروژه‌های باقی‌ماندهٔ تحت مالکیت انحصاری آن باید به مالک دیگری که باقی می‌ماند منتقل شوند. پروژه‌های مشترک نزد مالکان باقی‌مانده می‌مانند و ارتباط سازمان حذف‌شده با آن‌ها قطع می‌شود. حذفِ جداگانه و مجازِ پروژه به‌عنوان حذف خود آن پروژه رسیدگی می‌شود، نه اقدام بازیابی حساب.",
                   },
                 ],
               },
@@ -3234,7 +3234,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "درخواست جداگانه و قابل اعمالِ محو داده‌های شخصی می‌تواند بدون دورهٔ بازیابی محصول رسیدگی شود، از جمله درخواست‌های مربوط به سوابق نگهداری‌شده پس از حذف حساب. از مسیر تماسِ درخواست حقوق در سیاست حریم خصوصی استفاده کنید؛ بدون تأخیر ناموجه به آن رسیدگی می‌کنیم، با رعایت احراز متناسب در صورت لزوم و استثناهای قانونی با دامنهٔ کاربرد محدود. سوابق محدودی ممکن است پس از حذف برای اهداف توضیح‌داده‌شده در سیاست حریم خصوصی باقی بمانند:",
+                text: "درخواست‌های قابل اعمال داده‌های شخصی تابع مقررات عمومی حقوق در سیاست حریم خصوصی‌اند و نیازمند مهلت بازیابی محصول نیستند. سوابق محدودی ممکن است پس از حذف، برای اهداف شرح‌داده‌شده در سیاست حریم خصوصی باقی بمانند:",
               },
             ],
           },
@@ -3245,21 +3245,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "هش‌های کوتاه‌مدتِ جلوگیری از بازپخش و وضعیت لازمِ محدودیت/جلوگیری از ارسال برای هدف حفاظتی خود، نه بایگانی نامحدودِ اثبات‌های کامل احراز هویت یا حذف.",
+                    text: "هش‌های کوتاه‌عمر جلوگیری از بازپخش و وضعیت ضروری محدودسازی/عدم ارسال برای هدف حفاظتی خود، نه بایگانی نامحدود اثبات‌های کامل احراز هویت یا حذف.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "سوابق رویدادهای عملیاتی/امنیتی طبق سیاست نگهداریِ قابل اعمال، از جمله سیاست 180 روزهٔ گروه‌های گزارش رویداد CloudWatch. این سوابق به هدف خود محدودند و از داده‌های نگهداری‌شدهٔ حساب یا دورهٔ پشتیبان جدا هستند.",
+                    text: "سوابق رویدادهای عملیاتی/امنیتی طبق سیاست نگهداری قابل اعمال، از جمله سیاست 180 روزهٔ گروه گزارش‌های CloudWatch. این سوابق محدود به هدف خود و جدا از داده‌های نگهداری‌شدهٔ حساب یا دورهٔ پشتیبان‌اند.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "حداقل دستورهای محوِ لازم برای جلوگیری از بازگرداندن اطلاعات حذف‌شده از پشتیبان‌ها، و شواهد با دامنهٔ محدود برای رخداد مشخص، تعهد قانونی یا ادعا در موارد موجه.",
+                    text: "حداقل دستورهای محو لازم برای پیشگیری از بازگرداندن اطلاعات حذف‌شده از پشتیبان‌ها و شواهد با دامنهٔ محدود برای حادثه، تعهد قانونی یا دعوای مشخص در صورت وجود توجیه.",
                   },
                 ],
               },
@@ -3269,7 +3269,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "این سوابق محدودشده، مجوز یا توجیه کلی برای نگهداری نامحدودِ محتوای حذف‌شده، الگوهای فردی مشارکت یا اعتبارنامه‌ها ایجاد نمی‌کنند. نسخه‌های دریافت‌شده یا مستقلاً نگهداری‌شده و رسیدگی پردازشگران/دریافت‌کنندگان در سیاست حریم خصوصی توضیح داده شده‌اند. هیچ‌چیز در این بخش، حقوق قانونیِ قابل اعمالِ حفاظت از داده را محدود نمی‌کند.",
+                text: "این سوابق محدود، مجوز یا توجیه کلی برای نگهداری نامحدود محتوای حذف‌شده، الگوهای مشارکت فردی یا اعتبارنامه‌ها ایجاد نمی‌کنند. نسخه‌های دانلودشده یا مستقلاً نگهداری‌شده و نحوهٔ رسیدگی پردازشگر/دریافت‌کننده در سیاست حریم خصوصی توضیح داده شده‌اند. هیچ چیز در این بخش حقوق قانونی قابل اعمال حفاظت از داده‌ها را محدود نمی‌کند.",
               },
             ],
           },
@@ -3277,7 +3277,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora حق تعلیق یا خاتمهٔ حساب‌هایی را که این شرایط را نقض می‌کنند برای خود محفوظ می‌دارد.",
+                text: "Agora حق دارد حساب‌های ناقض این شرایط را تعلیق یا خاتمه دهد.",
               },
             ],
           },
@@ -3290,7 +3290,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "خدمات «به همان صورت موجود» و بدون هیچ‌گونه تضمین ارائه می‌شوند. Agora هیچ‌گونه اظهار یا تضمینی، اعم از صریح، ضمنی، قانونی یا به هر صورت دیگر، ارائه نمی‌دهد؛ از جمله و نه محدود به تضمین‌های قابلیت فروش، تناسب برای هدف خاص، عدم نقض حقوق یا دسترس‌پذیری خدمات.",
+                text: "خدمات «به همان شکل موجود» و بدون هیچ‌گونه تضمینی ارائه می‌شوند. Agora هیچ‌گونه اظهار یا تضمین صریح، ضمنی، قانونی یا غیره، از جمله تضمین قابلیت عرضهٔ تجاری، تناسب برای هدفی خاص، عدم نقض حقوق یا دسترس‌پذیری خدمات ارائه نمی‌کند.",
               },
             ],
           },
@@ -3298,7 +3298,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora تضمین نمی‌کند که خدمات بی‌خطا، بدون وقفه یا امن خواهند بود یا نقص‌ها برطرف خواهند شد. کاربران همهٔ خطرهای مرتبط با استفاده از خدمات را می‌پذیرند.",
+                text: "Agora تضمین نمی‌کند که خدمات بدون خطا، بی‌وقفه یا امن باشند یا نقص‌ها اصلاح شوند. کاربران همهٔ خطرهای مرتبط با استفاده از خدمات را می‌پذیرند.",
               },
             ],
           },
@@ -3306,7 +3306,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "تا بیشترین حدی که قانون اجازه می‌دهد، Agora مسئول هیچ خسارت غیرمستقیم، اتفاقی، تبعی، تنبیهی یا ویژهٔ ناشی از یا مرتبط با استفادهٔ شما از خدمات نیست، خواه بر مبنای قرارداد، مسئولیت ناشی از فعل زیان‌بار، مسئولیت محض یا هر مبنای حقوقی دیگر باشد، حتی اگر Agora از امکان چنین خسارت‌هایی آگاه شده باشد. این امر شامل، اما نه محدود به، خسارتِ سود ازدست‌رفته، از دست رفتن داده، آسیب بدنی، خسارت به اموال یا وقفه در کسب‌وکار است.",
+                text: "تا بیشترین حد مجاز قانونی، Agora مسئول خسارت‌های غیرمستقیم، اتفاقی، تبعی، تنبیهی یا خاص ناشی از یا مرتبط با استفادهٔ شما از خدمات نیست؛ خواه بر پایهٔ قرارداد، مسئولیت مدنی، مسئولیت محض یا هر مبنای حقوقی دیگر، حتی اگر از احتمال چنین خسارت‌هایی آگاه شده باشد. این شامل زیان سود، از دست رفتن داده، آسیب بدنی، خسارت مالی یا اختلال کسب‌وکار نیز می‌شود.",
               },
             ],
           },
@@ -3314,7 +3314,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "برخی حوزه‌های قضایی استثنا کردن یا محدود کردن بعضی خسارت‌ها را مجاز نمی‌دانند؛ بنابراین ممکن است برخی از این محدودیت‌ها بر شما اعمال نشوند.",
+                text: "برخی حوزه‌های قضایی استثنا یا محدودسازی بعضی خسارت‌ها را مجاز نمی‌دانند؛ بنابراین ممکن است برخی از این محدودیت‌ها دربارهٔ شما اعمال نشوند.",
               },
             ],
           },
@@ -3322,7 +3322,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "اگرچه Agora فناوری اثبات دانش صفر (ZKP) را برای تقویت حریم خصوصی و امنیت اجرا می‌کند، کاربران می‌پذیرند که هیچ فناوری مصون از خطا نیست. ممکن است آسیب‌پذیری‌ها یا نقص‌های پیش‌بینی‌نشده‌ای در پیاده‌سازی ZKP وجود داشته باشد که بالقوه به افشای غیرمجاز داده یا نقض حریم خصوصی منجر شود. Agora هیچ تضمینی دربارهٔ امنیت یا قابلیت اتکای مطلقِ ZKP نمی‌دهد و مسئولیتی بابت پیامدهای ناخواستهٔ ناشی از استفاده از آن نمی‌پذیرد.",
+                text: "هرچند Agora برای بهبود حریم خصوصی و امنیت از فناوری اثبات دانش صفر (ZKP) استفاده می‌کند، کاربران می‌پذیرند که هیچ فناوری بی‌نقص نیست. ممکن است آسیب‌پذیری‌ها یا نقص‌های پیش‌بینی‌نشده در پیاده‌سازی ZKP به افشای غیرمجاز داده یا نقض حریم خصوصی منجر شوند. Agora امنیت یا قابلیت اطمینان مطلق ZKP را تضمین نمی‌کند و مسئولیتی بابت پیامدهای ناخواستهٔ استفاده از آن ندارد.",
               },
             ],
           },
@@ -3330,7 +3330,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "کاربران به رعایت احتیاط‌های اضافی تشویق می‌شوند؛ مانند استفاده از ابزارهای ناشناس‌سازی نظیر Tor برای پنهان کردن نشانی IP، خودداری از اشتراک‌گذاری بیش‌ازحدِ اطلاعات شخصی در نوشته‌های خود و توجه به سبک‌های نوشتار و ویژگی‌های مشترکی که ممکن است از طریق تطبیق با گذرنامه و سایر اقدامات ثبت‌شده، ناخواسته هویت آنان را آشکار کنند.",
+                text: "به کاربران توصیه می‌شود احتیاط‌های بیشتری کنند؛ مانند استفاده از ابزارهای ناشناس‌ماندن نظیر Tor برای پنهان کردن نشانی IP، خودداری از ارائهٔ اطلاعات شخصی بیش از حد در نوشته‌ها، و توجه به سبک نگارش و ویژگی‌های مشترکی که ممکن است با تطبیق با گذرنامه و دیگر اقدامات ثبت‌شده، ناخواسته هویتشان را آشکار کنند.",
               },
             ],
           },
@@ -3343,7 +3343,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "جز در مواردی که قانون منع می‌کند، می‌پذیرید در برابر هر ادعا، مطالبه، مسئولیت، خسارت، زیان و هزینه (از جمله حق‌الوکاله و هزینه‌های حقوقی) ناشی از یا مرتبط با موارد زیر، از Agora، اشخاص وابستهٔ آن و اعضای هیئت‌مدیره، مدیران اجرایی، کارکنان، نمایندگان، پیمانکاران، ارائه‌دهندگان خدماتِ شخص ثالث و اعطاکنندگان مجوزِ مربوط به آن‌ها دفاع کنید، خسارت آنان را جبران کنید و آنان را از مسئولیت و زیان مصون دارید:",
+                text: "جز در موارد منع قانونی، موافقت می‌کنید از Agora، وابستگان آن و مدیران، مسئولان، کارکنان، نمایندگان، پیمانکاران، ارائه‌دهندگان ثالث خدمات و اعطاکنندگان مجوزِ آن‌ها در برابر هر ادعا، مطالبه، مسئولیت، خسارت، زیان و هزینه (از جمله حق‌الوکاله و هزینه‌های حقوقی) ناشی از یا مرتبط با موارد زیر دفاع کنید، خسارتشان را جبران کنید و آن‌ها را مصون نگه دارید:",
               },
             ],
           },
@@ -3369,7 +3369,7 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "نقض هر قانون یا مقررهٔ قابل اعمال توسط شما؛ یا",
+                    text: "نقض هر قانون یا مقررات قابل اعمال توسط شما؛ یا",
                   },
                 ],
               },
@@ -3386,20 +3386,20 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora حق به‌عهده‌گرفتن ادارهٔ دفاع در هر موضوعی را که ملزم به جبران خسارت ما در آن هستید برای خود محفوظ می‌دارد و شما می‌پذیرید در دفاع ما در برابر چنین ادعاهایی همکاری کامل داشته باشید. تعهدات جبران خسارت شما پس از هر خاتمه یا تعلیقِ استفادهٔ شما از Agora و خدمات آن همچنان معتبر خواهند ماند.",
+                text: "Agora حق دارد دفاع در هر موضوعی را که ملزم به جبران خسارت آن هستید در اختیار بگیرد و می‌پذیرید در دفاع از این دعاوی همکاری کامل کنید. تعهدات جبران خسارت شما پس از پایان یا تعلیق استفاده از Agora و خدمات آن نیز پابرجا می‌مانند.",
               },
             ],
           },
         ],
       },
       {
-        heading: "11. تفکیک‌پذیری مفاد",
+        heading: "11. تفکیک‌پذیری",
         blocks: [
           {
             type: "paragraph",
             content: [
               {
-                text: "تا حد امکان، مفاد این شرایط باید به‌گونه‌ای تفسیر شوند که طبق قانون حاکم معتبر و قابل اجرا باشند. بااین‌حال، اگر یک یا چند بندِ این شرایط، به‌طور کامل یا جزئی، نامعتبر، غیرقانونی یا غیرقابل اجرا تشخیص داده شوند، باقی‌ماندهٔ هر چنین بند و این شرایط متأثر نخواهد شد و با قوت و اثر کامل ادامه خواهد یافت، چنان‌که گویی آن بخش نامعتبر، غیرقانونی یا غیرقابل اجرا هرگز در این سند گنجانده نشده است.",
+                text: "تا حد امکان، مفاد این شرایط باید به‌گونه‌ای تفسیر شوند که طبق قانون حاکم معتبر و قابل اجرا باشند. بااین‌حال، اگر یک یا چند مفاد، کلاً یا جزئاً، نامعتبر، غیرقانونی یا غیرقابل اجرا شناخته شوند، باقی آن مفاد و این شرایط متأثر نمی‌شوند و همچنان کاملاً معتبر و لازم‌الاجرا خواهند بود، گویی مفاد نامعتبر، غیرقانونی یا غیرقابل اجرا هرگز در آن‌ها نبوده‌اند.",
               },
             ],
           },
@@ -3412,7 +3412,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "این شرایط، از جمله هر مسئلهٔ مرتبط با اعتبار، تفسیر، الزام به اجرا، انجام تعهدات یا خاتمهٔ آن‌ها، و نیز هر اختلاف ناشی از دعاوی فعل زیان‌بار، تعهدات پیش‌قراردادی یا مسئولیت خارج از قرارداد، تابع قوانین فرانسه خواهد بود و مطابق آن‌ها تفسیر می‌شود. هیچ اصل دیگرِ انتخاب قانون یا قاعدهٔ تعارض قوانینی که موجب اعمال قانون حوزهٔ قضایی دیگری غیر از فرانسه شود، اثر نخواهد داشت.",
+                text: "این شرایط، از جمله مسائل اعتبار، تفسیر، اجرا، انجام یا پایان آن‌ها، و اختلافات ناشی از دعاوی مسئولیت مدنی، تعهدات پیش‌قراردادی یا مسئولیت خارج از قرارداد، تابع قوانین فرانسه‌اند و بر همان اساس تفسیر می‌شوند. هیچ اصل انتخاب قانون یا قاعدهٔ تعارض قوانینی که به اجرای قوانین حوزه‌ای جز فرانسه منجر شود، اعمال نمی‌شود.",
               },
             ],
           },
@@ -3420,7 +3420,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "می‌خواهیم تجربهٔ مثبتی در Agora داشته باشید. اگر مسئله یا اختلافی دارید، می‌پذیرید ابتدا تلاش کنید آن را به‌صورت غیررسمی با ما حل کنید. می‌توانید هر بازخورد یا نگرانی را از این نشانی با ما در میان بگذارید: ",
+                text: "می‌خواهیم تجربهٔ خوبی در Agora داشته باشید. در صورت هر مشکل یا اختلاف، می‌پذیرید ابتدا برای حل غیررسمی آن با ما تلاش کنید. برای بازخورد یا طرح نگرانی با ما تماس بگیرید: ",
               },
               {
                 text: "legal@zkorum.com",
@@ -3436,7 +3436,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "هر اختلافی که به‌صورت غیررسمی حل نشود، در صلاحیت انحصاری دادگاه‌های Neuilly Sur Seine خواهد بود.",
+                text: "اختلافاتی که غیررسمی حل نشوند در صلاحیت انحصاری دادگاه‌های Neuilly Sur Seine خواهند بود.",
               },
             ],
           },
@@ -3449,7 +3449,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Agora ممکن است گاه‌به‌گاه این شرایط را برای بازتاب تغییرات خدمات، الزامات قانونی یا سایر نیازهای عملیاتی به‌روزرسانی کند. اگر اصلاحات مهمی انجام دهیم، پیش از لازم‌الاجرا شدن تغییرات، کاربران را از طریق اعلان‌های درون برنامه، بنرها یا پیام‌هایی که تأیید آگاهی را می‌طلبند مطلع خواهیم کرد.",
+                text: "Agora ممکن است گاه این شرایط را برای انعکاس تغییر خدمات، الزامات قانونی یا دیگر نیازهای عملیاتی به‌روز کند. در صورت تغییرات مهم، پیش از اجرا از طریق اعلان درون‌برنامه‌ای، بنر یا پیام نیازمند تأیید اطلاع می‌دهیم.",
               },
             ],
           },
@@ -3457,7 +3457,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "با ادامهٔ دسترسی به Agora یا استفاده از آن پس از لازم‌الاجرا شدن شرایط اصلاح‌شده، می‌پذیرید که ملزم به شرایط به‌روزشده باشید. اگر با اصلاحات موافق نیستید، باید پیش از لازم‌الاجرا شدن تغییرات، استفاده از Agora را متوقف کنید.",
+                text: "با ادامهٔ دسترسی به Agora یا استفاده از آن پس از اجرای شرایط بازنگری‌شده، تعهد به شرایط به‌روزشده را می‌پذیرید. اگر با تغییرات موافق نیستید، باید پیش از اجرای آن‌ها استفاده از Agora را متوقف کنید.",
               },
             ],
           },
@@ -3465,20 +3465,20 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "کاربران را تشویق می‌کنیم این شرایط را به‌طور منظم بررسی کنند تا از حقوق و تعهدات خود هنگام استفاده از Agora آگاه بمانند.",
+                text: "توصیه می‌کنیم این شرایط را منظم بررسی کنید تا از حقوق و تعهدات خود هنگام استفاده از Agora آگاه بمانید.",
               },
             ],
           },
         ],
       },
       {
-        heading: "14. مقررات متفرقه",
+        heading: "14. سایر مقررات",
         blocks: [
           {
             type: "paragraph",
             content: [
               {
-                text: "این شرایط همراه با سیاست حریم خصوصی، کل توافق حاکم بر دسترسی شما به Agora و استفاده از آن را تشکیل می‌دهند. اعمال نکردن یا اجرا نکردن هر حق یا بندِ این شرایط از جانب ما، اسقاط آن حق یا بند تلقی نخواهد شد.",
+                text: "این شرایط همراه با سیاست حریم خصوصی، کل توافق حاکم بر دسترسی شما به Agora و استفاده از آن را تشکیل می‌دهند. اعمال نکردن یا اجرا نکردن هر حق یا مفاد این شرایط از سوی ما به معنای صرف‌نظر از آن نیست.",
               },
             ],
           },
@@ -3486,7 +3486,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "اگر هر بندِ این شرایط نامعتبر یا غیرقابل اجرا تشخیص داده شود، تا بیشترین حد مجاز اجرا خواهد شد و سایر بندها با قوت و اثر کامل به اعتبار خود ادامه خواهند داد.",
+                text: "اگر هر مفاد این شرایط نامعتبر یا غیرقابل اجرا شناخته شود، تا بیشترین حد مجاز اجرا می‌شود و سایر مفاد همچنان کاملاً معتبر و لازم‌الاجرا می‌مانند.",
               },
             ],
           },
@@ -3494,7 +3494,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "نمی‌توانید هیچ‌یک از حقوق یا تعهدات خود طبق این شرایط را بدون رضایت قبلی ما واگذار یا منتقل کنید. بااین‌حال، حق واگذاری آزادانهٔ حقوق و تعهدات خود طبق این شرایط را بدون محدودیت برای خود محفوظ می‌داریم.",
+                text: "نمی‌توانید بدون رضایت قبلی ما هیچ‌یک از حقوق یا تعهدات خود در این شرایط را واگذار یا منتقل کنید. بااین‌حال، حق داریم حقوق و تعهدات خود را آزادانه و بدون محدودیت واگذار کنیم.",
               },
             ],
           },
@@ -3507,7 +3507,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "برای پرسش‌ها یا نگرانی‌های مربوط به این شرایط، از این نشانی با ما تماس بگیرید: ",
+                text: "برای پرسش یا نگرانی دربارهٔ این شرایط، با ما تماس بگیرید: ",
               },
               {
                 text: "legal@zkorum.com",
@@ -3520,7 +3520,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "با استفاده از Agora، این شرایط و هر اصلاح آتیِ آن‌ها را تصدیق می‌کنید و می‌پذیرید.",
+                text: "با استفاده از Agora تأیید می‌کنید که این شرایط و تغییرات آیندهٔ آن را پذیرفته‌اید.",
               },
             ],
           },
@@ -3530,7 +3530,7 @@ export const termsOfServiceContent: Record<
               "ZKORUM SAS",
               "99 AVENUE ACHILLE PERETTI",
               "92200 NEUILLY-SUR-SEINE",
-              "FRANCE",
+              "فرانسه",
             ],
           },
         ],
@@ -3546,7 +3546,7 @@ export const termsOfServiceContent: Record<
       "Consulter la version anglaise faisant foi",
     returnToTranslatedVersion: "Revenir à la version traduite",
     lastUpdatedLabel: "Dernière mise à jour le",
-    lastUpdatedDate: "2026/10/14 (AAAA/MM/JJ)",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
         text: "Bienvenue sur Agora Citizen Network (« Agora ») ! Les présentes conditions générales d’utilisation (les « Conditions ») régissent votre accès à la plateforme Agora et son utilisation, notamment notre site web, nos applications mobiles et nos autres services (ensemble, les « Services »). En accédant aux Services ou en les utilisant, vous acceptez d’être lié par les présentes Conditions. Si vous ne les acceptez pas, vous n’êtes pas autorisé à accéder aux Services ni à les utiliser.",
@@ -3609,7 +3609,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: ", ou des preuves d’admissibilité fondées sur un billet d’événement par l’intermédiaire de Zupass. Dans le cadre de ces procédures, Agora reçoit les signaux divulgués par la preuve, plutôt que le passeport ou le billet sous-jacent. L’inscription auprès de Rarimo est soumise à sa condition d’âge supplémentaire : vous devez avoir 18 ans ou plus. Les conditions applicables du prestataire régissent également son service de vérification.",
+                    text: ". Agora reçoit les signaux divulgués par la preuve, plutôt que le passeport sous-jacent. L’inscription auprès de Rarimo est soumise à sa condition d’âge supplémentaire : vous devez avoir 18 ans ou plus. Les conditions applicables du prestataire régissent également son service de vérification.",
                   },
                 ],
               },
@@ -3837,7 +3837,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "La licence de contenu ci-dessus ne prime pas sur les droits applicables en matière de protection des données ou d’effacement et n’autorise pas à contourner les restrictions d’accès d’une fonctionnalité. La suppression d’une proposition ou de votre compte retire les propositions personnelles concernées des vues actuelles et des analyses futures et remplace leur texte par « [deleted] » dans nos instantanés historiques, sans leurs traductions, votre nom d’utilisateur ni de lien vers votre profil. Nous occultons ou invalidons les exports concernés et les autres affichages que nous contrôlons. La suppression du compte conserve de manière privée les données nécessaires à la récupération pendant 15 jours avant le nettoyage définitif ; la suppression explicite d’une proposition ne bénéficie d’aucun délai de récupération. La suppression du compte retire les associations devenues inutiles au compte ou aux moyens d’authentification et ne retire pas, à elle seule, les votes « d’accord », « pas d’accord » ou « passer » conservés licitement sur d’autres propositions admissibles. Les chiffres des instantanés historiques ne portant pas atteinte à la vie privée peuvent rester figés ; la suppression ne relance pas les calculs historiques et ne régénère pas les descriptions historiques produites par intelligence artificielle (AI). Lorsque des résultats stockés produits par intelligence artificielle (AI) doivent eux-mêmes être effacés, les résultats existants et les traductions concernées sont supprimés ou occultés conformément à la Politique de confidentialité sans génération de descriptions de remplacement. Les autres données privées de participation, les données d’entrée conservées et les correspondances personnelles suivent les règles de conservation fondée sur les finalités et de retrait ou d’effacement de la Politique de confidentialité. La seule suppression des liens avec le compte n’est pas assimilée à une anonymisation. La divulgation par export et les copies déjà téléchargées ou republiées indépendamment sont traitées comme expliqué dans cette Politique.",
+                text: "Cette licence ne prime pas sur les droits applicables en matière de protection des données ou d’effacement et n’élargit pas l’accès aux participations privées. La suppression acceptée du compte masque les propositions personnelles et exclut la participation des nouveaux calculs des résultats courants. Les données nécessaires à la récupération restent privées pendant le délai de récupération de 15 jours. Nous conservons indéfiniment les données numériques individuelles ayant servi aux résultats enregistrés (matrices Polis, choix BWS/pairwise et allocations QV) pour l’analyse des votes et leur recalcul, en supprimant les liens avec le compte lors du nettoyage définitif. Il ne s’agit pas d’un historique de chaque enregistrement ou calcul QV. La suppression ordinaire ne recalcule pas les chiffres enregistrés ; des corrections ou une nouvelle analyse distinctes peuvent les modifier. Les descriptions historiques produites par IA ne sont pas automatiquement réécrites lors d’une suppression ordinaire ; les droits d’effacement applicables demeurent. Le téléchargement des exports existants expire au plus tard 30 jours après leur génération ; les nouveaux exports tiennent compte de l’état actuel des suppressions. La suppression des liens ne garantit pas l’anonymat.",
               },
             ],
           },
@@ -3987,7 +3987,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Vous pouvez résilier les présentes Conditions à tout moment et pour tout motif en demandant la suppression de votre Compte et en cessant d’utiliser les Services. L’accès ordinaire au compte cesse immédiatement. Vous pouvez annuler explicitement une demande ordinaire de suppression de compte pendant le délai de récupération de 15 jours décrit ci-dessous ; l’effacement définitif et les données conservées suivent la Politique de confidentialité.",
+                text: "Vous pouvez demander la suppression de votre Compte et cesser d’utiliser les Services à tout moment. Dès l’acceptation de votre demande, l’accès ordinaire au compte cesse et le délai de récupération de 15 jours commence. Une demande refusée ne clôture pas votre compte et ne déclenche pas ce délai. Vous pouvez annuler explicitement une demande ordinaire de suppression de compte acceptée pendant ce délai ; l’effacement définitif et les données conservées suivent la Politique de confidentialité.",
               },
             ],
           },
@@ -4062,21 +4062,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Utilisez la commande disponible de suppression de compte après authentification ou contactez legal@zkorum.com pour obtenir de l’aide. Nous vérifions la titularité au moyen de données d’authentification prises en charge ou d’une preuve de possession des clés de l’appareil, selon le type de compte ; cela n’implique pas que vous deviez nous envoyer une image de passeport ni que nous conservions indéfiniment un ensemble de preuves signées.",
+                    text: "Utilisez la commande disponible de suppression de compte après authentification ou contactez legal@zkorum.com pour obtenir de l’aide. Si vos responsabilités au sein d’une organisation empêchent la suppression par ces commandes, contactez-nous. Nous vérifions la titularité au moyen de données d’authentification prises en charge ou d’une preuve de possession des clés de l’appareil, selon le type de compte ; cela n’implique pas que vous deviez nous envoyer une image de passeport ni que nous conservions indéfiniment un ensemble de preuves signées.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "Le compte devient inaccessible pour un usage ordinaire, les sessions existantes sont révoquées et les propositions personnelles sont exclues des vues et analyses actuelles. Leur texte est remplacé par « [deleted] » dans nos instantanés historiques, sans traductions, nom d’utilisateur ni lien vers le profil, et les exports concernés et autres affichages que nous contrôlons sont invalidés ou occultés. La seule clôture du compte ne retire pas les votes conservés licitement sur d’autres propositions admissibles. Le texte source, les traductions et les associations au compte nécessaires sont conservés de manière privée pour la récupération et effacés lors du nettoyage définitif. Le compte n’est récupérable que strictement avant l’échéance enregistrée, fixée à 15 jours après la demande. La récupération nécessite la vérification de la titularité et une confirmation explicite annulant la suppression ; une reconnexion ne rétablit pas implicitement le compte. Une récupération réussie crée une nouvelle session autorisée plutôt que de réactiver toutes les sessions révoquées.",
+                    text: "La suppression acceptée désactive l’accès ordinaire, révoque les sessions et masque les propositions personnelles. Les résultats des activités ouvertes peuvent être actualisés de manière asynchrone ; les résultats numériques conservés et les exports existants suivent la Politique de confidentialité. Les données nécessaires à la récupération restent privées. La récupération exige une annulation explicite et la vérification de la titularité, strictement avant l’échéance enregistrée des 15 jours et avant le début de la purge irréversible. Les invités ont besoin des clés d’origine de leur appareil ; leur perte peut empêcher la récupération. Une récupération réussie crée une nouvelle session, sans rétablir l’accès par les sessions précédemment révoquées.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "À l’échéance des 15 jours, la récupération prend fin et la purge définitive du compte devient exigible. Le nettoyage commence lors du prochain passage horaire planifié et s’effectue dans les meilleurs délais, normalement dans les sept jours suivant cette échéance. Nous surveillons les échecs, réessayons et faisons remonter les opérations retardées ou bloquées pour intervention. Les passages retardés et les nouvelles tentatives ne font pas repartir ce délai et ne prolongent ni la récupération ni les délais légaux applicables. Les sauvegardes de reprise après sinistre à accès restreint peuvent conserver les données effacées pendant 30 jours supplémentaires au maximum après la suppression définitive effective, et l’effacement est réappliqué avant que les données restaurées ne soient exposées.",
+                    text: "La récupération prend fin à l’échéance des 15 jours, et les données privées du compte deviennent admissibles au nettoyage définitif dans les meilleurs délais. Les retards de nettoyage ne prolongent pas la récupération et ne font pas repartir les délais légaux applicables. Les données d’entrée conservées, les enregistrements à accès restreint et les sauvegardes suivent la Politique de confidentialité. Une inscription ultérieure ne permet pas de récupérer les participations dissociées.",
                   },
                 ],
               },
@@ -4101,7 +4101,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Les propositions, conversations, documents et autres contenus explicitement supprimés au moyen d’une commande autorisée sont immédiatement masqués et admissibles à un nettoyage définitif rapide. Ils ne bénéficient pas du délai de récupération de 15 jours du compte. La suppression d’une proposition ou de votre compte utilise le même affichage « [deleted] » dans les instantanés et la même règle d’occultation du texte ; il n’est pas nécessaire de supprimer les propositions séparément avant de clôturer le compte. Les résultats numériques figés ne portant pas atteinte à la vie privée suivent la Politique de confidentialité. Utilisez les commandes de retrait des votes si vous souhaitez également retirer vos votes. Après la rupture définitive du lien avec le compte, la gestion ordinaire des données de vote conservées à partir du compte n’est plus disponible, mais les demandes applicables d’exercice des droits sur les données personnelles restent possibles par le canal de contact prévu dans la Politique de confidentialité.",
+                    text: " La suppression autorisée d’un contenu masque immédiatement le texte, ses versions, ses traductions et son attribution, y compris dans les points de contrôle conservés, sans le délai de récupération du compte. La suppression du compte masque les propositions personnelles dans les vues courantes, mais peut conserver le texte historique autorisé sans attribution publique au compte. Gérez vos contenus séparément avant de supprimer votre compte si vous souhaitez aussi retirer ce texte ; les demandes d’effacement applicables n’exigent pas de supprimer manuellement chaque contribution. Les commandes de retrait suivent les règles d’ouverture et de clôture de l’activité et ne réécrivent pas les résultats conservés. Après la suppression définitive des liens, les commandes du compte ne permettent plus de retrouver, modifier ou retirer les données numériques dissociées.",
                   },
                 ],
               },
@@ -4123,7 +4123,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Les actions de suppression nécessitent les autorisations pertinentes et ne constituent pas un archivage réversible. La suppression d’un projet supprime les conversations et documents qu’il contient ainsi que les rapports historiques dont il est propriétaire. Avant la suppression d’une organisation, tout projet subsistant dont elle est l’unique propriétaire doit être transféré à un autre propriétaire subsistant. Les projets détenus en commun restent avec leurs propriétaires subsistants, et les relations de l’organisation supprimée sont retirées. La suppression d’un projet autorisée séparément est traitée comme la suppression propre à ce projet, et non comme une action de récupération de compte.",
+                    text: " Les actions de suppression nécessitent les autorisations pertinentes et ne constituent pas un archivage réversible. La suppression d’un projet supprime les conversations et documents qu’il contient ainsi que les données numériques d’entrée conservées et les rapports dont il est l’unique propriétaire, selon les règles de nettoyage applicables. Avant la suppression d’une organisation, tout projet subsistant dont elle est l’unique propriétaire doit être transféré à un autre propriétaire subsistant. Les projets détenus en commun restent avec leurs propriétaires subsistants, et les relations de l’organisation supprimée sont retirées. La suppression d’un projet autorisée séparément est traitée comme la suppression propre à ce projet, et non comme une action de récupération de compte.",
                   },
                 ],
               },
@@ -4133,7 +4133,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Une demande distincte et applicable d’effacement de données à caractère personnel peut être traitée sans le délai de récupération du produit, y compris lorsqu’elle concerne des données conservées après la suppression du compte. Utilisez le canal de contact pour l’exercice des droits prévu dans la Politique de confidentialité ; nous traitons la demande dans les meilleurs délais, sous réserve d’une vérification proportionnée si nécessaire et d’exceptions légales d’application limitée. Certains enregistrements limités peuvent subsister après la suppression pour les finalités décrites dans la Politique de confidentialité :",
+                text: "Les demandes applicables relatives aux données personnelles suivent les dispositions générales de la Politique de confidentialité concernant vos droits, sans imposer le délai de récupération du produit. Certains enregistrements limités peuvent subsister après la suppression pour les finalités décrites dans la Politique de confidentialité :",
               },
             ],
           },
@@ -4507,7 +4507,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: ", או הוכחות זכאות המבוססות על כרטיס לאירוע באמצעות Zupass. במסגרת תהליכים אלה Agora מקבלת את אותות ההוכחה שנחשפו, ולא את הדרכון או הכרטיס שעליהם הם מבוססים. הרשמה ב־Rarimo כפופה לדרישת הגיל הנוספת שלה: עליכם להיות בני 18 ומעלה. גם התנאים החלים של הספק מסדירים את שירות האימות שלו.",
+                    text: ". Agora מקבלת את אותות ההוכחה שנחשפו, ולא את הדרכון שעליו הם מבוססים. הרשמה ב־Rarimo כפופה לדרישת הגיל הנוספת שלה: עליכם להיות בני 18 ומעלה. גם התנאים החלים של הספק מסדירים את שירות האימות שלו.",
                   },
                 ],
               },
@@ -4735,7 +4735,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "רישיון התוכן שלעיל אינו גובר על זכויות להגנת נתונים או למחיקה החלות לפי דין ואינו מתיר לעקוף הגבלות גישה של תכונה. מחיקת היגד או חשבונכם מסירה את ההיגדים האישיים הנוגעים בדבר מהתצוגות הנוכחיות ומהניתוח העתידי ומחליפה את הטקסט שלהם ב־'[deleted]' בתמונות המצב שלנו, ללא תרגומיהם, שם משתמש או קישור לפרופיל. אנו מסירים מידע מייצואים מושפעים ומתצוגות אחרות שבשליטתנו או מבטלים את תוקפם. מחיקת חשבון שומרת באופן פרטי נתוני שחזור נחוצים במשך 15 ימים לפני הניקוי הסופי; למחיקה מפורשת של היגד אין תקופת שחזור. מחיקת חשבון מסירה קישורים שאינם נחוצים לחשבון או לאמצעי אימות ואינה כשלעצמה מבטלת הצבעות הסכמה/אי־הסכמה/דילוג הנשמרות כדין על היגדים אחרים העומדים בתנאים. מספרים בטוחים בתמונות מצב היסטוריות יכולים להישאר קפואים; מחיקה אינה מפעילה מחדש חישובים היסטוריים או יוצרת מחדש תיאורי בינה מלאכותית (AI) היסטוריים. כאשר פלט בינה מלאכותית (AI) שנשמר מחייב בעצמו מחיקה, הפלט הקיים והתרגומים המושפעים מוסרים או עוברים מחיקת המידע הנוגע בדבר בהתאם למדיניות הפרטיות, ללא יצירת תיאורים חלופיים. רשומות השתתפות פרטיות אחרות, קלט שנשמר ומיפויים אישיים כפופים לכללי השמירה לפי מטרה ולכללי החזרה מהשתתפות או מהסכמה והמחיקה שבמדיניות הפרטיות. הסרת קישורים לחשבון בלבד אינה נחשבת לאנונימיזציה. חשיפה באמצעות ייצוא ועותקים שכבר הורדו או פורסמו מחדש באופן עצמאי מטופלים כמוסבר במדיניות זו.",
+                text: "רישיון זה אינו גובר על זכויות להגנת נתונים או למחיקה לפי דין ואינו מרחיב גישה להשתתפות פרטית. בקשת מחיקת חשבון שאושרה מסתירה הצהרות אישיות ומוציאה השתתפות מקלט לחישובים חיים חדשים. נתוני השחזור הנחוצים נשארים פרטיים בתקופת השחזור בת 15 הימים. אנו שומרים ללא הגבלת זמן את הקלט המספרי האישי ששימש לתוצאות שנשמרו (מטריצות Polis, בחירות BWS/pairwise והקצאות QV), לצורך ניתוח הצבעות וחישוב מחדש, ומסירים קישורים לחשבון בניקוי הסופי. אין זו היסטוריה של כל שמירה או חישוב QV. מחיקה רגילה אינה מחשבת מחדש מספרים שנשמרו; תיקונים נפרדים או ניתוח חוזר עשויים לשנותם. תיאורי AI היסטוריים אינם נכתבים מחדש אוטומטית בעקבות מחיקה רגילה; זכויות המחיקה לפי דין נשמרות. הורדת ייצואים קיימים פוקעת לכל המאוחר 30 ימים לאחר יצירתם; ייצואים חדשים משקפים את מצב המחיקה הנוכחי. ניתוק קישורים אינו מבטיח אנונימיות.",
               },
             ],
           },
@@ -4885,7 +4885,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "תוכלו לסיים את תחולתם של תנאים אלה בכל עת ומכל סיבה באמצעות בקשה למחיקת חשבונכם והפסקת השימוש בשירותים. הגישה הרגילה לחשבון מופסקת מיד. תוכלו לבטל במפורש בקשה רגילה למחיקת חשבון במהלך חלון השחזור בן 15 הימים המתואר להלן; מחיקה לצמיתות ורשומות שנשמרו כפופות למדיניות הפרטיות.",
+                text: "תוכלו לבקש את מחיקת חשבונכם ולהפסיק להשתמש בשירותים בכל עת. עם אישור בקשת המחיקה, הגישה הרגילה לחשבון נפסקת ומתחיל חלון שחזור בן 15 ימים. בקשה שנדחתה אינה סוגרת את החשבון ואינה מתחילה חלון זה. במהלך החלון תוכלו לבטל במפורש בקשה רגילה למחיקת חשבון שאושרה; מחיקה לצמיתות ורשומות שנשמרו כפופות למדיניות הפרטיות.",
               },
             ],
           },
@@ -4960,21 +4960,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "השתמשו בבקרה הזמינה למחיקת חשבון לאחר אימות, או פנו ל־legal@zkorum.com לקבלת סיוע. אנו מאמתים בעלות באמצעות אמצעי אימות נתמכים או הוכחה באמצעות מפתח מכשיר, בהתאם לסוג החשבון; אין בכך כדי לחייב שליחת תמונת דרכון אלינו או איסוף הוכחות חתומות ללא הגבלת זמן.",
+                    text: "השתמשו בבקרה הזמינה למחיקת חשבון לאחר אימות, או פנו ל־legal@zkorum.com לסיוע. אם אחריותכם בארגון מונעת מחיקה באמצעות הבקרות, פנו אלינו. אנו מאמתים בעלות באמצעות אמצעי אימות נתמכים או הוכחה במפתח מכשיר, לפי סוג החשבון; אין בכך דרישה לשלוח לנו תמונת דרכון או לאסוף הוכחות חתומות ללא הגבלת זמן.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "החשבון נעשה בלתי נגיש לשימוש רגיל, מושבים קיימים מבוטלים והיגדים אישיים אינם נכללים בתצוגות ובניתוח הנוכחיים. הטקסט שלהם מוחלף ב־'[deleted]' בתמונות המצב שלנו ללא תרגומים, שם משתמש או קישור לפרופיל, וייצואים מושפעים ותצוגות אחרות שבשליטתנו מבוטלים או עוברים הסרת מידע. סגירת חשבון לבדה אינה מבטלת הצבעות הנשמרות כדין על היגדים אחרים העומדים בתנאים. טקסט מקור, תרגומים וקישורים לחשבון הנחוצים לשחזור נשמרים באופן פרטי ונמחקים בניקוי הסופי. ניתן לשחזר את החשבון רק לפני המועד האחרון השמור במערכת, החל 15 ימים לאחר הבקשה. שחזור מחייב בעלות מאומתת ואישור מפורש המבטל את המחיקה; התחברות מחדש אינה משחזרת את החשבון ללא אישור. שחזור מוצלח יוצר מושב מורשה חדש במקום להפעיל מחדש את כל המושבים שבוטלו.",
+                    text: "מחיקה שאושרה משביתה גישה רגילה, מבטלת מושבים ומסתירה הצהרות אישיות. תוצאות פתוחות עשויות להתעדכן באופן אסינכרוני; תוצאות מספריות שנשמרו וייצואים קיימים כפופים למדיניות הפרטיות. נתוני השחזור הנחוצים נשארים פרטיים. שחזור מחייב ביטול מפורש ואימות בעלות, אך ורק לפני המועד השמור במערכת בתום 15 הימים ולפני תחילת מחיקה בלתי הפיכה. אורחים זקוקים למפתחות המכשיר המקוריים; אובדנם עלול למנוע שחזור. שחזור מוצלח יוצר מושב חדש ואינו מחזיר גישה באמצעות מושבים שבוטלו.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "במועד האחרון בתום 15 הימים, אפשרות השחזור מסתיימת ומגיע מועד המחיקה הסופית של החשבון. הניקוי מתחיל בסריקת הניקוי השעתית המתוכננת הבאה ומתבצע ללא עיכוב בלתי מוצדק, ובדרך כלל מסתיים בתוך שבעה ימים ממועד זה. אנו מנטרים כשלים, מנסים שוב ומעבירים משימות מעוכבות או חסומות לטיפול מוגבר. סריקות שהתעכבו וניסיונות חוזרים אינם מתחילים תקופה זו מחדש ואינם מאריכים את השחזור או את המועדים החוקיים החלים. גיבויי התאוששות מאסון בעלי גישה מוגבלת עשויים לשמור נתונים שנמחקו למשך לא יותר מ־30 ימים נוספים לאחר המחיקה הסופית בפועל, והמחיקה מוחלת מחדש לפני חשיפת נתונים משוחזרים.",
+                    text: "השחזור מסתיים במועד האחרון בתום 15 הימים, ונתוני החשבון הפרטיים נעשים מיועדים לניקוי סופי ללא דיחוי בלתי מוצדק. עיכוב בניקוי אינו מאריך את השחזור או מתחיל מחדש מועדים חוקיים החלים. קלט שנשמר, רשומות מוגבלות וגיבויים כפופים למדיניות הפרטיות. הרשמה מאוחרת יותר אינה מאפשרת להשיב השתתפות שקישורה נותק.",
                   },
                 ],
               },
@@ -4999,7 +4999,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " היגדים, שיחות, מסמכים ותוכן אחר שנמחקו במפורש באמצעות בקרה מורשית מוסתרים מיד ונעשים בני־מחיקה במסגרת ניקוי סופי בהקדם. לא חל עליהם חלון שחזור החשבון בן 15 הימים. מחיקת היגד או חשבונכם משתמשת באותה תצוגת '[deleted]' בתמונות מצב ובאותו כלל להסרת טקסט; אינכם צריכים למחוק היגדים בנפרד לפני סגירת החשבון. תוצאות מספריות קפואות ובטוחות מבחינת הפרטיות כפופות למדיניות הפרטיות. השתמשו בבקרות לביטול הצבעות אם ברצונכם לבטל גם הצבעות. לאחר ניתוק הקישור הסופי לא ניתן עוד לנהל בדרך הרגילה באמצעות החשבון את רשומות ההצבעה שנשמרו, אך עדיין ניתן להגיש בקשות למימוש זכויות בנתונים אישיים מכוח הדין החל באמצעות ערוץ הפנייה שבמדיניות הפרטיות.",
+                    text: " מחיקת תוכן מורשית מסתירה מיד את הטקסט, הגרסאות, התרגומים והייחוס, גם בנקודות ביקורת שנשמרו, ללא חלון שחזור החשבון. מחיקת חשבון מסתירה הצהרות אישיות מהתצוגות העדכניות, אך עשויה לשמור טקסט היסטורי מותר ללא ייחוס פומבי לחשבון. נהלו את התוכן בנפרד לפני מחיקת החשבון אם ברצונכם להסיר גם טקסט זה; בקשות מחיקה לפי דין אינן מחייבות מחיקה ידנית של כל תרומה. בקרות ביטול השתתפות כפופות לכללי פעילות פתוחה או סגורה ואינן משנות תוצאות שנשמרו. לאחר ניתוק סופי, בקרות החשבון אינן מאפשרות לאחזר, לשנות או לבטל רשומות מספריות שקישורן נותק.",
                   },
                 ],
               },
@@ -5010,7 +5010,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " שחזור חשבון יכול להשיב טקסט מותר, תרגומים, ייחוס וזכאות נוכחית של היגדים שהוסתרו אך ורק עקב מחיקת החשבון, לרבות בתמונות המצב שלנו. הוא אינו משחזר תוכן, מיזמים או מסמכים שנמחקו בנפרד, הצבעות שבוטלו, מיזוגי אורח בלתי הפיכים, פעולות פיקוח על תוכן שנעשו בינתיים או פלטים שנמחקו בנפרד, ואינו משכפל הצבעות שנשמרו. אורחים חייבים לשמור את המפתחות המקוריים של המכשיר כדי להוכיח בעלות. שחזור אינו זמין לאחר המועד האחרון המדויק או לאחר שהחלה מחיקה בלתי הפיכה.",
+                    text: " שחזור חשבון יכול להשיב טקסט מותר, תרגומים, ייחוס וזכאות נוכחית של הצהרות שהוסתרו אך ורק עקב מחיקת החשבון, לרבות בנקודות הביקורת שלנו. הוא אינו משחזר תוכן, מיזמים או מסמכים שנמחקו בנפרד, הצבעות שבוטלו, מיזוגי אורח בלתי הפיכים, פעולות פיקוח על תוכן שנעשו בינתיים או פלטים שנמחקו בנפרד, ואינו משכפל הצבעות שנשמרו. אורחים חייבים לשמור את המפתחות המקוריים של המכשיר כדי להוכיח בעלות. שחזור אינו זמין לאחר המועד האחרון המדויק או לאחר שהחלה מחיקה בלתי הפיכה.",
                   },
                 ],
               },
@@ -5021,7 +5021,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " פעולות מחיקה מחייבות את ההרשאות הרלוונטיות ואינן העברות הפיכות לארכיון. מחיקת מיזם מסירה את השיחות, המסמכים והדוחות ההיסטוריים שבבעלותו הכלולים בו. לפני מחיקת ארגון, יש להעביר כל מיזם שנותר בבעלותו הבלעדית לבעלים אחר שיישאר קיים. מיזמים בבעלות משותפת נותרים בידי בעליהם שנותרו, והקשרים של הארגון שנמחק מוסרים. מחיקה של מיזם שהותרה בנפרד מטופלת כמחיקה של אותו מיזם, ולא כפעולת שחזור חשבון.",
+                    text: " פעולות מחיקה מחייבות הרשאות מתאימות ואינן העברה הפיכה לארכיון. מחיקת מיזם מסירה את השיחות והמסמכים שבתוכו ואת הקלט המספרי שנשמר והדוחות שבבעלותו הבלעדית, לפי כללי הניקוי החלים. לפני מחיקת ארגון יש להעביר כל מיזם שנותר בבעלותו הבלעדית לבעלים אחר שיישאר קיים. מיזמים בבעלות משותפת נשארים בידי הבעלים הנותרים, והקשרים של הארגון שנמחק מוסרים. מחיקת מיזם בהרשאה נפרדת מטופלת כמחיקת אותו מיזם, ולא כפעולת שחזור חשבון.",
                   },
                 ],
               },
@@ -5031,7 +5031,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "ניתן לטפל בבקשה נפרדת למחיקת נתונים אישיים החלה לפי דין ללא תקופת השחזור של המוצר, לרבות בקשות הנוגעות לרשומות שנשמרו לאחר מחיקת חשבון. השתמשו בערוץ הפנייה לבקשות למימוש זכויות שבמדיניות הפרטיות; אנו מטפלים בבקשה ללא דיחוי בלתי מוצדק, בכפוף לאימות מידתי ככל שהוא נחוץ ולחריגים משפטיים החלים בהיקף מצומצם. רשומות מוגבלות עשויות להישאר לאחר מחיקה למטרות המתוארות במדיניות הפרטיות:",
+                text: "בקשות לפי דין בעניין נתונים אישיים מטופלות לפי הוראות הזכויות הכלליות שבמדיניות הפרטיות, ללא חובה להמתין לתקופת השחזור של המוצר. רשומות מוגבלות עשויות להישאר לאחר מחיקה למטרות המתוארות במדיניות הפרטיות:",
               },
             ],
           },
@@ -5342,7 +5342,7 @@ export const termsOfServiceContent: Record<
     viewAuthoritativeEnglishVersion: "正文である英語版を表示",
     returnToTranslatedVersion: "翻訳版に戻る",
     lastUpdatedLabel: "最終更新日",
-    lastUpdatedDate: "2026/10/14（YYYY/MM/DD）",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
         text: "Agora Citizen Network（「Agora」）へようこそ。本利用規約（「本規約」）は、当社のウェブサイト、モバイルアプリケーションおよびその他のサービス（総称して「本サービス」）を含むAgoraプラットフォームへのアクセスおよび利用に適用されます。本サービスにアクセスし、またはこれを利用することにより、利用者は本規約に拘束されることに同意するものとします。同意しない場合、本サービスにアクセスし、またはこれを利用することはできません。",
@@ -5405,7 +5405,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: "）、またはZupassによるイベントチケットに基づく参加資格の証明。これらの手続きでAgoraが受け取るのは、開示された証明シグナルであり、元のパスポートまたはチケットではありません。Rarimoでの登録には、追加の年齢要件が適用され、18歳以上でなければなりません。事業者の確認サービスには、その事業者の適用される規約も適用されます。",
+                    text: "）。Agoraが受け取るのは開示された証明シグナルであり、元のパスポートではありません。Rarimoでの登録には、追加の年齢要件が適用され、18歳以上でなければなりません。事業者の確認サービスには、その事業者の適用される規約も適用されます。",
                   },
                 ],
               },
@@ -5633,7 +5633,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "上記のコンテンツの使用許諾は、適用されるデータ保護または消去の権利に優先するものではなく、機能のアクセス制限を回避することを許可するものでもありません。意見文またはアカウントを削除すると、対象となる個人の意見文は現在の表示および今後の分析から取り除かれ、当社のチェックポイントでは本文を「[deleted]」に置き換え、翻訳、ユーザー名またはプロフィールへのリンクを表示しません。当社は、対象となるエクスポートおよびその他の管理下の表示の情報を伏せ、または無効化します。アカウントの削除では、必要な復旧用データを15日間非公開で保持した後、恒久的な消去処理を行います。明示的な意見文の削除には復旧期間がありません。アカウントの削除では、不要なアカウント・資格情報との関連付けを取り除きますが、それ自体によって、対象となる他の意見文への適法に保持される賛成・反対・パスの投票が撤回されることはありません。過去のチェックポイントの安全な数値は固定されたまま残る場合があります。削除によって過去の計算を再実行したり、過去のAI説明を再生成したりすることはありません。保存されたAI出力自体の消去が必要な場合は、プライバシーポリシーに従い、代替の説明を生成せずに、既存の出力および対象となる翻訳を削除し、またはその情報を伏せます。その他の非公開の参加記録、保持される入力、および個人との対応付けには、プライバシーポリシーの目的に基づく保持と撤回・消去のルールが適用されます。アカウントとの関連付けの除去だけを、匿名化とはみなしません。エクスポートによる開示、および既にダウンロードされた、または独立して再公開された複製は、同ポリシーに説明するとおり扱います。",
+                text: "この使用許諾は、適用されるデータ保護・消去の権利に優先せず、非公開の参加情報へのアクセスを広げるものでもありません。アカウント削除が受理されると、個人の意見文は非表示となり、参加情報は新たな稼働中の計算の対象外になります。必要な復旧用データは15日間の復旧期間中、非公開で保持します。保存済み結果の個別の数値入力（Polis行列、BWS・pairwise（一対比較）の選択、QVの配分）は、投票の分析と再計算のため無期限に保持し、恒久的な消去処理の際にアカウントとの関連付けを除去します。これは、すべての保存やQV計算の履歴ではありません。通常の削除では保存済みの数値を再計算しませんが、別途の訂正や再分析により変わる場合があります。過去のAI説明は通常の削除では自動的に書き換えられず、適用される消去の権利は引き続き有効です。既存エクスポートのダウンロードは生成後最長30日で期限切れとなり、新しいエクスポートには現在の削除状態を反映します。関連付けの解除は匿名性を保証しません。",
               },
             ],
           },
@@ -5783,7 +5783,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "利用者は、アカウントの削除を要求し、本サービスの利用を中止することで、いつでも、いかなる理由でも、本規約に基づく契約を終了できます。通常のアカウントアクセスは直ちに停止します。通常のアカウント削除要求は、後述する15日間の復旧期間中に、明示的に取り消すことができます。恒久的な消去および保持される記録は、プライバシーポリシーに従います。",
+                text: "利用者はいつでもアカウントの削除を要求し、本サービスの利用を中止できます。削除要求が受理されると、通常のアカウントアクセスが停止し、15日間の復旧期間が始まります。拒否された要求では、アカウントは閉鎖されず、この期間も始まりません。受理された通常のアカウント削除要求は、この期間中に明示的に取り消すことができます。恒久的な消去と保持される記録は、プライバシーポリシーに従います。",
               },
             ],
           },
@@ -5858,21 +5858,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "利用可能な認証済みのアカウント削除機能を使用するか、legal@zkorum.comに連絡して支援をお求めください。当社は、アカウントの種類に応じて、対応する資格情報または端末鍵による証明を用いて、アカウント所有者を確認します。これは、パスポートの画像を当社に送信することや、署名付き証明を無期限に収集することが必要であるという意味ではありません。",
+                    text: "利用可能な認証済みのアカウント削除機能を使用するか、legal@zkorum.comまで支援をお求めください。組織に対する責務により、この機能から削除できない場合は当社にご連絡ください。当社はアカウントの種類に応じて、対応する資格情報または端末鍵による証明で所有者を確認します。これは、パスポート画像の送信や署名付き証明の無期限の収集を求めるものではありません。",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "アカウントは通常の利用のためにアクセスできなくなり、既存のセッションは失効し、個人の意見文は現在の表示および分析から除外されます。当社のチェックポイントでは本文を「[deleted]」に置き換え、翻訳、ユーザー名またはプロフィールへのリンクを表示せず、対象となるエクスポートおよびその他の管理下の表示を無効化し、または情報を伏せます。アカウントの閉鎖だけでは、対象となる他の意見文への適法に保持される投票は撤回されません。必要な元のテキスト、翻訳およびアカウントとの関連付けは、復旧のために非公開で保持し、恒久的な消去処理時に消去します。アカウントを復旧できるのは、要求から15日後の保存された期限より厳密に前に限られます。復旧には、アカウント所有者であることの確認、および削除を取り消す明示的な確認が必要です。再接続によってアカウントが自動的に復旧されることはありません。復旧が成功すると、失効したすべてのセッションを再有効化するのではなく、新たな権限に基づくセッションを確立します。",
+                    text: "削除が受理されると、通常のアクセスが無効になり、セッションが失効し、個人の意見文が非表示になります。進行中の結果は非同期で更新される場合があり、保持される数値結果と既存のエクスポートはプライバシーポリシーに従います。必要な復旧用データは非公開で保持します。復旧には、保存された15日間の期限より厳密に前、かつ不可逆な消去が始まる前に、明示的な取消しと所有者確認が必要です。ゲストには元の端末鍵が必要で、紛失すると復旧できない場合があります。復旧が成功すると新しいセッションが作成され、失効したセッションからのアクセスは復活しません。",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "15日間の期限到来時に、復旧はできなくなり、アカウントを恒久的に消去する時点となります。消去処理は、次に予定された1時間ごとの巡回処理で開始し、不当に遅滞することなく、通常はその期限から7日以内に完了します。失敗を監視して再試行し、遅延または停止した処理は追加対応のためにエスカレーションします。巡回処理の遅延や再試行によって、この期間が最初から数え直されたり、復旧や適用される法定期限が延長されたりすることはありません。アクセス制限付きの災害復旧用バックアップには、消去されたデータが、実際の恒久的削除後、追加で最長30日間残る場合があります。復元された情報を公開する前に、消去を再適用します。",
+                    text: "15日間の期限で復旧は終了し、非公開のアカウントデータは、不当な遅滞なく恒久的な消去処理を行う対象となります。処理の遅延により復旧期間が延長されたり、適用される法定期限が再び起算されたりすることはありません。保持される入力、アクセス制限付きの記録およびバックアップはプライバシーポリシーに従います。後から登録しても、関連付けを解除した参加情報を取り戻すことはできません。",
                   },
                 ],
               },
@@ -5897,7 +5897,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 権限に基づく操作機能で明示的に削除された意見文、対話、文書およびその他のコンテンツは、直ちに非表示となり、速やかな恒久的消去処理の対象となります。アカウントの15日間の復旧期間は適用されません。意見文の削除とアカウントの削除には、同じ「[deleted]」のチェックポイント表示と本文の情報除去ルールを用います。アカウントの閉鎖前に、意見文を別途削除する必要はありません。安全な固定済み数値結果は、プライバシーポリシーに従います。投票も撤回したい場合は、投票の撤回機能をご利用ください。関連付けを恒久的に解除した後は、保持される投票記録を通常のアカウント操作で管理することはできなくなりますが、適用される個人データに関する権利の請求は、プライバシーポリシーの連絡窓口を通じて引き続き行えます。",
+                    text: " 権限に基づくコンテンツ削除では、保持されたチェックポイントを含め、本文、各版、翻訳、投稿者表示を直ちに非表示にし、アカウントの復旧期間は適用しません。アカウント削除では個人の意見文は現在の表示から非表示になりますが、許可される過去の本文はアカウントの公開表示なしで残る場合があります。その本文も削除したい場合は、アカウント削除前にコンテンツを別途管理してください。適用される消去請求に、すべての投稿の手動削除は必要ありません。撤回機能は活動の進行中・終了後のルールに従い、保持済みの結果を書き換えません。恒久的な関連付け解除後は、アカウント操作機能で切り離された数値記録を取得、変更または撤回することはできません。",
                   },
                 ],
               },
@@ -5919,7 +5919,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 削除操作には関係する権限が必要であり、元に戻せるアーカイブではありません。プロジェクトを削除すると、その中の対話、文書および所有する過去の報告書が削除されます。組織の削除前に、その組織が単独で所有する残存プロジェクトを、存続する別の所有者へ移転しなければなりません。共同所有のプロジェクトは、存続する所有者の下に残り、削除された組織の関係情報を取り除きます。別途権限に基づいて行われるプロジェクトの削除は、アカウントの復旧操作ではなく、そのプロジェクト自体の削除として扱います。",
+                    text: " 削除には関係する権限が必要で、元に戻せるアーカイブではありません。プロジェクトの削除では、適用される消去処理ルールに従って、含まれる対話、文書、そのプロジェクトが単独で所有する保持済みの数値入力と報告書を削除します。組織の削除前に、残っている単独所有のプロジェクトを、存続する別の所有者へ移転しなければなりません。共同所有のプロジェクトは他の所有者の下に残り、削除された組織との関係を除去します。別途権限に基づいて行われるプロジェクト削除は、そのプロジェクト自体の削除であり、アカウントの復旧操作とは別に扱います。",
                   },
                 ],
               },
@@ -5929,7 +5929,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "別途適用される個人データの消去要求は、製品上の復旧期間を設けずに処理できます。アカウント削除後に保持される記録に関する要求も含まれます。プライバシーポリシーの権利請求用の連絡窓口をご利用ください。当社は、必要な場合の必要性に見合った確認、および適用範囲の狭い法的な例外に従い、不当な遅滞なく処理します。プライバシーポリシーに記載する目的のため、限定された記録が削除後も残る場合があります：",
+                text: "適用される個人データに関する要求は、製品上の復旧期間を必要とせず、プライバシーポリシーの一般的な権利の規定に従います。同ポリシーに記載する目的のため、限定された記録が削除後も残る場合があります：",
               },
             ],
           },
@@ -6304,7 +6304,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: ", же Zupass аркылуу иш-чаранын билетине байланыштуу жарамдуулук далилдери. Бул жолдор аркылуу Agora паспорттун же билеттин өзүн эмес, ачылган далил сигналдарын алат. Rarimo аркылуу каттоого анын кошумча жаш талабы колдонулат: сиз 18 жашта же андан улуу болушуңуз керек. Кызмат көрсөтүүчүнүн текшерүү кызматына анын колдонулуучу шарттары да колдонулат.",
+                    text: ". Agora паспорттун өзүн эмес, ачылган далил сигналдарын алат. Rarimo аркылуу каттоого анын кошумча жаш талабы колдонулат: сиз 18 жашта же андан улуу болушуңуз керек. Кызмат көрсөтүүчүнүн текшерүү кызматына анын колдонулуучу шарттары да колдонулат.",
                   },
                 ],
               },
@@ -6532,7 +6532,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Жогорудагы мазмун лицензиясы колдонулуучу маалыматтарды коргоо же өчүрүү укуктарынан жогору турбайт жана мүмкүнчүлүктүн жеткиликтүүлүк чектөөлөрүн айланып өтүүгө уруксат бербейт. Билдирүүнү же аккаунтуңузду өчүрүү тиешелүү жеке билдирүүлөрдү учурдагы көрүнүштөрдөн жана келечектеги талдоодон алып салат жана көзөмөлдүк кесиндилерибизде алардын текстин котормолорун, колдонуучунун атын же профилдин шилтемесин көрсөтпөстөн '[deleted]' белгисине алмаштырат. Биз тиешелүү экспорттордон жана көзөмөлүбүздөгү башка көрүнүштөрдөн маалыматты алып салабыз же аларды жараксыз кылабыз. Аккаунтту өчүрүүдө биротоло тазалоого чейин зарыл калыбына келтирүү маалыматтары 15 күн купуя сакталат; билдирүүнү өзүнчө атайын өчүрүүдө калыбына келтирүү мөөнөтү жок. Аккаунтту өчүрүү аккаунттун/ырастоочу маалыматтардын зарыл эмес байланыштарын алып салат жана башка жарамдуу билдирүүлөргө берилген мыйзамдуу сакталган макул/каршы/өткөрүп жиберүү добуштарын өзүнөн өзү кайтарып албайт. Коопсуз тарыхый көзөмөлдүк кесиндилердин сандары өзгөрүүсүз калышы мүмкүн; өчүрүү тарыхый эсептөөлөрдү кайра жүргүзбөйт жана тарыхый AI сүрөттөмөлөрүн кайра түзбөйт. Сакталган AI натыйжасынын өзүн өчүрүү талап кылынганда, Купуялык саясатына ылайык учурдагы натыйжа жана тиешелүү котормолор алмаштыруучу сүрөттөмөлөр түзүлбөстөн алынып салынат же алардан тиешелүү маалымат өчүрүлөт. Башка купуя катышуу жазууларына, сакталган киргизилген маалыматтарга жана жеке байланыш карталарына Купуялык саясатынын максатка негизделген сактоо жана макулдукту кайтарып алуу/өчүрүү эрежелери колдонулат. Аккаунт менен байланыштарды гана алып салуу анонимдештирүү катары каралбайт. Экспорт аркылуу маалыматты ачуу жана буга чейин жүктөлгөн же өз алдынча кайра жарыяланган көчүрмөлөр ошол Саясатта түшүндүрүлгөндөй каралат.",
+                text: "Бул лицензия колдонулуучу маалыматтарды коргоо же өчүрүү укуктарынан жогору турбайт жана купуя катышууга жеткиликтүүлүктү кеңейтпейт. Аккаунтту өчүрүү өтүнүчү кабыл алынганда жеке билдирүүлөр жашырылып, катышуу жаңы учурдагы эсептөөлөргө киргизилбейт. Зарыл калыбына келтирүү маалыматтары 15 күндүк калыбына келтирүү мөөнөтүндө купуя сакталат. Сакталган жыйынтыктардын жеке сандык киргизүүлөрүн (Polis матрицалары, BWS/pairwise тандоолору жана QV бөлүштүрүүлөрү) добуш берүүнү талдоо жана кайра эсептөө үчүн мөөнөтсүз сактайбыз; биротоло тазалоодо аккаунт менен байланыштар алынат. Бул ар бир сактоонун же QV эсептөөсүнүн тарыхы эмес. Кадимки өчүрүү сакталган сандарды кайра эсептебейт; өзүнчө оңдоолор же кайра талдоо аларды өзгөртүшү мүмкүн. Кадимки өчүрүү тарыхый AI сүрөттөмөлөрүн автоматтык түрдө кайра жазбайт; колдонулуучу өчүрүү укуктары сакталат. Учурдагы экспортторду жүктөө мүмкүнчүлүгү түзүлгөндөн кийин эң көп 30 күндө аяктайт; жаңы экспорттор өчүрүүнүн учурдагы абалын колдонот. Байланышты алып салуу анонимдүүлүктү кепилдебейт.",
               },
             ],
           },
@@ -6682,7 +6682,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Аккаунтуңузду өчүрүүнү сурап жана Кызматтарды пайдаланууну токтотуп, ушул Шарттардын колдонулушун каалаган убакта жана каалаган себеп менен токтото аласыз. Аккаунтка кадимки кирүү дароо токтойт. Төмөндө сүрөттөлгөн 15 күндүк калыбына келтирүү мөөнөтүндө кадимки аккаунтту өчүрүү өтүнүчүн ачык түрдө жокко чыгара аласыз; биротоло өчүрүүгө жана сакталган жазууларга Купуялык саясаты колдонулат.",
+                text: "Аккаунтуңузду өчүрүүнү каалаган убакта сурап, Кызматтарды пайдаланууну токтото аласыз. Өчүрүү өтүнүчүңүз кабыл алынганда аккаунтка кадимки кирүү токтоп, 15 күндүк калыбына келтирүү мөөнөтү башталат. Четке кагылган өтүнүч аккаунтту жаппайт жана бул мөөнөттү баштабайт. Ушул мөөнөттө кабыл алынган кадимки аккаунтту өчүрүү өтүнүчүн ачык түрдө жокко чыгара аласыз; биротоло өчүрүүгө жана сакталган жазууларга Купуялык саясаты колдонулат.",
               },
             ],
           },
@@ -6757,21 +6757,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Аутентификациядан кийин жеткиликтүү болгон аккаунтту өчүрүү каражатын колдонуңуз же жардам үчүн legal@zkorum.com дарегине кайрылыңыз. Аккаунттун түрүнө ылайык, колдоого алынган ырастоочу маалыматтарды же түзмөк ачкычынын далилин колдонуп ээликти текшеребиз; бул бизге паспорттун сүрөтүн жөнөтүү же кол коюлган далилдерди чексиз чогултуу талабы бар дегенди билдирбейт.",
+                    text: "Аутентификациядан кийин жеткиликтүү болгон аккаунтту өчүрүү каражатын колдонуңуз же жардам үчүн legal@zkorum.com дарегине кайрылыңыз. Уюмдагы милдеттериңиз бул каражаттар аркылуу аккаунтту өчүрүүгө жол бербесе, биз менен байланышыңыз. Аккаунттун түрүнө ылайык, колдоого алынган ырастоочу маалыматтар же түзмөк ачкычынын далили аркылуу ээликти текшеребиз; бул паспорттун сүрөтүн жөнөтүү же кол коюлган далилдерди мөөнөтсүз чогултуу талабы бар дегенди билдирбейт.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "Аккаунт кадимки пайдалануу үчүн жеткиликсиз болуп, учурдагы сеанстар жокко чыгарылат жана жеке билдирүүлөр учурдагы көрүнүштөрдөн жана талдоодон чыгарылат. Көзөмөлдүк кесиндилерибизде алардын тексти котормолорун, колдонуучунун атын же профилдин шилтемесин көрсөтпөстөн '[deleted]' белгисине алмаштырылат, ал эми тиешелүү экспорттор жана көзөмөлүбүздөгү башка көрүнүштөр жараксыз кылынат же алардан тиешелүү маалымат алынып салынат. Аккаунтту жабуу гана башка жарамдуу билдирүүлөргө берилген мыйзамдуу сакталган добуштарды кайтарып албайт. Зарыл баштапкы текст, котормолор жана аккаунт байланыштары калыбына келтирүү үчүн купуя сакталып, биротоло тазалоодо өчүрүлөт. Аккаунтту өтүнүчтөн 15 күн өткөндө аяктаган, сакталган акыркы мөөнөт бүтө электе гана калыбына келтирүүгө болот. Калыбына келтирүү текшерилген ээликти жана өчүрүүнү жокко чыгарган ачык ырастоону талап кылат; кайра туташуу аккаунтту билдирбестен калыбына келтирбейт. Ийгиликтүү калыбына келтирүү бардык жокко чыгарылган сеанстарды кайра иштетүүнүн ордуна жаңы уруксат берилген сеансты түзөт.",
+                    text: "Кабыл алынган өчүрүү кадимки кирүүнү токтотуп, сеанстарды жокко чыгарат жана жеке билдирүүлөрдү жашырат. Ачык жыйынтыктар асинхрондуу жаңырышы мүмкүн; сакталган сандык жыйынтыктарга жана учурдагы экспортторго Купуялык саясаты колдонулат. Зарыл калыбына келтирүү маалыматтары купуя сакталат. Калыбына келтирүү үчүн өчүрүүнү ачык түрдө жокко чыгаруу жана ээликти текшерүү сакталган 15 күндүк акыркы мөөнөт бүтө электе жана кайтарылгыс тазалоо баштала электе талап кылынат. Конокторго баштапкы түзмөк ачкычтары керек; аларды жоготуу калыбына келтирүүгө тоскоол болушу мүмкүн. Ийгиликтүү калыбына келтирүү мурда жокко чыгарылган сеанстарды жандандырбастан, жаңы сеанс түзөт.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "15 күндүк акыркы мөөнөттө калыбына келтирүү мүмкүнчүлүгү аяктайт жана аккаунтту биротоло тазалоону жүргүзүү убактысы келет. Тазалоо кийинки пландалган сааттык текшерүүдө башталып, негизсиз кечиктирбестен жүргүзүлөт жана адатта ошол акыркы мөөнөттөн тартып жети күндүн ичинде аяктайт. Биз каталарды көзөмөлдөп, кайра аракет кылабыз жана кечиккен же бөгөттөлгөн иштерди кошумча чара көрүү үчүн жооптуу тарапка өткөрөбүз. Кечиккен текшерүүлөр жана кайра аракеттер бул мөөнөттү кайра баштабайт жана калыбына келтирүүнү же колдонулуучу мыйзамдык мөөнөттөрдү узартпайт. Жеткиликтүүлүгү чектелген, кырсыктан калыбына келтирүүчү камдык көчүрмөлөрдө өчүрүлгөн маалымат чындап биротоло өчүрүлгөндөн кийин дагы эң көп 30 күнгө чейин сакталышы мүмкүн жана калыбына келтирилген маалымат көрсөтүлгөнгө чейин өчүрүү кайра колдонулат.",
+                    text: "15 күндүк акыркы мөөнөттө калыбына келтирүү аяктап, купуя аккаунт маалыматтары негизсиз кечиктирбестен биротоло тазалоого жарамдуу болот. Тазалоонун кечигиши калыбына келтирүү мөөнөтүн узартпайт жана колдонулуучу мыйзамдык мөөнөттөрдү кайра баштабайт. Сакталган киргизүүлөргө, чектелген жазууларга жана камдык көчүрмөлөргө Купуялык саясаты колдонулат. Кийин кайра катталуу ажыратылган катышууну кайра өзүнө байланыштыра албайт.",
                   },
                 ],
               },
@@ -6796,7 +6796,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Уруксат берилген башкаруу каражаты аркылуу атайын өчүрүлгөн билдирүүлөр, талкуулар, документтер жана башка мазмун дароо жашырылып, тез арада биротоло тазалоого жарамдуу болот. Аларга аккаунттун 15 күндүк калыбына келтирүү мөөнөтү берилбейт. Билдирүүнү же аккаунтуңузду өчүрүүгө көзөмөлдүк кесиндиде бирдей '[deleted]' көрсөтүүсү жана тексттеги маалыматты алып салуу эрежеси колдонулат; аккаунтту жабуудан мурун билдирүүлөрдү өзүнчө өчүрүүнүн кереги жок. Өзгөрүүсүз коопсуз сандык жыйынтыктарга Купуялык саясаты колдонулат. Добуштардын да кайтарылып алынышын кааласаңыз, добуштарды кайтарып алуу каражаттарын колдонуңуз. Биротоло ажыратуудан кийин сакталган добуш берүү жазууларын аккаунт аркылуу кадимки башкаруу жеткиликсиз болот, бирок жеке маалыматка байланыштуу колдонулуучу укуктар боюнча өтүнүчтөрдү Купуялык саясатындагы байланыш жолу аркылуу берүүгө болот.",
+                    text: " Уруксат берилген мазмунду өчүрүү текстти, версияларды, котормолорду жана авторлук маалыматты, анын ичинде сакталган көзөмөлдүк кесиндилерде дароо жашырат; аккаунттун калыбына келтирүү мөөнөтү колдонулбайт. Аккаунтту өчүрүү жеке билдирүүлөрдү учурдагы көрүнүштөрдөн жашырат, бирок уруксат берилген тарыхый текстти аккаунтка ачык шилтемесиз сакташы мүмкүн. Ал текстти да алып салгыңыз келсе, аккаунтту өчүрүүдөн мурун мазмунду өзүнчө башкарыңыз; колдонулуучу өчүрүү өтүнүчтөрү ар бир салымды кол менен өчүрүүнү талап кылбайт. Катышууну кайтарып алуу каражаттарына аракеттин ачык/жабык эрежелери колдонулат жана алар сакталган жыйынтыктарды кайра жазбайт. Байланыш биротоло алынгандан кийин аккаунттун башкаруу каражаттары ажыратылган сандык жазууларды алууга, өзгөртүүгө же кайтарып алууга мүмкүндүк бербейт.",
                   },
                 ],
               },
@@ -6818,7 +6818,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Өчүрүү аракеттери тиешелүү уруксаттарды талап кылат жана кайтарылуучу архивдер эмес. Долбоорду өчүрүү анын ичиндеги талкууларды, документтерди жана ага таандык тарыхый отчетторду алып салат. Уюм өчүрүлгөнгө чейин калган, жалгыз өзүнө таандык бардык долбоорлор башка, сакталып калган ээсине өткөрүлүшү керек. Биргелешип ээлик кылынган долбоорлор сакталып калган ээлеринде калат, ал эми өчүрүлгөн уюмдун байланыштары алынып салынат. Долбоорду өзүнчө уруксат берилген өчүрүү аккаунтту калыбына келтирүү аракети катары эмес, ошол долбоордун өзүнүн өчүрүлүшү катары каралат.",
+                    text: " Өчүрүү аракеттери тиешелүү уруксаттарды талап кылат жана кайтарылуучу архивдер эмес. Долбоорду өчүрүү колдонулуучу тазалоо эрежелерине ылайык анын ичиндеги талкууларды, документтерди, өзүнө гана таандык сакталган сандык киргизүүлөрдү жана отчетторду алып салат. Уюм өчүрүлгөнгө чейин калган, жалгыз өзүнө таандык бардык долбоорлор башка, сакталып калган ээсине өткөрүлүшү керек. Биргелешип ээлик кылынган долбоорлор башка ээлеринде калат, ал эми өчүрүлгөн уюмдун байланыштары алынат. Долбоорду өзүнчө уруксат берилген өчүрүү аккаунтту калыбына келтирүү аракети эмес, ошол долбоордун өзүнүн өчүрүлүшү катары каралат.",
                   },
                 ],
               },
@@ -6828,7 +6828,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Жеке маалыматты өчүрүү боюнча өзүнчө колдонулуучу өтүнүч продукттун калыбына келтирүү мөөнөтүсүз каралышы мүмкүн, анын ичинде аккаунт өчүрүлгөндөн кийин сакталган жазуулар тууралуу өтүнүчтөр да. Купуялык саясатындагы укук боюнча өтүнүч берүү байланыш жолун колдонуңуз; биз аны зарыл жерде өлчөмдөш текшерүүнү жана тар чекте колдонулуучу укуктук өзгөчөлүктөрдү эске алып, негизсиз кечиктирбестен карайбыз. Купуялык саясатында сүрөттөлгөн максаттар үчүн өчүргөндөн кийин чектелген жазуулар калышы мүмкүн:",
+                text: "Жеке маалымат боюнча колдонулуучу өтүнүчтөр продукттун калыбына келтирүү мөөнөтүн күтүүнү талап кылбастан, Купуялык саясатынын жалпы укуктар жөнүндө жоболоруна ылайык каралат. Купуялык саясатында сүрөттөлгөн максаттар үчүн өчүрүүдөн кийин чектелген жазуулар калышы мүмкүн:",
               },
             ],
           },
@@ -7140,7 +7140,7 @@ export const termsOfServiceContent: Record<
       "Открыть юридически определяющую английскую версию",
     returnToTranslatedVersion: "Вернуться к переведённой версии",
     lastUpdatedLabel: "Дата последнего обновления",
-    lastUpdatedDate: "2026/10/14 (ГГГГ/ММ/ДД)",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
         text: "Добро пожаловать в Agora Citizen Network («Agora»)! Настоящие условия («Условия») регулируют ваш доступ к платформе Agora и её использование, включая наш веб-сайт, мобильные приложения и другие услуги (совместно — «Сервисы»). Получая доступ к Сервисам или используя их, вы соглашаетесь соблюдать настоящие Условия. Если вы не согласны, вы не вправе получать доступ к Сервисам или использовать их.",
@@ -7203,7 +7203,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: ", либо доказательства права на участие по билету на мероприятие через Zupass. В рамках этих процедур Agora получает раскрываемые доказательствами сигналы, а не сам паспорт или билет. Для регистрации через Rarimo действует дополнительное возрастное требование: вам должно быть 18 лет или больше. Сервис проверки также регулируется применимыми условиями поставщика.",
+                    text: ". Agora получает раскрываемые доказательствами сигналы, а не сам паспорт. Для регистрации через Rarimo действует дополнительное возрастное требование: вам должно быть 18 лет или больше. Сервис проверки также регулируется применимыми условиями поставщика.",
                   },
                 ],
               },
@@ -7431,7 +7431,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Указанная выше лицензия на контент не отменяет применимые права на защиту и удаление данных и не разрешает обходить ограничения доступа соответствующей функции. При удалении утверждения или вашей учётной записи затронутые личные утверждения исключаются из текущих представлений и будущего анализа, а их текст в наших контрольных снимках заменяется на '[deleted]' без переводов, имени пользователя или ссылки на профиль. Мы удаляем соответствующие сведения из затронутых экспортных материалов и других подконтрольных представлений либо аннулируем их. При удалении учётной записи необходимые данные восстановления непублично сохраняются 15 дней до окончательной очистки; при явном удалении утверждения периода восстановления нет. Удаление учётной записи устраняет ненужные связи с учётной записью и учётными данными и само по себе не отзывает правомерно сохраняемые голоса «согласен»/«не согласен»/«пропускаю» по другим допустимым утверждениям. Безопасные числовые показатели исторических контрольных снимков могут оставаться зафиксированными; удаление не запускает исторические вычисления повторно и не создаёт заново исторические описания ИИ (AI). Если сам сохранённый результат ИИ требует удаления, существующий результат и затронутые переводы удаляются полностью либо очищаются от соответствующей информации в соответствии с Политикой конфиденциальности без создания заменяющих описаний. Другие непубличные записи об участии, сохраняемые входные данные и сопоставления с личностью регулируются правилами хранения в зависимости от цели и правилами отзыва согласия и удаления данных из Политики конфиденциальности. Одно лишь удаление связей с учётной записью не считается анонимизацией. Раскрытие посредством экспорта и копии, уже скачанные или самостоятельно повторно опубликованные, регулируются в порядке, объяснённом в этой Политике.",
+                text: "Эта лицензия не отменяет применимые права на защиту и удаление данных и не расширяет доступ к непубличному участию. Принятый запрос на удаление учётной записи скрывает личные утверждения и исключает участие из новых текущих расчётов. Необходимые данные восстановления хранятся непублично в течение 15-дневного срока восстановления. Мы бессрочно храним индивидуальные числовые входные данные сохранённых результатов (матрицы Polis, выборы BWS/pairwise и распределения QV) для анализа голосования и пересчёта, удаляя связи с учётной записью при окончательной очистке. Это не история каждого сохранения или расчёта QV. Обычное удаление не пересчитывает сохранённые показатели; отдельные исправления или повторный анализ могут их изменить. Исторические описания ИИ не переписываются автоматически при обычном удалении; применимые права на удаление сохраняются. Скачивание существующего экспорта прекращается не позднее чем через 30 дней после создания; новый экспорт учитывает текущее состояние удаления. Удаление связей не гарантирует анонимность.",
               },
             ],
           },
@@ -7581,7 +7581,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Вы можете прекратить действие настоящих Условий в любое время и по любой причине, запросив удаление своей Учётной записи и прекратив использование Сервисов. Обычный доступ к учётной записи прекращается немедленно. Вы можете явно отменить обычный запрос на удаление учётной записи в течение 15-дневного срока восстановления, описанного ниже; окончательное удаление данных и сохраняемые записи регулируются Политикой конфиденциальности.",
+                text: "Вы можете в любое время запросить удаление своей Учётной записи и прекратить использование Сервисов. После принятия запроса обычный доступ прекращается и начинается 15-дневный срок восстановления. Отклонённый запрос не закрывает учётную запись и не запускает этот срок. В течение этого срока вы можете явно отменить принятый обычный запрос на удаление учётной записи; окончательное удаление данных и сохраняемые записи регулируются Политикой конфиденциальности.",
               },
             ],
           },
@@ -7656,21 +7656,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "Воспользуйтесь доступным средством удаления учётной записи после аутентификации или обратитесь за помощью по адресу legal@zkorum.com. Мы подтверждаем принадлежность учётной записи с помощью поддерживаемых учётных данных или доказательства владения ключом устройства в соответствии с типом учётной записи; это не означает, что требуется присылать нам изображение паспорта или бессрочно собирать подписанные доказательства.",
+                    text: "Воспользуйтесь доступным средством удаления учётной записи после аутентификации или обратитесь за помощью по адресу legal@zkorum.com. Если обязанности в организации мешают удалению через эти средства, свяжитесь с нами. Мы проверяем владение с помощью поддерживаемых учётных данных или доказательства владения ключом устройства в соответствии с типом учётной записи; это не означает, что требуется присылать изображение паспорта или бессрочно собирать подписанные доказательства.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "Учётная запись становится недоступной для обычного использования, существующие сеансы отзываются, а личные утверждения исключаются из текущих представлений и анализа. Их текст в наших контрольных снимках заменяется на '[deleted]' без переводов, имени пользователя или ссылки на профиль; затронутые экспортные материалы и другие подконтрольные представления аннулируются или очищаются от соответствующих сведений. Само по себе закрытие учётной записи не отзывает правомерно сохраняемые голоса по другим допустимым утверждениям. Необходимые исходный текст, переводы и связи с учётной записью непублично сохраняются для восстановления и удаляются при окончательной очистке. Учётную запись можно восстановить только строго до сохранённого предельного срока, наступающего через 15 дней после запроса. Для восстановления требуются подтверждение принадлежности учётной записи и явное подтверждение отмены удаления; повторное подключение не восстанавливает её автоматически без такого подтверждения. Успешное восстановление создаёт новый авторизованный сеанс, а не возобновляет все отозванные сеансы.",
+                    text: "Принятый запрос на удаление отключает обычный доступ, отзывает сеансы и скрывает личные утверждения. Открытые результаты могут обновляться асинхронно; сохранённые числовые результаты и существующий экспорт регулируются Политикой конфиденциальности. Необходимые данные восстановления остаются непубличными. Для восстановления нужны явная отмена удаления и подтверждение владения строго до сохранённого 15-дневного предельного срока и до начала необратимой очистки. Гостям нужны исходные ключи устройства; их потеря может сделать восстановление невозможным. Успешное восстановление создаёт новый сеанс, а не возобновляет доступ через ранее отозванные сеансы.",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "По истечении 15-дневного срока возможность восстановления прекращается, и наступает срок окончательной очистки учётной записи. Очистка начинается при следующем запланированном ежечасном проходе и проводится без неоправданной задержки, обычно завершаясь в течение семи дней после этого срока. Мы отслеживаем сбои, повторяем попытки и передаём задержанные или заблокированные задачи на дополнительное рассмотрение. Задержанные проходы и повторные попытки не начинают этот период заново и не продлевают восстановление или применимые законные сроки. Резервные копии для аварийного восстановления с ограниченным доступом могут сохранять удалённые данные ещё не более 30 дней после фактического окончательного физического удаления; удаление применяется повторно до предоставления доступа к восстановленным данным.",
+                    text: "Восстановление прекращается по истечении 15-дневного срока, и непубличные данные учётной записи подлежат окончательной очистке без неоправданной задержки. Задержки очистки не продлевают восстановление и не запускают применимые законные сроки заново. Сохранённые входные данные, записи с ограниченным доступом и резервные копии регулируются Политикой конфиденциальности. Более поздняя регистрация не позволяет вернуть отвязанное участие.",
                   },
                 ],
               },
@@ -7695,7 +7695,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Утверждения, обсуждения, документы и другой контент, явно удалённые через разрешённое средство управления, скрываются немедленно и подлежат скорой окончательной очистке. На них не распространяется 15-дневный срок восстановления учётной записи. При удалении утверждения или вашей учётной записи применяются одинаковое отображение '[deleted]' в контрольных снимках и правило удаления текста; отдельно удалять утверждения до закрытия учётной записи не требуется. Безопасные зафиксированные числовые результаты регулируются Политикой конфиденциальности. Если вы также хотите отозвать голоса, воспользуйтесь средствами отзыва голосов. После окончательного удаления связей обычное управление сохранёнными записями голосования через учётную запись недоступно, однако применимые запросы о правах на персональные данные по-прежнему можно подавать через канал обращения из Политики конфиденциальности.",
+                    text: " Разрешённое удаление контента немедленно скрывает текст, версии, переводы и авторство, в том числе в сохранённых контрольных точках, без срока восстановления учётной записи. Удаление учётной записи скрывает личные утверждения из текущих представлений, но может сохранять допустимый исторический текст без публичной привязки к учётной записи. Если вы хотите удалить и этот текст, управляйте контентом отдельно до удаления учётной записи; применимые запросы на удаление данных не требуют вручную удалять каждый вклад. Средства отзыва участия подчиняются правилам открытых и закрытых активностей и не переписывают сохранённые результаты. После окончательного удаления связей средства управления учётной записью не позволяют получать, изменять или отзывать отвязанные числовые записи.",
                   },
                 ],
               },
@@ -7717,7 +7717,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Действия по удалению требуют соответствующих полномочий и не являются обратимым архивированием. Удаление проекта удаляет содержащиеся в нём обсуждения, документы и принадлежащие ему исторические отчёты. До удаления организации все оставшиеся проекты, принадлежащие исключительно ей, необходимо передать другому владельцу, остающемуся в системе. Проекты в совместной собственности остаются у сохранившихся владельцев, а связи удалённой организации удаляются. Отдельное разрешённое удаление проекта рассматривается как удаление самого проекта, а не как действие по восстановлению учётной записи.",
+                    text: " Действия по удалению требуют соответствующих полномочий и не являются обратимым архивированием. Удаление проекта удаляет содержащиеся в нём обсуждения, документы и принадлежащие исключительно ему сохранённые числовые входные данные и отчёты по применимым правилам очистки. До удаления организации оставшиеся проекты, принадлежащие только ей, нужно передать другому сохраняющемуся владельцу. Совместные проекты остаются у сохранившихся владельцев, а связи удалённой организации удаляются. Отдельное разрешённое удаление проекта рассматривается как удаление самого проекта, а не как действие по восстановлению учётной записи.",
                   },
                 ],
               },
@@ -7727,7 +7727,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Отдельный применимый запрос на удаление персональных данных может быть обработан без предусмотренного продуктом периода восстановления, в том числе запросы о сохранённых записях после удаления учётной записи. Воспользуйтесь каналом обращения по запросам о реализации прав из Политики конфиденциальности; мы обрабатываем запрос без неоправданной задержки с соразмерной проверкой при необходимости и узко применимыми законными исключениями. Ограниченный объём записей может сохраняться после удаления для целей, описанных в Политике конфиденциальности:",
+                text: "Применимые запросы о персональных данных регулируются общими положениями о правах из Политики конфиденциальности без необходимости ждать предусмотренный продуктом срок восстановления. После удаления могут сохраняться ограниченные записи для целей, описанных в Политике конфиденциальности:",
               },
             ],
           },
@@ -7929,7 +7929,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "Любые споры, которые не удаётся урегулировать неформально, подлежат исключительной юрисдикции судов Neuilly Sur Seine.",
+                text: "Любые споры, которые не удаётся урегулировать неформально, подлежат исключительной юрисдикции судов Нёйи-сюр-Сен.",
               },
             ],
           },
@@ -8023,7 +8023,7 @@ export const termsOfServiceContent: Record<
               "ZKORUM SAS",
               "99 AVENUE ACHILLE PERETTI",
               "92200 NEUILLY-SUR-SEINE",
-              "FRANCE",
+              "ФРАНЦИЯ",
             ],
           },
         ],
@@ -8038,7 +8038,7 @@ export const termsOfServiceContent: Record<
     viewAuthoritativeEnglishVersion: "查看具有权威效力的英文版本",
     returnToTranslatedVersion: "返回译文版本",
     lastUpdatedLabel: "最后更新日期",
-    lastUpdatedDate: "2026/10/14（YYYY/MM/DD）",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
         text: "欢迎使用 Agora Citizen Network（“Agora”）！本条款及条件（“条款”）规范您对 Agora 平台的访问和使用，包括我们的网站、移动应用程序及其他服务（统称为“服务”）。访问或使用服务即表示您同意受本条款约束。如不同意，您不得访问或使用服务。",
@@ -8101,7 +8101,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: "，或通过 Zupass 提供活动门票资格证明。在这些流程中，Agora 接收所披露的证明信号，而非底层护照或门票。Rarimo 注册须遵守其额外年龄要求：您必须年满18岁。该提供商的适用条款也规范其验证服务。",
+                    text: "。Agora 接收所披露的证明信号，而非底层护照。Rarimo 注册须遵守其额外年龄要求：您必须年满18岁。该提供商的适用条款也规范其验证服务。",
                   },
                 ],
               },
@@ -8329,7 +8329,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "上述内容许可不凌驾于适用的数据保护或删除权之上，也不授权绕过某项功能的访问限制。删除陈述或您的账户，会将受影响的个人陈述从当前展示和后续分析中移除，并在我们的检查点中将其文本替换为“[deleted]”，不显示其译文、用户名或个人资料链接。我们会对受影响的导出文件和其他受控展示进行脱敏处理或使其失效。账户删除会以私密方式保留必要的恢复数据15天，然后进行永久清理；主动删除陈述没有恢复期。账户删除会移除不必要的账户/凭据关联，但本身并不撤回对其他符合条件陈述投出的、依法保留的同意/不同意/跳过票。安全的历史检查点数值可以保持冻结；删除不会重新运行历史计算，也不会重新生成历史AI描述。如果存储的AI输出本身需要删除，现有输出及受影响的译文会按照隐私政策移除或遮蔽，而不生成替代描述。其他私密参与记录、保留的输入和个人映射关系，遵循隐私政策按目的确定的保留规则及撤回/删除规则。仅移除账户关联，不被视为匿名化。导出披露以及已下载或独立再次发布的副本，按照该政策所述方式处理。",
+                text: "本许可不凌驾于适用的数据保护或删除权之上，也不扩大对私密参与信息的访问范围。账户删除请求获接受后，个人陈述会被隐藏，相关参与记录不再纳入新的实时计算。必要的恢复数据会在15天恢复期内以私密方式保留。我们无限期保留已保存结果的个人数值输入（Polis 矩阵、BWS/pairwise 选择和 QV 分配），用于投票分析和重新计算，并在永久清理时移除账户关联。这并非每次保存或 QV 计算的完整历史。常规删除不会重新计算已保存的数值；另行更正或重新分析可能使其改变。常规删除不会自动改写历史AI描述；适用的删除权仍然有效。现有导出文件的下载最迟在生成后30天到期；新导出文件按当前删除状态生成。解除关联不保证匿名性。",
               },
             ],
           },
@@ -8479,7 +8479,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "您可以随时基于任何理由，通过请求删除账户并停止使用服务来终止本条款。常规账户访问立即停止。您可以在下文所述的15天恢复期内，明确取消常规账户删除请求；永久删除和保留记录遵循隐私政策。",
+                text: "您可以随时请求删除账户并停止使用服务。删除请求获接受后，常规账户访问停止，15天恢复期开始。请求被拒绝不会关闭账户，也不会启动恢复期。您可以在该期限内明确取消已获接受的常规账户删除请求；永久删除和保留记录遵循隐私政策。",
               },
             ],
           },
@@ -8554,21 +8554,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "使用可用的、须经身份验证的账户删除控制功能，或联系 legal@zkorum.com 寻求协助。我们根据账户类型，使用受支持的凭据或设备密钥证明验证所有权；这不意味着您必须向我们发送护照图像，也不意味着我们需要无限期收集已签名证明。",
+                    text: "使用可用的、须经身份验证的账户删除功能，或联系 legal@zkorum.com 寻求协助。如果组织职责导致您无法通过该功能删除账户，请联系我们。我们根据账户类型，使用受支持的凭据或设备密钥证明验证所有权；这不意味着您必须向我们发送护照图像，也不意味着我们需要无限期收集已签名证明。",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "账户将无法用于常规访问，现有会话被撤销，个人陈述不再纳入当前展示和分析。其文本会在我们的检查点中替换为“[deleted]”，不显示译文、用户名或个人资料链接；受影响的导出文件和其他受控展示会失效或经过脱敏处理。关闭账户本身不会撤回对其他符合条件陈述投出的、依法保留的投票。必要的源文本、译文和账户关联会以私密方式保留用于恢复，并在永久清理时删除。账户只能在记录的截止时间之前恢复，该截止时间为请求提出后15天。恢复要求验证所有权，并明确确认取消删除；重新连接不会在未明确确认的情况下恢复账户。恢复成功后会建立新的授权会话，而非重新激活所有已撤销会话。",
+                    text: "删除请求获接受后，常规访问被禁用，会话被撤销，个人陈述被隐藏。开放活动的结果可能异步更新；保留的数值结果和现有导出文件遵循隐私政策。必要的恢复数据以私密方式保留。恢复须明确取消删除并验证所有权，且必须严格早于已记录的15天截止时间和不可逆清除的开始时间。访客需要原始设备密钥；密钥丢失可能导致无法恢复。恢复成功会创建新会话，而不会通过已撤销的会话重新获得访问权限。",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "15天截止时间到达时，恢复期结束，并应执行账户永久清除。清理从下一次计划的每小时清理扫描开始，并在无不当延误的情况下进行，通常在该截止时间起七天内完成。我们会监测失败情况、重试，并将延迟或受阻的任务升级处理。扫描延迟和重试不会重新计算该期限，也不会延长恢复期或适用的法定期限。受限的灾难恢复备份可能在实际硬删除后再保留已删除数据最多30天，在恢复的数据开放访问前会重新应用删除措施。",
+                    text: "15天截止时间到达时，恢复期结束，私密账户数据可进入永久清理，清理不得无故拖延。清理延迟不会延长恢复期，也不会重新计算适用的法定期限。保留的输入、受限记录和备份遵循隐私政策。日后重新注册无法重新认领已解除关联的参与记录。",
                   },
                 ],
               },
@@ -8593,7 +8593,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 通过经授权控制功能主动删除的陈述、对话、文档及其他内容，会立即隐藏，并可及时进行永久清理。它们不适用账户的15天恢复期。删除陈述或您的账户采用相同的“[deleted]”检查点显示和文本脱敏规则；您无须在关闭账户前单独删除陈述。安全且冻结的数值结果遵循隐私政策。如果您也希望撤回投票，请使用投票撤回控制功能。永久解除关联后，您将无法通过常规账户功能管理保留的投票记录，但仍可通过隐私政策所述联系渠道提出适用的个人数据权利请求。",
+                    text: " 经授权删除内容会立即隐藏文本、各版本、译文和署名，包括保留的检查点中的内容，不适用账户恢复期。删除账户会从当前视图中隐藏个人陈述，但允许保留的历史文本可能继续存在，而不公开关联账户。若您也希望移除该文本，请在删除账户前单独管理内容；适用的删除请求不要求您手动删除每项贡献。撤回功能遵循活动的开放/关闭规则，不会改写保留的结果。永久解除关联后，账户功能无法检索、更改或撤回已解除关联的数值记录。",
                   },
                 ],
               },
@@ -8615,7 +8615,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 删除操作需要相关权限，并非可撤销的归档。删除项目会移除其中的对话、文档及其拥有的历史报告。删除组织前，任何仍存在且由其单独拥有的项目都必须转移给另一位仍保留的所有者。共同拥有的项目继续由其余所有者持有，同时移除被删除组织的关联关系。另行授权的项目删除按该项目自身的删除处理，并非账户恢复操作。",
+                    text: " 删除操作需要相关权限，并非可撤销的归档。删除项目会按照适用的清理规则，移除其中的对话、文档以及该项目独占拥有的保留数值输入和报告。删除组织前，任何仍存在且由其单独拥有的项目都必须转移给另一位仍保留的所有者。共同拥有的项目继续由其余所有者持有，同时移除被删除组织的关联关系。另行授权的项目删除按该项目自身的删除处理，并非账户恢复操作。",
                   },
                 ],
               },
@@ -8625,7 +8625,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "单独提出的、适用的个人数据删除请求可以不经产品恢复期直接处理，包括账户删除后针对保留记录的请求。请使用隐私政策中的权利请求联系渠道；我们会在不无故拖延的情况下处理，在必要时进行与目的相称的验证，并仅适用范围严格限定的法律例外。删除后，可能为隐私政策所述目的保留有限记录：",
+                text: "适用的个人数据请求遵循隐私政策的一般权利条款，无须经过产品恢复期。删除后，可能为隐私政策所述目的保留有限记录：",
               },
             ],
           },
@@ -8936,7 +8936,7 @@ export const termsOfServiceContent: Record<
     viewAuthoritativeEnglishVersion: "查看具權威效力的英文版本",
     returnToTranslatedVersion: "返回翻譯版本",
     lastUpdatedLabel: "最後更新日期",
-    lastUpdatedDate: "2026/10/14（YYYY/MM/DD）",
+    lastUpdatedDate: "2026/10/14 (YYYY/MM/DD)",
     introduction: [
       {
         text: "歡迎使用 Agora Citizen Network（「Agora」）！本條款及條件（「本條款」）規範您對 Agora 平台的存取及使用，包括我們的網站、行動應用程式及其他服務（合稱「本服務」）。存取或使用本服務，即表示您同意受本條款拘束。如您不同意，則不得存取或使用本服務。",
@@ -8999,7 +8999,7 @@ export const termsOfServiceContent: Record<
                     external: true,
                   },
                   {
-                    text: "進行以護照為基礎的資格驗證，或透過 Zupass 取得活動票券資格證明。在這些流程中，Agora 收到的是已揭露的證明訊號，而非原始護照或票券。Rarimo 註冊另有年齡要求：您必須年滿 18 歲。供應商適用的條款亦規範其驗證服務。",
+                    text: "進行以護照為基礎的資格驗證。Agora 收到的是已揭露的證明訊號，而非原始護照。Rarimo 註冊另有年齡要求：您必須年滿 18 歲。供應商適用的條款亦規範其驗證服務。",
                   },
                 ],
               },
@@ -9227,7 +9227,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "上述內容授權不凌駕適用的資料保護或資料刪除權利，也不授權規避功能的存取限制。刪除陳述或您的帳戶，會將受影響的個人陳述從目前檢視及未來分析中移除，並在我們的檢查點中將其文字替換為 '[deleted]'，不顯示其翻譯、使用者名稱或個人檔案連結。我們會遮蔽受影響的匯出資料及其他受控制顯示內容，或使其失效。帳戶刪除會以非公開方式保留必要的復原資料 15 天，之後進行永久清理；明確刪除陳述不設復原期間。帳戶刪除會移除不必要的帳戶／憑證連結，本身並不撤回對其他符合條件陳述所作、依法保留的同意／不同意／略過投票。安全的歷史檢查點數值可維持凍結；刪除不會重新執行歷史計算，也不會重新產生歷史 AI 描述。如已儲存的 AI 輸出本身需要刪除，會依隱私權政策移除或遮蔽既有輸出及受影響翻譯，不產生替代描述。其他私密參與紀錄、保留輸入及個人對應關係，依隱私權政策基於目的的保留及撤回／刪除規則處理。僅移除帳戶連結，不被視為匿名化。匯出揭露，以及已下載或由他人獨立再次發布的副本，依該政策所述方式處理。",
+                text: "本授權不凌駕適用的資料保護或刪除權利，也不擴大對私密參與資料的存取。帳戶刪除請求獲接受後，個人陳述會隱藏，參與資料不再符合新的即時計算資格。必要的復原資料會在 15 天復原期間內保持非公開。我們會無限期保留已儲存結果的個別數值輸入（Polis 矩陣、BWS／pairwise 選擇及 QV 分配），用於投票分析與重新計算，並在永久清理時移除帳戶連結。這並非每次儲存或 QV 計算的完整歷史。一般刪除不會重新計算已儲存數值；另行更正或重新分析可能改變這些數值。一般刪除不會自動改寫歷史 AI 描述；適用的刪除權利仍然有效。既有匯出資料的下載期限最遲於產生後 30 天屆滿；新匯出資料採用目前的刪除狀態。解除連結不保證匿名。",
               },
             ],
           },
@@ -9377,7 +9377,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "您可隨時以任何理由，透過請求刪除帳戶並停止使用本服務，終止本條款。一般帳戶存取會立即停止。您可在下述 15 天復原期間內，明確取消一般帳戶刪除請求；永久刪除及保留紀錄依隱私權政策處理。",
+                text: "您可隨時請求刪除帳戶並停止使用本服務。刪除請求獲接受後，一般帳戶存取即停止，並開始 15 天復原期間。遭拒絕的請求不會關閉帳戶，也不會啟動該期間。您可在期間內明確取消已獲接受的一般帳戶刪除請求；永久刪除及保留紀錄依隱私權政策處理。",
               },
             ],
           },
@@ -9452,21 +9452,21 @@ export const termsOfServiceContent: Record<
               {
                 content: [
                   {
-                    text: "請使用可用、經身分驗證的帳戶刪除控制項，或聯絡 legal@zkorum.com 取得協助。我們依帳戶類型，適當使用受支援的憑證或裝置金鑰證明驗證所有權；這不表示要求您向我們傳送護照影像，也不表示會無限期蒐集已簽署的證明。",
+                    text: "請使用可用、經身分驗證的帳戶刪除控制項，或聯絡 legal@zkorum.com 取得協助。若組織責任使您無法透過控制項刪除帳戶，請聯絡我們。我們依帳戶類型，適當使用受支援的憑證或裝置金鑰證明驗證所有權；這不表示要求您傳送護照影像，也不表示會無限期蒐集已簽署的證明。",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "帳戶會無法供一般使用，既有工作階段會撤銷，個人陳述則排除於目前檢視及分析之外。我們的檢查點會將其文字替換為 '[deleted]'，不顯示翻譯、使用者名稱或個人檔案連結，並使受影響的匯出資料及其他受控制顯示內容失效或經遮蔽。關閉帳戶本身不會撤回對其他符合條件陳述所作、依法保留的投票。必要的來源文字、翻譯及帳戶連結，會以非公開方式保留供復原，並於永久清理時刪除。帳戶復原嚴格限於所記錄的期限屆滿前；該期限為請求提出後 15 天。復原須驗證所有權，並明確確認取消刪除；重新連線不會在未明確確認的情況下還原帳戶。成功復原會建立新的經授權工作階段，而非重新啟用所有已撤銷的工作階段。",
+                    text: "刪除請求獲接受後，會停用一般存取、撤銷工作階段並隱藏個人陳述。開放中的結果可能非同步更新；保留的數值結果及既有匯出資料依隱私權政策處理。必要的復原資料保持非公開。復原須明確取消刪除並驗證所有權，且嚴格限於所儲存的 15 天期限屆滿前，以及不可逆清除開始前。訪客需要原始裝置金鑰；遺失金鑰可能使其無法復原。成功復原會建立新的工作階段，而非透過先前已撤銷的工作階段恢復存取。",
                   },
                 ],
               },
               {
                 content: [
                   {
-                    text: "15 天期限屆滿時，復原期間結束，並應永久清除帳戶。清理會透過下一次排定的每小時掃描啟動，並在無不當延誤的情況下進行，通常於該截止時間起七天內完成。我們會監控失敗情況、重試，並將延遲或受阻作業升級處理。掃描延遲和重試不會重新計算該期限，也不會延長復原期間或適用的法定期限。受限制的災難復原備份，可在實際永久刪除後最多再保留已刪除資料 30 天，且還原資料向外開放前會重新套用刪除指示。",
+                    text: "15 天期限屆滿時，復原結束，私密帳戶資料即符合永久清理條件，並會在無不當延誤的情況下清理。清理延遲不會延長復原期間，也不會重新起算適用的法定期限。保留的輸入、受限制紀錄及備份依隱私權政策處理。日後重新註冊無法取回已解除連結的參與資料。",
                   },
                 ],
               },
@@ -9491,7 +9491,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 透過經授權控制項明確刪除的陳述、對話、文件及其他內容，會立即隱藏，並可迅速進行永久清理。這些內容不適用帳戶的 15 天復原期間。刪除陳述或您的帳戶，適用相同的 '[deleted]' 檢查點顯示及文字遮蔽規則；您無須在關閉帳戶前另行刪除陳述。安全的凍結數值結果依隱私權政策處理。如您也希望撤回投票，請使用投票撤回控制項。永久解除連結後，便無法再透過一般帳戶功能管理保留的投票紀錄，但仍可透過隱私權政策的聯絡管道提出適用的個人資料權利請求。",
+                    text: " 經授權刪除內容後，文字、各版本、翻譯及署名會立即隱藏，包括保留的檢查點中的內容，不適用帳戶復原期間。刪除帳戶會從目前檢視隱藏個人陳述，但獲准保留的歷史文字可能繼續存在，而不公開連結帳戶。若您也希望移除該文字，請在刪除帳戶前另行管理內容；適用的刪除請求不要求您手動刪除每項貢獻。撤回控制項依活動的開放／關閉規則運作，不會改寫保留的結果。永久解除連結後，帳戶控制項無法取回、更改或撤回已解除連結的數值紀錄。",
                   },
                 ],
               },
@@ -9513,7 +9513,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 刪除操作需要相關權限，並非可還原的封存。刪除專案，會移除其中的對話、文件及所擁有的歷史報告。刪除組織前，任何仍由其單獨擁有的專案，均須移轉予另一個仍存續的擁有者。共同擁有的專案仍由存續的擁有者保有，並移除已刪除組織的關係。另行授權的專案刪除，會作為該專案本身的刪除處理，而非帳戶復原操作。",
+                    text: " 刪除操作需要相關權限，並非可還原的封存。刪除專案會依適用清理規則，移除其中的對話、文件，以及專案專屬的保留數值輸入和報告。刪除組織前，任何仍由其單獨擁有的專案，均須移轉予另一個仍存續的擁有者。共同擁有的專案仍由存續的擁有者保有，並移除已刪除組織的關係。另行授權的專案刪除，會作為該專案本身的刪除處理，而非帳戶復原操作。",
                   },
                 ],
               },
@@ -9523,7 +9523,7 @@ export const termsOfServiceContent: Record<
             type: "paragraph",
             content: [
               {
-                text: "獨立且適用的個人資料刪除請求，可不經產品復原期間而處理，包括針對帳戶刪除後保留紀錄的請求。請使用隱私權政策中的權利請求聯絡管道；我們會在無不當延遲的情況下處理，必要時採取符合比例原則的驗證，並僅適用範圍嚴格限縮的法律例外。刪除後，有限的紀錄可為隱私權政策所述目的保留：",
+                text: "適用的個人資料請求依隱私權政策的一般權利規定處理，無須等待產品復原期間屆滿。刪除後，有限的紀錄可為隱私權政策所述目的保留：",
               },
             ],
           },

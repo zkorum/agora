@@ -2,11 +2,9 @@ import type { AnalysisData } from "src/utils/api/comment/comment";
 import { describe, expect, it } from "vitest";
 
 import {
-  buildAnalysisFreshnessRequest,
   getExpectedDescriptionLocalesFromEvent,
   getPendingDescriptionLocales,
   isAnalysisFreshEnough,
-  shouldRetryDescriptionReadiness,
 } from "./analysisFreshness";
 
 function analysis(overrides: Partial<AnalysisData> = {}): AnalysisData {
@@ -30,7 +28,9 @@ const analysisViewState: NonNullable<AnalysisData["analysisViewState"]> = {
   options: [],
 };
 
-function analysisWithLabels(overrides: Partial<AnalysisData> = {}): AnalysisData {
+function analysisWithLabels(
+  overrides: Partial<AnalysisData> = {}
+): AnalysisData {
   return analysis({
     manifest: {
       analysisViewResolution: analysisViewState,
@@ -94,32 +94,6 @@ describe("analysis freshness", () => {
     ).toBe(false);
   });
 
-  it("builds explicit freshness requests from event and pending state", () => {
-    const request = buildAnalysisFreshnessRequest({
-      previousAnalysis: analysisWithLabels(),
-      expectedSnapshotId: 15,
-      expectedDescriptionLocales: ["fr"],
-      enablePrimaryFallback: true,
-    });
-
-    expect(request).toEqual({
-      enablePrimaryFallback: true,
-      minimumConversationViewSnapshotId: 15,
-      expectedDescriptionLocales: ["fr"],
-    });
-  });
-
-  it("does not build a freshness request without expectations", () => {
-    expect(
-      buildAnalysisFreshnessRequest({
-        previousAnalysis: analysis(),
-        expectedSnapshotId: null,
-        expectedDescriptionLocales: [],
-        enablePrimaryFallback: true,
-      })
-    ).toBeNull();
-  });
-
   it("derives expected locales only for description events", () => {
     expect(
       getExpectedDescriptionLocalesFromEvent({
@@ -137,10 +111,5 @@ describe("analysis freshness", () => {
         },
       })
     ).toEqual(["en", "fr"]);
-  });
-
-  it("does not retry from readiness state", () => {
-    expect(shouldRetryDescriptionReadiness(analysisWithLabels())).toBe(false);
-    expect(shouldRetryDescriptionReadiness(analysis())).toBe(false);
   });
 });

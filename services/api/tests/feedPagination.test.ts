@@ -64,7 +64,8 @@ describe("server-owned feed pagination", () => {
             username: "postgres",
             password: "postgres",
         });
-        db = drizzle(client, {
+        db = drizzle({
+            client,
             logger: {
                 logQuery: (query) => {
                     queries.push(query);
@@ -136,7 +137,7 @@ describe("server-owned feed pagination", () => {
         slugId: string;
         projectId?: number;
         votes?: number;
-        type?: "polis" | "ranking";
+        type?: "polis" | "prioritizing";
         snapshot?: boolean;
         createdAt?: Date;
     }): Promise<number> {
@@ -162,7 +163,9 @@ describe("server-owned feed pagination", () => {
                 projectId,
                 conversationType: type,
                 polisConfigId: type === "polis" ? config.id : null,
-                rankingConfigId: type === "ranking" ? config.id : null,
+                rankingConfigId: type === "prioritizing" ? config.id : null,
+                prioritizationType:
+                    type === "prioritizing" ? "comparisons" : undefined,
                 createdAt: rowCreatedAt,
                 lastReactedAt: rowCreatedAt,
             })
@@ -394,10 +397,15 @@ describe("server-owned feed pagination", () => {
                 personalUserId: authorId,
             });
             const deletedProject = await addProject({ slug: "deleted" });
+            const unlistedProject = await addProject({ slug: "link-only" });
             await db
                 .update(projectTable)
                 .set({ deletedAt: new Date() })
                 .where(eq(projectTable.id, deletedProject));
+            await db
+                .update(projectTable)
+                .set({ directoryVisibility: "unlisted" })
+                .where(eq(projectTable.id, unlistedProject));
             await addConversation({
                 slugId: "muted001",
                 projectId: mutedProject,
@@ -405,6 +413,10 @@ describe("server-owned feed pagination", () => {
             await addConversation({
                 slugId: "project1",
                 projectId: deletedProject,
+            });
+            await addConversation({
+                slugId: "unlist01",
+                projectId: unlistedProject,
             });
             await addConversation({ slugId: "nosnap01", snapshot: false });
             const hidden = await addConversation({ slugId: "hidden01" });
@@ -532,7 +544,7 @@ describe("server-owned feed pagination", () => {
         const ranking = await addConversation({
             slugId: "ranking1",
             votes: 10_000,
-            type: "ranking",
+            type: "prioritizing",
         });
         await db
             .update(rankingConversationConfigTable)

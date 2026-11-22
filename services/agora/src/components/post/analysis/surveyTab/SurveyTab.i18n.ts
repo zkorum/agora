@@ -5,6 +5,7 @@ export interface SurveyTabTranslations {
   myAnswersTitle: string;
   surveyResultsTitle: string;
   surveySubtitle: string;
+  frozenClosingSurvey: string;
   allGroups: string;
   overall: string;
   suppressed: string;
@@ -26,12 +27,18 @@ export interface SurveyTabTranslations {
   retrySurvey: string;
 }
 
-export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, SurveyTabTranslations> = {
+export const surveyTabTranslations: Record<
+  SupportedDisplayLanguageCodes,
+  SurveyTabTranslations
+> = {
   en: {
+    frozenClosingSurvey:
+      "Overall survey results captured at closing. They do not describe the recalculated opinion groups.",
     surveyTitle: "Survey",
     myAnswersTitle: "My answers",
     surveyResultsTitle: "Survey results",
-    surveySubtitle: "See how each survey question is answered overall or within each opinion group.",
+    surveySubtitle:
+      "See how each survey question is answered overall or within each opinion group.",
     allGroups: "All groups",
     overall: "Overall",
     suppressed: "Suppressed",
@@ -39,7 +46,8 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     myAnswersNeedUpdateMessage: "The survey changed since you answered it.",
     myAnswersInProgressMessage: "Your answers are not complete yet.",
     myAnswersOptionalMessage: "You can answer this survey if you want.",
-    myAnswersRequiredMessage: "Answer the survey to participate in this conversation.",
+    myAnswersRequiredMessage:
+      "Answer the survey to participate in this conversation.",
     reviewMyAnswersLabel: "Review",
     updateMyAnswersLabel: "Update answers",
     continueSurveyLabel: "Continue",
@@ -53,10 +61,13 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     retrySurvey: "Retry loading",
   },
   ar: {
+    frozenClosingSurvey:
+      "هذه النتائج الإجمالية للاستبيان سُجّلت عند الإغلاق ولا تصف مجموعات الرأي بعد إعادة حسابها.",
     surveyTitle: "الاستبيان",
     myAnswersTitle: "إجاباتي",
     surveyResultsTitle: "نتائج الاستبيان",
-    surveySubtitle: "اطّلع على إجابات كل سؤال في الاستبيان على مستوى الجميع أو داخل كل مجموعة رأي.",
+    surveySubtitle:
+      "اطّلع على إجابات كل سؤال في الاستبيان على مستوى الجميع أو داخل كل مجموعة رأي.",
     allGroups: "كل المجموعات",
     overall: "إجمالي",
     suppressed: "محجوب",
@@ -78,10 +89,13 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     retrySurvey: "إعادة التحميل",
   },
   es: {
+    frozenClosingSurvey:
+      "Resultados generales de la encuesta al cierre. No describen los grupos de opinión recalculados.",
     surveyTitle: "Encuesta",
     myAnswersTitle: "Mis respuestas",
     surveyResultsTitle: "Resultados de la encuesta",
-    surveySubtitle: "Consulte cómo se responde cada pregunta de la encuesta en general o dentro de cada grupo de opinión.",
+    surveySubtitle:
+      "Consulte cómo se responde cada pregunta de la encuesta en general o dentro de cada grupo de opinión.",
     allGroups: "Todos los grupos",
     overall: "General",
     suppressed: "Suprimido",
@@ -89,29 +103,37 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     myAnswersNeedUpdateMessage: "La encuesta cambió desde que la respondió.",
     myAnswersInProgressMessage: "Sus respuestas aún no están completas.",
     myAnswersOptionalMessage: "Puede responder esta encuesta si quiere.",
-    myAnswersRequiredMessage: "Responda la encuesta para participar en esta conversación.",
+    myAnswersRequiredMessage:
+      "Responda la encuesta para participar en esta conversación.",
     reviewMyAnswersLabel: "Revisar",
     updateMyAnswersLabel: "Actualizar respuestas",
     continueSurveyLabel: "Continuar",
     answerSurveyLabel: "Responder encuesta",
-    noSurveyResultsMessage: "Todavía no hay resultados de la encuesta disponibles.",
-    noGroupResultsMessage: "No hay resultados de la encuesta disponibles para este grupo.",
+    noSurveyResultsMessage:
+      "Todavía no hay resultados de la encuesta disponibles.",
+    noGroupResultsMessage:
+      "No hay resultados de la encuesta disponibles para este grupo.",
     loadingSurvey: "Cargando encuesta...",
     retryingSurvey: "Reintentando cargar la encuesta...",
     surveyErrorTitle: "Error al cargar la encuesta",
-    surveyErrorMessage: "No se pudo cargar el análisis de la encuesta. Inténtelo de nuevo.",
+    surveyErrorMessage:
+      "No se pudo cargar el análisis de la encuesta. Inténtelo de nuevo.",
     retrySurvey: "Reintentar carga",
   },
   fa: {
+    frozenClosingSurvey:
+      "نتایج کلی نظرسنجی در زمان بسته‌شدن ثبت شده‌اند و گروه‌های نظرِ بازمحاسبه‌شده را توصیف نمی‌کنند.",
     surveyTitle: "نظرسنجی",
     myAnswersTitle: "پاسخ‌های من",
     surveyResultsTitle: "نتایج نظرسنجی",
-    surveySubtitle: "ببینید هر پرسش نظرسنجی به صورت کلی یا درون هر گروه نظر چگونه پاسخ داده شده است.",
+    surveySubtitle:
+      "ببینید هر پرسش نظرسنجی به صورت کلی یا درون هر گروه نظر چگونه پاسخ داده شده است.",
     allGroups: "همه گروه‌ها",
     overall: "کلی",
     suppressed: "پنهان‌شده",
     myAnswersSavedMessage: "پاسخ‌های شما ذخیره شده‌اند.",
-    myAnswersNeedUpdateMessage: "این نظرسنجی از زمانی که به آن پاسخ داده‌اید تغییر کرده است.",
+    myAnswersNeedUpdateMessage:
+      "این نظرسنجی از زمانی که به آن پاسخ داده‌اید تغییر کرده است.",
     myAnswersInProgressMessage: "پاسخ‌های شما هنوز کامل نیستند.",
     myAnswersOptionalMessage: "اگر بخواهید می‌توانید به این نظرسنجی پاسخ دهید.",
     myAnswersRequiredMessage: "برای مشارکت در این گفتگو، به نظرسنجی پاسخ دهید.",
@@ -124,39 +146,52 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     loadingSurvey: "در حال بارگذاری نظرسنجی...",
     retryingSurvey: "تلاش مجدد برای بارگذاری نظرسنجی...",
     surveyErrorTitle: "بارگذاری نظرسنجی ناموفق بود",
-    surveyErrorMessage: "بارگذاری تحلیل نظرسنجی ممکن نیست. لطفا دوباره تلاش کنید.",
+    surveyErrorMessage:
+      "بارگذاری تحلیل نظرسنجی ممکن نیست. لطفا دوباره تلاش کنید.",
     retrySurvey: "تلاش مجدد",
   },
   fr: {
+    frozenClosingSurvey:
+      "Résultats globaux du questionnaire enregistrés à la clôture. Ils ne décrivent pas les groupes d’opinion recalculés.",
     surveyTitle: "Questionnaire",
     myAnswersTitle: "Mes réponses",
     surveyResultsTitle: "Résultats du questionnaire",
-    surveySubtitle: "Voyez comment chaque question du questionnaire est répondue globalement ou dans chaque groupe d'opinion.",
+    surveySubtitle:
+      "Voyez comment chaque question du questionnaire est répondue globalement ou dans chaque groupe d'opinion.",
     allGroups: "Tous les groupes",
     overall: "Global",
     suppressed: "Masqué",
     myAnswersSavedMessage: "Vos réponses sont enregistrées.",
-    myAnswersNeedUpdateMessage: "Le questionnaire a changé depuis que vous y avez répondu.",
+    myAnswersNeedUpdateMessage:
+      "Le questionnaire a changé depuis que vous y avez répondu.",
     myAnswersInProgressMessage: "Vos réponses ne sont pas encore complètes.",
-    myAnswersOptionalMessage: "Vous pouvez répondre à ce questionnaire si vous le souhaitez.",
-    myAnswersRequiredMessage: "Répondez au questionnaire pour participer à cette conversation.",
+    myAnswersOptionalMessage:
+      "Vous pouvez répondre à ce questionnaire si vous le souhaitez.",
+    myAnswersRequiredMessage:
+      "Répondez au questionnaire pour participer à cette conversation.",
     reviewMyAnswersLabel: "Consulter",
     updateMyAnswersLabel: "Mettre à jour",
     continueSurveyLabel: "Continuer",
     answerSurveyLabel: "Répondre",
-    noSurveyResultsMessage: "Aucun résultat de questionnaire n'est encore disponible.",
-    noGroupResultsMessage: "Aucun résultat de questionnaire n'est disponible pour ce groupe.",
+    noSurveyResultsMessage:
+      "Aucun résultat de questionnaire n'est encore disponible.",
+    noGroupResultsMessage:
+      "Aucun résultat de questionnaire n'est disponible pour ce groupe.",
     loadingSurvey: "Chargement du questionnaire...",
     retryingSurvey: "Nouvelle tentative de chargement du questionnaire...",
     surveyErrorTitle: "Échec du chargement du questionnaire",
-    surveyErrorMessage: "Impossible de charger l'analyse du questionnaire. Veuillez réessayer.",
+    surveyErrorMessage:
+      "Impossible de charger l'analyse du questionnaire. Veuillez réessayer.",
     retrySurvey: "Réessayer le chargement",
   },
   he: {
+    frozenClosingSurvey:
+      "תוצאות הסקר הכוללות כפי שנשמרו בסגירה. הן אינן מתארות את קבוצות הדעה שחושבו מחדש.",
     surveyTitle: "סקר",
     myAnswersTitle: "התשובות שלי",
     surveyResultsTitle: "תוצאות הסקר",
-    surveySubtitle: "ראו כיצד נענית כל שאלה בסקר בכלל המשתתפים או בתוך כל קבוצת דעה.",
+    surveySubtitle:
+      "ראו כיצד נענית כל שאלה בסקר בכלל המשתתפים או בתוך כל קבוצת דעה.",
     allGroups: "כל הקבוצות",
     overall: "כולל",
     suppressed: "מוסתר",
@@ -178,10 +213,13 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     retrySurvey: "נסה שוב",
   },
   ja: {
+    frozenClosingSurvey:
+      "終了時点に記録されたアンケートの全体結果です。再計算された意見グループの結果ではありません。",
     surveyTitle: "アンケート",
     myAnswersTitle: "自分の回答",
     surveyResultsTitle: "アンケート結果",
-    surveySubtitle: "各アンケート設問への回答が全体または各意見グループ内でどう分かれているかを確認できます。",
+    surveySubtitle:
+      "各アンケート設問への回答が全体または各意見グループ内でどう分かれているかを確認できます。",
     allGroups: "すべてのグループ",
     overall: "全体",
     suppressed: "非表示",
@@ -189,24 +227,30 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     myAnswersNeedUpdateMessage: "回答後にアンケートが変更されました。",
     myAnswersInProgressMessage: "回答はまだ完了していません。",
     myAnswersOptionalMessage: "必要に応じてこのアンケートに回答できます。",
-    myAnswersRequiredMessage: "この会話に参加するにはアンケートに回答してください。",
+    myAnswersRequiredMessage:
+      "この会話に参加するにはアンケートに回答してください。",
     reviewMyAnswersLabel: "確認",
     updateMyAnswersLabel: "回答を更新",
     continueSurveyLabel: "続ける",
     answerSurveyLabel: "回答する",
     noSurveyResultsMessage: "利用可能なアンケート結果はまだありません。",
-    noGroupResultsMessage: "このグループで利用可能なアンケート結果はありません。",
+    noGroupResultsMessage:
+      "このグループで利用可能なアンケート結果はありません。",
     loadingSurvey: "アンケートを読み込み中...",
     retryingSurvey: "アンケートの読み込みを再試行中...",
     surveyErrorTitle: "アンケートの読み込みに失敗しました",
-    surveyErrorMessage: "アンケート分析を読み込めませんでした。もう一度お試しください。",
+    surveyErrorMessage:
+      "アンケート分析を読み込めませんでした。もう一度お試しください。",
     retrySurvey: "再試行",
   },
   ky: {
+    frozenClosingSurvey:
+      "Сурамжылоонун жабылган учурдагы жалпы жыйынтыктары. Алар кайра эсептелген пикир топторун сүрөттөбөйт.",
     surveyTitle: "Сурамжылоо",
     myAnswersTitle: "Менин жоопторум",
     surveyResultsTitle: "Сурамжылоонун жыйынтыктары",
-    surveySubtitle: "Ар бир сурамжылоо суроосуна жооптор жалпы же ар бир пикир тобунун ичинде кандай бөлүнгөнүн көрүңүз.",
+    surveySubtitle:
+      "Ар бир сурамжылоо суроосуна жооптор жалпы же ар бир пикир тобунун ичинде кандай бөлүнгөнүн көрүңүз.",
     allGroups: "Бардык топтор",
     overall: "Жалпы",
     suppressed: "Жашырылган",
@@ -214,24 +258,31 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     myAnswersNeedUpdateMessage: "Сиз жооп бергенден бери сурамжылоо өзгөрдү.",
     myAnswersInProgressMessage: "Жоопторуңуз али толук эмес.",
     myAnswersOptionalMessage: "Кааласаңыз бул сурамжылоого жооп бере аласыз.",
-    myAnswersRequiredMessage: "Бул сүйлөшүүгө катышуу үчүн сурамжылоого жооп бериңиз.",
+    myAnswersRequiredMessage:
+      "Бул сүйлөшүүгө катышуу үчүн сурамжылоого жооп бериңиз.",
     reviewMyAnswersLabel: "Көрүү",
     updateMyAnswersLabel: "Жоопторду жаңыртуу",
     continueSurveyLabel: "Улантуу",
     answerSurveyLabel: "Жооп берүү",
-    noSurveyResultsMessage: "Азырынча сурамжылоонун жыйынтыктары жеткиликтүү эмес.",
-    noGroupResultsMessage: "Бул топ үчүн сурамжылоонун жыйынтыктары жеткиликтүү эмес.",
+    noSurveyResultsMessage:
+      "Азырынча сурамжылоонун жыйынтыктары жеткиликтүү эмес.",
+    noGroupResultsMessage:
+      "Бул топ үчүн сурамжылоонун жыйынтыктары жеткиликтүү эмес.",
     loadingSurvey: "Сурамжылоо жүктөлүүдө...",
     retryingSurvey: "Сурамжылоону кайра жүктөө аракети...",
     surveyErrorTitle: "Сурамжылоону жүктөө ишке ашкан жок",
-    surveyErrorMessage: "Сурамжылоонун анализин жүктөө мүмкүн болгон жок. Кайра аракет кылыңыз.",
+    surveyErrorMessage:
+      "Сурамжылоонун анализин жүктөө мүмкүн болгон жок. Кайра аракет кылыңыз.",
     retrySurvey: "Кайра жүктөө",
   },
   ru: {
+    frozenClosingSurvey:
+      "Общие результаты опроса на момент закрытия. Они не описывают группы мнений после пересчёта.",
     surveyTitle: "Опрос",
     myAnswersTitle: "Мои ответы",
     surveyResultsTitle: "Результаты опроса",
-    surveySubtitle: "Смотрите, как отвечают на каждый вопрос опроса в целом или внутри каждой группы мнений.",
+    surveySubtitle:
+      "Смотрите, как отвечают на каждый вопрос опроса в целом или внутри каждой группы мнений.",
     allGroups: "Все группы",
     overall: "Общее",
     suppressed: "Скрыто",
@@ -239,7 +290,8 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     myAnswersNeedUpdateMessage: "Опрос изменился после вашего ответа.",
     myAnswersInProgressMessage: "Ваши ответы ещё не заполнены.",
     myAnswersOptionalMessage: "Вы можете ответить на этот опрос, если хотите.",
-    myAnswersRequiredMessage: "Ответьте на опрос, чтобы участвовать в этой беседе.",
+    myAnswersRequiredMessage:
+      "Ответьте на опрос, чтобы участвовать в этой беседе.",
     reviewMyAnswersLabel: "Посмотреть",
     updateMyAnswersLabel: "Обновить ответы",
     continueSurveyLabel: "Продолжить",
@@ -249,10 +301,13 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     loadingSurvey: "Загрузка опроса...",
     retryingSurvey: "Повторная загрузка опроса...",
     surveyErrorTitle: "Не удалось загрузить опрос",
-    surveyErrorMessage: "Не удалось загрузить анализ опроса. Пожалуйста, попробуйте снова.",
+    surveyErrorMessage:
+      "Не удалось загрузить анализ опроса. Пожалуйста, попробуйте снова.",
     retrySurvey: "Повторить загрузку",
   },
   "zh-Hans": {
+    frozenClosingSurvey:
+      "这是关闭时记录的问卷总体结果，不代表重新计算后的意见群组。",
     surveyTitle: "问卷",
     myAnswersTitle: "我的回答",
     surveyResultsTitle: "问卷结果",
@@ -278,6 +333,8 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     retrySurvey: "重试加载",
   },
   "zh-Hant": {
+    frozenClosingSurvey:
+      "這是關閉時記錄的問卷整體結果，不代表重新計算後的意見群組。",
     surveyTitle: "問卷",
     myAnswersTitle: "我的回答",
     surveyResultsTitle: "問卷結果",

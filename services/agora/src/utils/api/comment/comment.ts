@@ -2,25 +2,23 @@ import { storeToRefs } from "pinia";
 import type {
   ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest,
   ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest,
-  ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest,
   ApiV1OpinionFetchBySlugIdListPostRequest,
   ApiV1OpinionNextUnansweredPostRequest,
 } from "src/api";
 import { DefaultApiAxiosParamCreator, DefaultApiFactory } from "src/api";
 import type {
+  AnalysisFrameContent,
   AnalysisFrameGroupLabels,
-  AnalysisFrameGroups,
   AnalysisFrameKey,
   AnalysisFrameManifest,
-  AnalysisFrameOpinionList,
-  AnalysisFrameOpinionListKind,
-  AnalysisFreshnessRequest,
   CreateCommentResponse,
   CreateOpinionRequest,
   FetchAnalysisCheckpointsResponse,
   FetchCommentStatsResponse,
   FetchNextUnansweredOpinionResponse,
   GetOpinionBySlugIdListResponse,
+  SetClosedAnalysisInputModeRequest,
+  SetClosedAnalysisInputModeResponse,
 } from "src/shared/types/dto";
 import { Dto } from "src/shared/types/dto";
 import type { AnalysisView } from "src/shared/types/zod";
@@ -28,6 +26,7 @@ import { useAuthenticationStore } from "src/stores/authentication";
 import { useOpinionRedactionStore } from "src/stores/opinionRedaction";
 import type { ParticipationRequestResult } from "src/utils/api/participation/requestResult";
 import { waitForAuthInitialization } from "src/utils/auth/waitForAuthInitialization";
+import { buildUcanForRequestWithDid } from "src/utils/crypto/ucan/operation";
 import type { z } from "zod";
 
 import { useBackendAuthApi } from "../auth";
@@ -54,11 +53,17 @@ type CreateNewCommentResult =
     })
   | Extract<CreateCommentResponse, { success: false }>;
 
+interface AnalysisReadScope {
+  displayLanguage: string;
+  viewerUserId: string | undefined;
+  signal: AbortSignal;
+}
+
 export function useBackendCommentApi() {
   const redactions = useOpinionRedactionStore();
   const { buildEncodedUcan, createRawAxiosRequestConfig } = useCommonApi();
-  const { isGuestOrLoggedIn } = storeToRefs(useAuthenticationStore());
-  const { ensureParticipationAuthState } = useBackendAuthApi();
+  const { isGuestOrLoggedIn, userId } = storeToRefs(useAuthenticationStore());
+  const { applyAcceptedParticipationAuth } = useBackendAuthApi();
 
   async function fetchOpinionPage(
     request: OpinionPageRequest & { signal?: AbortSignal }
@@ -187,7 +192,10 @@ export function useBackendCommentApi() {
 
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1OpinionCreatePost(params);
-      const encodedUcan = await buildEncodedUcan(url, options);
+      const { encodedUcan, didWrite } = await buildUcanForRequestWithDid({
+        pathname: url,
+        method: options.method,
+      });
       if (!isCurrent()) return { status: "cancelled" };
       const response = await DefaultApiFactory(
         undefined,
@@ -203,7 +211,11 @@ export function useBackendCommentApi() {
 
       if (data.success) {
         const { authStateChanged, needsCacheRefresh } =
-          await ensureParticipationAuthState();
+          await applyAcceptedParticipationAuth({
+            loginStatus: data.loginStatus,
+            didWrite,
+            isCurrent,
+          });
         if (!isCurrent()) return { status: "cancelled" };
         return {
           status: "completed",
@@ -289,194 +301,152 @@ export function useBackendCommentApi() {
     return Dto.getOpinionBySlugIdListResponse.parse(response.data);
   }
 
-  async function fetchAnalysisFrameManifest(params: {
-    conversationSlugId: string;
-    analysisView?: AnalysisView;
-    checkpointViewSnapshotId?: number;
-    freshness: AnalysisFreshnessRequest | null;
-  }): Promise<AnalysisFrameManifest> {
+  async function setClosedAnalysisInputMode({
+    request,
+    isCurrent,
+  }: {
+    request: SetClosedAnalysisInputModeRequest;
+    isCurrent: () => boolean;
+  }): Promise<SetClosedAnalysisInputModeResponse> {
+    await waitForAuthInitialization();
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1ConversationAnalysisInputModeSetPost(
+        request
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+    if (!isCurrent())
+      throw new DOMException("Analysis selection changed", "AbortError");
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1ConversationAnalysisInputModeSetPost(
+      request,
+      createRawAxiosRequestConfig({ encodedUcan })
+    );
+    return Dto.setClosedAnalysisInputModeResponse.parse(response.data);
+  }
+
+  async function analysisReadConfig({
+    scope,
+    requestArgs,
+  }: {
+    scope: AnalysisReadScope;
+    requestArgs: () => Promise<{
+      url: string;
+      options: Parameters<typeof buildEncodedUcan>[1];
+    }>;
+  }) {
+    const checkScope = () => {
+      scope.signal.throwIfAborted();
+      if (
+        scope.viewerUserId !== undefined &&
+        (!isGuestOrLoggedIn.value || userId.value !== scope.viewerUserId)
+      )
+        throw new DOMException("Analysis viewer changed", "AbortError");
+    };
+    let encodedUcan: string | undefined;
+    if (scope.viewerUserId !== undefined) {
+      await waitForAuthInitialization();
+      checkScope();
+      const { url, options } = await requestArgs();
+      encodedUcan = await buildEncodedUcan(url, options, "get");
+    }
+    checkScope();
+    const config = createRawAxiosRequestConfig({
+      encodedUcan,
+      timeoutProfile: "extended",
+      signal: scope.signal,
+    });
+    return {
+      ...config,
+      headers: { ...config.headers, "Accept-Language": scope.displayLanguage },
+    };
+  }
+  async function fetchAnalysisFrameManifest(
+    params: AnalysisReadScope & {
+      conversationSlugId: string;
+      analysisView?: AnalysisView;
+      checkpointViewSnapshotId?: number;
+    }
+  ): Promise<AnalysisFrameManifest> {
     const requestParams: ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest =
       {
         conversationSlugId: params.conversationSlugId,
         analysisView: params.analysisView,
         checkpointViewSnapshotId: params.checkpointViewSnapshotId,
-        freshness: params.freshness,
       };
-
-    await waitForAuthInitialization();
-
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
+    const config = await analysisReadConfig({
+      scope: params,
+      requestArgs: () =>
+        DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
           requestParams
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
-        requestParams,
-        createRawAxiosRequestConfig({
-          encodedUcan,
-          timeoutProfile: "extended",
-        })
-      );
-      return Dto.analysisFrameManifest.parse(response.data);
-    }
-
+        ),
+    });
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
     ).apiV1OpinionFetchAnalysisFrameManifestByConversationPost(
       requestParams,
-      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
+      config
     );
     return Dto.analysisFrameManifest.parse(response.data);
   }
 
-  async function fetchAnalysisFrameGroups(params: {
-    conversationSlugId: string;
-    frameKey: AnalysisFrameKey;
-    freshness: AnalysisFreshnessRequest | null;
-  }): Promise<AnalysisFrameGroups> {
+  async function fetchAnalysisFrameContent(
+    params: AnalysisReadScope & {
+      conversationSlugId: string;
+      frameKey: AnalysisFrameKey;
+    }
+  ): Promise<AnalysisFrameContent> {
     const requestParams: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest =
       {
         conversationSlugId: params.conversationSlugId,
         frameKey: params.frameKey,
-        freshness: params.freshness,
       };
 
-    await waitForAuthInitialization();
-
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
+    const config = await analysisReadConfig({
+      scope: params,
+      requestArgs: () =>
+        DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameContentByFramePost(
           requestParams
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
-        requestParams,
-        createRawAxiosRequestConfig({
-          encodedUcan,
-          timeoutProfile: "extended",
-        })
-      );
-      return redactions.projectGroups(
-        Dto.analysisFrameGroups.parse(response.data)
-      );
-    }
-
+        ),
+    });
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1OpinionFetchAnalysisFrameGroupsByFramePost(
-      requestParams,
-      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
-    );
-    return redactions.projectGroups(
-      Dto.analysisFrameGroups.parse(response.data)
+    ).apiV1OpinionFetchAnalysisFrameContentByFramePost(requestParams, config);
+    return redactions.projectFrameContent(
+      Dto.analysisFrameContent.parse(response.data)
     );
   }
 
   async function fetchAnalysisFrameGroupLabels(params: {
     conversationSlugId: string;
     frameKey: AnalysisFrameKey;
-    freshness: AnalysisFreshnessRequest | null;
+    displayLanguage: string;
+    signal: AbortSignal;
   }): Promise<AnalysisFrameGroupLabels> {
     const requestParams: ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest =
       {
         conversationSlugId: params.conversationSlugId,
         frameKey: params.frameKey,
-        freshness: params.freshness,
       };
-
-    await waitForAuthInitialization();
-
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
-          requestParams
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
-        requestParams,
-        createRawAxiosRequestConfig({
-          encodedUcan,
-          timeoutProfile: "extended",
-        })
-      );
-      return Dto.analysisFrameGroupLabels.parse(response.data);
-    }
 
     const response = await DefaultApiFactory(
       undefined,
       undefined,
       api
-    ).apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(
-      requestParams,
-      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
-    );
+    ).apiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost(requestParams, {
+      ...createRawAxiosRequestConfig({
+        timeoutProfile: "extended",
+        signal: params.signal,
+      }),
+      headers: { "Accept-Language": params.displayLanguage },
+    });
     return Dto.analysisFrameGroupLabels.parse(response.data);
-  }
-
-  async function fetchAnalysisFrameOpinionList(params: {
-    conversationSlugId: string;
-    frameKey: AnalysisFrameKey;
-    kind: AnalysisFrameOpinionListKind;
-    freshness: AnalysisFreshnessRequest | null;
-  }): Promise<AnalysisFrameOpinionList> {
-    const requestParams: ApiV1OpinionFetchAnalysisFrameOpinionListByFramePostRequest =
-      {
-        conversationSlugId: params.conversationSlugId,
-        frameKey: params.frameKey,
-        kind: params.kind,
-        freshness: params.freshness,
-      };
-
-    await waitForAuthInitialization();
-
-    if (isGuestOrLoggedIn.value) {
-      const { url, options } =
-        await DefaultApiAxiosParamCreator().apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
-          requestParams
-        );
-      const encodedUcan = await buildEncodedUcan(url, options);
-      const response = await DefaultApiFactory(
-        undefined,
-        undefined,
-        api
-      ).apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
-        requestParams,
-        createRawAxiosRequestConfig({
-          encodedUcan,
-          timeoutProfile: "extended",
-        })
-      );
-      const list = Dto.analysisFrameOpinionList.parse(response.data);
-      return { ...list, items: list.items.map(redactions.projectOpinion) };
-    }
-
-    const response = await DefaultApiFactory(
-      undefined,
-      undefined,
-      api
-    ).apiV1OpinionFetchAnalysisFrameOpinionListByFramePost(
-      requestParams,
-      createRawAxiosRequestConfig({ timeoutProfile: "extended" })
-    );
-    const list = Dto.analysisFrameOpinionList.parse(response.data);
-    return { ...list, items: list.items.map(redactions.projectOpinion) };
   }
 
   async function fetchAnalysisCheckpoints(params: {
@@ -503,9 +473,9 @@ export function useBackendCommentApi() {
     deleteCommentBySlugId,
     fetchOpinionsBySlugIdList,
     fetchAnalysisFrameManifest,
-    fetchAnalysisFrameGroups,
+    setClosedAnalysisInputMode,
+    fetchAnalysisFrameContent,
     fetchAnalysisFrameGroupLabels,
-    fetchAnalysisFrameOpinionList,
     fetchAnalysisCheckpoints,
   };
 }

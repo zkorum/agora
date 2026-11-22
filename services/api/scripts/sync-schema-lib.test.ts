@@ -84,6 +84,31 @@ describe("filterTablesForService", () => {
 // === parseSqlTables ===
 
 describe("parseSqlTables", () => {
+    it("preserves composite primary keys for sparse QV allocation ORM identity", () => {
+        const sql = `CREATE TABLE "qv_allocation" (
+            "version_id" uuid NOT NULL,
+            "item_id" integer NOT NULL,
+            "votes" smallint NOT NULL,
+            CONSTRAINT "qv_allocation_pk" PRIMARY KEY("version_id", "item_id")
+        );`;
+        const tables = parseSqlTables(sql, new Set(["qv_allocation"]));
+        expect(
+            getParsedColumns(tables, "qv_allocation")
+                .filter((column) => column.isPrimaryKey)
+                .map((column) => column.name),
+        ).toEqual(["version_id", "item_id"]);
+        const output = generateSqlAlchemyModels({
+            tables,
+            enums: new Map(),
+            service: "credit-voting-worker",
+        });
+        expect(output).toContain(
+            "version_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)",
+        );
+        expect(output).toContain(
+            "item_id: Mapped[int] = mapped_column(Integer, primary_key=True)",
+        );
+    });
     it("parses a simple table", () => {
         const sql = `CREATE TABLE "items" (
     "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "items_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
@@ -169,6 +194,38 @@ CREATE TABLE "unwanted" ("id" integer NOT NULL);`;
         expect(cols).toHaveLength(1);
         expect(cols[0].name).toBe("id");
     });
+
+    it("keeps UUID types when a named unique constraint is inline", () => {
+        const sql = `CREATE TABLE "qv_response" (
+    "participant_id" uuid NOT NULL CONSTRAINT "qv_response_participant_unique" UNIQUE
+);`;
+        const columns = getParsedColumns(
+            parseSqlTables(sql, new Set(["qv_response"])),
+            "qv_response",
+        );
+        expect(columns[0]).toMatchObject({
+            name: "participant_id",
+            sqlType: "uuid",
+            nullable: false,
+        });
+    });
+
+    it("does not include named constraints in column defaults", () => {
+        const columns = getParsedColumns(
+            parseSqlTables(
+                `CREATE TABLE "items" (
+    "id" uuid DEFAULT gen_random_uuid() CONSTRAINT "items_id_unique" UNIQUE
+);`,
+                new Set(["items"]),
+            ),
+            "items",
+        );
+        expect(columns[0]).toMatchObject({
+            sqlType: "uuid",
+            hasDefault: true,
+            defaultValue: "gen_random_uuid()",
+        });
+    });
 });
 
 describe("assertParsedTablesForService", () => {
@@ -248,7 +305,7 @@ describe("mapSqlType", () => {
     it("maps text[] to ARRAY(Text)", () => {
         expect(mapSqlType("text[]", noEnums)).toEqual({
             pyType: "list[str]",
-            saType: "ARRAY(Text)",
+            saType: 'ARRAY(Text).with_variant(JSON(), "sqlite")',
         });
     });
 
@@ -298,7 +355,7 @@ describe("mapSqlType", () => {
     it("maps integer[] to ARRAY(Integer)", () => {
         expect(mapSqlType("integer[]", noEnums)).toEqual({
             pyType: "list[int]",
-            saType: "ARRAY(Integer)",
+            saType: 'ARRAY(Integer).with_variant(JSON(), "sqlite")',
         });
     });
 
@@ -597,6 +654,62 @@ describe("generateSqlAlchemyModels", () => {
             service: "test",
         });
         expect(output).toContain("default=uuid_pkg.uuid4");
+    });
+
+    it.each([
+        { defaultValue: "'closing'", expected: "closing" },
+        { defaultValue: "'live'::text", expected: "live" },
+        { defaultValue: "'it''s frozen'", expected: "it's frozen" },
+        { defaultValue: "''", expected: "" },
+    ])(
+        "preserves literal text default $defaultValue",
+        ({ defaultValue, expected }) => {
+            const output = generateSqlAlchemyModels({
+                tables: new Map([
+                    [
+                        "checkpoint",
+                        [
+                            {
+                                name: "input_mode",
+                                sqlType: "text",
+                                nullable: false,
+                                hasDefault: true,
+                                defaultValue,
+                                isPrimaryKey: false,
+                            },
+                        ],
+                    ],
+                ]),
+                enums: new Map(),
+                service: "test",
+            });
+            expect(output).toContain(
+                `server_default=${JSON.stringify(expected)}`,
+            );
+        },
+    );
+
+    it("does not turn a SQL text expression into a string default", () => {
+        const output = generateSqlAlchemyModels({
+            tables: new Map([
+                [
+                    "checkpoint",
+                    [
+                        {
+                            name: "input_mode",
+                            sqlType: "text",
+                            nullable: false,
+                            hasDefault: true,
+                            defaultValue: "lower('CLOSING')",
+                            isPrimaryKey: false,
+                        },
+                    ],
+                ],
+            ]),
+            enums: new Map(),
+            service: "test",
+        });
+        expect(output).not.toContain("server_default");
     });
 
     it("includes header comment", () => {

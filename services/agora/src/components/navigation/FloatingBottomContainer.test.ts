@@ -1,15 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type App, createApp, h, KeepAlive, nextTick, ref } from "vue";
 
-vi.mock("quasar", () => ({
-  useQuasar: () => ({ lang: { rtl: false } }),
-}));
-vi.mock("src/stores/navigation", () => ({
-  useNavigationStore: () => ({
-    drawerBehavior: ref("mobile"),
-    drawerWidth: ref(280),
-  }),
-}));
 vi.mock("vue-router", () => ({
   useRoute: () => ({ path: "/conversation/test/" }),
   useRouter: () => ({ currentRoute: actualRoute }),
@@ -31,7 +22,10 @@ describe("floating composer lifecycle", () => {
     const host = document.createElement("div");
     document.body.append(host);
     const app = createApp({
-      render: () => h(FloatingBottomContainer, {}, () => h("input")),
+      render: () =>
+        h(FloatingBottomContainer, { anchorElement: undefined }, () =>
+          h("input")
+        ),
     });
     apps.push(app);
     app.mount(host);
@@ -60,7 +54,9 @@ describe("floating composer lifecycle", () => {
       render: () =>
         h(KeepAlive, () =>
           visible.value
-            ? h(FloatingBottomContainer, {}, () => h("input"))
+            ? h(FloatingBottomContainer, { anchorElement: undefined }, () =>
+                h("input")
+              )
             : undefined
         ),
     });
