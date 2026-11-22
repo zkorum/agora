@@ -168,9 +168,9 @@ Scheduling reads only identities and translation coverage, in 500-response pages
 it does not load response text to decide which work is missing. Display assembly,
 scheduling and interactive requests live in separate translation modules.
 
-The translation schema additions still require generated, reviewed migrations
-before deployment. Migration generation is paused; no database was migrated.
-New enum values must be committed before constraints can reference them.
+V0116 includes the translation schema. Enum values are committed in the base
+phase before the concurrent translation indexes and validated constraints use
+them. No application database was migrated.
 
 Permanent purge, backup erasure, private-data retention periods and exceptional
 cross-copy erasure are deletion-service/privacy-policy gates, not permission to

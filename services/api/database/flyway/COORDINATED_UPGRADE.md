@@ -59,6 +59,10 @@ replaces the original FK directly.
 - **Ship every `.sql.conf` sidecar.** The concurrent-index and batched-data files
   require `executeInTransaction=false`. CALLs manage their own batch commits;
   wrapping the entire file/chain in BEGIN defeats this and PostgreSQL rejects it.
+- **Use Flyway's PostgreSQL session lock.** Both `pnpm db:migrate` entry points
+  set `FLYWAY_POSTGRESQL_TRANSACTIONAL_LOCK=false`. Set it on any other Flyway
+  runner too: the default transaction-level advisory lock can block the first
+  `CREATE INDEX CONCURRENTLY` even with the per-script sidecar.
 - The five-second lock timeout follows the existing backend lock-timeout default:
   metadata contention fails rather than building a long lock queue. It is not an
   index-build/backfill statement timeout or a deployment-duration guarantee.
@@ -86,7 +90,13 @@ node scripts/stage_coordinated_migration.mjs --write
 ## Deployment gates
 
 - Inspect actual target Flyway history, including pending V0113.1, before choosing
-  any deployment command. Do not assume out-of-order execution is enabled.
+  any deployment command. A database migrated with upstream main through V0115
+  does **not** have this branch's V0113.1. Stop if it is missing; do not let
+  application cutover silently skip ticket retirement. In a separately approved
+  maintenance window, verify V0113.1 is the **only** outstanding migration
+  through V0115, drain incompatible writers, apply that pinned version, and
+  verify its successful history entry before normal V0116 migration. Do not
+  enable out-of-order execution globally or apply other historical gaps by guess.
 - This packaging is editable only while unapplied. Once any phase is deployed,
   freeze its contents/checksum and use forward migrations for changes; do not
   restage an already-applied version.
@@ -117,5 +127,7 @@ Detailed intent and sequencing: `doc/coordinated-backfill-order.md`.
 
 Local verification covers final-schema catalog parity, one-row batch boundaries,
 failure/retry, frozen evidence, and writer compatibility during concurrent index
-creation and FK validation. Preexisting Flyway files through V0115 are unchanged.
-No application migration was run.
+creation and FK validation. A separate Flyway 11.20.3 / PostgreSQL 16 rehearsal
+applied the SQL history through V0115, seeded legacy rows, and applied all 17
+V0116 phases; `validate` passed and a second `migrate` had no work. Preexisting
+Flyway files through V0115 are unchanged. No application migration was run.

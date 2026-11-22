@@ -31,6 +31,5 @@ separate session without involving participant-facing conversation tables.
 There is no rehearsal API or frontend wiring yet. Vue can keep publishing its
 local drafts through `/api/v1/conversation/create` unchanged.
 
-Include `conversation_draft` in the pending consolidated schema migration before
-using these endpoints against a deployed database. No legacy data backfill is
-needed.
+V0116 creates `conversation_draft`. Apply the coordinated upgrade before using
+these endpoints against a deployed database. No legacy data backfill is needed.

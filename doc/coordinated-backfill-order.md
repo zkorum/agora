@@ -116,6 +116,7 @@ Prepared paths below are relative to `services/api/scripts/`.
 | Data part of `prepare-realtime-retention-contract.sql` | Delivery timestamps/replay floor and compatible event readers | Retention/pruning enablement and replay verification | Preserve IDs/topics; timestamp legacy delivered rows at discovery; scrub obsolete free text. Never guess delivery age for pending events. |
 | `refresh-deleted-account-live-inputs.sql` | Ownership repair, source normalization, correct eligibility and renamed scoring functions | Compatible workers reconcile live results | Update working counts/dirty revisions only. Preserve finalized results/history. Record once rather than rerunning arbitrary maintenance. |
 | Retired ticket entitlement removal | Resolve pending V0113.1 against actual Flyway history; drain incompatible writers | Ticket-free runtime contract | Use the exact hash-pinned migration. Do not broaden the purge or change deployed checksums. |
+| `backfill-default-project-directory-visibility.sql` (`V0116.15`) | Existing conversation indexing intent and current content, after lifecycle repairs | Deploying project-aware feed/crawler discovery | List qualifying active auto-provisioned projects only; keep named projects and conversation flags unchanged. |
 
 The participant-policy plan explicitly gives existing mapping configs true and
 comparison configs false. QV has no permission field. This changes creation
@@ -131,8 +132,16 @@ permission, not existing opinions, answers or normal voting.
 - Mass comparison identity detachment just because `detached_at` now exists.
 - Historical learner conversion/recalculation of frozen results solely because
   joint BWS replaces the live learner.
-- Backend drafts or gathering data. The separate Nov 14 gathering session is
-  future design, not part of these generated tables.
+- Backend drafts, Gathering fields/responses and translations, or post-close
+  selection roots. The tables are new; no old published activity implies any
+  corresponding working draft, saved response, or certified closing capture.
+- Existing conversations keep their participation mode through the
+  `conversation_override` default. Setting them all to inherit the new project's
+  `guest` default would change admission. Historical ranking items are comparisons,
+  not QV items; the new QV position does not require inventing a retained order.
+- Existing numerical payloads remain version 1; `uses_closing_inputs` defaults
+  false on old work. Do not manufacture baseline certificates, account mappings,
+  or retroactive permission to retain account-hidden text.
 
 `conversation_export_object` needs operational verification, not guessed SQL
 history: `cleanupExportObjects` already discovers legacy artifact keys in

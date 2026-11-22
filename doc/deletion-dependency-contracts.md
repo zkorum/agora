@@ -60,10 +60,10 @@ active reused publication as a retention root. The cross-conversation FK and
 PostgreSQL binding trigger protect reference scope, provenance and immutability.
 
 The generated V0116 migration includes this reference plus the previously pending
-account/content flags and eligibility tables. V0116.1 upgrades comparison
+account/content flags and eligibility tables. V0116.10 upgrades comparison
 binding/retention functions and installs the reuse trigger. These files were
-generated/authored but not applied to an application database. The separate
-retained-participant eligibility trigger contract remains a rollout prerequisite.
+generated/authored but not applied to an application database. V0116.14 installs
+the retained-participant eligibility trigger contract.
 Neither migration enables automatic cleanup or post-closure recalculation.
 
 The subsequent comparison baseline source adds `comparison_input_baseline`, an
@@ -81,15 +81,9 @@ Missing legacy baseline certificates remain explicitly unsupported; no live-data
 backfill or inferred account association is performed. The readiness audit reports
 these closed baseline gaps as informational, separately from purge data blockers.
 
-At the user's request, additional migration generation is deferred until the
-canonical schema is complete, followed by one consolidated generated structural
-migration and numbered PostgreSQL/backfill phases. The temporary V0119 structural
-draft was removed; baseline PostgreSQL functions/triggers are versioned in
+The consolidated V0116 schema creates the baseline table.
 `services/api/database/flyway/V0116.10__prepare_comparison_retention.sql`
-and will be installed by Flyway after the consolidated generated V0116 schema.
-Earlier/concurrent structural drafts were not consolidated or applied by this
-follow-up. The baseline table must be included in that consolidated schema before
-running Flyway; the current drafts are not a deployable final migration sequence.
+installs its PostgreSQL functions and triggers.
 
 ### Complete Polis evidence follow-up — 2026-11-17
 
@@ -114,8 +108,8 @@ share root locks, so a new V2 result cannot lose its baseline certificate during
 publication. PostgreSQL enforces relational scope and projections; zstd/hash and
 numerical-cell validation runs in the Python writer/reader.
 
-The consolidated generated structural migration still needs to include the
-baseline table and payload-version column before this phase runs. No application
+The consolidated structural migration creates the baseline table and adds the
+payload-version column before this phase runs. No application
 database was migrated, and this follow-up does not enable finalized correction
 admission, input-mode switching or automatic deletion scheduling.
 
@@ -131,20 +125,20 @@ content-reference erasure remains allowed without changing numerical provenance.
 These tables contain no account IDs or raw answers.
 
 Flyway phase `V0116.14__protect_retained_analysis_inputs.sql` checks lifecycle
-freshness, native checkpoint scope and immutability. The consolidated structural
-migration is still pending; no application database was migrated.
+freshness, native checkpoint scope and immutability after the consolidated
+structural migration. No application database was migrated.
 
 `polis_analysis_close_generation` binds a retained-input rerun to its close.
-Draft phase `V0116.5` makes the binding immutable. It adds no account links
+Phase `V0116.14` makes the binding immutable. It adds no account links
 or raw input.
 
-`V0116.6` allows a derived Closing capture to link directly to certified complete
+`V0116.14` allows a derived Closing capture to link directly to certified complete
 evidence behind that bound close's original checkpoint. The derived capture
 holds only the projected numerical evidence and its certificate; participant
 eligibility inserts and updates cannot attach account links to it. This is not
 a publication or result-selection contract.
 
-Draft `V0116.7` protects pinned captures and staged Closing views. The worker
+`V0116.14` protects pinned captures and staged Closing views. The worker
 publishes the replacement only once every bound spec has a result. The original
 snapshot and its survey evidence remain unchanged.
 
@@ -320,9 +314,8 @@ blanket exemption from exceptional cross-copy erasure. Assess retained locators
 as part of that erasure policy. Physical purge and that policy are not implemented
 or enabled by the Gathering backend.
 
-Generated V0117/V0118 migrations were exercised on disposable PostgreSQL only.
-V0117's Flyway configuration commits the enum addition before its use. These
-migrations must precede deploying API code that queries Gathering roots.
+The coordinated V0116 Flyway chain commits the enum addition before its use.
+It must precede deployment of API code that queries Gathering roots.
 
 ## Updated retention decision — 2026-11-11
 
@@ -493,18 +486,17 @@ Stage 5; Stage 3 does not create or enable a deletion worker.
 
 ## Migration and external enablement gates
 
-Stages 3/4 originally deferred schema generation. The comparison closing
-follow-up above generated V0116 (including their pending schema changes) and
-V0116.1; no application-database migration has been run. Review populated-data
+The V0116 Flyway chain includes the schema and fractional data/contract phases
+for stages 3/4 and comparison closing. No application-database migration has been run. Review populated-data
 compatibility, composite FKs and staging script order before application:
 
 1. The existing guest vote ownership repair must precede its generated FK.
 2. Participant unlink function changes follow `V0111.1`; nullable attribution and
    composite FK expansion must be available before using the unlink contracts.
 3. `prepare-deletion-intent-backfill.sql`, device retirement, ranking account-source
-   fences and replay boundary
-   scripts require their generated columns/tables first. Place staging sources in
-   reviewed fractional Flyway migrations, not manual production cleanup commands.
+   fences and replay boundary scripts require their generated columns/tables
+   first. The prepared sources are integrated into numbered Flyway phases;
+   do not run them as manual production cleanup commands.
 4. Unknown active-parent null pointers stay unclassified and blocked. Discovery
    must not create a fresh recovery window or guess an old deletion date.
 5. Drain old writers/clients and validate parity before enabling purge. Deploy the
@@ -536,7 +528,7 @@ compatibility, composite FKs and staging script order before application:
     `prepare-comparison-retention-contract.sql` before source retirement. Drain old
     writers before enabling any purge-phase caller. Validate populated legacy
     checkpoints explicitly; never fabricate their original inputs from today's
-    session rows. The binding source is not an installed migration.
+    session rows. Phase `.10` installs the binding contract.
 
 ## Verification evidence (2026-10-31)
 
