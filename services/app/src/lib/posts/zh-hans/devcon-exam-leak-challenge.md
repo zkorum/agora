@@ -14,6 +14,12 @@ image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 
 我们邀请参与者组成一个小型公民议会。不必了解区块链的运作方式，他们就能讨论考试系统应该提供哪些保障，例如一条记录生成之后能否修改。至于区块链究竟有没有帮助，则由他们自己决定。
 
+工作坊期间，我们用 Agora 进行了两轮简短的投票，根据结果引导讨论。实时看到投票结果，参与者就能检验自己的假设，深入探讨分歧，也能发现大家在哪些问题上其实已经有了共识。
+
+Agora 把投票倾向相近的人归入同一观点群体，并突出显示在不同群体中都获得支持的陈述。[了解 Agora 如何绘制观点地图、找出跨群体的共识](/zh-hans#faq)
+
+我们先提出了两条陈述，分别代表保障考试安全的两种不同思路。我们把它们称为“保险库”和“图书馆”。
+
 ## 保障考试安全的两个起点
 
 <figure class="resource-comparison" aria-label="保障考试安全的两种方案">
@@ -51,8 +57,6 @@ image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 
 4. **压力测试。** 时间结束前，大家着手检验争议最大的提案。现场没有进行最终排序，我们让 Agora 上的讨论又开放了一周。
 
-Agora 根据投票模式划分观点群体。分组完成后，一个人工智能模型为各组命名并概括其观点。
-
 ## 投票揭示了什么
 
 Agora 的报告记录了 18 名参与者、330 票和 22 条陈述。其中有 12 条陈述由参与者在现场撰写。
@@ -84,5 +88,9 @@ Agora 的报告记录了 18 名参与者、330 票和 22 条陈述。其中有 1
 我们希望这次小型工作坊能鼓励公民、社区和机构试用 Agora，共同为自己关心的问题寻找解决办法。[阅读 Agora 主持指南](/resources/facilitation-guide)
 
 [查看 Agora 上的原始讨论](https://www.agoracitizen.app/project/devcon8/conversation/Z-n7k2Q) · [查看 Devcon 官方档案条目](https://archive.devcon.org/devcon8/what-can-ethereum-do-for-india-the-exam-leak-challenge/)
+
+<figure>
+  <img src="https://d36w59669phgb2.cloudfront.net/workshop-devcon-india.jpg" alt="工作坊现场，六个人在写着 Devcon India 的屏幕前一起自拍。" width="1600" height="1201" loading="lazy" decoding="async" />
+</figure>
 
 特别感谢 [GCC](https://www.gccofficial.org/) 为 Agora 和其他公共产品提供资助。

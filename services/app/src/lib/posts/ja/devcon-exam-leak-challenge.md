@@ -14,6 +14,12 @@ image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 
 私たちは、参加者に小さな市民会議の一員として考えてもらいました。ブロックチェーンの仕組みを知らなくても、たとえば作成後に記録を変更できるかどうかなど、試験制度が何を保証すべきかを話し合えます。そもそもブロックチェーンが役に立つかどうかも、参加者が自由に判断できました。
 
+ワークショップでは、Agoraで短い投票を2回行い、その結果をもとに話し合いを進めました。結果をその場で見ることで、参加者は自分の考えの前提を確かめ、意見が分かれた理由を掘り下げ、すでに意見が一致している点にも気づくことができました。
+
+Agoraは、投票の傾向が似ている人を意見グループに分け、グループを超えて支持されている意見を示します。[Agoraの意見マップの仕組みと、合意点の見つけ方を知る](/ja#faq)
+
+最初に取り上げたのは、試験の安全性をどう守るかについて異なる考え方を示す二つの意見です。私たちはそれぞれを「金庫案」と「図書館案」と呼びました。
+
 ## 試験の安全性を考える二つの出発点
 
 <figure class="resource-comparison" aria-label="試験の安全性を高める二つの方法">
@@ -51,8 +57,6 @@ image: "/images/resources/devcon-exam-leak-opinion-map.webp"
 
 4. **提案の弱点を検討。** 最も意見が割れた提案の弱点を検討し始めたところで、時間切れになりました。その場で最終順位は決めず、Agoraでの会話にはその後も1週間参加できるようにしておきました。
 
-Agoraは、投票パターンに基づいて参加者をグループ分けしました。グループができた後、AIモデルがそれぞれに名前を付け、意見の傾向を要約しました。
-
 ## 投票で明らかになったこと
 
 Agoraのレポートには、参加者18人、330票、22件の意見が記録されています。そのうち12件は参加者がワークショップ中に書いたものです。
@@ -84,5 +88,9 @@ Agoraのレポートには、参加者18人、330票、22件の意見が記録�
 この小さなワークショップをきっかけに、市民や地域のコミュニティ、組織がAgoraを使い、自分たちにとって大切な課題の解決策を共に探してくれることを願っています。[Agoraのファシリテーションガイドを読む](/resources/facilitation-guide)
 
 [Agoraの元の議論を見る](https://www.agoracitizen.app/project/devcon8/conversation/Z-n7k2Q) · [Devcon公式アーカイブを見る](https://archive.devcon.org/devcon8/what-can-ethereum-do-for-india-the-exam-leak-challenge/)
+
+<figure>
+  <img src="https://d36w59669phgb2.cloudfront.net/workshop-devcon-india.jpg" alt="ワークショップ会場で、Devcon Indiaのスクリーンを背に6人が自撮りしている様子。" width="1600" height="1201" loading="lazy" decoding="async" />
+</figure>
 
 Agoraとその他の公共財を支援してくださった [GCC](https://www.gccofficial.org/) に、特に感謝します。

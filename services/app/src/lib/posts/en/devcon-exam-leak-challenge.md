@@ -14,6 +14,12 @@ At Devcon 8 in Mumbai, we asked workshop participants how future paper leaks cou
 
 We invited participants to act as a mini citizens’ assembly. They could discuss what an exam system should guarantee, such as whether a record could be changed after it was created, without needing to know how a blockchain works. They were free to decide whether a blockchain would help at all.
 
+We used Agora during two short voting rounds to guide the workshop discussion. Seeing the results in real time helped participants test their assumptions, dig into disagreements, and recognize where they already had common ground.
+
+Agora groups people with similar voting patterns and highlights statements that draw support across groups. [Learn how opinion mapping and consensus work in Agora](https://www.agoracitizen.network/#faq)
+
+We started with two statements that took different approaches to exam security. We called them the Vault and the Library.
+
 ## Two starting points for exam security
 
 <figure class="resource-comparison" aria-label="Two approaches to exam security">
@@ -51,8 +57,6 @@ We used the two statements as starting points. My co-facilitators helped the tea
 
 4. **Stress test.** The room began challenging the most divisive proposal before time ran out. The session ended before a final ranking, and we left the Agora conversation open for another week.
 
-Agora grouped participants by their voting patterns. An AI model named and summarized each group after the groups had been formed.
-
 ## What the votes revealed
 
 The Agora report recorded 18 participants, 330 votes, and 22 statements. Participants wrote 12 of those statements during the session.
@@ -85,4 +89,8 @@ We hope this small workshop inspires citizens, communities, and institutions to 
 
 [Explore the original Agora conversation](https://www.agoracitizen.app/project/devcon8/conversation/Z-n7k2Q) · [View the official Devcon Archive entry](https://archive.devcon.org/devcon8/what-can-ethereum-do-for-india-the-exam-leak-challenge/)
 
-Special thanks to GCC for sponsoring Agora and other public goods. [GCC](https://www.gccofficial.org/)
+<figure>
+  <img src="https://d36w59669phgb2.cloudfront.net/workshop-devcon-india.jpg" alt="Six people pose for a group selfie in front of the Devcon India screen at the workshop." width="1600" height="1201" loading="lazy" decoding="async" />
+</figure>
+
+Special thanks to [GCC](https://www.gccofficial.org/) for sponsoring Agora and other public goods.
