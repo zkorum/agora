@@ -797,6 +797,22 @@ describe("conversation Email Update preference pagination", () => {
             }),
         ).resolves.toEqual({
             success: true,
+            groupKeys: [],
+            nextCursor: undefined,
+        });
+        await db
+            .update(projectTable)
+            .set({ directoryVisibility: "listed" })
+            .where(eq(projectTable.id, noProjectContainerId));
+        await expect(
+            queryPreferenceGroupPage({
+                db,
+                userId: USER_ID,
+                request,
+                now: NOW,
+            }),
+        ).resolves.toEqual({
+            success: true,
             groupKeys: [{ kind: "no_project" }],
             nextCursor: undefined,
         });
