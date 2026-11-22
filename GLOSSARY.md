@@ -1,8 +1,9 @@
 # Agora glossary
 
 Headings give the canonical terms to use when writing code. **Other code names**
-records existing or historical synonyms; **UI** gives the visible wording used
-in i18n.
+records existing synonyms, marking historical names where relevant; **UI**
+gives the visible wording used in i18n. A historical name is not necessarily
+ambiguous or a candidate for renaming.
 
 Names are scoped by meaning: different labels can name one concept, and the same
 UI label can name different concepts. Apply normal casing and pluralization.
@@ -23,6 +24,27 @@ analysis of voting patterns.
 
 - Other code names: `mapping`.
 - UI: Mapping (EN).
+
+### gathering
+
+A conversation collecting free-text responses using a fixed response format.
+
+- UI: Gathering (EN).
+
+### gatheringMode
+
+Whether a Gathering starts a new response collection or an amendment round based
+on copied responses from an earlier Gathering. This is separate from whether new
+participant responses are allowed.
+
+### gatheringResponseFormat
+
+The ordered, frozen collection of fields used for Gathering responses.
+
+### gatheringField
+
+One text field's identity, label, order and validation rules within a Gathering
+response format.
 
 ### opinion
 
@@ -55,6 +77,14 @@ added through the participant contribution flow.
 
 - Other code names: shared `seedOpinions` inputs; `qvStatements`.
 - UI: seed statement or statement to rank (EN), according to the flow.
+
+### seedGatheringResponse
+
+An organizer-supplied Gathering response, rather than one added through the
+participant contribution flow. “Seed” describes origin, not a separate content
+type or necessarily AI-generated content.
+
+- UI: seed response (EN).
 
 ### seedSuggestion
 
@@ -137,6 +167,21 @@ best–worst selections, not an umbrella name for all comparison methods.
 - Code: accurate mathematical names such as `JointMaxDiffLearning`.
 
 ## Participant choices and responses
+
+### gatheringResponse
+
+A stable contributed-response identity within one Gathering conversation,
+whether participant-authored or organizer-supplied seed content.
+
+- UI: response (EN).
+
+### gatheringResponseContent
+
+One immutable, complete saved version of a Gathering response.
+
+### gatheringAnswer
+
+The text entered for one Gathering field in a particular response-content version.
 
 ### vote (Polis)
 
@@ -265,6 +310,12 @@ The account or verification requirement for participating in a conversation:
 guest participation, an account, email verification or strong verification.
 It is separate from discovery and permission to view content.
 
+### participationModeSettingsSource
+
+Whether a conversation inherits the project's current participation mode
+(`project_inherited`) or uses its own explicit setting (`conversation_override`).
+The effective participation mode is the requirement that applies, not its source.
+
 ### facilitator
 
 A user organizing or managing a participation exercise. This product role is not
@@ -305,6 +356,17 @@ management permissions.
 
 - UI: Project Owners, Sponsors and Partners (EN). The public `project_owner`
   attribution role is distinct from administrative ownership.
+
+### projectContact
+
+The contact for participant questions about a particular project. An email
+address alone can identify the contact; a person's name and organization
+affiliation are optional. An affiliation does not imply administrative ownership
+or public attribution. Different projects may use different contact addresses
+for the same organization. The contact email also receives replies to project
+email updates.
+
+- UI: project contact / Contact email (EN).
 
 ### author
 
@@ -367,13 +429,19 @@ Whether an organization or project is listed or unlisted in public directory
 surfaces. Unlisted is not a universal promise of either link access or private
 access across resource types.
 
+- Project UI: Listed in Explore (EN); Publish is the action that lists a project.
+
 ### isIndexed
 
 Whether a conversation is eligible for indexed public discovery. Turning it off
-does not make the content confidential or change participation requirements.
+does not make the content confidential, change participation requirements, or
+determine its project's `directoryVisibility`.
 
-- UI: Public / Private (EN, current conversation visibility selector); “Private”
-  here names the unindexed/shared-link option, not an authorization guarantee.
+- Project discovery rule: an unlisted project cannot have listed conversations.
+  A listed project may contain unlisted conversations.
+- Current UI: Link available by invitation (EN, participant project page);
+  Public / Private (EN, conversation visibility selector). “Private” here means
+  unindexed, not access restricted.
 
 ### opinionModeration
 
@@ -408,7 +476,45 @@ does not imply physical erasure of all stored data or numerical snapshots.
 - Other code names: resource-specific `deletedAt`, `isDeleted` or retired
   `currentContentId`.
 
+### survey withdrawal
+
+Removal of a survey response from live use, distinct from deleting an account
+or erasing retained checkpoint evidence.
+
+- UI: Withdraw response (EN, survey flow).
+
 ## Counting and results
+
+### analysisCheckpoint
+
+A named reference in a conversation's analysis history. A historical
+checkpoint identifies a fixed result, not the conversation's current result.
+
+### closing checkpoint
+
+The stable `analysisCheckpoint` for a finalized close. It follows that close's
+completed Closing result while current and identifies a fixed result after reopening.
+
+- Checkpoint reason: `conversation_closed`.
+
+### analysisInputMode
+
+The input basis for the current result of a finalized close: **Closing inputs**
+(`closing`) use inputs retained at that close; **Live inputs** (`live`) use
+currently eligible inputs.
+
+- Other code names: `closedAnalysisInputMode` (shared DTO).
+- UI: Closing inputs / Live inputs (EN).
+- **Requested mode** is the facilitator's choice; **served mode** is the mode
+  that produced the result currently shown.
+
+### participantIndex (retained analysis inputs)
+
+A participant's local number within retained analysis inputs. It connects
+numerical inputs from the same participant without being their global `userId`
+or their `conversationParticipant` identity.
+
+- Other code names: `local_participant_index` (Python worker).
 
 ### participantCount
 
@@ -564,3 +670,24 @@ This selects translation policy, not the source language of every contribution.
 The deduplicated target set resulting from the applicable default or detected
 language and manually added targets. This is distinct from the manually added
 list and from translations already available.
+
+## API layers
+
+### API controller
+
+The HTTP boundary for an Agora API operation. It handles the request and
+response and delegates application work to an API service.
+
+- Other code names: route handler.
+
+### API service
+
+The application layer that implements an Agora API operation independently of
+its HTTP route. It owns the operation's rules and coordinates persistence and
+other side effects.
+
+### API DTO
+
+The request or response shape of an API operation, defined around what its
+callers send or need to receive. A DTO may combine or omit stored fields and
+does not correspond one-to-one with a database row.

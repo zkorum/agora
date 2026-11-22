@@ -4,6 +4,326 @@ This is the Stage 3 handoff for account recovery and the later deletion worker.
 It describes source contracts, not an applied migration or enabled hard purge.
 Execution order remains in `AGENTS_DELETION_PREPARATION_PLAN.md`.
 
+## Account/content distinction — 2026-11-15
+
+Account deletion hides personal content and voting inputs from live use, not
+permitted text in retained checkpoints/snapshots. Historical readers keep that
+text and existing translations without public account attribution; explicit
+content deletion still redacts every historical representation immediately.
+Recovery, finalized numerical values, parent lifecycle and separately applicable
+erasure handling are unchanged.
+
+`opinion.accountHiddenContentRetained` and
+`ranking_item.accountHiddenContentRetained` default to false. New ordinary
+account-deletion transitions explicitly permit historical retention; recovery
+clears that account-hiding state. Unclassified legacy account-hidden sources
+remain redacted, even if old private text still exists. Explicit content deletion
+and moderation override historical retention. Do not bulk-enable these flags
+or infer permission from an absent author.
+
+The distinction above is the agreed product rule (see
+`AGENTS_ACCOUNT_CONTENT_DELETION_PLAN.md` §1). It does not depend on submission
+date. The published notice's blanket checkpoint-redaction promise differs from
+that rule; see the [publication review](participation-retention-legal-review.en.md#closing-and-live-results-published-notice-review-2026-11-19).
+
+New captures write private account associations and reversible `is_account_hidden`
+into `analysis_input_participant_eligibility`,
+`ranking_input_participant_eligibility` and `qv_input_ballot_eligibility`.
+These rows are separate from sealed numerical evidence. Producers acquire
+ordered account SHARE locks; deletion/recovery holds the same account lock
+exclusively before changing their markers. Purge clears `user_id` while preserving
+the content-free exclusion marker, so later authorized cleanup need not recover
+account identity. Recovery cannot touch detached rows. These markers describe
+account eligibility, not permanent exclusions from retained closing calculations.
+Boolean markers do not carry a shared account-deletion timestamp
+across conversations and do not establish anonymity.
+
+Legacy inputs without these associations stay unclassified: do not infer their
+owners from current ballots, group membership, matching vote patterns or reused
+credentials. Historical participant eligibility cannot be reconstructed for such inputs.
+Populated-data review must resolve that limitation before enabling account purge.
+No migration or permanent purge is enabled by this source implementation.
+
+### Comparison closing evidence follow-up — 2026-11-15
+
+Reused BWS/pairwise closing publications now reference the original sealed capture
+through `ranking_conversation_stats_snapshot.reused_input_snapshot_id`. A capture's
+original publication binding, numerical choices and private eligibility rows are
+not copied or reassigned. The closing fast path requires the captured method and
+counts to match; a legacy result without evidence falls back to normal pending
+finalization rather than fabricating a historical input set. Explicit empty
+captures are reusable.
+
+Private-source retirement recognizes this reference, including when the original
+statistics snapshot is tombstoned. Numerical-input deletion protection treats an
+active reused publication as a retention root. The cross-conversation FK and
+PostgreSQL binding trigger protect reference scope, provenance and immutability.
+
+The generated V0116 migration includes this reference plus the previously pending
+account/content flags and eligibility tables. V0116.1 upgrades comparison
+binding/retention functions and installs the reuse trigger. These files were
+generated/authored but not applied to an application database. The separate
+retained-participant eligibility trigger contract remains a rollout prerequisite.
+Neither migration enables automatic cleanup or post-closure recalculation.
+
+The subsequent comparison baseline source adds `comparison_input_baseline`, an
+immutable direct reference from effective evidence to complete pre-lifecycle-filter
+numerical evidence. Identical datasets share their graph; an existing certified
+complete graph can be reused across revisions after exact numerical/private-source
+matching. The complete graph also has the existing separate, unlinkable participant
+eligibility rows, including participants absent from the effective result.
+
+An active owned/reused publication roots its complete baseline and certificate,
+even if that graph's original publication is tombstoned. Private-source retirement
+does not mutate baseline choices or local numerical identities. The prepared
+baseline contract checks numerical projection and protects deletion/immutability.
+Missing legacy baseline certificates remain explicitly unsupported; no live-data
+backfill or inferred account association is performed. The readiness audit reports
+these closed baseline gaps as informational, separately from purge data blockers.
+
+At the user's request, additional migration generation is deferred until the
+canonical schema is complete, followed by one consolidated generated structural
+migration and numbered PostgreSQL/backfill phases. The temporary V0119 structural
+draft was removed; baseline PostgreSQL functions/triggers are versioned in
+`services/api/database/flyway/V0116.2__certify_comparison_input_baselines.sql`
+and will be installed by Flyway after the consolidated generated V0116 schema.
+Earlier/concurrent structural drafts were not consolidated or applied by this
+follow-up. The baseline table must be included in that consolidated schema before
+running Flyway; the current drafts are not a deployable final migration sequence.
+
+### Complete Polis evidence follow-up — 2026-11-17
+
+New `analysis_input_snapshot` payload version 2 includes the opinion/source ID
+catalogue in the hashed numerical bytes, but no opinion text or account identifiers.
+`analysis_input_baseline` retains a direct reference to the complete pre-moderation
+matrix and its effective-to-baseline local-index projections. Identical effective
+and complete inputs share one graph. Required-survey/deletion eligibility is still
+applied at initial capture; filtered opinions and participants with only filtered
+votes remain available in that complete numerical baseline.
+
+Separate `analysis_input_participant_eligibility` rows cover the complete graph
+and may be hidden/unlinked without changing numerical bytes. Retries cannot
+reconstruct missing associations or certify another account's identical voting
+matrix. The retained reader resolves numerical evidence after unlinking, validates
+the stored catalogue/hash/projection, and reports missing private cleanup eligibility
+without inventing it. Legacy V1/placeholder input remains uncertified.
+
+Flyway phase `V0116.3__retain_complete_polis_inputs.sql` protects certified input,
+direct baseline references and publication retention. Publication and retirement
+share root locks, so a new V2 result cannot lose its baseline certificate during
+publication. PostgreSQL enforces relational scope and projections; zstd/hash and
+numerical-cell validation runs in the Python writer/reader.
+
+The consolidated generated structural migration still needs to include the
+baseline table and payload-version column before this phase runs. No application
+database was migrated, and this follow-up does not enable finalized correction
+admission, input-mode switching or automatic deletion scheduling.
+
+### Initial close selection roots — 2026-11-18
+
+`conversation_analysis_close` binds one shared input selection to a finalized
+conversation epoch and source revision. `polis_analysis_close` references the
+original snapshot with conversation/spec-scoped foreign keys. Both Polis
+finalization paths create these roots atomically and default to Closing.
+
+The close and original survey evidence remain retention roots. View
+content-reference erasure remains allowed without changing numerical provenance.
+These tables contain no account IDs or raw answers.
+
+Draft Flyway phase `V0116.4__bind_polis_analysis_closes.sql` checks lifecycle
+freshness, native checkpoint scope and immutability. The consolidated structural
+migration is still pending; no application database was migrated.
+
+`polis_analysis_close_generation` binds a retained-input rerun to its close.
+Draft phase `V0116.5` makes the binding immutable. It adds no account links
+or raw input.
+
+`V0116.6` allows a derived Closing capture to link directly to certified complete
+evidence behind that bound close's original checkpoint. The derived capture
+holds only the projected numerical evidence and its certificate; participant
+eligibility inserts and updates cannot attach account links to it. This is not
+a publication or result-selection contract.
+
+Draft `V0116.7` protects pinned captures and staged Closing views. The worker
+publishes the replacement only once every bound spec has a result. The original
+snapshot and its survey evidence remain unchanged.
+
+### Revised closed-analysis direction — 2026-11-17
+
+The planned product choice is reversible Closing inputs / Live inputs, replacing
+the earlier cumulative automatic-cleanup policy. Closing inputs retains the
+original numerical population with current moderation; Live inputs uses actual
+currently eligible live sources with current moderation. Switching back may count
+retained numerical votes again, but never restores erased text or account links.
+There is no permanent accepted-cleanup exclusion ledger.
+The original close evidence, including its survey aggregates, is preserved.
+The closing checkpoint link shows the last complete Closing result; reopening
+freezes that link without recapturing inputs or admitting late publication.
+Reruns are not separate timeline entries. In Live inputs,
+required-survey withdrawal excludes the participant's votes; optional-survey
+withdrawal removes their answers without excluding otherwise eligible votes.
+
+Only authorized facilitators can change the selection from the Analysis tab.
+The selection is shared, starts with Closing inputs, and applies only to the
+currently finalized close cycle. Older checkpoints remain historical. Separate
+account eligibility/unlink markers remain privacy and recovery infrastructure,
+not authority to change a closed calculation.
+Selecting Live inputs uses the ordinary Live calculation without reopening
+participation or moving the closing checkpoint link. Reopening and closing
+again creates a new closing checkpoint from the inputs eligible for that close.
+
+Closing recalculation can use retained survey choices linked to checkpoint-local
+participants. Account deletion removes the account link, not those numerical
+choices. The retained input is for aggregate calculation only; it contains no
+free-text answers. This is separate from the original aggregates, which belong
+to their original groups and must never be relabeled. Existing closes that have
+only aggregates cannot produce a new closing breakdown. An explicit survey
+withdrawal also leaves the retained choices available for recalculating that
+close. It excludes the withdrawn choices from Live inputs and later captures
+without changing existing checkpoint account links or personalization. Account
+deletion, not survey withdrawal, unlinks the account from retained evidence.
+
+Polis schedules ordinary Live work even after finalization. Moderation also
+schedules retained-input work for the current close when the original evidence
+is complete. Both use the same worker and retry mechanism, with independent
+work records so a Live-only change cannot cancel a Closing rerun. Switching
+the selection does not schedule work; it keeps serving the previous complete
+result until the requested mode's current result is published.
+
+For BWS and pairwise, the selection serves an exact complete snapshot. The
+original closing snapshot remains the public link and evidence anchor. Its
+timeline counts and direct result read resolve the last complete Closing
+projection, including after reopening. The ordinary worker can refresh Live
+without replacing that checkpoint. The close ID and
+selection revision order selected counters in the client, even when switching
+back to an older snapshot. Publishing a new served Live result advances that
+revision too. Moving or hiding a participant-submitted comparison item excludes
+it from Live and Closing. Moved text is readable in Moderation History; hidden
+text and the associated decision are visible there only to site moderators.
+Restore removes that exclusion. Seed and connector items are not participant
+submissions, and completion/cancellation is a separate lifecycle action.
+
+Closing projects the certified original answers onto the original active item
+catalogue with current moderation. A surviving BWS best/worst pair remains a
+valid answer when a middle candidate is removed. Working responses, account
+links, and private scores are not inputs to a rerun. Its snapshot identifies
+the source close and stores the projected item set; it creates no checkpoint
+or permanent URL. A revision- or epoch-obsolete calculation cannot publish.
+A deterministic input or scoring failure leaves the previous complete result
+visible; a new eligible revision can run again. Before rollout, the structural
+migration and retention checks must cover these derived snapshot roots and the
+comparison moderation decisions. Existing retirement guards remain fail-closed.
+
+New QV closes bind the original complete tally. Subsequent Live generations
+can publish without replacing that binding. Changing a saved ballot's eligibility
+through a required survey or account hide/restore queues a Live tally. Changes
+during original finalization share one follow-up tally, activated only when the
+original result is bound. Older QV closes without a binding
+remain readable but cannot switch.
+
+Whole-contribution withdrawal is available on finalized conversations with
+eligible working inputs: all of the participant's Polis votes, all comparison
+answers, or a QV ballot on a bound close. It changes Live eligibility only,
+does not modify retained contributions or their account links, and cannot be
+undone while closed. A repeated request in the same close is harmless; a
+confirmation from a prior close cannot authorize withdrawal in a later one.
+
+Retained numerical input and moderation projection remain identity-free. No
+application database migration or additional participant-level survey retention
+was performed. Derived-input publication/retention and parent-owned retirement
+contracts remain rollout requirements.
+
+The comparison counts-only readiness audit recognizes reused evidence and requires its
+binding trigger and lookup index. Older schemas remain explicitly incomplete.
+
+Verification: 76 focused API integration tests, 19 retention-audit tests and 37
+scoring publication/locking tests passed; API/scoring typechecking, scoped source
+lint and the soft-delete check passed.
+The comparison integration suite upgrades historical triggers on disposable
+PostgreSQL and covers BWS/pairwise, empty captures, legacy gaps, repeated closure,
+rollback, immutable references and reused-input retention after tombstoning.
+
+Rollout requires the generated source flags and three eligibility tables before
+new API/worker writers, plus
+`services/api/scripts/prepare-retained-participant-eligibility-contract.sql`
+after those tables. The staged trigger protects numerical identity and rejects
+reattachment. Drain old producers and coordinate the new SSE actions with the
+frontend. Ordinary migration generation/application still requires approval.
+
+Source verification after the focused code review: 193 API tests passed (including
+recovery, organization lifecycle, finalization, deletion contracts, historical
+projections and codegen); 58 focused frontend tests passed, with frontend
+typechecking and scoped API/frontend lint clean. Shared-analysis tests passed
+340 with 11 environment-gated skips; scoring tests passed 137. The unchanged
+QV capture suite previously passed 30. All three affected Python packages passed
+typechecking. Disposable test databases exercise source
+schema and staged contracts; this is not evidence of a production migration,
+legacy-data approval or completed permanent cleanup.
+
+Review follow-up:
+
+- A replay-gap resync discards reversible account projections before authoritative
+  refetch; permanent content redaction remains monotonic.
+- Prepared comparison participants carry response and account identity together
+  from the numerical read snapshot. Capture never re-derives ownership from a
+  response that may have moved during a guest merge. Merge retirement marks the
+  original guest's eligibility excluded, without transferring sealed identity.
+- Translation-request permission is required on each ranking display source,
+  rather than an optional, separate deny-list. Stored-only sources do not query
+  translation work or offer provider controls. Legacy hidden seeds do not bypass
+  explicit historical-retention permission.
+- Account locks use globally ordered batches of 1,000 and select only IDs and
+  deletion flags. Eligibility uses typed bulk inserts, outside sealed evidence.
+  Regression tests cover interleaved ownership changes and multi-batch capture.
+- The account-deletion notice briefly explains unlinking and asks participants
+  to delete their participation beforehand if desired; detailed rights and
+  retention explanations remain in the legal text.
+
+## Gathering handoff — 2026-11-15
+
+Gathering has no numerical/historical-display retention exception. Account hiding
+marks every participant-authored `gathering_response`, including independently
+copied amendment roots. Readers additionally require an active linked account;
+neither an absent author nor a retained baseline grants display permission.
+Recovery clears account hiding only for roots not explicitly deleted. Seeds have
+no personal author and follow their project's ownership lifecycle.
+
+Explicit response deletion retires its current pointer and records `deleted_at`.
+Lists, current/version/baseline readers, protected counts and amendment source
+selection exclude the root and every version. No response text is embedded
+in realtime events, exports, translation work or AI inputs. Translation work stores
+only source references; providers may read eligible public response versions, never
+private responses under the current policy. Roots remain reserved
+against second submissions. Guest merge transfers non-conflicting whole roots;
+an existing destination root, including a deleted one, wins.
+
+Future purge must handle `gathering_answer_translation`,
+`gathering_field_translation`, `gathering_answer`, `gathering_response_content`,
+`gathering_moderation`, response roots and frozen format/configuration ownership.
+Content versions and baselines are not independent retention roots. Dispose of
+private text and moderation reasons under their applicable retention/erasure
+policy, clear personal author/moderator links, and coordinate circular
+current/baseline references before physical removal. Account participation-source
+guards block premature unlinking while Gathering roots still depend on the user.
+Translations are derived copies, not independent retention roots. Cancel/retire
+translation work before removing referenced field/content versions, remove answer
+translations before original answers, and remove label translations before fields.
+Soft deletion/account hiding immediately blocks translation reads and new provider
+work for all response versions. A worker rechecks eligibility before publication;
+in-flight provider processing and retained copies remain subject to the same
+provider, backup and erasure-policy gates as other translated content.
+
+Provenance FKs to source conversations/content use `ON DELETE SET NULL`; they do
+not cascade into target copies. Target baselines and source slug/type remain
+independent of source availability, confer no read permission, and are not a
+blanket exemption from exceptional cross-copy erasure. Assess retained locators
+as part of that erasure policy. Physical purge and that policy are not implemented
+or enabled by the Gathering backend.
+
+Generated V0117/V0118 migrations were exercised on disposable PostgreSQL only.
+V0117's Flyway configuration commits the enum addition before its use. These
+migrations must precede deploying API code that queries Gathering roots.
+
 ## Updated retention decision — 2026-11-11
 
 Target policy for **Polis, BWS, pairwise and QV**: retain the individual numerical inputs behind each retained result, not only aggregates, with separately removable account associations. This supersedes earlier proposals to erase QV frozen ballots or comparison inputs merely because their account is deleted. It is a product decision, not a claim that the source contracts below already implement it.
@@ -66,6 +386,13 @@ foreign key, unique constraint, check and index. Consult the generated inventory
 for current counts. Do not infer cascades from comments or treat
 this structural list as a classification of semantic copies.
 
+Conversation drafts are project-owned working configuration, not participant
+history. The creator ID is detachable provenance. Project soft deletion removes
+draft access; a future authorized hard purge of the project removes its draft
+children. Publishing or discarding a draft clears its configuration while
+retaining a terminal marker. An erased published-conversation link never makes
+the draft editable or eligible for publication again.
+
 ## Root and table-family ownership
 
 | Family                                                                                                               | Account purge contract                                                                                                                                                                                                                                                                                                                                                                                                    | Parent/compaction contract                                                                                                                                                                                                                                                                       |
@@ -74,7 +401,7 @@ this structural list as a classification of semantic copies.
 | Languages, mutes, follows, memberships and recipient preferences                                                     | Account-owned settings/relationship children are removed, including incoming mute links.                                                                                                                                                                                                                                                                                                                                  | Deleted relationship intent is distinct from a live disabled preference.                                                                                                                                                                                                                         |
 | `conversation_participant`, `opinion_group_user`                                                                     | Membership account IDs and participant account links become nullable; stable local participant IDs and numerical membership rows remain distinct. Unlink memberships before their participant root. Composite account FKs protect linked rows; the binding trigger rejects reattachment and scope changes.                                                                                                                | Conversation-owned roots. Frozen matrices, membership/group counts and results are not rewritten.                                                                                                                                                                                                |
 | `vote`, `vote_content`, raw survey responses/answers/options; `comparison_response`, answers/personal scores         | Private working sources, separate from retained matrices/`ranking_input_*`. Comparison retirement is bounded and purge-gated: clear/tombstone private copies before detaching the nullable account link. Do not retain every session/revision or private survey answer. Explicit withdrawal differs from account hiding.                                                                                                  | Preserve necessary in-flight sources; unfinished comparison closes block retirement. Frozen numerical evidence must not depend on the source account. Saved survey aggregates remain independent of individual answers.                                                                          |
-| `opinion`, `ranking_item`, source versions/translations/work                                                         | Personal source text stays private while recovery is possible. At purge erase private versions and account attribution; keep content-free roots needed by frozen results. Project-owned seeds retain content and lose administering-account attribution. Edited flags and state timestamps survive editor erasure.                                                                                                        | A deleted parent owns its full source/report graph. Null construction pointers alone are not intent.                                                                                                                                                                                             |
+| `opinion`, `ranking_item`, source versions/translations/work                                                         | Account-hidden personal sources remain excluded from live use, new exports and provider sources. Retain permitted historical text/existing translations without public attribution; erase unnecessary private copies and account/editor links at purge. Explicit deletion redacts historical text too. Project-owned seeds follow their owner's lifecycle.                                                                | A deleted parent owns its source/report graph. Preserve versions rooted by retained historical views unless explicitly erased. Null construction pointers alone are not intent.                                                                                                                  |
 | `qv_response`, `qv_response_version`, `qv_allocation`, `qv_response_command`                                         | Account deletion hides the current root during recovery. `retireQvAccountInputs` tombstones private sources before participant unlinking; independent `qv_input_*` rows retain sealed numerical inputs without source/account FKs. No physical purge is enabled.                                                                                                                                                          | Ordinary replacement/withdrawal moves the current pointer; the permanent statement lock survives. Reopen hides the one current result and re-close replaces it. Detached inputs never re-enter live selection; parent cleanup owns the retained graph.                                           |
 | `analysis_input_snapshot`, snapshots/results/candidates, metrics, groups/stats, views/checkpoints, survey aggregates | Numerical history survives account removal. Active-account historical personalization remains while linked; account unlinking does not renumber local indices or change hashes/payloads/counts. New live input loading requires active voters and matching linked participant scope, plus independent statement eligibility and required-survey gating.                                                                   | Every retained checkpoint roots its numerical input/output and supporting artifacts. Only unrooted intermediates are compaction candidates. Source references may be cleared without dropping numerical result rows.                                                                             |
 | Lineage, descriptions/translations, locale requests/work, definitions/specs                                          | Existing historical AI descriptions are not automatically rewritten for ordinary deletion. New provider reads/publication must recheck source eligibility. Definitions are not account-owned.                                                                                                                                                                                                                             | Preserve retained result/lineage/work roots; parent deletion removes exclusively owned descriptions/work.                                                                                                                                                                                        |
@@ -119,8 +446,8 @@ this structural list as a classification of semantic copies.
   progress. Call separate bounded phases/transactions and repeat until empty;
   preserve user -> organization/project -> conversation lock order when composing
   future worker handlers. A progress result is not an account-purge certificate.
-- Ranking checkpoints LEFT JOIN only currently visible source content, including
-  author eligibility independently of account-hiding backfill. Redacted DTOs retain
+- Ranking checkpoints LEFT JOIN historical-permitted source content independently
+  of live author/account eligibility. Explicitly redacted DTOs retain
   item identity, scores, ranks, participant counts and lifecycle status but require
   null content and external URL. Unlinking a source never deletes its numerical row.
   Live comparison/QV/seed/translation readers and scoring inputs apply the same
@@ -166,9 +493,10 @@ Stage 5; Stage 3 does not create or enable a deletion worker.
 
 ## Migration and external enablement gates
 
-No `pnpm db:generate` or application-database migration was run for Stages 3/4.
-The user generates the ordinary schema migration. Review populated-data compatibility,
-composite FKs and staging script order before application:
+Stages 3/4 originally deferred schema generation. The comparison closing
+follow-up above generated V0116 (including their pending schema changes) and
+V0116.1; no application-database migration has been run. Review populated-data
+compatibility, composite FKs and staging script order before application:
 
 1. The existing guest vote ownership repair must precede its generated FK.
 2. Participant unlink function changes follow `V0111.1`; nullable attribution and

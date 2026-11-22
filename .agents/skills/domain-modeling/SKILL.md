@@ -57,11 +57,11 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
-### Update GLOSSARY.md inline
+### Update shared language inline
 
-When a term is resolved, update `GLOSSARY.md` right there. Don't batch these up: capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
+When an agreed decision changes a term's meaning or the distinction between terms, update `GLOSSARY.md` right there. Follow the repository's existing entry format and the definition rules in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
 
-`GLOSSARY.md` should be totally devoid of implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
+Keep only what readers need to understand and use the term in the glossary. Record detailed behavior, policy rules, exceptions, and examples in the document that owns them. If an agreement changes how an existing term behaves but not what it means, update that document without expanding the glossary.
 
 ### Offer ADRs sparingly
 

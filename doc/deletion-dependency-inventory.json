@@ -4,6 +4,189 @@
   "note": "Structural inventory only. Semantic copies and lifecycle ownership are reviewed separately in doc/deletion-dependency-contracts.md.",
   "tables": [
     {
+      "table": "analysis_input_baseline",
+      "columns": [
+        {
+          "name": "input_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "baseline_input_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "participant_indices",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "opinion_indices",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "source_vote_count",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "source_participant_count",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "analysis_baseline_certificate_fk",
+          "columns": [
+            "baseline_input_snapshot_id"
+          ],
+          "targetTable": "analysis_input_baseline",
+          "targetColumns": [
+            "input_snapshot_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "analysis_baseline_input_scope_fk",
+          "columns": [
+            "input_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "analysis_input_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "analysis_baseline_source_scope_fk",
+          "columns": [
+            "baseline_input_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "analysis_input_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "analysis_input_baseline_source_counts_check",
+          "expression": "((\"analysis_input_baseline\".\"source_vote_count\" >= 0) and (\"analysis_input_baseline\".\"source_participant_count\" >= 0) and (\"analysis_input_baseline\".\"source_participant_count\" <= \"analysis_input_baseline\".\"source_vote_count\"))"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "analysis_input_baseline_source_idx",
+          "unique": false,
+          "columns": [
+            "baseline_input_snapshot_id"
+          ]
+        }
+      ]
+    },
+    {
+      "table": "analysis_input_participant_eligibility",
+      "columns": [
+        {
+          "name": "input_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "participant_index",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "is_account_hidden",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "analysis_input_participant_eligibility_input_snapshot_id_analysis_input_snapshot_id_fk",
+          "columns": [
+            "input_snapshot_id"
+          ],
+          "targetTable": "analysis_input_snapshot",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "analysis_input_participant_eligibility_user_id_user_id_fk",
+          "columns": [
+            "user_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "analysis_input_participant_eligibility_index_check",
+          "expression": "\"analysis_input_participant_eligibility\".\"participant_index\" >= $1"
+        },
+        {
+          "name": "analysis_input_participant_eligibility_detached_check",
+          "expression": "(((\"analysis_input_participant_eligibility\".\"user_id\" is not null)) or (\"analysis_input_participant_eligibility\".\"is_account_hidden\" = true))"
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "analysis_input_participant_eligibility_account_unique",
+          "columns": [
+            "input_snapshot_id",
+            "user_id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "analysis_input_participant_eligibility_user_idx",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    {
       "table": "analysis_input_snapshot",
       "columns": [
         {
@@ -27,6 +210,12 @@
         {
           "name": "input_hash",
           "type": "varchar(64)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "payload_version",
+          "type": "integer",
           "nullable": false,
           "primaryKey": false
         },
@@ -82,6 +271,10 @@
       ],
       "checks": [
         {
+          "name": "analysis_input_snapshot_version_check",
+          "expression": "\"analysis_input_snapshot\".\"payload_version\" in ($1, $2)"
+        },
+        {
           "name": "analysis_input_snapshot_counts_check",
           "expression": "\"analysis_input_snapshot\".\"opinion_count\" >= 0 AND \"analysis_input_snapshot\".\"participant_count\" >= 0 AND \"analysis_input_snapshot\".\"vote_count\" >= 0"
         }
@@ -93,6 +286,13 @@
             "conversation_id",
             "data_generation",
             "input_hash"
+          ]
+        },
+        {
+          "name": "analysis_input_snapshot_scope_unique",
+          "columns": [
+            "id",
+            "conversation_id"
           ]
         }
       ],
@@ -613,7 +813,7 @@
       "checks": [
         {
           "name": "analysis_work_state_running_lease_check",
-          "expression": "((\"analysis_work_state\".\"running_data_generation\" is null and \"analysis_work_state\".\"lease_owner\" is null and \"analysis_work_state\".\"lease_token\" is null and \"analysis_work_state\".\"lease_expires_at\" is null) or (\"analysis_work_state\".\"running_data_generation\" is not null and \"analysis_work_state\".\"lease_owner\" is not null and \"analysis_work_state\".\"lease_token\" is not null and \"analysis_work_state\".\"lease_expires_at\" is not null))"
+          "expression": "(((((\"analysis_work_state\".\"running_data_generation\" is null)) and ((\"analysis_work_state\".\"lease_owner\" is null)) and ((\"analysis_work_state\".\"lease_token\" is null)) and ((\"analysis_work_state\".\"lease_expires_at\" is null)))) or ((((\"analysis_work_state\".\"running_data_generation\" is not null)) and ((\"analysis_work_state\".\"lease_owner\" is not null)) and ((\"analysis_work_state\".\"lease_token\" is not null)) and ((\"analysis_work_state\".\"lease_expires_at\" is not null)))))"
         }
       ],
       "uniqueConstraints": [
@@ -632,7 +832,7 @@
           "columns": [
             "lease_expires_at"
           ],
-          "predicate": "\"analysis_work_state\".\"running_data_generation\" is not null"
+          "predicate": "(\"analysis_work_state\".\"running_data_generation\" is not null)"
         },
         {
           "name": "analysis_work_state_running_conversation_unique",
@@ -640,7 +840,7 @@
           "columns": [
             "conversation_id"
           ],
-          "predicate": "\"analysis_work_state\".\"running_data_generation\" is not null"
+          "predicate": "(\"analysis_work_state\".\"running_data_generation\" is not null)"
         }
       ]
     },
@@ -923,7 +1123,7 @@
         },
         {
           "name": "candidate_set",
-          "type": "text[]",
+          "type": "text",
           "nullable": false,
           "primaryKey": false
         },
@@ -964,7 +1164,7 @@
         },
         {
           "name": "comparison_answer_candidates_check",
-          "expression": "(cardinality(\"comparison_answer\".\"candidate_set\") BETWEEN 2 AND 4 and \"comparison_answer\".\"candidate_set\" @> ARRAY[\"comparison_answer\".\"best_slug_id\"::text, \"comparison_answer\".\"worst_slug_id\"::text])"
+          "expression": "((cardinality(\"comparison_answer\".\"candidate_set\") BETWEEN 2 AND 4) and (\"comparison_answer\".\"candidate_set\" @> ARRAY[\"comparison_answer\".\"best_slug_id\"::text, \"comparison_answer\".\"worst_slug_id\"::text]))"
         }
       ],
       "uniqueConstraints": [],
@@ -983,7 +1183,76 @@
             "comparison_response_id",
             "position"
           ],
-          "predicate": "\"comparison_answer\".\"deleted_at\" is null"
+          "predicate": "(\"comparison_answer\".\"deleted_at\" is null)"
+        }
+      ]
+    },
+    {
+      "table": "comparison_input_baseline",
+      "columns": [
+        {
+          "name": "input_snapshot_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "baseline_input_snapshot_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "comparison_baseline_input_conversation_fk",
+          "columns": [
+            "input_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_input_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "comparison_baseline_source_conversation_fk",
+          "columns": [
+            "baseline_input_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_input_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "comparison_input_baseline_source_idx",
+          "unique": false,
+          "columns": [
+            "baseline_input_snapshot_id",
+            "conversation_id"
+          ]
         }
       ]
     },
@@ -1072,7 +1341,7 @@
       "checks": [
         {
           "name": "comparison_response_account_binding_check",
-          "expression": "((\"comparison_response\".\"participant_id\" is not null and \"comparison_response\".\"detached_at\" is null) or (\"comparison_response\".\"participant_id\" is null and \"comparison_response\".\"detached_at\" is not null))"
+          "expression": "(((((\"comparison_response\".\"participant_id\" is not null)) and ((\"comparison_response\".\"detached_at\" is null)))) or ((((\"comparison_response\".\"participant_id\" is null)) and ((\"comparison_response\".\"detached_at\" is not null)))))"
         }
       ],
       "uniqueConstraints": [
@@ -1162,7 +1431,7 @@
       "checks": [
         {
           "name": "comparison_user_entity_score_display_score_check",
-          "expression": "(\"comparison_user_entity_score\".\"display_score\" is null or (\"comparison_user_entity_score\".\"display_score\" >= 0 and \"comparison_user_entity_score\".\"display_score\" <= 1))"
+          "expression": "(((\"comparison_user_entity_score\".\"display_score\" is null)) or (((\"comparison_user_entity_score\".\"display_score\" >= 0) and (\"comparison_user_entity_score\".\"display_score\" <= 1))))"
         }
       ],
       "uniqueConstraints": [
@@ -1182,7 +1451,7 @@
             "comparison_response_id",
             "\"comparison_user_entity_score\".\"score\" desc"
           ],
-          "predicate": "\"comparison_user_entity_score\".\"deleted_at\" is null"
+          "predicate": "(\"comparison_user_entity_score\".\"deleted_at\" is null)"
         },
         {
           "name": "comparison_user_entity_score_deleted_idx",
@@ -1191,7 +1460,7 @@
             "deleted_at",
             "id"
           ],
-          "predicate": "\"comparison_user_entity_score\".\"deleted_at\" is not null"
+          "predicate": "(\"comparison_user_entity_score\".\"deleted_at\" is not null)"
         }
       ]
     },
@@ -1242,12 +1511,24 @@
         },
         {
           "name": "survey_question_option_content_ids",
-          "type": "integer[]",
+          "type": "integer",
           "nullable": true,
           "primaryKey": false
         },
         {
           "name": "ranking_item_content_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "gathering_field_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "gathering_response_content_id",
           "type": "integer",
           "nullable": true,
           "primaryKey": false
@@ -1403,16 +1684,42 @@
             "id"
           ],
           "onDelete": "no action"
+        },
+        {
+          "name": "content_translation_work_gathering_field_id_gathering_field_id_fk",
+          "columns": [
+            "gathering_field_id"
+          ],
+          "targetTable": "gathering_field",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "content_translation_work_gathering_response_content_id_gathering_response_content_id_fk",
+          "columns": [
+            "gathering_response_content_id"
+          ],
+          "targetTable": "gathering_response_content",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
         }
       ],
       "checks": [
         {
+          "name": "content_translation_work_gathering_source_check",
+          "expression": "((((\"content_translation_work\".\"source_kind\" = 'gathering_field') and ((\"content_translation_work\".\"gathering_field_id\" is not null)) and ((\"content_translation_work\".\"gathering_response_content_id\" is null)))) or (((\"content_translation_work\".\"source_kind\" = 'gathering_response') and ((\"content_translation_work\".\"gathering_field_id\" is null)) and ((\"content_translation_work\".\"gathering_response_content_id\" is not null)))) or (((\"content_translation_work\".\"source_kind\" not in ('gathering_field', 'gathering_response')) and ((\"content_translation_work\".\"gathering_field_id\" is null)) and ((\"content_translation_work\".\"gathering_response_content_id\" is null)))))"
+        },
+        {
           "name": "content_translation_work_source_check",
-          "expression": "((\"content_translation_work\".\"source_kind\" = 'conversation' and \"content_translation_work\".\"conversation_id\" is not null and \"content_translation_work\".\"project_content_id\" is null and \"content_translation_work\".\"conversation_content_id\" is not null and \"content_translation_work\".\"opinion_content_id\" is null and \"content_translation_work\".\"survey_question_content_id\" is null and \"content_translation_work\".\"survey_question_option_content_ids\" is null and \"content_translation_work\".\"ranking_item_content_id\" is null) or (\"content_translation_work\".\"source_kind\" = 'project' and \"content_translation_work\".\"conversation_id\" is null and \"content_translation_work\".\"project_content_id\" is not null and \"content_translation_work\".\"conversation_content_id\" is null and \"content_translation_work\".\"opinion_content_id\" is null and \"content_translation_work\".\"survey_question_content_id\" is null and \"content_translation_work\".\"survey_question_option_content_ids\" is null and \"content_translation_work\".\"ranking_item_content_id\" is null) or (\"content_translation_work\".\"source_kind\" = 'opinion' and \"content_translation_work\".\"conversation_id\" is not null and \"content_translation_work\".\"project_content_id\" is null and \"content_translation_work\".\"conversation_content_id\" is null and \"content_translation_work\".\"opinion_content_id\" is not null and \"content_translation_work\".\"survey_question_content_id\" is null and \"content_translation_work\".\"survey_question_option_content_ids\" is null and \"content_translation_work\".\"ranking_item_content_id\" is null) or (\"content_translation_work\".\"source_kind\" = 'survey_question' and \"content_translation_work\".\"conversation_id\" is not null and \"content_translation_work\".\"project_content_id\" is null and \"content_translation_work\".\"conversation_content_id\" is null and \"content_translation_work\".\"opinion_content_id\" is null and \"content_translation_work\".\"survey_question_content_id\" is not null and \"content_translation_work\".\"survey_question_option_content_ids\" is not null and \"content_translation_work\".\"ranking_item_content_id\" is null) or (\"content_translation_work\".\"source_kind\" = 'ranking_item' and \"content_translation_work\".\"conversation_id\" is not null and \"content_translation_work\".\"project_content_id\" is null and \"content_translation_work\".\"conversation_content_id\" is null and \"content_translation_work\".\"opinion_content_id\" is null and \"content_translation_work\".\"survey_question_content_id\" is null and \"content_translation_work\".\"survey_question_option_content_ids\" is null and \"content_translation_work\".\"ranking_item_content_id\" is not null))"
+          "expression": "((((\"content_translation_work\".\"source_kind\" = 'conversation') and ((\"content_translation_work\".\"conversation_id\" is not null)) and ((\"content_translation_work\".\"project_content_id\" is null)) and ((\"content_translation_work\".\"conversation_content_id\" is not null)) and ((\"content_translation_work\".\"opinion_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is null)) and ((\"content_translation_work\".\"ranking_item_content_id\" is null)))) or (((\"content_translation_work\".\"source_kind\" = 'project') and ((\"content_translation_work\".\"conversation_id\" is null)) and ((\"content_translation_work\".\"project_content_id\" is not null)) and ((\"content_translation_work\".\"conversation_content_id\" is null)) and ((\"content_translation_work\".\"opinion_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is null)) and ((\"content_translation_work\".\"ranking_item_content_id\" is null)))) or (((\"content_translation_work\".\"source_kind\" = 'opinion') and ((\"content_translation_work\".\"conversation_id\" is not null)) and ((\"content_translation_work\".\"project_content_id\" is null)) and ((\"content_translation_work\".\"conversation_content_id\" is null)) and ((\"content_translation_work\".\"opinion_content_id\" is not null)) and ((\"content_translation_work\".\"survey_question_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is null)) and ((\"content_translation_work\".\"ranking_item_content_id\" is null)))) or (((\"content_translation_work\".\"source_kind\" = 'survey_question') and ((\"content_translation_work\".\"conversation_id\" is not null)) and ((\"content_translation_work\".\"project_content_id\" is null)) and ((\"content_translation_work\".\"conversation_content_id\" is null)) and ((\"content_translation_work\".\"opinion_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_content_id\" is not null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is not null)) and ((\"content_translation_work\".\"ranking_item_content_id\" is null)))) or (((\"content_translation_work\".\"source_kind\" = 'ranking_item') and ((\"content_translation_work\".\"conversation_id\" is not null)) and ((\"content_translation_work\".\"project_content_id\" is null)) and ((\"content_translation_work\".\"conversation_content_id\" is null)) and ((\"content_translation_work\".\"opinion_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is null)) and ((\"content_translation_work\".\"ranking_item_content_id\" is not null)))) or (((\"content_translation_work\".\"source_kind\" in ('gathering_field', 'gathering_response')) and ((\"content_translation_work\".\"conversation_id\" is not null)) and ((\"content_translation_work\".\"project_content_id\" is null)) and ((\"content_translation_work\".\"conversation_content_id\" is null)) and ((\"content_translation_work\".\"opinion_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_content_id\" is null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is null)) and ((\"content_translation_work\".\"ranking_item_content_id\" is null)))))"
         },
         {
           "name": "content_translation_work_running_lease_check",
-          "expression": "((\"content_translation_work\".\"status\" <> 'running' and \"content_translation_work\".\"lease_owner\" is null and \"content_translation_work\".\"lease_token\" is null and \"content_translation_work\".\"lease_expires_at\" is null) or (\"content_translation_work\".\"status\" = 'running' and \"content_translation_work\".\"lease_owner\" is not null and \"content_translation_work\".\"lease_token\" is not null and \"content_translation_work\".\"lease_expires_at\" is not null))"
+          "expression": "((((\"content_translation_work\".\"status\" <> 'running') and ((\"content_translation_work\".\"lease_owner\" is null)) and ((\"content_translation_work\".\"lease_token\" is null)) and ((\"content_translation_work\".\"lease_expires_at\" is null)))) or (((\"content_translation_work\".\"status\" = 'running') and ((\"content_translation_work\".\"lease_owner\" is not null)) and ((\"content_translation_work\".\"lease_token\" is not null)) and ((\"content_translation_work\".\"lease_expires_at\" is not null)))))"
         },
         {
           "name": "content_translation_work_priority_rank_check",
@@ -1428,7 +1735,7 @@
             "conversation_content_id",
             "display_language_code"
           ],
-          "predicate": "(\"content_translation_work\".\"source_kind\" = 'conversation' and \"content_translation_work\".\"conversation_content_id\" is not null)"
+          "predicate": "((\"content_translation_work\".\"source_kind\" = 'conversation') and ((\"content_translation_work\".\"conversation_content_id\" is not null)))"
         },
         {
           "name": "content_translation_work_project_unique",
@@ -1437,7 +1744,7 @@
             "project_content_id",
             "display_language_code"
           ],
-          "predicate": "(\"content_translation_work\".\"source_kind\" = 'project' and \"content_translation_work\".\"project_content_id\" is not null)"
+          "predicate": "((\"content_translation_work\".\"source_kind\" = 'project') and ((\"content_translation_work\".\"project_content_id\" is not null)))"
         },
         {
           "name": "content_translation_work_opinion_unique",
@@ -1446,7 +1753,7 @@
             "opinion_content_id",
             "display_language_code"
           ],
-          "predicate": "(\"content_translation_work\".\"source_kind\" = 'opinion' and \"content_translation_work\".\"opinion_content_id\" is not null)"
+          "predicate": "((\"content_translation_work\".\"source_kind\" = 'opinion') and ((\"content_translation_work\".\"opinion_content_id\" is not null)))"
         },
         {
           "name": "content_translation_work_survey_question_unique",
@@ -1456,7 +1763,7 @@
             "survey_question_option_content_ids",
             "display_language_code"
           ],
-          "predicate": "(\"content_translation_work\".\"source_kind\" = 'survey_question' and \"content_translation_work\".\"survey_question_content_id\" is not null and \"content_translation_work\".\"survey_question_option_content_ids\" is not null)"
+          "predicate": "((\"content_translation_work\".\"source_kind\" = 'survey_question') and ((\"content_translation_work\".\"survey_question_content_id\" is not null)) and ((\"content_translation_work\".\"survey_question_option_content_ids\" is not null)))"
         },
         {
           "name": "content_translation_work_ranking_item_unique",
@@ -1465,7 +1772,25 @@
             "ranking_item_content_id",
             "display_language_code"
           ],
-          "predicate": "(\"content_translation_work\".\"source_kind\" = 'ranking_item' and \"content_translation_work\".\"ranking_item_content_id\" is not null)"
+          "predicate": "((\"content_translation_work\".\"source_kind\" = 'ranking_item') and ((\"content_translation_work\".\"ranking_item_content_id\" is not null)))"
+        },
+        {
+          "name": "content_translation_work_gathering_field_unique",
+          "unique": true,
+          "columns": [
+            "gathering_field_id",
+            "display_language_code"
+          ],
+          "predicate": "\"content_translation_work\".\"source_kind\" = $1"
+        },
+        {
+          "name": "content_translation_work_gathering_response_unique",
+          "unique": true,
+          "columns": [
+            "gathering_response_content_id",
+            "display_language_code"
+          ],
+          "predicate": "\"content_translation_work\".\"source_kind\" = $1"
         },
         {
           "name": "content_translation_work_claim_idx",
@@ -1540,6 +1865,12 @@
           "primaryKey": false
         },
         {
+          "name": "gathering_config_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
           "name": "prioritization_type",
           "type": "text",
           "nullable": true,
@@ -1584,6 +1915,12 @@
         {
           "name": "participation_mode",
           "type": "participation_mode",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "participation_mode_settings_source",
+          "type": "text",
           "nullable": false,
           "primaryKey": false
         },
@@ -1717,6 +2054,17 @@
           "onDelete": "no action"
         },
         {
+          "name": "conversation_gathering_config_id_gathering_config_id_fk",
+          "columns": [
+            "gathering_config_id"
+          ],
+          "targetTable": "gathering_config",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
           "name": "conversation_conversation_email_update_override_updated_by_user_id_user_id_fk",
           "columns": [
             "conversation_email_update_override_updated_by_user_id"
@@ -1730,8 +2078,12 @@
       ],
       "checks": [
         {
+          "name": "conversation_participation_mode_settings_source_check",
+          "expression": "\"conversation\".\"participation_mode_settings_source\" in ($1, $2)"
+        },
+        {
           "name": "conversation_deletion_intent_check",
-          "expression": "(\"conversation\".\"deleted_at\" is null or \"conversation\".\"current_content_id\" is null)"
+          "expression": "(((\"conversation\".\"deleted_at\" is null)) or ((\"conversation\".\"current_content_id\" is null)))"
         },
         {
           "name": "conversation_closing_state_check",
@@ -1739,11 +2091,11 @@
         },
         {
           "name": "conversation_subtype_config_check",
-          "expression": "((\"conversation\".\"conversation_type\" = 'polis' AND \"conversation\".\"polis_config_id\" IS NOT NULL AND \"conversation\".\"ranking_config_id\" IS NULL AND \"conversation\".\"credit_voting_config_id\" IS NULL AND \"conversation\".\"prioritization_type\" IS NULL) OR (\"conversation\".\"conversation_type\" = 'prioritizing' AND \"conversation\".\"polis_config_id\" IS NULL AND \"conversation\".\"prioritization_type\" IS NOT NULL AND ((\"conversation\".\"prioritization_type\" = 'comparisons' AND \"conversation\".\"ranking_config_id\" IS NOT NULL AND \"conversation\".\"credit_voting_config_id\" IS NULL) OR (\"conversation\".\"prioritization_type\" = 'qv' AND \"conversation\".\"credit_voting_config_id\" IS NOT NULL AND \"conversation\".\"ranking_config_id\" IS NULL))))"
+          "expression": "((((\"conversation\".\"conversation_type\" = 'gathering') and ((\"conversation\".\"gathering_config_id\" is not null)) and ((\"conversation\".\"polis_config_id\" is null)) and ((\"conversation\".\"ranking_config_id\" is null)) and ((\"conversation\".\"credit_voting_config_id\" is null)) and ((\"conversation\".\"prioritization_type\" is null)))) or ((((\"conversation\".\"gathering_config_id\" is null)) and (((((\"conversation\".\"conversation_type\" = 'polis') and ((\"conversation\".\"polis_config_id\" is not null)) and ((\"conversation\".\"ranking_config_id\" is null)) and ((\"conversation\".\"credit_voting_config_id\" is null)) and ((\"conversation\".\"prioritization_type\" is null)))) or (((\"conversation\".\"conversation_type\" = 'prioritizing') and ((\"conversation\".\"polis_config_id\" is null)) and ((\"conversation\".\"prioritization_type\" is not null)) and (((((\"conversation\".\"prioritization_type\" = 'comparisons') and ((\"conversation\".\"ranking_config_id\" is not null)) and ((\"conversation\".\"credit_voting_config_id\" is null)))) or (((\"conversation\".\"prioritization_type\" = 'qv') and ((\"conversation\".\"credit_voting_config_id\" is not null)) and ((\"conversation\".\"ranking_config_id\" is null)))))))))))))"
         },
         {
           "name": "conversation_email_update_override_audit_check",
-          "expression": "(\"conversation\".\"conversation_email_update_override_updated_by_user_id\" is null or \"conversation\".\"conversation_email_update_override_updated_at\" is not null)"
+          "expression": "(((\"conversation\".\"conversation_email_update_override_updated_by_user_id\" is null)) or ((\"conversation\".\"conversation_email_update_override_updated_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [
@@ -1752,6 +2104,13 @@
           "columns": [
             "project_id",
             "id"
+          ]
+        },
+        {
+          "name": "conversation_gathering_config_unique",
+          "columns": [
+            "id",
+            "gathering_config_id"
           ]
         }
       ],
@@ -1763,7 +2122,7 @@
             "deleted_at",
             "id"
           ],
-          "predicate": "\"conversation\".\"deleted_at\" is not null"
+          "predicate": "(\"conversation\".\"deleted_at\" is not null)"
         },
         {
           "name": "conversation_feed_idx",
@@ -1806,9 +2165,86 @@
             "\"conversation\".\"created_at\" DESC",
             "\"conversation\".\"id\" DESC"
           ],
-          "predicate": "\"conversation\".\"current_content_id\" is not null"
+          "predicate": "(\"conversation\".\"current_content_id\" is not null)"
         }
       ]
+    },
+    {
+      "table": "conversation_analysis_close",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "close_epoch",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "source_revision",
+          "type": "bigint",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "selected_input_mode",
+          "type": "analysis_input_mode",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "finalized_at",
+          "type": "timestamp (0)",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "conversation_analysis_close_conversation_id_conversation_id_fk",
+          "columns": [
+            "conversation_id"
+          ],
+          "targetTable": "conversation",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "conversation_analysis_close_revision_check",
+          "expression": "\"conversation_analysis_close\".\"source_revision\" >= $1"
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "conversation_analysis_close_epoch_unique",
+          "columns": [
+            "conversation_id",
+            "close_epoch"
+          ]
+        },
+        {
+          "name": "conversation_analysis_close_scope_unique",
+          "columns": [
+            "id",
+            "conversation_id"
+          ]
+        }
+      ],
+      "indexes": []
     },
     {
       "table": "conversation_content",
@@ -2013,6 +2449,154 @@
       "indexes": []
     },
     {
+      "table": "conversation_draft",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "project_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "conversation_type",
+          "type": "conversation_type",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "content",
+          "type": "jsonb",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "revision",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp (3)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp (3)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "published_conversation_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "conversation_draft_project_id_project_id_fk",
+          "columns": [
+            "project_id"
+          ],
+          "targetTable": "project",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "cascade"
+        },
+        {
+          "name": "conversation_draft_created_by_user_id_user_id_fk",
+          "columns": [
+            "created_by_user_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "set null"
+        },
+        {
+          "name": "conversation_draft_published_conversation_id_conversation_id_fk",
+          "columns": [
+            "published_conversation_id"
+          ],
+          "targetTable": "conversation",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "set null"
+        }
+      ],
+      "checks": [
+        {
+          "name": "conversation_draft_revision_check",
+          "expression": "\"conversation_draft\".\"revision\" >= $1"
+        },
+        {
+          "name": "conversation_draft_published_link_check",
+          "expression": "(((\"conversation_draft\".\"published_conversation_id\" is null)) or ((\"conversation_draft\".\"published_at\" is not null)))"
+        },
+        {
+          "name": "conversation_draft_terminal_state_check",
+          "expression": "(((\"conversation_draft\".\"deleted_at\" is null)) or ((\"conversation_draft\".\"published_at\" is null)))"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "conversation_draft_project_idx",
+          "unique": false,
+          "columns": [
+            "project_id"
+          ]
+        },
+        {
+          "name": "conversation_draft_active_list_idx",
+          "unique": false,
+          "columns": [
+            "project_id",
+            "created_at",
+            "id"
+          ],
+          "predicate": "(((\"conversation_draft\".\"deleted_at\" is null)) and ((\"conversation_draft\".\"published_at\" is null)))"
+        },
+        {
+          "name": "conversation_draft_created_by_idx",
+          "unique": false,
+          "columns": [
+            "created_by_user_id"
+          ],
+          "predicate": "(\"conversation_draft\".\"created_by_user_id\" is not null)"
+        }
+      ]
+    },
+    {
       "table": "conversation_email_update",
       "columns": [
         {
@@ -2195,7 +2779,7 @@
       "checks": [
         {
           "name": "conversation_email_update_review_fields_check",
-          "expression": "(((\"conversation_email_update\".\"review_expires_at\" is null and \"conversation_email_update\".\"template_version\" is null and \"conversation_email_update\".\"participant_preference_scope_snapshot\" is null and \"conversation_email_update\".\"branding_snapshot\" is null) or (\"conversation_email_update\".\"review_expires_at\" is not null and \"conversation_email_update\".\"template_version\" is not null and \"conversation_email_update\".\"participant_preference_scope_snapshot\" is not null and \"conversation_email_update\".\"branding_snapshot\" is not null)) and (\"conversation_email_update\".\"cancelled_at\" is null or \"conversation_email_update\".\"review_expires_at\" is not null) and ((\"conversation_email_update\".\"review_expires_at\" is null and \"conversation_email_update\".\"review_test_email_credential_id\" is null and \"conversation_email_update\".\"review_test_email_snapshot\" is null) or (\"conversation_email_update\".\"review_expires_at\" is not null and ((\"conversation_email_update\".\"created_by_user_id\" is not null and \"conversation_email_update\".\"review_test_email_credential_id\" is not null and \"conversation_email_update\".\"review_test_email_snapshot\" is not null) or (\"conversation_email_update\".\"created_by_user_id\" is null and \"conversation_email_update\".\"review_test_email_credential_id\" is null and \"conversation_email_update\".\"review_test_email_snapshot\" is null)))))"
+          "expression": "(((((((\"conversation_email_update\".\"review_expires_at\" is null)) and ((\"conversation_email_update\".\"template_version\" is null)) and ((\"conversation_email_update\".\"participant_preference_scope_snapshot\" is null)) and ((\"conversation_email_update\".\"branding_snapshot\" is null)))) or ((((\"conversation_email_update\".\"review_expires_at\" is not null)) and ((\"conversation_email_update\".\"template_version\" is not null)) and ((\"conversation_email_update\".\"participant_preference_scope_snapshot\" is not null)) and ((\"conversation_email_update\".\"branding_snapshot\" is not null)))))) and ((((\"conversation_email_update\".\"cancelled_at\" is null)) or ((\"conversation_email_update\".\"review_expires_at\" is not null)))) and ((((((\"conversation_email_update\".\"review_expires_at\" is null)) and ((\"conversation_email_update\".\"review_test_email_credential_id\" is null)) and ((\"conversation_email_update\".\"review_test_email_snapshot\" is null)))) or ((((\"conversation_email_update\".\"review_expires_at\" is not null)) and ((((((\"conversation_email_update\".\"created_by_user_id\" is not null)) and ((\"conversation_email_update\".\"review_test_email_credential_id\" is not null)) and ((\"conversation_email_update\".\"review_test_email_snapshot\" is not null)))) or ((((\"conversation_email_update\".\"created_by_user_id\" is null)) and ((\"conversation_email_update\".\"review_test_email_credential_id\" is null)) and ((\"conversation_email_update\".\"review_test_email_snapshot\" is null)))))))))))"
         },
         {
           "name": "conversation_email_update_review_expiry_check",
@@ -2869,7 +3453,7 @@
           "columns": [
             "provider_message_id"
           ],
-          "predicate": "\"conversation_email_update_delivery_attempt\".\"provider_message_id\" is not null"
+          "predicate": "(\"conversation_email_update_delivery_attempt\".\"provider_message_id\" is not null)"
         }
       ]
     },
@@ -3037,7 +3621,7 @@
         },
         {
           "name": "conversation_email_update_email_suppression_lift_audit_check",
-          "expression": "(\"conversation_email_update_email_suppression\".\"lifted_by_user_id\" is null or \"conversation_email_update_email_suppression\".\"lifted_at\" is not null)"
+          "expression": "(((\"conversation_email_update_email_suppression\".\"lifted_by_user_id\" is null)) or ((\"conversation_email_update_email_suppression\".\"lifted_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [
@@ -3057,7 +3641,7 @@
             "canonical_email",
             "reason"
           ],
-          "predicate": "\"conversation_email_update_email_suppression\".\"lifted_at\" is null"
+          "predicate": "(\"conversation_email_update_email_suppression\".\"lifted_at\" is null)"
         },
         {
           "name": "conversation_email_update_email_suppression_credential_idx",
@@ -3633,7 +4217,7 @@
         },
         {
           "name": "conversation_email_update_safety_lift_audit_check",
-          "expression": "(\"conversation_email_update_scope_safety_block\".\"lifted_by_user_id\" is null or \"conversation_email_update_scope_safety_block\".\"lifted_at\" is not null)"
+          "expression": "(((\"conversation_email_update_scope_safety_block\".\"lifted_by_user_id\" is null)) or ((\"conversation_email_update_scope_safety_block\".\"lifted_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [],
@@ -3965,7 +4549,7 @@
       "checks": [
         {
           "name": "email_update_test_sender_provenance_check",
-          "expression": "((\"conversation_email_update_test_attempt\".\"sender_purged_at\" is null and \"conversation_email_update_test_attempt\".\"requested_by_user_id\" is not null and \"conversation_email_update_test_attempt\".\"destination_email_credential_id\" is not null and \"conversation_email_update_test_attempt\".\"destination_email_snapshot\" is not null) or (\"conversation_email_update_test_attempt\".\"sender_purged_at\" is not null and \"conversation_email_update_test_attempt\".\"requested_by_user_id\" is null and \"conversation_email_update_test_attempt\".\"destination_email_credential_id\" is null and \"conversation_email_update_test_attempt\".\"destination_email_snapshot\" is null and \"conversation_email_update_test_attempt\".\"status\" not in ('pending', 'claimed', 'attempting')))"
+          "expression": "(((((\"conversation_email_update_test_attempt\".\"sender_purged_at\" is null)) and ((\"conversation_email_update_test_attempt\".\"requested_by_user_id\" is not null)) and ((\"conversation_email_update_test_attempt\".\"destination_email_credential_id\" is not null)) and ((\"conversation_email_update_test_attempt\".\"destination_email_snapshot\" is not null)))) or ((((\"conversation_email_update_test_attempt\".\"sender_purged_at\" is not null)) and ((\"conversation_email_update_test_attempt\".\"requested_by_user_id\" is null)) and ((\"conversation_email_update_test_attempt\".\"destination_email_credential_id\" is null)) and ((\"conversation_email_update_test_attempt\".\"destination_email_snapshot\" is null)) and (\"conversation_email_update_test_attempt\".\"status\" not in ('pending', 'claimed', 'attempting')))))"
         },
         {
           "name": "conversation_email_update_test_lease_check",
@@ -4028,7 +4612,7 @@
           "columns": [
             "provider_message_id"
           ],
-          "predicate": "\"conversation_email_update_test_attempt\".\"provider_message_id\" is not null"
+          "predicate": "(\"conversation_email_update_test_attempt\".\"provider_message_id\" is not null)"
         }
       ]
     },
@@ -4117,7 +4701,7 @@
       "checks": [
         {
           "name": "conversation_email_update_user_complaint_lift_audit_check",
-          "expression": "(\"conversation_email_update_user_complaint_suppression\".\"lifted_by_user_id\" is null or \"conversation_email_update_user_complaint_suppression\".\"lifted_at\" is not null)"
+          "expression": "(((\"conversation_email_update_user_complaint_suppression\".\"lifted_by_user_id\" is null)) or ((\"conversation_email_update_user_complaint_suppression\".\"lifted_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [
@@ -4136,7 +4720,7 @@
           "columns": [
             "user_id"
           ],
-          "predicate": "\"conversation_email_update_user_complaint_suppression\".\"lifted_at\" is null"
+          "predicate": "(\"conversation_email_update_user_complaint_suppression\".\"lifted_at\" is null)"
         }
       ]
     },
@@ -4733,15 +5317,15 @@
       "checks": [
         {
           "name": "conversation_export_object_lease_check",
-          "expression": "((\"conversation_export_object\".\"lease_token\" is null and \"conversation_export_object\".\"lease_expires_at\" is null) or (\"conversation_export_object\".\"lease_token\" is not null and \"conversation_export_object\".\"lease_expires_at\" is not null))"
+          "expression": "(((((\"conversation_export_object\".\"lease_token\" is null)) and ((\"conversation_export_object\".\"lease_expires_at\" is null)))) or ((((\"conversation_export_object\".\"lease_token\" is not null)) and ((\"conversation_export_object\".\"lease_expires_at\" is not null)))))"
         },
         {
           "name": "conversation_export_object_attempts_check",
-          "expression": "(\"conversation_export_object\".\"delete_attempts\" >= 0 and \"conversation_export_object\".\"generation_attempt\" >= 0)"
+          "expression": "((\"conversation_export_object\".\"delete_attempts\" >= 0) and (\"conversation_export_object\".\"generation_attempt\" >= 0))"
         },
         {
           "name": "conversation_export_object_deleted_check",
-          "expression": "(\"conversation_export_object\".\"object_deleted_at\" is null or \"conversation_export_object\".\"cleanup_requested_at\" is not null)"
+          "expression": "(((\"conversation_export_object\".\"object_deleted_at\" is null)) or ((\"conversation_export_object\".\"cleanup_requested_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [
@@ -4768,7 +5352,7 @@
             "cleanup_requested_at",
             "id"
           ],
-          "predicate": "\"conversation_export_object\".\"object_deleted_at\" is null"
+          "predicate": "(\"conversation_export_object\".\"object_deleted_at\" is null)"
         }
       ]
     },
@@ -5123,7 +5707,7 @@
       "checks": [
         {
           "name": "conversation_import_requester_check",
-          "expression": "((\"conversation_import\".\"user_id\" is not null and \"conversation_import\".\"requester_purged_at\" is null) or (\"conversation_import\".\"user_id\" is null and \"conversation_import\".\"requester_purged_at\" is not null and \"conversation_import\".\"conversation_id\" is not null))"
+          "expression": "(((((\"conversation_import\".\"user_id\" is not null)) and ((\"conversation_import\".\"requester_purged_at\" is null)))) or ((((\"conversation_import\".\"user_id\" is null)) and ((\"conversation_import\".\"requester_purged_at\" is not null)) and ((\"conversation_import\".\"conversation_id\" is not null)))))"
         }
       ],
       "uniqueConstraints": [],
@@ -5331,7 +5915,7 @@
           "columns": [
             "conversation_id"
           ],
-          "predicate": "\"conversation_moderation\".\"deleted_at\" is null"
+          "predicate": "(\"conversation_moderation\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -5668,7 +6252,7 @@
             "conversation_id",
             "language_code"
           ],
-          "predicate": "\"conversation_translation_target_language\".\"deleted_at\" is null"
+          "predicate": "(\"conversation_translation_target_language\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -5695,6 +6279,12 @@
         },
         {
           "name": "analysis_snapshot_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "close_replacement_generation",
           "type": "integer",
           "nullable": true,
           "primaryKey": false
@@ -5845,6 +6435,19 @@
             "id"
           ],
           "onDelete": "set null"
+        },
+        {
+          "name": "conversation_view_snapshot_close_generation_fk",
+          "columns": [
+            "conversation_id",
+            "close_replacement_generation"
+          ],
+          "targetTable": "polis_analysis_close_generation",
+          "targetColumns": [
+            "conversation_id",
+            "data_generation"
+          ],
+          "onDelete": "no action"
         }
       ],
       "checks": [
@@ -5857,7 +6460,24 @@
           "expression": "\"conversation_view_snapshot\".\"preferred_opinion_group_count\" IS NULL OR (\"conversation_view_snapshot\".\"preferred_opinion_group_count\" >= 2 AND \"conversation_view_snapshot\".\"preferred_opinion_group_count\" <= 6)"
         }
       ],
-      "uniqueConstraints": [],
+      "uniqueConstraints": [
+        {
+          "name": "conversation_view_snapshot_scope_unique",
+          "columns": [
+            "id",
+            "conversation_id",
+            "opinion_group_spec_id"
+          ]
+        },
+        {
+          "name": "conversation_view_snapshot_close_generation_spec_unique",
+          "columns": [
+            "conversation_id",
+            "close_replacement_generation",
+            "opinion_group_spec_id"
+          ]
+        }
+      ],
       "indexes": [
         {
           "name": "conversation_view_snapshot_latest_idx",
@@ -5876,7 +6496,7 @@
             "\"conversation_view_snapshot\".\"created_at\" DESC",
             "\"conversation_view_snapshot\".\"id\" DESC"
           ],
-          "predicate": "\"conversation_view_snapshot\".\"activated_at\" is not null"
+          "predicate": "(\"conversation_view_snapshot\".\"activated_at\" is not null)"
         },
         {
           "name": "conversation_view_snapshot_latest_spec_active_idx",
@@ -5887,7 +6507,7 @@
             "\"conversation_view_snapshot\".\"created_at\" DESC",
             "\"conversation_view_snapshot\".\"id\" DESC"
           ],
-          "predicate": "\"conversation_view_snapshot\".\"activated_at\" is not null"
+          "predicate": "(\"conversation_view_snapshot\".\"activated_at\" is not null)"
         },
         {
           "name": "conversation_view_snapshot_analysis_snapshot_idx",
@@ -5895,7 +6515,7 @@
           "columns": [
             "analysis_snapshot_id"
           ],
-          "predicate": "\"conversation_view_snapshot\".\"analysis_snapshot_id\" is not null"
+          "predicate": "(\"conversation_view_snapshot\".\"analysis_snapshot_id\" is not null)"
         }
       ]
     },
@@ -6304,7 +6924,7 @@
         },
         {
           "name": "email_recovery_reservation_check",
-          "expression": "(\"email\".\"reserved_for_recovery\" = false or \"email\".\"is_deleted\" = true)"
+          "expression": "((\"email\".\"reserved_for_recovery\" = false) or (\"email\".\"is_deleted\" = true))"
         }
       ],
       "uniqueConstraints": [
@@ -6323,7 +6943,7 @@
           "columns": [
             "email"
           ],
-          "predicate": "(\"email\".\"is_deleted\" = false or \"email\".\"reserved_for_recovery\" = true)"
+          "predicate": "((\"email\".\"is_deleted\" = false) or (\"email\".\"reserved_for_recovery\" = true))"
         },
         {
           "name": "email_active_primary_user_unique",
@@ -6522,9 +7142,668 @@
             "user_id",
             "topic_id"
           ],
-          "predicate": "\"followed_topic\".\"deleted_at\" is null"
+          "predicate": "(\"followed_topic\".\"deleted_at\" is null)"
         }
       ]
+    },
+    {
+      "table": "gathering_answer",
+      "columns": [
+        {
+          "name": "config_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "content_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "field_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "value",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_answer_config_id_content_id_gathering_response_content_config_id_id_fk",
+          "columns": [
+            "config_id",
+            "content_id"
+          ],
+          "targetTable": "gathering_response_content",
+          "targetColumns": [
+            "config_id",
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "gathering_answer_config_id_field_id_gathering_field_config_id_id_fk",
+          "columns": [
+            "config_id",
+            "field_id"
+          ],
+          "targetTable": "gathering_field",
+          "targetColumns": [
+            "config_id",
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "gathering_answer_length_check",
+          "expression": "char_length(\"gathering_answer\".\"value\") <= 20000"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": []
+    },
+    {
+      "table": "gathering_answer_translation",
+      "columns": [
+        {
+          "name": "content_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "field_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "display_language_code",
+          "type": "display_language_code",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "translated_value",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "source_language_code",
+          "type": "spoken_language_code",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_answer_translation_content_id_field_id_gathering_answer_content_id_field_id_fk",
+          "columns": [
+            "content_id",
+            "field_id"
+          ],
+          "targetTable": "gathering_answer",
+          "targetColumns": [
+            "content_id",
+            "field_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [],
+      "indexes": []
+    },
+    {
+      "table": "gathering_config",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "gathering_mode",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "allow_new_responses",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "response_visibility",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [],
+      "checks": [
+        {
+          "name": "gathering_mode_check",
+          "expression": "\"gathering_config\".\"gathering_mode\" in ($1, $2)"
+        },
+        {
+          "name": "gathering_visibility_check",
+          "expression": "\"gathering_config\".\"response_visibility\" in ($1, $2)"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": []
+    },
+    {
+      "table": "gathering_field",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "config_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "position",
+          "type": "smallint",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "label",
+          "type": "varchar(200)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "character_limit",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_field_config_id_gathering_config_id_fk",
+          "columns": [
+            "config_id"
+          ],
+          "targetTable": "gathering_config",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "gathering_field_position_check",
+          "expression": "((\"gathering_field\".\"position\" >= 1) and (\"gathering_field\".\"position\" <= 6))"
+        },
+        {
+          "name": "gathering_field_limit_check",
+          "expression": "((\"gathering_field\".\"character_limit\" >= 1) and (\"gathering_field\".\"character_limit\" <= 20000))"
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "gathering_field_config_position_unique",
+          "columns": [
+            "config_id",
+            "position"
+          ]
+        },
+        {
+          "name": "gathering_field_config_id_unique",
+          "columns": [
+            "config_id",
+            "id"
+          ]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "table": "gathering_field_translation",
+      "columns": [
+        {
+          "name": "field_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "display_language_code",
+          "type": "display_language_code",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "translated_label",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "source_language_code",
+          "type": "spoken_language_code",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_field_translation_field_id_gathering_field_id_fk",
+          "columns": [
+            "field_id"
+          ],
+          "targetTable": "gathering_field",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [],
+      "indexes": []
+    },
+    {
+      "table": "gathering_moderation",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "response_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "moderator_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "reason",
+          "type": "varchar(1000)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_moderation_response_id_gathering_response_id_fk",
+          "columns": [
+            "response_id"
+          ],
+          "targetTable": "gathering_response",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "gathering_moderation_moderator_id_user_id_fk",
+          "columns": [
+            "moderator_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "gathering_moderation_action_check",
+          "expression": "\"gathering_moderation\".\"action\" in ($1, $2, $3)"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "gathering_moderation_response_idx",
+          "unique": false,
+          "columns": [
+            "response_id"
+          ]
+        }
+      ]
+    },
+    {
+      "table": "gathering_response",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "slug_id",
+          "type": "varchar(8)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "config_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "author_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "is_seed",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "current_content_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "baseline_content_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "source_conversation_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "source_response_content_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "source_conversation_slug_id",
+          "type": "varchar(8)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "source_conversation_type",
+          "type": "text",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "moderation",
+          "type": "text",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "account_hidden_at",
+          "type": "timestamp (3)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp (3)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_response_author_id_user_id_fk",
+          "columns": [
+            "author_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "gathering_response_source_conversation_id_conversation_id_fk",
+          "columns": [
+            "source_conversation_id"
+          ],
+          "targetTable": "conversation",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "set null"
+        },
+        {
+          "name": "gathering_response_source_response_content_id_gathering_response_content_id_fk",
+          "columns": [
+            "source_response_content_id"
+          ],
+          "targetTable": "gathering_response_content",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "set null"
+        },
+        {
+          "name": "gathering_response_conversation_id_config_id_conversation_id_gathering_config_id_fk",
+          "columns": [
+            "conversation_id",
+            "config_id"
+          ],
+          "targetTable": "conversation",
+          "targetColumns": [
+            "id",
+            "gathering_config_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "gathering_response_current_fk",
+          "columns": [
+            "id",
+            "current_content_id"
+          ],
+          "targetTable": "gathering_response_content",
+          "targetColumns": [
+            "response_id",
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "gathering_response_baseline_fk",
+          "columns": [
+            "id",
+            "baseline_content_id"
+          ],
+          "targetTable": "gathering_response_content",
+          "targetColumns": [
+            "response_id",
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "gathering_response_seed_author_check",
+          "expression": "((\"gathering_response\".\"is_seed\" = false) or ((\"gathering_response\".\"author_id\" is null)))"
+        },
+        {
+          "name": "gathering_response_author_check",
+          "expression": "((\"gathering_response\".\"is_seed\" = true) or ((\"gathering_response\".\"author_id\" is not null)) or ((\"gathering_response\".\"account_hidden_at\" is not null)))"
+        },
+        {
+          "name": "gathering_response_deletion_check",
+          "expression": "(((\"gathering_response\".\"deleted_at\" is null)) or ((\"gathering_response\".\"current_content_id\" is null)))"
+        },
+        {
+          "name": "gathering_response_moderation_check",
+          "expression": "(((\"gathering_response\".\"moderation\" is null)) or (\"gathering_response\".\"moderation\" in ('hide', 'move')))"
+        },
+        {
+          "name": "gathering_response_provenance_check",
+          "expression": "(((((\"gathering_response\".\"source_conversation_slug_id\" is null)) and ((\"gathering_response\".\"source_conversation_type\" is null)) and ((\"gathering_response\".\"baseline_content_id\" is null)) and ((\"gathering_response\".\"source_conversation_id\" is null)) and ((\"gathering_response\".\"source_response_content_id\" is null)))) or ((((\"gathering_response\".\"source_conversation_slug_id\" is not null)) and ((\"gathering_response\".\"source_conversation_type\" is not null)) and (\"gathering_response\".\"source_conversation_type\" = 'gathering') and ((\"gathering_response\".\"baseline_content_id\" is not null)))))"
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "gathering_response_config_id_unique",
+          "columns": [
+            "config_id",
+            "id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "gathering_response_author_unique",
+          "unique": true,
+          "columns": [
+            "conversation_id",
+            "author_id"
+          ],
+          "predicate": "\"gathering_response\".\"is_seed\" = $1"
+        },
+        {
+          "name": "gathering_response_author_idx",
+          "unique": false,
+          "columns": [
+            "author_id"
+          ]
+        }
+      ]
+    },
+    {
+      "table": "gathering_response_content",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "public_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "response_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "config_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "gathering_response_content_config_id_response_id_gathering_response_config_id_id_fk",
+          "columns": [
+            "config_id",
+            "response_id"
+          ],
+          "targetTable": "gathering_response",
+          "targetColumns": [
+            "config_id",
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [
+        {
+          "name": "gathering_content_response_id_unique",
+          "columns": [
+            "response_id",
+            "id"
+          ]
+        },
+        {
+          "name": "gathering_content_config_id_unique",
+          "columns": [
+            "config_id",
+            "id"
+          ]
+        }
+      ],
+      "indexes": []
     },
     {
       "table": "notification",
@@ -7025,6 +8304,12 @@
           "primaryKey": false
         },
         {
+          "name": "account_hidden_content_retained",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
           "name": "is_seed",
           "type": "boolean",
           "nullable": false,
@@ -7105,11 +8390,11 @@
       "checks": [
         {
           "name": "opinion_source_owner_check",
-          "expression": "(\"opinion\".\"author_id\" is not null or \"opinion\".\"is_seed\" = true or \"opinion\".\"deleted_at\" is not null or \"opinion\".\"account_hidden_at\" is not null)"
+          "expression": "(((\"opinion\".\"author_id\" is not null)) or (\"opinion\".\"is_seed\" = true) or ((\"opinion\".\"deleted_at\" is not null)) or ((\"opinion\".\"account_hidden_at\" is not null)))"
         },
         {
           "name": "opinion_deletion_intent_check",
-          "expression": "(\"opinion\".\"deleted_at\" is null or \"opinion\".\"current_content_id\" is null)"
+          "expression": "(((\"opinion\".\"deleted_at\" is null)) or ((\"opinion\".\"current_content_id\" is null)))"
         }
       ],
       "uniqueConstraints": [],
@@ -7121,7 +8406,7 @@
             "deleted_at",
             "id"
           ],
-          "predicate": "\"opinion\".\"deleted_at\" is not null"
+          "predicate": "(\"opinion\".\"deleted_at\" is not null)"
         },
         {
           "name": "opinion_authorId_idx",
@@ -7138,7 +8423,7 @@
             "\"opinion\".\"created_at\" DESC",
             "\"opinion\".\"id\" DESC"
           ],
-          "predicate": "\"opinion\".\"current_content_id\" is not null"
+          "predicate": "(\"opinion\".\"current_content_id\" is not null)"
         },
         {
           "name": "opinion_conversation_active_idx",
@@ -7156,7 +8441,7 @@
             "\"opinion\".\"created_at\" DESC",
             "\"opinion\".\"id\" DESC"
           ],
-          "predicate": "\"opinion\".\"current_content_id\" is not null"
+          "predicate": "(\"opinion\".\"current_content_id\" is not null)"
         }
       ]
     },
@@ -7280,7 +8565,7 @@
       "checks": [
         {
           "name": "opinion_content_edit_attribution_check",
-          "expression": "(\"opinion_content\".\"edited_by_user_id\" is null or \"opinion_content\".\"is_edited\" = true)"
+          "expression": "(((\"opinion_content\".\"edited_by_user_id\" is null)) or (\"opinion_content\".\"is_edited\" = true))"
         },
         {
           "name": "opinion_content_content_byte_length_check",
@@ -7506,7 +8791,7 @@
             "scope_id",
             "candidate_id"
           ],
-          "predicate": "\"opinion_group\".\"lineage_id\" is not null"
+          "predicate": "(\"opinion_group\".\"lineage_id\" is not null)"
         }
       ]
     },
@@ -8100,7 +9385,7 @@
       "checks": [
         {
           "name": "opinion_group_description_translation_work_running_lease_check",
-          "expression": "((\"opinion_group_description_translation_work\".\"lease_owner\" is null and \"opinion_group_description_translation_work\".\"lease_token\" is null and \"opinion_group_description_translation_work\".\"lease_expires_at\" is null) or (\"opinion_group_description_translation_work\".\"lease_owner\" is not null and \"opinion_group_description_translation_work\".\"lease_token\" is not null and \"opinion_group_description_translation_work\".\"lease_expires_at\" is not null))"
+          "expression": "(((((\"opinion_group_description_translation_work\".\"lease_owner\" is null)) and ((\"opinion_group_description_translation_work\".\"lease_token\" is null)) and ((\"opinion_group_description_translation_work\".\"lease_expires_at\" is null)))) or ((((\"opinion_group_description_translation_work\".\"lease_owner\" is not null)) and ((\"opinion_group_description_translation_work\".\"lease_token\" is not null)) and ((\"opinion_group_description_translation_work\".\"lease_expires_at\" is not null)))))"
         }
       ],
       "uniqueConstraints": [
@@ -8119,7 +9404,7 @@
           "columns": [
             "lease_expires_at"
           ],
-          "predicate": "\"opinion_group_description_translation_work\".\"lease_token\" is not null"
+          "predicate": "(\"opinion_group_description_translation_work\".\"lease_token\" is not null)"
         },
         {
           "name": "opinion_group_description_translation_work_claim_idx",
@@ -8129,7 +9414,7 @@
             "updated_at",
             "id"
           ],
-          "predicate": "\"opinion_group_description_translation_work\".\"lease_token\" is null"
+          "predicate": "(\"opinion_group_description_translation_work\".\"lease_token\" is null)"
         }
       ]
     },
@@ -8338,7 +9623,7 @@
       "checks": [
         {
           "name": "opinion_group_lineage_description_work_running_lease_check",
-          "expression": "((\"opinion_group_lineage_description_work\".\"lease_owner\" is null and \"opinion_group_lineage_description_work\".\"lease_token\" is null and \"opinion_group_lineage_description_work\".\"lease_expires_at\" is null) or (\"opinion_group_lineage_description_work\".\"lease_owner\" is not null and \"opinion_group_lineage_description_work\".\"lease_token\" is not null and \"opinion_group_lineage_description_work\".\"lease_expires_at\" is not null))"
+          "expression": "(((((\"opinion_group_lineage_description_work\".\"lease_owner\" is null)) and ((\"opinion_group_lineage_description_work\".\"lease_token\" is null)) and ((\"opinion_group_lineage_description_work\".\"lease_expires_at\" is null)))) or ((((\"opinion_group_lineage_description_work\".\"lease_owner\" is not null)) and ((\"opinion_group_lineage_description_work\".\"lease_token\" is not null)) and ((\"opinion_group_lineage_description_work\".\"lease_expires_at\" is not null)))))"
         }
       ],
       "uniqueConstraints": [
@@ -8356,7 +9641,7 @@
           "columns": [
             "lease_expires_at"
           ],
-          "predicate": "\"opinion_group_lineage_description_work\".\"lease_token\" is not null"
+          "predicate": "(\"opinion_group_lineage_description_work\".\"lease_token\" is not null)"
         },
         {
           "name": "opinion_group_lineage_description_work_claim_idx",
@@ -8366,7 +9651,7 @@
             "updated_at",
             "id"
           ],
-          "predicate": "\"opinion_group_lineage_description_work\".\"lease_token\" is null"
+          "predicate": "(\"opinion_group_lineage_description_work\".\"lease_token\" is null)"
         }
       ]
     },
@@ -8556,7 +9841,7 @@
             "representative_probability_agreement",
             "analysis_snapshot_opinion_id"
           ],
-          "predicate": "(\"opinion_group_opinion_stats\".\"representative_agreement_type\" is not null and \"opinion_group_opinion_stats\".\"representative_probability_agreement\" is not null)"
+          "predicate": "(((\"opinion_group_opinion_stats\".\"representative_agreement_type\" is not null)) and ((\"opinion_group_opinion_stats\".\"representative_probability_agreement\" is not null)))"
         }
       ]
     },
@@ -8757,7 +10042,7 @@
       "checks": [
         {
           "name": "opinion_group_user_identity_check",
-          "expression": "(\"opinion_group_user\".\"user_id\" is not null or \"opinion_group_user\".\"participant_id\" is not null)"
+          "expression": "(((\"opinion_group_user\".\"user_id\" is not null)) or ((\"opinion_group_user\".\"participant_id\" is not null)))"
         }
       ],
       "uniqueConstraints": [
@@ -8934,7 +10219,7 @@
           "columns": [
             "opinion_id"
           ],
-          "predicate": "\"opinion_moderation\".\"deleted_at\" is null"
+          "predicate": "(\"opinion_moderation\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -9118,7 +10403,7 @@
       "checks": [
         {
           "name": "organization_account_retirement_check",
-          "expression": "(\"organization\".\"retired_for_account_deletion_at\" is null or (\"organization\".\"auto_provisioned_for_user_id\" is not null and \"organization\".\"deleted_at\" is not null and \"organization\".\"deleted_at\" = \"organization\".\"retired_for_account_deletion_at\"::timestamp(0)))"
+          "expression": "(((\"organization\".\"retired_for_account_deletion_at\" is null)) or ((((\"organization\".\"auto_provisioned_for_user_id\" is not null)) and ((\"organization\".\"deleted_at\" is not null)) and (\"organization\".\"deleted_at\" = \"organization\".\"retired_for_account_deletion_at\"::timestamp(0)))))"
         }
       ],
       "uniqueConstraints": [],
@@ -9302,7 +10587,7 @@
             "user_id",
             "organization_id"
           ],
-          "predicate": "\"organization_membership\".\"deleted_at\" is null"
+          "predicate": "(\"organization_membership\".\"deleted_at\" is null)"
         },
         {
           "name": "organization_membership_organization_idx",
@@ -9318,7 +10603,7 @@
             "organization_id",
             "user_id"
           ],
-          "predicate": "(\"organization_membership\".\"deleted_at\" is null and \"organization_membership\".\"role\" = 'admin')"
+          "predicate": "(((\"organization_membership\".\"deleted_at\" is null)) and (\"organization_membership\".\"role\" = 'admin'))"
         }
       ]
     },
@@ -9412,7 +10697,7 @@
       "checks": [
         {
           "name": "organization_membership_all_project_capability_revocation_check",
-          "expression": "(\"organization_membership_all_project_capability\".\"revoked_by_user_id\" is null or \"organization_membership_all_project_capability\".\"deleted_at\" is not null)"
+          "expression": "(((\"organization_membership_all_project_capability\".\"revoked_by_user_id\" is null)) or ((\"organization_membership_all_project_capability\".\"deleted_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [],
@@ -9424,7 +10709,7 @@
             "organization_membership_id",
             "capability"
           ],
-          "predicate": "\"organization_membership_all_project_capability\".\"deleted_at\" is null"
+          "predicate": "(\"organization_membership_all_project_capability\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -9703,7 +10988,7 @@
         },
         {
           "name": "phone_recovery_reservation_check",
-          "expression": "(\"phone\".\"reserved_for_recovery\" = false or \"phone\".\"is_deleted\" = true)"
+          "expression": "((\"phone\".\"reserved_for_recovery\" = false) or (\"phone\".\"is_deleted\" = true))"
         }
       ],
       "uniqueConstraints": [],
@@ -9714,7 +10999,7 @@
           "columns": [
             "phone_hash"
           ],
-          "predicate": "(\"phone\".\"is_deleted\" = false or \"phone\".\"reserved_for_recovery\" = true)"
+          "predicate": "((\"phone\".\"is_deleted\" = false) or (\"phone\".\"reserved_for_recovery\" = true))"
         },
         {
           "name": "phone_hash_idx",
@@ -9952,6 +11237,175 @@
       ]
     },
     {
+      "table": "polis_analysis_close",
+      "columns": [
+        {
+          "name": "close_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "opinion_group_spec_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "original_view_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "polis_analysis_close_scope_fk",
+          "columns": [
+            "close_id",
+            "conversation_id"
+          ],
+          "targetTable": "conversation_analysis_close",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "polis_analysis_close_original_view_fk",
+          "columns": [
+            "original_view_snapshot_id",
+            "conversation_id",
+            "opinion_group_spec_id"
+          ],
+          "targetTable": "conversation_view_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id",
+            "opinion_group_spec_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "polis_analysis_close_original_view_idx",
+          "unique": false,
+          "columns": [
+            "original_view_snapshot_id"
+          ]
+        }
+      ]
+    },
+    {
+      "table": "polis_analysis_close_generation",
+      "columns": [
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "data_generation",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "close_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "input_mode",
+          "type": "analysis_input_mode",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "input_snapshot_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "polis_analysis_close_generation_scope_fk",
+          "columns": [
+            "close_id",
+            "conversation_id"
+          ],
+          "targetTable": "conversation_analysis_close",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "polis_analysis_close_generation_capture_fk",
+          "columns": [
+            "input_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "analysis_input_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "polis_analysis_close_generation_published_capture",
+          "expression": "(((\"polis_analysis_close_generation\".\"published_at\" is null)) or ((\"polis_analysis_close_generation\".\"input_snapshot_id\" is not null)))"
+        },
+        {
+          "name": "polis_analysis_close_generation_positive",
+          "expression": "\"polis_analysis_close_generation\".\"data_generation\" >= $1"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "polis_analysis_close_generation_close_idx",
+          "unique": false,
+          "columns": [
+            "close_id"
+          ]
+        },
+        {
+          "name": "polis_analysis_close_generation_published_idx",
+          "unique": false,
+          "columns": [
+            "close_id",
+            "input_mode",
+            "data_generation"
+          ],
+          "predicate": "(\"polis_analysis_close_generation\".\"published_at\" is not null)"
+        }
+      ]
+    },
+    {
       "table": "polis_conversation_config",
       "columns": [
         {
@@ -9968,6 +11422,12 @@
         },
         {
           "name": "ai_labeling_enabled",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "allow_participant_statements",
           "type": "boolean",
           "nullable": false,
           "primaryKey": false
@@ -10185,6 +11645,12 @@
           "primaryKey": false
         },
         {
+          "name": "participation_mode",
+          "type": "participation_mode",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
           "name": "conversation_email_update_default_updated_at",
           "type": "timestamp (0)",
           "nullable": true,
@@ -10259,11 +11725,11 @@
       "checks": [
         {
           "name": "project_account_retirement_check",
-          "expression": "(\"project\".\"retired_for_account_deletion_at\" is null or (\"project\".\"auto_provisioned_for_organization_id\" is not null and \"project\".\"deleted_at\" is not null and \"project\".\"deleted_at\" = \"project\".\"retired_for_account_deletion_at\"::timestamp(0)))"
+          "expression": "(((\"project\".\"retired_for_account_deletion_at\" is null)) or ((((\"project\".\"auto_provisioned_for_organization_id\" is not null)) and ((\"project\".\"deleted_at\" is not null)) and (\"project\".\"deleted_at\" = \"project\".\"retired_for_account_deletion_at\"::timestamp(0)))))"
         },
         {
           "name": "project_email_update_default_audit_check",
-          "expression": "(\"project\".\"conversation_email_update_default_updated_by_user_id\" is null or \"project\".\"conversation_email_update_default_updated_at\" is not null)"
+          "expression": "(((\"project\".\"conversation_email_update_default_updated_by_user_id\" is null)) or ((\"project\".\"conversation_email_update_default_updated_at\" is not null)))"
         }
       ],
       "uniqueConstraints": [],
@@ -10274,7 +11740,7 @@
           "columns": [
             "slug"
           ],
-          "predicate": "\"project\".\"deleted_at\" is null"
+          "predicate": "(\"project\".\"deleted_at\" is null)"
         },
         {
           "name": "project_active_default_organization_unique",
@@ -10282,7 +11748,7 @@
           "columns": [
             "auto_provisioned_for_organization_id"
           ],
-          "predicate": "\"project\".\"deleted_at\" is null"
+          "predicate": "(\"project\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -10413,8 +11879,8 @@
       ],
       "checks": [
         {
-          "name": "project_contact_name_or_affiliation_check",
-          "expression": "((\"project_contact\".\"first_name\" is not null and \"project_contact\".\"first_name\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]') or (\"project_contact\".\"last_name\" is not null and \"project_contact\".\"last_name\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]') or \"project_contact\".\"organization_id\" is not null)"
+          "name": "project_contact_identity_or_email_check",
+          "expression": "(((((\"project_contact\".\"email\" is not null)) and (\"project_contact\".\"email\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))) or ((((\"project_contact\".\"first_name\" is not null)) and (\"project_contact\".\"first_name\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))) or ((((\"project_contact\".\"last_name\" is not null)) and (\"project_contact\".\"last_name\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))) or ((\"project_contact\".\"organization_id\" is not null)))"
         },
         {
           "name": "project_contact_affiliation_source_check",
@@ -10422,7 +11888,7 @@
         },
         {
           "name": "project_contact_email_or_website_check",
-          "expression": "((\"project_contact\".\"email\" is not null and \"project_contact\".\"email\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]') or (\"project_contact\".\"website_url\" is not null and \"project_contact\".\"website_url\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))"
+          "expression": "(((((\"project_contact\".\"email\" is not null)) and (\"project_contact\".\"email\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))) or ((((\"project_contact\".\"website_url\" is not null)) and (\"project_contact\".\"website_url\" ~ U&'[^\\0009-\\000d \\00a0\\1680\\2000-\\200a\\2028\\2029\\202f\\205f\\3000\\feff]'))))"
         }
       ],
       "uniqueConstraints": [],
@@ -10433,7 +11899,7 @@
           "columns": [
             "project_id"
           ],
-          "predicate": "\"project_contact\".\"deleted_at\" is null"
+          "predicate": "(\"project_contact\".\"deleted_at\" is null)"
         },
         {
           "name": "project_contact_organization_idx",
@@ -10441,7 +11907,7 @@
           "columns": [
             "organization_id"
           ],
-          "predicate": "\"project_contact\".\"organization_id\" is not null"
+          "predicate": "(\"project_contact\".\"organization_id\" is not null)"
         }
       ]
     },
@@ -10636,7 +12102,7 @@
             "project_content_id",
             "language_code"
           ],
-          "predicate": "\"project_content_banner_localization\".\"deleted_at\" is null"
+          "predicate": "(\"project_content_banner_localization\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -10766,7 +12232,7 @@
             "project_content_id",
             "display_language_code"
           ],
-          "predicate": "\"project_content_translation\".\"deleted_at\" is null"
+          "predicate": "(\"project_content_translation\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -10955,7 +12421,7 @@
             "project_document_id",
             "audience"
           ],
-          "predicate": "\"project_document_file\".\"deleted_at\" is null"
+          "predicate": "(\"project_document_file\".\"deleted_at\" is null)"
         },
         {
           "name": "project_document_file_deletion_queue_idx",
@@ -11045,7 +12511,7 @@
             "project_document_id",
             "language_code"
           ],
-          "predicate": "\"project_document_localization\".\"deleted_at\" is null"
+          "predicate": "(\"project_document_localization\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -11237,7 +12703,7 @@
             "external_organization_id",
             "language_code"
           ],
-          "predicate": "\"project_external_organization_localization\".\"deleted_at\" is null"
+          "predicate": "(\"project_external_organization_localization\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -11346,7 +12812,7 @@
             "role",
             "sort_order"
           ],
-          "predicate": "\"project_organization_attribution\".\"deleted_at\" is null"
+          "predicate": "(\"project_organization_attribution\".\"deleted_at\" is null)"
         },
         {
           "name": "project_organization_attribution_organization_idx",
@@ -11354,7 +12820,7 @@
           "columns": [
             "organization_id"
           ],
-          "predicate": "\"project_organization_attribution\".\"organization_id\" is not null"
+          "predicate": "(\"project_organization_attribution\".\"organization_id\" is not null)"
         },
         {
           "name": "project_organization_attribution_real_active_unique",
@@ -11364,7 +12830,7 @@
             "role",
             "organization_id"
           ],
-          "predicate": "(\"project_organization_attribution\".\"organization_id\" is not null and \"project_organization_attribution\".\"deleted_at\" is null)"
+          "predicate": "(((\"project_organization_attribution\".\"organization_id\" is not null)) and ((\"project_organization_attribution\".\"deleted_at\" is null)))"
         },
         {
           "name": "project_organization_attribution_external_active_unique",
@@ -11374,7 +12840,7 @@
             "role",
             "external_organization_id"
           ],
-          "predicate": "(\"project_organization_attribution\".\"external_organization_id\" is not null and \"project_organization_attribution\".\"deleted_at\" is null)"
+          "predicate": "(((\"project_organization_attribution\".\"external_organization_id\" is not null)) and ((\"project_organization_attribution\".\"deleted_at\" is null)))"
         }
       ]
     },
@@ -11446,7 +12912,7 @@
             "project_id",
             "organization_id"
           ],
-          "predicate": "\"project_organization_ownership\".\"deleted_at\" is null"
+          "predicate": "(\"project_organization_ownership\".\"deleted_at\" is null)"
         },
         {
           "name": "project_organization_ownership_organization_idx",
@@ -11514,7 +12980,7 @@
             "project_id",
             "language_code"
           ],
-          "predicate": "\"project_translation_target_language\".\"deleted_at\" is null"
+          "predicate": "(\"project_translation_target_language\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -11602,7 +13068,7 @@
       "checks": [
         {
           "name": "qv_allocation_votes_check",
-          "expression": "(\"qv_allocation\".\"votes\" <> 0 and \"qv_allocation\".\"votes\" >= -10 and \"qv_allocation\".\"votes\" <= 10)"
+          "expression": "((\"qv_allocation\".\"votes\" <> 0) and (\"qv_allocation\".\"votes\" >= -10) and (\"qv_allocation\".\"votes\" <= 10))"
         }
       ],
       "uniqueConstraints": [],
@@ -11613,7 +13079,7 @@
           "columns": [
             "deleted_at"
           ],
-          "predicate": "\"qv_allocation\".\"deleted_at\" is not null"
+          "predicate": "(\"qv_allocation\".\"deleted_at\" is not null)"
         }
       ]
     },
@@ -11734,11 +13200,11 @@
         },
         {
           "name": "qv_calculation_lease_check",
-          "expression": "((\"qv_calculation\".\"status\" = 'running' and \"qv_calculation\".\"lease_token\" is not null and \"qv_calculation\".\"lease_expires_at\" is not null) or (\"qv_calculation\".\"status\" <> 'running' and \"qv_calculation\".\"lease_token\" is null and \"qv_calculation\".\"lease_expires_at\" is null))"
+          "expression": "((((\"qv_calculation\".\"status\" = 'running') and ((\"qv_calculation\".\"lease_token\" is not null)) and ((\"qv_calculation\".\"lease_expires_at\" is not null)))) or (((\"qv_calculation\".\"status\" <> 'running') and ((\"qv_calculation\".\"lease_token\" is null)) and ((\"qv_calculation\".\"lease_expires_at\" is null)))))"
         },
         {
           "name": "qv_calculation_ready_check",
-          "expression": "((\"qv_calculation\".\"status\" = 'ready' and \"qv_calculation\".\"input_snapshot_id\" is not null and \"qv_calculation\".\"ready_at\" is not null) or (\"qv_calculation\".\"status\" <> 'ready' and \"qv_calculation\".\"ready_at\" is null))"
+          "expression": "((((\"qv_calculation\".\"status\" = 'ready') and ((\"qv_calculation\".\"input_snapshot_id\" is not null)) and ((\"qv_calculation\".\"ready_at\" is not null)))) or (((\"qv_calculation\".\"status\" <> 'ready') and ((\"qv_calculation\".\"ready_at\" is null)))))"
         }
       ],
       "uniqueConstraints": [
@@ -11885,7 +13351,7 @@
       "checks": [
         {
           "name": "qv_input_allocation_votes_check",
-          "expression": "(\"qv_input_allocation\".\"votes\" <> 0 and \"qv_input_allocation\".\"votes\" >= -10 and \"qv_input_allocation\".\"votes\" <= 10)"
+          "expression": "((\"qv_input_allocation\".\"votes\" <> 0) and (\"qv_input_allocation\".\"votes\" >= -10) and (\"qv_input_allocation\".\"votes\" <= 10))"
         }
       ],
       "uniqueConstraints": [],
@@ -11928,6 +13394,85 @@
       ],
       "uniqueConstraints": [],
       "indexes": []
+    },
+    {
+      "table": "qv_input_ballot_eligibility",
+      "columns": [
+        {
+          "name": "snapshot_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "ballot_index",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "is_account_hidden",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "qv_input_ballot_eligibility_user_id_user_id_fk",
+          "columns": [
+            "user_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "qv_input_ballot_eligibility_ballot_fk",
+          "columns": [
+            "snapshot_id",
+            "ballot_index"
+          ],
+          "targetTable": "qv_input_ballot",
+          "targetColumns": [
+            "snapshot_id",
+            "ballot_index"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "qv_input_ballot_eligibility_detached_check",
+          "expression": "(((\"qv_input_ballot_eligibility\".\"user_id\" is not null)) or (\"qv_input_ballot_eligibility\".\"is_account_hidden\" = true))"
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "qv_input_ballot_eligibility_account_unique",
+          "columns": [
+            "snapshot_id",
+            "user_id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "qv_input_ballot_eligibility_user_idx",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
     },
     {
       "table": "qv_input_item",
@@ -12071,7 +13616,7 @@
       "checks": [
         {
           "name": "qv_input_snapshot_provenance_check",
-          "expression": "(\"qv_input_snapshot\".\"credit_budget\" = 100 and \"qv_input_snapshot\".\"credit_pricing\" = 'quadratic' and \"qv_input_snapshot\".\"rule_version\" = 1 and \"qv_input_snapshot\".\"algorithm_version\" = 1 and \"qv_input_snapshot\".\"participant_count\" >= 0 and \"qv_input_snapshot\".\"statement_set_revision\" >= 0)"
+          "expression": "((\"qv_input_snapshot\".\"credit_budget\" = 100) and (\"qv_input_snapshot\".\"credit_pricing\" = 'quadratic') and (\"qv_input_snapshot\".\"rule_version\" = 1) and (\"qv_input_snapshot\".\"algorithm_version\" = 1) and (\"qv_input_snapshot\".\"participant_count\" >= 0) and (\"qv_input_snapshot\".\"statement_set_revision\" >= 0))"
         }
       ],
       "uniqueConstraints": [
@@ -12241,7 +13786,7 @@
         },
         {
           "name": "qv_response_deleted_pointer_check",
-          "expression": "(\"qv_response\".\"deleted_at\" is null or \"qv_response\".\"current_version_id\" is null)"
+          "expression": "(((\"qv_response\".\"deleted_at\" is null)) or ((\"qv_response\".\"current_version_id\" is null)))"
         }
       ],
       "uniqueConstraints": [
@@ -12266,7 +13811,7 @@
           "columns": [
             "conversation_id"
           ],
-          "predicate": "(\"qv_response\".\"current_version_id\" is not null and \"qv_response\".\"deleted_at\" is null and \"qv_response\".\"account_hidden_at\" is null)"
+          "predicate": "(((\"qv_response\".\"current_version_id\" is not null)) and ((\"qv_response\".\"deleted_at\" is null)) and ((\"qv_response\".\"account_hidden_at\" is null)))"
         }
       ]
     },
@@ -12356,7 +13901,7 @@
           "columns": [
             "deleted_at"
           ],
-          "predicate": "\"qv_response_command\".\"deleted_at\" is not null"
+          "predicate": "(\"qv_response_command\".\"deleted_at\" is not null)"
         }
       ]
     },
@@ -12452,7 +13997,7 @@
         },
         {
           "name": "qv_version_budget_check",
-          "expression": "(\"qv_response_version\".\"credit_budget\" = 100 and \"qv_response_version\".\"credit_pricing\" = 'quadratic' and \"qv_response_version\".\"rule_version\" = 1 and \"qv_response_version\".\"credits_spent\" >= 1 and \"qv_response_version\".\"credits_spent\" <= \"qv_response_version\".\"credit_budget\")"
+          "expression": "((\"qv_response_version\".\"credit_budget\" = 100) and (\"qv_response_version\".\"credit_pricing\" = 'quadratic') and (\"qv_response_version\".\"rule_version\" = 1) and (\"qv_response_version\".\"credits_spent\" >= 1) and (\"qv_response_version\".\"credits_spent\" <= \"qv_response_version\".\"credit_budget\"))"
         }
       ],
       "uniqueConstraints": [
@@ -12485,7 +14030,7 @@
           "columns": [
             "deleted_at"
           ],
-          "predicate": "\"qv_response_version\".\"deleted_at\" is not null"
+          "predicate": "(\"qv_response_version\".\"deleted_at\" is not null)"
         }
       ]
     },
@@ -12559,7 +14104,7 @@
       "checks": [
         {
           "name": "qv_result_item_totals_check",
-          "expression": "(\"qv_result_item\".\"support_units\" >= 0 and \"qv_result_item\".\"opposition_units\" >= 0 and \"qv_result_item\".\"net_units\" = \"qv_result_item\".\"support_units\" - \"qv_result_item\".\"opposition_units\" and \"qv_result_item\".\"supporting_participant_count\" >= 0 and \"qv_result_item\".\"opposing_participant_count\" >= 0 and \"qv_result_item\".\"rank\" >= 1)"
+          "expression": "((\"qv_result_item\".\"support_units\" >= 0) and (\"qv_result_item\".\"opposition_units\" >= 0) and (\"qv_result_item\".\"net_units\" = \"qv_result_item\".\"support_units\" - \"qv_result_item\".\"opposition_units\") and (\"qv_result_item\".\"supporting_participant_count\" >= 0) and (\"qv_result_item\".\"opposing_participant_count\" >= 0) and (\"qv_result_item\".\"rank\" >= 1))"
         }
       ],
       "uniqueConstraints": [],
@@ -12616,7 +14161,7 @@
             "conversation_id",
             "id"
           ],
-          "predicate": "\"qv_stats_refresh\".\"processed_at\" is null"
+          "predicate": "(\"qv_stats_refresh\".\"processed_at\" is null)"
         }
       ]
     },
@@ -12632,6 +14177,12 @@
         {
           "name": "ranking_mode",
           "type": "ranking_mode",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "allow_participant_statements",
+          "type": "boolean",
           "nullable": false,
           "primaryKey": false
         },
@@ -12958,7 +14509,7 @@
       "checks": [
         {
           "name": "ranking_stats_item_redacted_source_check",
-          "expression": "(\"ranking_conversation_stats_item\".\"ranking_item_content_id\" is not null or \"ranking_conversation_stats_item\".\"external_url\" is null)"
+          "expression": "(((\"ranking_conversation_stats_item\".\"ranking_item_content_id\" is not null)) or ((\"ranking_conversation_stats_item\".\"external_url\" is null)))"
         },
         {
           "name": "ranking_stats_item_score_rank_check",
@@ -13008,6 +14559,12 @@
         {
           "name": "ranking_score_id",
           "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "reused_input_snapshot_id",
+          "type": "uuid",
           "nullable": true,
           "primaryKey": false
         },
@@ -13096,9 +14653,26 @@
             "conversation_id"
           ],
           "onDelete": "no action"
+        },
+        {
+          "name": "ranking_stats_reused_input_conversation_fk",
+          "columns": [
+            "reused_input_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_input_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
         }
       ],
       "checks": [
+        {
+          "name": "ranking_stats_reused_input_closed_check",
+          "expression": "(((\"ranking_conversation_stats_snapshot\".\"reused_input_snapshot_id\" is null)) or (\"ranking_conversation_stats_snapshot\".\"is_closed\" = true))"
+        },
         {
           "name": "ranking_conversation_stats_snapshot_counts_check",
           "expression": "\"ranking_conversation_stats_snapshot\".\"item_count\" >= 0 AND \"ranking_conversation_stats_snapshot\".\"item_count\" <= \"ranking_conversation_stats_snapshot\".\"total_item_count\" AND \"ranking_conversation_stats_snapshot\".\"vote_count\" >= 0 AND \"ranking_conversation_stats_snapshot\".\"vote_count\" <= \"ranking_conversation_stats_snapshot\".\"total_vote_count\" AND \"ranking_conversation_stats_snapshot\".\"participant_count\" >= 0 AND \"ranking_conversation_stats_snapshot\".\"participant_count\" <= \"ranking_conversation_stats_snapshot\".\"total_participant_count\" AND \"ranking_conversation_stats_snapshot\".\"scoring_input_revision\" >= 0"
@@ -13114,6 +14688,14 @@
         }
       ],
       "indexes": [
+        {
+          "name": "ranking_stats_reused_input_idx",
+          "unique": false,
+          "columns": [
+            "reused_input_snapshot_id"
+          ],
+          "predicate": "(\"ranking_conversation_stats_snapshot\".\"reused_input_snapshot_id\" is not null)"
+        },
         {
           "name": "ranking_conversation_stats_snapshot_latest_idx",
           "unique": false,
@@ -13170,13 +14752,13 @@
         },
         {
           "name": "candidate_set",
-          "type": "text[]",
+          "type": "text",
           "nullable": false,
           "primaryKey": false
         },
         {
           "name": "effective_candidate_set",
-          "type": "text[]",
+          "type": "text",
           "nullable": false,
           "primaryKey": false
         }
@@ -13225,11 +14807,11 @@
       "checks": [
         {
           "name": "ranking_input_answer_choices_check",
-          "expression": "(\"ranking_input_answer\".\"position\" >= 0 and \"ranking_input_answer\".\"best_slug_id\" <> \"ranking_input_answer\".\"worst_slug_id\")"
+          "expression": "((\"ranking_input_answer\".\"position\" >= 0) and (\"ranking_input_answer\".\"best_slug_id\" <> \"ranking_input_answer\".\"worst_slug_id\"))"
         },
         {
           "name": "ranking_input_answer_candidates_check",
-          "expression": "(cardinality(\"ranking_input_answer\".\"candidate_set\") BETWEEN 2 AND 4 and cardinality(\"ranking_input_answer\".\"effective_candidate_set\") BETWEEN 2 AND 4 and \"ranking_input_answer\".\"candidate_set\" @> \"ranking_input_answer\".\"effective_candidate_set\" and \"ranking_input_answer\".\"effective_candidate_set\" @> ARRAY[\"ranking_input_answer\".\"best_slug_id\"::text, \"ranking_input_answer\".\"worst_slug_id\"::text])"
+          "expression": "((cardinality(\"ranking_input_answer\".\"candidate_set\") BETWEEN 2 AND 4) and (cardinality(\"ranking_input_answer\".\"effective_candidate_set\") BETWEEN 2 AND 4) and (\"ranking_input_answer\".\"candidate_set\" @> \"ranking_input_answer\".\"effective_candidate_set\") and (\"ranking_input_answer\".\"effective_candidate_set\" @> ARRAY[\"ranking_input_answer\".\"best_slug_id\"::text, \"ranking_input_answer\".\"worst_slug_id\"::text]))"
         }
       ],
       "uniqueConstraints": [],
@@ -13324,6 +14906,85 @@
       ],
       "uniqueConstraints": [],
       "indexes": []
+    },
+    {
+      "table": "ranking_input_participant_eligibility",
+      "columns": [
+        {
+          "name": "input_snapshot_id",
+          "type": "uuid",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "participant_index",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "is_account_hidden",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "ranking_input_participant_eligibility_user_id_user_id_fk",
+          "columns": [
+            "user_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "ranking_input_participant_eligibility_participant_fk",
+          "columns": [
+            "input_snapshot_id",
+            "participant_index"
+          ],
+          "targetTable": "ranking_input_participant",
+          "targetColumns": [
+            "input_snapshot_id",
+            "participant_index"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "ranking_input_participant_eligibility_detached_check",
+          "expression": "(((\"ranking_input_participant_eligibility\".\"user_id\" is not null)) or (\"ranking_input_participant_eligibility\".\"is_account_hidden\" = true))"
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "name": "ranking_input_participant_eligibility_account_unique",
+          "columns": [
+            "input_snapshot_id",
+            "user_id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ranking_input_participant_eligibility_user_idx",
+          "unique": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
     },
     {
       "table": "ranking_input_snapshot",
@@ -13436,14 +15097,22 @@
       "checks": [
         {
           "name": "ranking_input_snapshot_bounds_check",
-          "expression": "(\"ranking_input_snapshot\".\"participant_count\" >= 0 and \"ranking_input_snapshot\".\"scoring_input_revision\" >= 0 and \"ranking_input_snapshot\".\"algorithm_version\" >= 1 and \"ranking_input_snapshot\".\"item_count\" >= 0 and \"ranking_input_snapshot\".\"answer_count\" >= 0)"
+          "expression": "((\"ranking_input_snapshot\".\"participant_count\" >= 0) and (\"ranking_input_snapshot\".\"scoring_input_revision\" >= 0) and (\"ranking_input_snapshot\".\"algorithm_version\" >= 1) and (\"ranking_input_snapshot\".\"item_count\" >= 0) and (\"ranking_input_snapshot\".\"answer_count\" >= 0))"
         },
         {
           "name": "ranking_input_published_sealed_check",
-          "expression": "(\"ranking_input_snapshot\".\"stats_snapshot_id\" is null or \"ranking_input_snapshot\".\"sealed_at\" is not null)"
+          "expression": "(((\"ranking_input_snapshot\".\"stats_snapshot_id\" is null)) or ((\"ranking_input_snapshot\".\"sealed_at\" is not null)))"
         }
       ],
-      "uniqueConstraints": [],
+      "uniqueConstraints": [
+        {
+          "name": "ranking_input_id_conversation_unique",
+          "columns": [
+            "id",
+            "conversation_id"
+          ]
+        }
+      ],
       "indexes": [
         {
           "name": "ranking_input_snapshot_conversation_idx",
@@ -13462,7 +15131,7 @@
             "created_at",
             "id"
           ],
-          "predicate": "(\"ranking_input_snapshot\".\"stats_snapshot_id\" is null and \"ranking_input_snapshot\".\"sealed_at\" is not null)"
+          "predicate": "(((\"ranking_input_snapshot\".\"stats_snapshot_id\" is null)) and ((\"ranking_input_snapshot\".\"sealed_at\" is not null)))"
         }
       ]
     },
@@ -13509,6 +15178,12 @@
           "name": "account_hidden_at",
           "type": "timestamp (3)",
           "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "account_hidden_content_retained",
+          "type": "boolean",
+          "nullable": false,
           "primaryKey": false
         },
         {
@@ -13619,11 +15294,11 @@
       "checks": [
         {
           "name": "ranking_item_source_owner_check",
-          "expression": "(\"ranking_item\".\"author_id\" is not null or \"ranking_item\".\"is_seed\" = true or \"ranking_item\".\"deleted_at\" is not null or \"ranking_item\".\"account_hidden_at\" is not null)"
+          "expression": "(((\"ranking_item\".\"author_id\" is not null)) or (\"ranking_item\".\"is_seed\" = true) or ((\"ranking_item\".\"deleted_at\" is not null)) or ((\"ranking_item\".\"account_hidden_at\" is not null)))"
         },
         {
           "name": "ranking_item_deletion_intent_check",
-          "expression": "(\"ranking_item\".\"deleted_at\" is null or \"ranking_item\".\"current_content_id\" is null)"
+          "expression": "(((\"ranking_item\".\"deleted_at\" is null)) or ((\"ranking_item\".\"current_content_id\" is null)))"
         }
       ],
       "uniqueConstraints": [
@@ -14088,7 +15763,7 @@
           "columns": [
             "id"
           ],
-          "predicate": "(\"ranking_score\".\"user_weights_snapshot\" is not null and \"ranking_score\".\"user_weights_snapshot\" <> 'null'::jsonb)"
+          "predicate": "(((\"ranking_score\".\"user_weights_snapshot\" is not null)) and (\"ranking_score\".\"user_weights_snapshot\" <> 'null'::jsonb))"
         }
       ]
     },
@@ -14205,7 +15880,7 @@
         },
         {
           "name": "realtime_event_dispatch_state_sequence_check",
-          "expression": "(\"realtime_event_dispatch_state\".\"replay_floor_delivery_id\" >= 0 and \"realtime_event_dispatch_state\".\"last_delivery_id\" >= \"realtime_event_dispatch_state\".\"replay_floor_delivery_id\")"
+          "expression": "((\"realtime_event_dispatch_state\".\"replay_floor_delivery_id\" >= 0) and (\"realtime_event_dispatch_state\".\"last_delivery_id\" >= \"realtime_event_dispatch_state\".\"replay_floor_delivery_id\"))"
         }
       ],
       "uniqueConstraints": [],
@@ -14268,7 +15943,7 @@
           "columns": [
             "id"
           ],
-          "predicate": "\"realtime_event_outbox\".\"delivery_id\" is null"
+          "predicate": "(\"realtime_event_outbox\".\"delivery_id\" is null)"
         },
         {
           "name": "realtime_event_outbox_conversation_replay_idx",
@@ -14703,11 +16378,11 @@
       "checks": [
         {
           "name": "survey_aggregate_result_scope_check",
-          "expression": "((\"survey_aggregate_result\".\"scope\" = 'overall' and \"survey_aggregate_result\".\"candidate_id\" is null and \"survey_aggregate_result\".\"group_id\" is null) or (\"survey_aggregate_result\".\"scope\" = 'opinion_group' and \"survey_aggregate_result\".\"candidate_id\" is not null and \"survey_aggregate_result\".\"group_id\" is not null))"
+          "expression": "((((\"survey_aggregate_result\".\"scope\" = 'overall') and ((\"survey_aggregate_result\".\"candidate_id\" is null)) and ((\"survey_aggregate_result\".\"group_id\" is null)))) or (((\"survey_aggregate_result\".\"scope\" = 'opinion_group') and ((\"survey_aggregate_result\".\"candidate_id\" is not null)) and ((\"survey_aggregate_result\".\"group_id\" is not null)))))"
         },
         {
           "name": "survey_aggregate_result_suppression_check",
-          "expression": "((\"survey_aggregate_result\".\"is_suppressed\" = true and \"survey_aggregate_result\".\"suppressed_count\" is null and \"survey_aggregate_result\".\"suppressed_percentage\" is null and \"survey_aggregate_result\".\"suppression_reason\" is not null) or (\"survey_aggregate_result\".\"is_suppressed\" = false and \"survey_aggregate_result\".\"suppressed_count\" is not null and \"survey_aggregate_result\".\"suppression_reason\" is null))"
+          "expression": "((((\"survey_aggregate_result\".\"is_suppressed\" = true) and ((\"survey_aggregate_result\".\"suppressed_count\" is null)) and ((\"survey_aggregate_result\".\"suppressed_percentage\" is null)) and ((\"survey_aggregate_result\".\"suppression_reason\" is not null)))) or (((\"survey_aggregate_result\".\"is_suppressed\" = false) and ((\"survey_aggregate_result\".\"suppressed_count\" is not null)) and ((\"survey_aggregate_result\".\"suppression_reason\" is null)))))"
         }
       ],
       "uniqueConstraints": [],
@@ -16060,7 +17735,7 @@
         },
         {
           "name": "user_recovery_lifecycle_check",
-          "expression": "(((\"user\".\"deletion_requested_at\" is null and \"user\".\"recoverable_until\" is null) or (\"user\".\"is_deleted\" = true and \"user\".\"deletion_reason\" is not null and \"user\".\"deletion_reason\" = 'account_deletion' and \"user\".\"deletion_requested_at\" is not null and \"user\".\"recoverable_until\" is not null and \"user\".\"recoverable_until\" = \"user\".\"deletion_requested_at\" + interval '15 days')) and (\"user\".\"purge_started_at\" is null or \"user\".\"is_deleted\" = true))"
+          "expression": "(((((((\"user\".\"deletion_requested_at\" is null)) and ((\"user\".\"recoverable_until\" is null)))) or (((\"user\".\"is_deleted\" = true) and ((\"user\".\"deletion_reason\" is not null)) and (\"user\".\"deletion_reason\" = 'account_deletion') and ((\"user\".\"deletion_requested_at\" is not null)) and ((\"user\".\"recoverable_until\" is not null)) and (\"user\".\"recoverable_until\" = \"user\".\"deletion_requested_at\" + interval '15 days'))))) and ((((\"user\".\"purge_started_at\" is null)) or (\"user\".\"is_deleted\" = true))))"
         },
         {
           "name": "user_auth_restriction_reason_check",
@@ -16068,7 +17743,7 @@
         },
         {
           "name": "user_deletion_reason_check",
-          "expression": "(\"user\".\"deletion_reason\" is null or (\"user\".\"is_deleted\" = true and \"user\".\"deleted_at\" is not null and \"user\".\"deletion_reason\" in ('account_deletion', 'guest_merge')))"
+          "expression": "(((\"user\".\"deletion_reason\" is null)) or (((\"user\".\"is_deleted\" = true) and ((\"user\".\"deleted_at\" is not null)) and (\"user\".\"deletion_reason\" in ('account_deletion', 'guest_merge')))))"
         }
       ],
       "uniqueConstraints": [],
@@ -16187,7 +17862,7 @@
             "source_user_id",
             "target_user_id"
           ],
-          "predicate": "\"user_mute_preference\".\"deleted_at\" is null"
+          "predicate": "(\"user_mute_preference\".\"deleted_at\" is null)"
         }
       ]
     },
@@ -16396,7 +18071,7 @@
       "checks": [
         {
           "name": "vote_inactive_intent_check",
-          "expression": "((\"vote\".\"withdrawn_at\" is null and \"vote\".\"retired_at\" is null) or \"vote\".\"current_content_id\" is null)"
+          "expression": "(((((\"vote\".\"withdrawn_at\" is null)) and ((\"vote\".\"retired_at\" is null)))) or ((\"vote\".\"current_content_id\" is null)))"
         }
       ],
       "uniqueConstraints": [
@@ -16431,7 +18106,7 @@
             "\"vote\".\"updated_at\" DESC",
             "\"vote\".\"id\" DESC"
           ],
-          "predicate": "\"vote\".\"current_content_id\" is not null"
+          "predicate": "(\"vote\".\"current_content_id\" is not null)"
         },
         {
           "name": "vote_opinion_active_idx",
@@ -16587,7 +18262,7 @@
       "checks": [
         {
           "name": "zk_passport_recovery_reservation_check",
-          "expression": "(\"zk_passport\".\"reserved_for_recovery\" = false or \"zk_passport\".\"is_deleted\" = true)"
+          "expression": "((\"zk_passport\".\"reserved_for_recovery\" = false) or (\"zk_passport\".\"is_deleted\" = true))"
         }
       ],
       "uniqueConstraints": [],
@@ -16598,7 +18273,7 @@
           "columns": [
             "nullifier"
           ],
-          "predicate": "(\"zk_passport\".\"is_deleted\" = false or \"zk_passport\".\"reserved_for_recovery\" = true)"
+          "predicate": "((\"zk_passport\".\"is_deleted\" = false) or (\"zk_passport\".\"reserved_for_recovery\" = true))"
         },
         {
           "name": "zk_passport_nullifier_idx",
