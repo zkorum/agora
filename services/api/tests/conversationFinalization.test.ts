@@ -146,7 +146,7 @@ describe("vote ownership, live eligibility and closing publication", () => {
                 sql.raw(
                     readFileSync(
                         new URL(
-                            "../database/flyway/V0116.4__bind_polis_analysis_closes.sql",
+                            "../database/flyway/V0116.14__protect_retained_analysis_inputs.sql",
                             import.meta.url,
                         ),
                         "utf8",

@@ -4,6 +4,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { source } from "./stage_coordinated_migration.mjs";
 
 const path = process.argv[2];
 if (path === undefined)
@@ -22,10 +23,7 @@ const report = z
     })
     .parse(JSON.parse(await readFile(path, "utf8")));
 const draft = await readFile(
-    new URL(
-        "../drizzle/20261114120826_conscious_luminals/migration.sql",
-        import.meta.url,
-    ),
+    new URL(`../drizzle/${source}/migration.sql`, import.meta.url),
     "utf8",
 );
 const drops = new Set(
@@ -46,7 +44,7 @@ const checks = report.equivalentChecks
     .map(({ table_name, name }) => `${table_name}.${name}`)
     .filter((key) => replacements.has(key))
     .sort();
-if (indexes.length !== 91 || checks.length !== 113)
+if (indexes.length !== 94 || checks.length !== 116)
     throw new Error(
         "Catalog audit differs; review the no-op inventory before recording it.",
     );

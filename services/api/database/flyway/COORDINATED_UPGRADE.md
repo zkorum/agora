@@ -1,11 +1,13 @@
-# V0115 coordinated upgrade
+# V0116 coordinated upgrade
 
 These files are staged for review. No application database has been migrated.
-Use the **Flyway chain**, not the unsplit Drizzle SQL.
+Use the **Flyway chain**, not the unsplit Drizzle SQL. Upstream V0115
+(`equal_golden_guardian`, project-document compression) is the unchanged
+baseline and must already be applied or run first.
 
 | Version | Purpose |
 | --- | --- |
-| V0115 | Generated expansion/renames; nullable role; native enum-label rename |
+| V0116 | Generated expansion/renames; nullable role; native enum-label rename and additions |
 | .0.1 | Concurrent builds for existing-table indexes/uniqueness; short attachment/swap steps |
 | .1 | Replace comparison scoring functions and account-source trigger |
 | .2 | Prepared historical Admin-role backfill |
@@ -20,26 +22,30 @@ Use the **Flyway chain**, not the unsplit Drizzle SQL.
 | .11 | Install required-role CHECK and generated existing-table FKs/CHECKs NOT VALID |
 | .12 | Existing-data governance checks and prepared governance triggers |
 | .13 | Validate constraints without retaining the installation locks; finalize role NOT NULL |
+| .14 | Install retained Polis input, survey, closing generation and participant-eligibility guards |
+| .15 | Restore default-project directory visibility where eligible, preserving conversation indexing intent |
 
-The ten prepared SQL sources remain under `scripts/` because existing regression
+The prepared SQL sources remain under `scripts/` because existing regression
 tests and the staging tool use them. They are assembly inputs, not extra manual
 production steps. `scripts/stage_coordinated_migration.mjs` packages their reviewed
-predicates into this chain. Data work is wrapped in bounded keyset procedures;
-obsolete staging headers are stripped. Do not independently edit both copies.
+predicates into this chain. Large historical backfills use bounded keyset
+procedures. The directory backfill updates only eligible default-project rows.
+Do not independently edit both copies.
 
-The raw Drizzle migration and snapshot remain unchanged as provenance. The
-deployment split corrects generation limitations: backfill before NOT NULL/FKs,
-native enum rename instead of invalid string casting, and forward SQL-function
-replacements. It also removes 302 timestamp type changes that are whitespace-only
-relative to the recorded baseline. PostgreSQL catalog equality also established
-91 equivalent index rebuilds and 113 equivalent CHECK replacements; these are
-omitted, preserving the existing objects instead of rebuilding/scanning them.
+One generated Drizzle migration and snapshot record the complete delta from
+upstream V0115. The deployment split corrects generation limitations: backfill
+before NOT NULL/FKs, native enum rename instead of invalid string casting, and
+forward SQL-function replacements. The base phase commits new enum labels before
+the concurrent indexes and CHECK constraints use them. The split omits 306
+equivalent timestamp type changes, 94 equivalent index rebuilds and 116
+equivalent CHECK replacements, preserving the existing objects instead of
+rebuilding or scanning them.
 The misleading intermediate vote-FK rename is omitted; the final contract
 replaces the original FK directly.
 
 ## Large-table execution
 
-- New empty-table indexes remain ordinary, fast transactional builds. The 19
+- New empty-table indexes remain ordinary, fast transactional builds. The 31
   remaining existing-table index/unique builds run `CONCURRENTLY` in `.0.1`.
   Replacements are built under temporary names before the old index is dropped;
   unique constraints attach their completed indexes in a short DDL step.
@@ -86,7 +92,7 @@ node scripts/stage_coordinated_migration.mjs --write
   restage an already-applied version.
 - Drain incompatible writers for this breaking table/enum/contract cutover.
   Ownership/live-refresh scripts retain their original stopped-writer requirement.
-- V0115 fails before DDL if nonempty legacy `group_sources_snapshot` needs
+- V0116 fails before DDL if nonempty legacy `group_sources_snapshot` needs
   classification; .11 rechecks before dropping the column. No blobs are erased
   to make a migration pass. .12 refuses orphan organizations/projects rather
   than inventing an Admin/owner.
@@ -109,10 +115,7 @@ node scripts/stage_coordinated_migration.mjs --write
 
 Detailed intent and sequencing: `doc/coordinated-backfill-order.md`.
 
-Verification: nine populated recorded-baseline PostgreSQL upgrade tests and 40
-composition/copier regressions pass, including full final-schema catalog parity,
-one-row batch boundaries, failure/retry, preservation and real concurrent-index
-writer compatibility, plus DML while an actual FK-validation lock is held. API
-and strict staging-tool typechecks pass. All 174
-preexisting Flyway files and the raw Drizzle draft remain unchanged.
+Local verification covers final-schema catalog parity, one-row batch boundaries,
+failure/retry, frozen evidence, and writer compatibility during concurrent index
+creation and FK validation. Preexisting Flyway files through V0115 are unchanged.
 No application migration was run.

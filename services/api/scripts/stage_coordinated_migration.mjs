@@ -15,10 +15,10 @@ import {
     boundedLiveRefresh,
 } from "./coordinated_migration_batches.mjs";
 
-const source = "20261114120826_conscious_luminals";
+export const source = "20261122091916_coordinated_activity_upgrade";
 const sourceSha256 =
-    "2339f3204e100a136c2625fe66b21221eb98d64bbe41975cbd3fec286ea18f36";
-const baseName = `V0115__${source}.sql`;
+    "617ef45581d199f65981fc75cc998a6c1789f06f3d8d50968089450997f605ba";
+const baseName = `V0116__${source}.sql`;
 const delimiter = "--> statement-breakpoint";
 const legacyContextGuard = `DO $$
 BEGIN
@@ -121,6 +121,12 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
             indexDrops.add(dropIndex);
             continue;
         }
+        if (
+            sql ===
+            `ALTER TABLE "analysis_work_state" DROP CONSTRAINT "analysis_work_state_conversation_spec_unique";`
+        ) {
+            continue;
+        }
         if (createIndex !== null) {
             const name = createIndex.at(2);
             const table = createIndex.at(3);
@@ -129,7 +135,7 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
             if (!newTables.has(table)) {
                 concurrentBuilds++;
                 if (indexDrops.delete(name)) {
-                    const temporary = `${name}__v0115`;
+                    const temporary = `${name}__v0116`;
                     if (temporary.length > 63)
                         throw new Error(
                             "Temporary index name exceeds PostgreSQL limit.",
@@ -165,11 +171,15 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
             )
                 throw new Error("Incomplete generated unique definition.");
             if (!newTables.has(table)) {
-                const temporary = `${name}__v0115`;
+                const temporary = `${name}__v0116`;
+                const dropReplacement =
+                    name === "analysis_work_state_input_spec_unique"
+                        ? `DROP CONSTRAINT "analysis_work_state_conversation_spec_unique", `
+                        : "";
                 concurrentBuilds++;
                 onlineIndexes.push(
                     `CREATE UNIQUE INDEX CONCURRENTLY "${temporary}" ON "${table}" ${columns};`,
-                    `ALTER TABLE "${table}" ADD CONSTRAINT "${name}" UNIQUE USING INDEX "${temporary}";`,
+                    `ALTER TABLE "${table}" ${dropReplacement}ADD CONSTRAINT "${name}" UNIQUE USING INDEX "${temporary}";`,
                 );
                 continue;
             }
@@ -192,7 +202,16 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
             if (enumOperations++ === 0)
                 expand.push(
                     `ALTER TYPE "conversation_type" RENAME VALUE 'ranking' TO 'prioritizing';`,
+                    `ALTER TYPE "conversation_type" ADD VALUE 'gathering' BEFORE 'polis';`,
                 );
+            continue;
+        }
+        // The replacement CHECK is added in the same contract phase.
+        if (
+            sql ===
+            `ALTER TABLE "project_contact" DROP CONSTRAINT "project_contact_name_or_affiliation_check";`
+        ) {
+            constraints.push(sql);
             continue;
         }
         if (
@@ -239,16 +258,26 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
         }
     }
     if (
-        timestampNoops !== 302 ||
+        timestampNoops !== 306 ||
         enumOperations !== 6 ||
         roleColumns !== 1 ||
         legacyDrops !== 1 ||
-        omittedIndexOperations !== 182 ||
-        omittedChecks !== 113 ||
-        concurrentBuilds !== 19
+        omittedIndexOperations !== 188 ||
+        omittedChecks !== 116 ||
+        concurrentBuilds !== 31
     ) {
         throw new Error(
-            "Unexpected generated operations; refusing an incomplete deployment split.",
+            `Unexpected generated operations; refusing an incomplete deployment split: ${JSON.stringify(
+                {
+                    timestampNoops,
+                    enumOperations,
+                    roleColumns,
+                    legacyDrops,
+                    omittedIndexOperations,
+                    omittedChecks,
+                    concurrentBuilds,
+                },
+            )}`,
         );
     }
     for (const name of indexDrops)
@@ -297,35 +326,35 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
     });
     const prepared = [
         {
-            name: "V0115.2__backfill_organization_roles.sql",
+            name: "V0116.2__backfill_organization_roles.sql",
             path: "prepare-organization-role-backfill.sql",
         },
         {
-            name: "V0115.4__repair_guest_merge_vote_ownership.sql",
+            name: "V0116.4__repair_guest_merge_vote_ownership.sql",
             path: "repair-guest-merge-vote-ownership.sql",
         },
         {
-            name: "V0115.5__backfill_deletion_intent.sql",
+            name: "V0116.5__backfill_deletion_intent.sql",
             path: "prepare-deletion-intent-backfill.sql",
         },
         {
-            name: "V0115.6__prepare_realtime_retention.sql",
+            name: "V0116.6__prepare_realtime_retention.sql",
             path: "prepare-realtime-retention-contract.sql",
         },
         {
-            name: "V0115.7__refresh_deleted_account_live_inputs.sql",
+            name: "V0116.7__refresh_deleted_account_live_inputs.sql",
             path: "refresh-deleted-account-live-inputs.sql",
         },
         {
-            name: "V0115.8__prepare_participant_unlink.sql",
+            name: "V0116.8__prepare_participant_unlink.sql",
             path: "prepare-participant-unlink-contract.sql",
         },
         {
-            name: "V0115.9__prepare_device_retirement.sql",
+            name: "V0116.9__prepare_device_retirement.sql",
             path: "prepare-device-retirement-contract.sql",
         },
         {
-            name: "V0115.10__prepare_comparison_retention.sql",
+            name: "V0116.10__prepare_comparison_retention.sql",
             path: "prepare-comparison-retention-contract.sql",
         },
     ];
@@ -335,21 +364,21 @@ export async function buildCoordinatedMigrations({ serviceDirectory }) {
             sql: `-- Fail before DDL/backfills if legacy context cannot be safely dropped.\n${legacyContextGuard}\n\n${expand.join(`\n${delimiter}\n`)}`,
         }),
         phase({
-            name: "V0115.0.1__build_existing_indexes.sql",
+            name: "V0116.0.1__build_existing_indexes.sql",
             sql: onlineIndexes.join(`\n${delimiter}\n`),
             transactional: false,
         }),
         phase({
-            name: "V0115.1__refresh_comparison_scoring_functions.sql",
+            name: "V0116.1__refresh_comparison_scoring_functions.sql",
             sql: [
                 ...replacements,
                 body(await read("prepare-ranking-account-source-contract.sql")),
             ].join("\n\n"),
         }),
         phase({
-            name: "V0115.3__backfill_comparison_subtypes.sql",
+            name: "V0116.3__backfill_comparison_subtypes.sql",
             sql: boundedUpdates({
-                prefix: "agora_upgrade_0115_3",
+                prefix: "agora_upgrade_0116_3",
                 expected: 1,
                 sql: `UPDATE conversation SET prioritization_type = 'comparisons'
 WHERE conversation_type = 'prioritizing' AND ranking_config_id IS NOT NULL
@@ -362,27 +391,27 @@ WHERE conversation_type = 'prioritizing' AND ranking_config_id IS NOT NULL
         const sourceSql = body(await read(path));
         let sql = sourceSql;
         let transactional = true;
-        if (name.startsWith("V0115.2__")) {
+        if (name.startsWith("V0116.2__")) {
             sql = boundedUpdates({
                 sql,
-                prefix: "agora_upgrade_0115_2",
+                prefix: "agora_upgrade_0116_2",
                 expected: 1,
             });
             transactional = false;
-        } else if (name.startsWith("V0115.4__")) {
+        } else if (name.startsWith("V0116.4__")) {
             sql = boundedOwnership(sql);
             transactional = false;
-        } else if (name.startsWith("V0115.5__")) {
+        } else if (name.startsWith("V0116.5__")) {
             sql = boundedUpdates({
                 sql,
-                prefix: "agora_upgrade_0115_5",
+                prefix: "agora_upgrade_0116_5",
                 expected: 7,
             });
             transactional = false;
-        } else if (name.startsWith("V0115.6__")) {
+        } else if (name.startsWith("V0116.6__")) {
             sql = boundedReplay(sql);
             transactional = false;
-        } else if (name.startsWith("V0115.7__")) {
+        } else if (name.startsWith("V0116.7__")) {
             sql = boundedLiveRefresh(sql);
             transactional = false;
         }
@@ -396,7 +425,7 @@ WHERE conversation_type = 'prioritizing' AND ranking_config_id IS NOT NULL
     }
     phases.push(
         phase({
-            name: "V0115.11__enforce_coordinated_constraints.sql",
+            name: "V0116.11__enforce_coordinated_constraints.sql",
             sql: `-- Do not erase unclassified legacy numerical/account context.
 ${legacyContextGuard}
 
@@ -408,7 +437,7 @@ ${constraints.join(`\n${delimiter}\n`)}`,
     );
     phases.push(
         phase({
-            name: "V0115.13__validate_coordinated_constraints.sql",
+            name: "V0116.13__validate_coordinated_constraints.sql",
             sql: [
                 "ALTER TABLE organization_membership VALIDATE CONSTRAINT organization_membership_role_required;",
                 // PostgreSQL can use the validated check to avoid another heap scan.
@@ -420,7 +449,7 @@ ${constraints.join(`\n${delimiter}\n`)}`,
     );
     phases.push(
         phase({
-            name: "V0115.12__prepare_organization_governance.sql",
+            name: "V0116.12__prepare_organization_governance.sql",
             sql: `-- Deferred triggers protect new mutations, not preexisting orphan rows.
 DO $$
 BEGIN
@@ -441,6 +470,23 @@ END;
 $$;
 
 ${body(await read("prepare-organization-governance.sql"))}`,
+        }),
+        phase({
+            name: "V0116.14__protect_retained_analysis_inputs.sql",
+            sql: [
+                body(await read("prepare-polis-retention-contract.sql")),
+                body(
+                    await read(
+                        "prepare-retained-participant-eligibility-contract.sql",
+                    ),
+                ),
+            ].join("\n\n"),
+        }),
+        phase({
+            name: "V0116.15__backfill_default_project_directory_visibility.sql",
+            sql: await read(
+                "backfill-default-project-directory-visibility.sql",
+            ),
         }),
     );
     const version = (/** @type {string} */ name) =>

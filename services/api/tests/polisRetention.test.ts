@@ -67,25 +67,17 @@ describe("complete retained Polis evidence contracts", () => {
             await pool.end();
         }
         await db.transaction(async (tx) => {
-            for (const filename of [
-                "V0116.3__retain_complete_polis_inputs.sql",
-                "V0116.4__bind_polis_analysis_closes.sql",
-                "V0116.5__bind_polis_close_generations.sql",
-                "V0116.6__certify_derived_polis_closing_inputs.sql",
-                "V0116.7__fence_polis_close_publication.sql",
-            ]) {
-                await tx.execute(
-                    sql.raw(
-                        await readFile(
-                            new URL(
-                                `../database/flyway/${filename}`,
-                                import.meta.url,
-                            ),
-                            "utf8",
+            await tx.execute(
+                sql.raw(
+                    await readFile(
+                        new URL(
+                            "../database/flyway/V0116.14__protect_retained_analysis_inputs.sql",
+                            import.meta.url,
                         ),
+                        "utf8",
                     ),
-                );
-            }
+                ),
+            );
         });
     }, 120_000);
     beforeEach(async () => {

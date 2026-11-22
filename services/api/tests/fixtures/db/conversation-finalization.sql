@@ -142,6 +142,20 @@ CREATE TABLE "analysis_spec" (
 	"created_at" timestamp(0) DEFAULT now() NOT NULL
 );
 
+CREATE TABLE "analysis_survey_choice_capture" (
+	"survey_aggregate_snapshot_id" integer PRIMARY KEY,
+	"baseline_input_snapshot_id" integer NOT NULL
+);
+
+CREATE TABLE "analysis_survey_choice" (
+	"survey_aggregate_snapshot_id" integer,
+	"participant_index" integer,
+	"question_slug_id" varchar(8),
+	"option_slug_ids" text[] NOT NULL,
+	CONSTRAINT "analysis_survey_choice_pkey" PRIMARY KEY("survey_aggregate_snapshot_id","participant_index","question_slug_id"),
+	CONSTRAINT "analysis_survey_choice_bounds" CHECK ((("participant_index" >= 0) and (cardinality("option_slug_ids") > 0)))
+);
+
 CREATE TABLE "analysis_work_state" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "analysis_work_state_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
@@ -683,6 +697,17 @@ CREATE TABLE "phone" (
 	CONSTRAINT "phone_recovery_reservation_check" CHECK ((("reserved_for_recovery" = false) or ("is_deleted" = true)))
 );
 
+CREATE TABLE "polis_analysis_close_generation" (
+	"conversation_id" integer,
+	"data_generation" integer,
+	"close_id" integer NOT NULL,
+	"input_snapshot_id" integer,
+	"published_at" timestamp,
+	CONSTRAINT "polis_analysis_close_generation_pkey" PRIMARY KEY("conversation_id","data_generation"),
+	CONSTRAINT "polis_analysis_close_generation_published_capture" CHECK (((("published_at" is null)) or (("input_snapshot_id" is not null)))),
+	CONSTRAINT "polis_analysis_close_generation_positive" CHECK ("data_generation" >= 1)
+);
+
 CREATE TABLE "polis_analysis_close" (
 	"close_id" integer,
 	"conversation_id" integer NOT NULL,
@@ -1064,6 +1089,17 @@ CREATE TABLE "retired_device_key" (
 	"retired_at" timestamp(3) DEFAULT now() NOT NULL
 );
 
+CREATE TABLE "survey_aggregate_snapshot" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "survey_aggregate_snapshot_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"analysis_snapshot_id" integer NOT NULL CONSTRAINT "survey_aggregate_snapshot_checkpoint_unique" UNIQUE,
+	"survey_config_id" integer NOT NULL,
+	"survey_config_revision" integer NOT NULL,
+	"suppression_threshold" integer NOT NULL,
+	"source_survey_aggregate_snapshot_id" integer,
+	"created_at" timestamp(0) DEFAULT now() NOT NULL
+);
+
 CREATE TABLE "survey_config" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "survey_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
@@ -1178,6 +1214,8 @@ CREATE INDEX "analysis_input_participant_eligibility_user_idx" ON "analysis_inpu
 CREATE INDEX "analysis_input_snapshot_conversation_idx" ON "analysis_input_snapshot" ("conversation_id","data_generation");
 
 CREATE INDEX "analysis_snapshot_latest_idx" ON "analysis_snapshot" ("conversation_id","data_generation","created_at");
+
+CREATE INDEX "analysis_survey_choice_capture_input_idx" ON "analysis_survey_choice_capture" ("baseline_input_snapshot_id");
 
 CREATE INDEX "analysis_work_state_lease_expiry_idx" ON "analysis_work_state" ("lease_expires_at") WHERE ("running_data_generation" is not null);
 
@@ -1301,6 +1339,10 @@ CREATE INDEX "phone_hash_idx" ON "phone" ("phone_hash");
 
 CREATE INDEX "phone_user_idx" ON "phone" ("user_id");
 
+CREATE INDEX "polis_analysis_close_generation_close_idx" ON "polis_analysis_close_generation" ("close_id");
+
+CREATE INDEX "polis_analysis_close_generation_published_idx" ON "polis_analysis_close_generation" ("close_id","data_generation" DESC NULLS LAST) WHERE ("published_at" is not null);
+
 CREATE INDEX "polis_analysis_close_original_view_idx" ON "polis_analysis_close" ("original_view_snapshot_id");
 
 CREATE UNIQUE INDEX "project_organization_ownership_active_unique" ON "project_organization_ownership" ("project_id","organization_id") WHERE ("deleted_at" is null);
@@ -1374,6 +1416,10 @@ CREATE INDEX "realtime_event_outbox_conversation_replay_idx" ON "realtime_event_
 CREATE INDEX "realtime_event_outbox_ranking_replay_idx" ON "realtime_event_outbox" (("payload"->>'conversationSlugId'),"delivery_id") WHERE "event_type" = 'conversation_ranking_stats_updated';
 
 CREATE INDEX "realtime_event_outbox_topic_replay_idx" ON "realtime_event_outbox_topic" ("topic","event_id");
+
+CREATE INDEX "survey_aggregate_snapshot_conversation_idx" ON "survey_aggregate_snapshot" ("conversation_id");
+
+CREATE INDEX "survey_aggregate_snapshot_source_idx" ON "survey_aggregate_snapshot" ("source_survey_aggregate_snapshot_id") WHERE ("source_survey_aggregate_snapshot_id" is not null);
 
 CREATE UNIQUE INDEX "survey_config_active_conversation_uidx" ON "survey_config" ("conversation_id") WHERE "deleted_at" IS NULL;
 

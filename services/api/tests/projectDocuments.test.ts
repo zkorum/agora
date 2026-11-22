@@ -255,7 +255,7 @@ describe("project document version authorization", () => {
         expect(migration).toBe(
             readFileSync(
                 new URL(
-                    "../drizzle/0114_equal_golden_guardian.sql",
+                    "../drizzle/20261114165054_equal_golden_guardian/migration.sql",
                     import.meta.url,
                 ),
                 "utf8",

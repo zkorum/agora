@@ -264,10 +264,6 @@ def ranking_db() -> Generator[Engine]:
                     (api / "scripts/prepare-comparison-retention-contract.sql").read_text(),
                     execution_options={"no_parameters": True},
                 )
-                connection.exec_driver_sql(
-                    (migrations / "V0116.2__certify_comparison_input_baselines.sql").read_text(),
-                    execution_options={"no_parameters": True},
-                )
             yield engine
         finally:
             engine.dispose()

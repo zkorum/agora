@@ -19,24 +19,8 @@ import { z } from "zod";
 
 process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
 
-const baselineFolder = "20261109150108_nice_bloodaxe";
-const files = [
-    "V0115__20261114120826_conscious_luminals.sql",
-    "V0115.0.1__build_existing_indexes.sql",
-    "V0115.1__refresh_comparison_scoring_functions.sql",
-    "V0115.2__backfill_organization_roles.sql",
-    "V0115.3__backfill_comparison_subtypes.sql",
-    "V0115.4__repair_guest_merge_vote_ownership.sql",
-    "V0115.5__backfill_deletion_intent.sql",
-    "V0115.6__prepare_realtime_retention.sql",
-    "V0115.7__refresh_deleted_account_live_inputs.sql",
-    "V0115.8__prepare_participant_unlink.sql",
-    "V0115.9__prepare_device_retirement.sql",
-    "V0115.10__prepare_comparison_retention.sql",
-    "V0115.11__enforce_coordinated_constraints.sql",
-    "V0115.12__prepare_organization_governance.sql",
-    "V0115.13__validate_coordinated_constraints.sql",
-];
+const baselineFolder = "20261114165054_equal_golden_guardian";
+const finalFolder = "20261122091916_coordinated_activity_upgrade";
 type UpgradePhase = { name: string; sql: string; transactional: boolean };
 
 async function readCatalog(database: postgres.Sql) {
@@ -132,8 +116,8 @@ INSERT INTO organization (id, slug, display_name, default_language_code, directo
 INSERT INTO organization_membership (user_id, organization_id, deleted_at) VALUES
  ('11111111-1111-4111-8111-111111111111', 100, NULL),
  ('22222222-2222-4222-8222-222222222222', 100, '2026-01-01');
-INSERT INTO project (id, slug, title, directory_visibility)
- OVERRIDING SYSTEM VALUE VALUES (100, 'migration-project', 'Migration project', 'unlisted');
+INSERT INTO project (id, slug, title, directory_visibility, auto_provisioned_for_organization_id)
+ OVERRIDING SYSTEM VALUE VALUES (100, 'migration-project', 'Migration project', 'unlisted', 100);
 INSERT INTO project_organization_ownership (project_id, organization_id) VALUES (100, 100);
 INSERT INTO polis_conversation_config (id) OVERRIDING SYSTEM VALUE VALUES (100);
 INSERT INTO ranking_conversation_config (id, ranking_mode) OVERRIDING SYSTEM VALUE VALUES (100, 'bws');
@@ -207,7 +191,6 @@ describe("ordered populated coordinated upgrade", () => {
         baselineSql = (
             await generateMigration(await generateDrizzleJson({}), historical)
         ).join("\n");
-        const finalFolder = "20261114120826_conscious_luminals";
         snapshots[finalFolder] = z
             .record(z.string(), z.unknown())
             .parse(
@@ -229,6 +212,16 @@ describe("ordered populated coordinated upgrade", () => {
                 ),
             })
         ).join("\n");
+        const flywayDirectory = new URL("../database/flyway/", import.meta.url);
+        const phaseOrder = new Intl.Collator("en", { numeric: true });
+        const files = (await readdir(flywayDirectory))
+            .filter((file) => /^V0116(?:\.\d+)*__.*\.sql$/.test(file))
+            .sort((a, b) =>
+                phaseOrder.compare(
+                    a.split("__")[0] ?? a,
+                    b.split("__")[0] ?? b,
+                ),
+            );
         for (const file of files) {
             const url = new URL(`../database/flyway/${file}`, import.meta.url);
             let transactional = true;
@@ -340,6 +333,11 @@ describe("ordered populated coordinated upgrade", () => {
         const before = await readCatalog(client);
         await client.unsafe("SET TIME ZONE 'Pacific/Honolulu'");
         await applyThrough();
+        expect(
+            await client.unsafe(
+                `SELECT directory_visibility FROM project WHERE id = 100`,
+            ),
+        ).toEqual([{ directory_visibility: "listed" }]);
         const actual = await readCatalog(client);
         const expected = await readCatalog(expectedClient);
         expect(actual.columns).toEqual(expected.columns);
@@ -351,9 +349,9 @@ describe("ordered populated coordinated upgrade", () => {
         const constraintDefinitions = (catalog: typeof actual) =>
             catalog.constraints
                 .filter(({ kind }) => kind !== "t")
-            .map(({ table_name, name, kind, definition, validated }) => ({
-                table_name,
-                name: kind === "c" || kind === "f" ? name : undefined,
+                .map(({ table_name, name, kind, definition, validated }) => ({
+                    table_name,
+                    name: kind === "c" || kind === "f" ? name : undefined,
                     kind,
                     definition,
                     validated,
@@ -648,8 +646,8 @@ describe("ordered populated coordinated upgrade", () => {
     }, 120_000);
 
     it("permits a normal table writer while an actual concurrent migration index waits", async () => {
-        await applyThrough("V0115");
-        const indexPhase = phases.find(({ name }) => name === "V0115.0.1");
+        await applyThrough("V0116");
+        const indexPhase = phases.find(({ name }) => name === "V0116.0.1");
         const statement = indexPhase?.sql
             .split("--> statement-breakpoint")
             .find((sql) =>
@@ -734,9 +732,9 @@ describe("ordered populated coordinated upgrade", () => {
     }, 120_000);
 
     it("permits a normal writer while the migrated FK validation lock is held", async () => {
-        await applyThrough("V0115.12");
+        await applyThrough("V0116.12");
         const validation = phases
-            .find(({ name }) => name === "V0115.13")
+            .find(({ name }) => name === "V0116.13")
             ?.sql.split("--> statement-breakpoint")
             .find((sql) =>
                 sql.includes(
@@ -771,7 +769,7 @@ describe("ordered populated coordinated upgrade", () => {
     }, 120_000);
 
     it("retains completed batches on failure and safely retries missing roles", async () => {
-        await applyThrough("V0115.1");
+        await applyThrough("V0116.1");
         await client.unsafe(`
             CREATE FUNCTION fail_second_role_batch() RETURNS trigger LANGUAGE plpgsql AS $$
             BEGIN
@@ -782,7 +780,7 @@ describe("ordered populated coordinated upgrade", () => {
             CREATE TRIGGER fail_second_role_batch BEFORE UPDATE ON organization_membership
             FOR EACH ROW EXECUTE FUNCTION fail_second_role_batch();
         `);
-        const roles = phases.find(({ name }) => name === "V0115.2");
+        const roles = phases.find(({ name }) => name === "V0116.2");
         if (roles === undefined) throw new Error("Missing role phase");
         await expect(executePhase(roles)).rejects.toThrow(
             "induced batch failure",
@@ -822,8 +820,8 @@ describe("ordered populated coordinated upgrade", () => {
             VALUES (101, 101, 100, 'Different opinion');
             UPDATE vote_content SET opinion_content_id = 101 WHERE id = 100;
         `);
-        await applyThrough("V0115.3");
-        const repair = phases.find(({ name }) => name === "V0115.4");
+        await applyThrough("V0116.3");
+        const repair = phases.find(({ name }) => name === "V0116.4");
         if (repair === undefined) throw new Error("Missing ownership phase");
         await expect(executePhase(repair)).rejects.toThrow(
             "references a different statement",
@@ -865,12 +863,12 @@ describe("ordered populated coordinated upgrade", () => {
     }, 120_000);
 
     it("refuses preexisting orphan organizations instead of inventing an Admin", async () => {
-        await applyThrough("V0115.11");
+        await applyThrough("V0116.11");
         await client.unsafe(`
             INSERT INTO organization (slug, display_name, default_language_code, directory_visibility, is_full_image_path)
             VALUES ('orphan', 'Orphan', 'en', 'unlisted', false)
         `);
-        const governance = phases.find(({ name }) => name === "V0115.12");
+        const governance = phases.find(({ name }) => name === "V0116.12");
         if (governance === undefined)
             throw new Error("Missing governance phase");
         await expect(

@@ -5,10 +5,11 @@ for the project-wide intent review, additional generation findings, and proposed
 
 Reviewed 2026-11-14 against HEAD `a64f5281` and the dirty working tree.
 
-**Status: Drizzle v1 conversion and the V0115 fractional deployment split are staged
-and tested, not production deployment approval.**
-The raw RC5 draft/snapshot are preserved. The Flyway split reuses all ten prepared
-SQL sources and places required data work before generated constraints. No
+**Status: Drizzle v1 conversion and the rebased V0116 fractional deployment split
+are staged for review, not production deployment approval.**
+One raw RC5 migration now supersedes the unpublished schema drafts. The Flyway
+split reuses the prepared SQL sources and places required data work before
+generated constraints. No
 application database was migrated or inspected. Target-history/data readiness,
 production-scale locking/batching, and application routing remain open.
 
@@ -178,7 +179,7 @@ Rerunning it is idempotent. The legacy flat-file mode remains for historical
 tooling, while mixed formats are rejected. A leftover `.drizzle-copy.lock` after a
 crash must be inspected manually; another process's lock is never removed.
 
-### Latest generation and copy result
+### Original generation and copy result (historical)
 
 The user's interactive RC5 generation succeeded at
 `services/api/drizzle/20261114120826_conscious_luminals/migration.sql`.
@@ -193,7 +194,7 @@ before these constraints can be enforced.
 
 Initially only the failed copy step was resumed, without regeneration:
 
-- Flyway draft: `services/api/database/flyway/V0115__20261114120826_conscious_luminals.sql`
+- Superseded Flyway draft: `V0115__20261114120826_conscious_luminals.sql`
 - SQL SHA-256: `2339f3204e100a136c2625fe66b21221eb98d64bbe41975cbd3fec286ea18f36`
 - Source and copied SQL were initially byte-identical; the approved deployment
   split below now replaces that unsplit Flyway draft.
@@ -207,18 +208,19 @@ adds the new vote ownership/account FKs before the planned data repairs. These
 are the ordering/correction blockers detailed below, not reasons to repeat the
 interactive rename prompts.
 
-### Approved fractional placement
+### Approved fractional placement (now V0116)
 
 Following the user's explicit instruction to place the prepared sources in
-fractional Flyway files, `V0115` now contains generated expansion/renames with
+fractional Flyway files, `V0116` contains generated expansion/renames with
 the narrowly required corrections. `.1` replaces affected scoring functions;
 `.2`–`.7` provide historical roles, subtype, ownership, intent, replay and live
 refresh; `.8`–`.10` install prepared identity/device/comparison contracts;
 `.11` applies required roles and generated FK/CHECK constraints; `.12` installs
-governance after checking existing owner/Admin integrity.
+governance after checking existing owner/Admin integrity. `.14` installs retained
+Polis and participant-eligibility guards; `.15` backfills default-project discovery.
 
-All ten prepared bodies are reused, not replaced by a new backfill policy.
-The raw Drizzle source and snapshot remain unchanged. A hash-pinned reviewed
+The prepared bodies are reused, not replaced by a new backfill policy. The
+consolidated Drizzle source and snapshot start from upstream V0115. A hash-pinned reviewed
 mapping makes the copier verify all deployment phases instead of replaying the
 raw draft. See `services/api/database/flyway/COORDINATED_UPGRADE.md`.
 
@@ -241,7 +243,7 @@ The original logical data/contract phases remain in place.
 
 ### A. Conversation hierarchy and enum values
 
-The old enum is `polis | ranking`; the target is `polis | prioritizing`.
+The old enum is `polis | ranking`; the target is `gathering | polis | prioritizing`.
 Existing ranking conversations also need `prioritization_type = 'comparisons'`.
 They must keep their existing ranking configuration and BWS mode.
 

@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { Script } from "@valkey/valkey-glide";
-import { readFile } from "node:fs/promises";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { pushSchema } from "drizzle-kit/api-postgres";
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
@@ -1712,62 +1711,6 @@ describe("Gathering backend", () => {
         expect(storedCopy.sourceResponseContentId).toBeNull();
         expect(first(copy.answers).value).toBe("Independent");
         expect(copy.baseline?.answers).toEqual(copy.answers);
-    });
-    it("applies generated Gathering migrations with enum addition committed before use", async () => {
-        const connection = await client.reserve();
-        const namespace = `gathering_migration_${randomUUID().replaceAll("-", "")}`;
-        try {
-            await connection.unsafe(`CREATE SCHEMA "${namespace}"`);
-            await connection.unsafe(`SET search_path TO "${namespace}"`);
-            // Minimal pre-migration parents, confined to this test namespace.
-            await connection.unsafe(`
-                CREATE TYPE conversation_type AS ENUM ('polis', 'prioritizing');
-                CREATE TABLE "user" (id uuid PRIMARY KEY);
-                CREATE TABLE conversation (
-                    id integer PRIMARY KEY, conversation_type conversation_type NOT NULL,
-                    polis_config_id integer, ranking_config_id integer, credit_voting_config_id integer,
-                    prioritization_type text,
-                    CONSTRAINT conversation_subtype_config_check CHECK (true)
-                );
-            `);
-            for (const name of [
-                "V0117__20261115132931_goofy_stranger.sql",
-                "V0118__20261115133709_narrow_the_stranger.sql",
-            ]) {
-                const migration = await readFile(
-                    new URL(`../database/flyway/${name}`, import.meta.url),
-                    "utf8",
-                );
-                for (const statement of migration
-                    .split("--> statement-breakpoint")
-                    .filter((part) => part.trim() !== "")) {
-                    await connection.unsafe(statement);
-                }
-            }
-            const conf = await readFile(
-                new URL(
-                    "../database/flyway/V0117__20261115132931_goofy_stranger.sql.conf",
-                    import.meta.url,
-                ),
-                "utf8",
-            );
-            expect(conf).toContain("executeInTransaction=false");
-            const tables = z
-                .array(z.object({ name: z.string() }))
-                .parse(
-                    await connection.unsafe(
-                        "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = $1",
-                        [namespace],
-                    ),
-                );
-            expect(
-                tables.filter((table) => table.name.startsWith("gathering_")),
-            ).toHaveLength(6);
-        } finally {
-            await connection.unsafe("SET search_path TO public");
-            await connection.unsafe(`DROP SCHEMA "${namespace}" CASCADE`);
-            connection.release();
-        }
     });
     const buffer: VoteBuffer = {
         add: vi.fn(async () => undefined),

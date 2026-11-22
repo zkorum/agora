@@ -6,7 +6,7 @@ SET lock_timeout = '5s';
 SET TIME ZONE 'UTC';
 SET search_path = public, pg_temp;
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_3_1() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_3_1() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -47,9 +47,9 @@ WHERE (conversation_type = 'prioritizing' AND ranking_config_id IS NOT NULL
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_3_1();
+CALL public.agora_upgrade_0116_3_1();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_3_1();
+DROP PROCEDURE public.agora_upgrade_0116_3_1();
 --> statement-breakpoint
 RESET lock_timeout;
 RESET search_path;

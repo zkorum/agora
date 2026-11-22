@@ -5,9 +5,9 @@ approval to apply migrations. Generated SQL and snapshots were not changed
 during this session-history review.
 
 Follow-up: the user subsequently approved placing the prepared sources into
-fractional Flyway files. That packaging is now staged as V0115 with fractional
-data/contracts and dedicated `.0.1` concurrent-index / `.13` validation phases; the raw
-Drizzle draft/snapshot are still unchanged. See
+fractional Flyway files. The unpublished packaging was moved to V0116 after
+upstream's project-document compression migration, preserving the data/contract
+ordering and dedicated `.0.1` concurrent-index and `.13` validation phases. See
 [`COORDINATED_UPGRADE.md`](../services/api/database/flyway/COORDINATED_UPGRADE.md)
 for the actual files, ordering and remaining deployment gates.
 
@@ -77,8 +77,9 @@ not populated-data readiness, stored functions, lock duration or rollout.
 
 ## 3. Additional findings in the generated draft
 
-Source: `services/api/drizzle/20261114120826_conscious_luminals/migration.sql`,
-currently copied unchanged to Flyway V0115.
+The findings below describe the original unpublished Drizzle draft
+(`20261114120826_conscious_luminals`), since superseded by a consolidated
+generation from upstream V0115.
 
 - **302 timestamp type alterations are textual normalization only relative to the
   pre-upgrade snapshot:** `timestamp (0)` → `timestamp(0)` and equivalent
@@ -216,7 +217,7 @@ already online-safe merely because they can be put in fractional SQL files.
   account-source and comparison retained-input contracts after their schema
   prerequisites, coordinated with compatible writers.
 - Put database-only contracts and approved data work in ordered fractional
-  Flyway phases. `V0115.1` cannot repair a failure earlier inside V0115.
+  Flyway phases. `V0116.1` cannot repair a failure earlier inside V0116.
 
 ### G. Rehearse, enable and observe
 

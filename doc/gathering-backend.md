@@ -120,14 +120,12 @@ Admission-setting events include `settings.gathering.allowNewResponses`.
 
 ## Rollout and remaining boundaries
 
-Generated migrations:
-
-- `V0117__20261115132931_goofy_stranger.sql`: family, configuration,
-  response/version/answer/moderation tables and relational constraints.
-- Its `.sql.conf` runs outside one encompassing transaction: PostgreSQL must commit
-  the enum addition before the generated conversation CHECK can use it.
-- `V0118__20261115133709_narrow_the_stranger.sql`: tightened response attribution,
-  deletion and provenance constraints.
+Gathering schema changes are included in the
+[coordinated V0116 upgrade](../services/api/database/flyway/COORDINATED_UPGRADE.md).
+The base phase creates the configuration, response, history, and translation
+tables and commits the new conversation and translation-source enum values.
+Later phases can then build the indexes and enforce the subtype and translation
+constraints. No historical responses are fabricated or backfilled.
 
 No application-database migration or deployment was performed. Deploy the schema
 before the new API. Shared copies, Python models, API fixtures, OpenAPI and clients

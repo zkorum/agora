@@ -85,7 +85,7 @@ At the user's request, additional migration generation is deferred until the
 canonical schema is complete, followed by one consolidated generated structural
 migration and numbered PostgreSQL/backfill phases. The temporary V0119 structural
 draft was removed; baseline PostgreSQL functions/triggers are versioned in
-`services/api/database/flyway/V0116.2__certify_comparison_input_baselines.sql`
+`services/api/database/flyway/V0116.10__prepare_comparison_retention.sql`
 and will be installed by Flyway after the consolidated generated V0116 schema.
 Earlier/concurrent structural drafts were not consolidated or applied by this
 follow-up. The baseline table must be included in that consolidated schema before
@@ -108,7 +108,7 @@ matrix. The retained reader resolves numerical evidence after unlinking, validat
 the stored catalogue/hash/projection, and reports missing private cleanup eligibility
 without inventing it. Legacy V1/placeholder input remains uncertified.
 
-Flyway phase `V0116.3__retain_complete_polis_inputs.sql` protects certified input,
+Flyway phase `V0116.14__protect_retained_analysis_inputs.sql` protects certified input,
 direct baseline references and publication retention. Publication and retirement
 share root locks, so a new V2 result cannot lose its baseline certificate during
 publication. PostgreSQL enforces relational scope and projections; zstd/hash and
@@ -130,7 +130,7 @@ The close and original survey evidence remain retention roots. View
 content-reference erasure remains allowed without changing numerical provenance.
 These tables contain no account IDs or raw answers.
 
-Draft Flyway phase `V0116.4__bind_polis_analysis_closes.sql` checks lifecycle
+Flyway phase `V0116.14__protect_retained_analysis_inputs.sql` checks lifecycle
 freshness, native checkpoint scope and immutability. The consolidated structural
 migration is still pending; no application database was migrated.
 

@@ -49,6 +49,10 @@ export function isProductionSource(path: string): boolean {
     const normalized = path.replaceAll("\\", "/");
     return (
         !normalized.split("/").some((part) => ignoredDirectories.has(part)) &&
+        // App builds and browser reports can contain large bundled JS copies.
+        !/^services\/app\/(?:\.netlify|build|storybook-static|playwright-report|test-results)(?:\/|$)/.test(
+            normalized,
+        ) &&
         !/\.(test|spec)\./.test(normalized) &&
         !/^services\/[^/]+\/(?:tests|test)(?:\/|$)/.test(normalized) &&
         !/(^|\/)test_[^/]+\.py$/.test(normalized) &&

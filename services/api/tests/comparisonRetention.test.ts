@@ -68,10 +68,8 @@ describe("result-owned comparison evidence and account-source retirement", () =>
             await pool.end();
         }
         for (const migration of [
-            "../database/flyway/V0115.10__prepare_comparison_retention.sql",
-            "../database/flyway/V0116.1__retain_reused_comparison_inputs.sql",
-            "../database/flyway/V0116.2__certify_comparison_input_baselines.sql",
-            "../database/flyway/V0116.4__bind_polis_analysis_closes.sql",
+            "../database/flyway/V0116.10__prepare_comparison_retention.sql",
+            "../database/flyway/V0116.14__protect_retained_analysis_inputs.sql",
         ]) {
             await db.transaction(async (tx) => {
                 await tx.execute(

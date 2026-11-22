@@ -1,5 +1,107 @@
+CREATE TYPE "analysis_input_mode" AS ENUM('closing', 'live');--> statement-breakpoint
 CREATE TYPE "organization_role" AS ENUM('admin', 'manager', 'moderator');--> statement-breakpoint
+ALTER TYPE "content_translation_source_kind" ADD VALUE 'gathering_field';--> statement-breakpoint
+ALTER TYPE "content_translation_source_kind" ADD VALUE 'gathering_response';--> statement-breakpoint
 ALTER TYPE "ranking_mode" ADD VALUE 'pairwise';--> statement-breakpoint
+CREATE TABLE "analysis_input_baseline" (
+	"input_snapshot_id" integer PRIMARY KEY,
+	"baseline_input_snapshot_id" integer NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"participant_indices" integer[] NOT NULL,
+	"opinion_indices" integer[] NOT NULL,
+	"source_vote_count" integer NOT NULL,
+	"source_participant_count" integer NOT NULL,
+	CONSTRAINT "analysis_input_baseline_source_counts_check" CHECK ((("source_vote_count" >= 0) and ("source_participant_count" >= 0) and ("source_participant_count" <= "source_vote_count")))
+);
+--> statement-breakpoint
+CREATE TABLE "analysis_input_participant_eligibility" (
+	"input_snapshot_id" integer,
+	"participant_index" integer,
+	"user_id" uuid,
+	"is_account_hidden" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "analysis_input_participant_eligibility_pkey" PRIMARY KEY("input_snapshot_id","participant_index"),
+	CONSTRAINT "analysis_input_participant_eligibility_account_unique" UNIQUE("input_snapshot_id","user_id"),
+	CONSTRAINT "analysis_input_participant_eligibility_index_check" CHECK ("participant_index" >= 0),
+	CONSTRAINT "analysis_input_participant_eligibility_detached_check" CHECK (((("user_id" is not null)) or ("is_account_hidden" = true)))
+);
+--> statement-breakpoint
+CREATE TABLE "analysis_survey_choice_capture" (
+	"survey_aggregate_snapshot_id" integer PRIMARY KEY,
+	"baseline_input_snapshot_id" integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "analysis_survey_choice" (
+	"survey_aggregate_snapshot_id" integer,
+	"participant_index" integer,
+	"question_slug_id" varchar(8),
+	"option_slug_ids" text[] NOT NULL,
+	CONSTRAINT "analysis_survey_choice_pkey" PRIMARY KEY("survey_aggregate_snapshot_id","participant_index","question_slug_id"),
+	CONSTRAINT "analysis_survey_choice_bounds" CHECK ((("participant_index" >= 0) and (cardinality("option_slug_ids") > 0)))
+);
+--> statement-breakpoint
+CREATE TABLE "comparison_analysis_close" (
+	"close_id" integer PRIMARY KEY,
+	"conversation_id" integer NOT NULL,
+	"original_stats_snapshot_id" integer NOT NULL UNIQUE,
+	"closing_stats_snapshot_id" integer NOT NULL,
+	"live_stats_snapshot_id" integer NOT NULL,
+	"served_stats_snapshot_id" integer NOT NULL,
+	"processed_closing_revision" bigint DEFAULT 0 NOT NULL,
+	"failed_closing_revision" bigint,
+	"failed_live_revision" bigint
+);
+--> statement-breakpoint
+CREATE TABLE "comparison_input_baseline" (
+	"input_snapshot_id" uuid PRIMARY KEY,
+	"baseline_input_snapshot_id" uuid NOT NULL,
+	"conversation_id" integer NOT NULL,
+	"created_at" timestamp(3) DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "comparison_item_moderation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "comparison_item_moderation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"ranking_item_id" integer NOT NULL,
+	"moderator_id" uuid,
+	"action" text NOT NULL,
+	"reason" varchar(1000) NOT NULL,
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	CONSTRAINT "comparison_item_moderation_action_check" CHECK ("action" in ('move', 'hide', 'restore'))
+);
+--> statement-breakpoint
+CREATE TABLE "conversation_analysis_close" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_analysis_close_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"conversation_id" integer NOT NULL,
+	"close_epoch" uuid NOT NULL,
+	"source_revision" bigint NOT NULL,
+	"selected_input_mode" "analysis_input_mode" DEFAULT 'closing'::"analysis_input_mode" NOT NULL,
+	"requested_result_revision" bigint,
+	"served_input_mode" "analysis_input_mode" DEFAULT 'closing'::"analysis_input_mode" NOT NULL,
+	"served_result_revision" bigint,
+	"selection_revision" bigint DEFAULT 0 NOT NULL,
+	"minimum_closing_result_revision" bigint DEFAULT 0 NOT NULL,
+	"finalized_at" timestamp(0) NOT NULL,
+	CONSTRAINT "conversation_analysis_close_epoch_unique" UNIQUE("conversation_id","close_epoch"),
+	CONSTRAINT "conversation_analysis_close_scope_unique" UNIQUE("id","conversation_id"),
+	CONSTRAINT "conversation_analysis_close_revision_check" CHECK ((("source_revision" >= 0) and ("selection_revision" >= 0) and ("minimum_closing_result_revision" >= 0) and (((("requested_result_revision" is null)) or ("requested_result_revision" > 0))) and (((("served_result_revision" is null)) or ("served_result_revision" > 0))) and ((("served_input_mode" = 'closing') or (("served_result_revision" is not null))))))
+);
+--> statement-breakpoint
+CREATE TABLE "conversation_draft" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"project_id" integer NOT NULL,
+	"created_by_user_id" uuid,
+	"conversation_type" "conversation_type" NOT NULL,
+	"content" jsonb DEFAULT '{}' NOT NULL,
+	"revision" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	"updated_at" timestamp(3) DEFAULT now() NOT NULL,
+	"deleted_at" timestamp(3),
+	"published_at" timestamp(3),
+	"published_conversation_id" integer UNIQUE,
+	CONSTRAINT "conversation_draft_revision_check" CHECK ("revision" >= 0),
+	CONSTRAINT "conversation_draft_published_link_check" CHECK (((("published_conversation_id" is null)) or (("published_at" is not null)))),
+	CONSTRAINT "conversation_draft_terminal_state_check" CHECK (((("deleted_at" is null)) or (("published_at" is null))))
+);
+--> statement-breakpoint
 CREATE TABLE "conversation_export_object" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"artifact_id" integer NOT NULL,
@@ -21,17 +123,116 @@ CREATE TABLE "conversation_export_object" (
 	CONSTRAINT "conversation_export_object_deleted_check" CHECK (((("object_deleted_at" is null)) or (("cleanup_requested_at" is not null))))
 );
 --> statement-breakpoint
-CREATE TABLE "credit_voting_config" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "credit_voting_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"credit_budget" integer DEFAULT 100 NOT NULL,
-	"allow_opposition" boolean DEFAULT true NOT NULL,
-	"item_count" integer DEFAULT 0 NOT NULL,
-	"statement_set_revision" integer DEFAULT 0 NOT NULL,
-	"statements_locked_at" timestamp(3),
-	"created_at" timestamp(0) DEFAULT now() NOT NULL,
-	CONSTRAINT "credit_voting_fixed_budget_check" CHECK ("credit_budget" = 100),
-	CONSTRAINT "credit_voting_statement_revision_check" CHECK ("statement_set_revision" >= 0),
-	CONSTRAINT "credit_voting_item_count_check" CHECK ("item_count" >= 0)
+CREATE TABLE "gathering_answer" (
+	"config_id" integer NOT NULL,
+	"content_id" integer,
+	"field_id" uuid,
+	"value" text NOT NULL,
+	CONSTRAINT "gathering_answer_pkey" PRIMARY KEY("content_id","field_id"),
+	CONSTRAINT "gathering_answer_length_check" CHECK (char_length("value") <= 20000)
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_answer_translation" (
+	"content_id" integer,
+	"field_id" uuid,
+	"display_language_code" "display_language_code",
+	"translated_value" text NOT NULL,
+	"source_language_code" "spoken_language_code",
+	CONSTRAINT "gathering_answer_translation_pkey" PRIMARY KEY("content_id","field_id","display_language_code")
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_config" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "gathering_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"gathering_mode" text NOT NULL,
+	"allow_new_responses" boolean NOT NULL,
+	"response_visibility" text NOT NULL,
+	CONSTRAINT "gathering_mode_check" CHECK ("gathering_mode" in ('new', 'amend')),
+	CONSTRAINT "gathering_visibility_check" CHECK ("response_visibility" in ('everyone', 'facilitators'))
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_field" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"config_id" integer NOT NULL,
+	"position" smallint NOT NULL,
+	"label" varchar(200) NOT NULL,
+	"required" boolean NOT NULL,
+	"character_limit" integer NOT NULL,
+	CONSTRAINT "gathering_field_config_position_unique" UNIQUE("config_id","position"),
+	CONSTRAINT "gathering_field_config_id_unique" UNIQUE("config_id","id"),
+	CONSTRAINT "gathering_field_position_check" CHECK ((("position" >= 1) and ("position" <= 6))),
+	CONSTRAINT "gathering_field_limit_check" CHECK ((("character_limit" >= 1) and ("character_limit" <= 20000)))
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_field_translation" (
+	"field_id" uuid,
+	"display_language_code" "display_language_code",
+	"translated_label" text NOT NULL,
+	"source_language_code" "spoken_language_code",
+	CONSTRAINT "gathering_field_translation_pkey" PRIMARY KEY("field_id","display_language_code")
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_moderation" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "gathering_moderation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"response_id" integer NOT NULL,
+	"action" text NOT NULL,
+	"moderator_id" uuid,
+	"reason" varchar(1000) NOT NULL,
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	CONSTRAINT "gathering_moderation_action_check" CHECK ("action" in ('hide', 'move', 'restore'))
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_response_content" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "gathering_response_content_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"public_id" uuid DEFAULT gen_random_uuid() NOT NULL UNIQUE,
+	"response_id" integer NOT NULL,
+	"config_id" integer NOT NULL,
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	CONSTRAINT "gathering_content_response_id_unique" UNIQUE("response_id","id"),
+	CONSTRAINT "gathering_content_config_id_unique" UNIQUE("config_id","id")
+);
+--> statement-breakpoint
+CREATE TABLE "gathering_response" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "gathering_response_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"slug_id" varchar(8) NOT NULL UNIQUE,
+	"conversation_id" integer NOT NULL,
+	"config_id" integer NOT NULL,
+	"author_id" uuid,
+	"is_seed" boolean DEFAULT false NOT NULL,
+	"current_content_id" integer,
+	"baseline_content_id" integer,
+	"source_conversation_id" integer,
+	"source_response_content_id" integer,
+	"source_conversation_slug_id" varchar(8),
+	"source_conversation_type" text,
+	"moderation" text,
+	"account_hidden_at" timestamp(3),
+	"deleted_at" timestamp(3),
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	CONSTRAINT "gathering_response_config_id_unique" UNIQUE("config_id","id"),
+	CONSTRAINT "gathering_response_seed_author_check" CHECK ((("is_seed" = false) or (("author_id" is null)))),
+	CONSTRAINT "gathering_response_author_check" CHECK ((("is_seed" = true) or (("author_id" is not null)) or (("account_hidden_at" is not null)))),
+	CONSTRAINT "gathering_response_deletion_check" CHECK (((("deleted_at" is null)) or (("current_content_id" is null)))),
+	CONSTRAINT "gathering_response_moderation_check" CHECK (((("moderation" is null)) or ("moderation" in ('hide', 'move')))),
+	CONSTRAINT "gathering_response_provenance_check" CHECK (((((("source_conversation_slug_id" is null)) and (("source_conversation_type" is null)) and (("baseline_content_id" is null)) and (("source_conversation_id" is null)) and (("source_response_content_id" is null)))) or (((("source_conversation_slug_id" is not null)) and (("source_conversation_type" is not null)) and ("source_conversation_type" = 'gathering') and (("baseline_content_id" is not null))))))
+);
+--> statement-breakpoint
+CREATE TABLE "polis_analysis_close_generation" (
+	"conversation_id" integer,
+	"data_generation" integer,
+	"close_id" integer NOT NULL,
+	"input_snapshot_id" integer,
+	"published_at" timestamp,
+	CONSTRAINT "polis_analysis_close_generation_pkey" PRIMARY KEY("conversation_id","data_generation"),
+	CONSTRAINT "polis_analysis_close_generation_published_capture" CHECK (((("published_at" is null)) or (("input_snapshot_id" is not null)))),
+	CONSTRAINT "polis_analysis_close_generation_positive" CHECK ("data_generation" >= 1)
+);
+--> statement-breakpoint
+CREATE TABLE "polis_analysis_close" (
+	"close_id" integer,
+	"conversation_id" integer NOT NULL,
+	"opinion_group_spec_id" integer,
+	"original_view_snapshot_id" integer NOT NULL,
+	CONSTRAINT "polis_analysis_close_pkey" PRIMARY KEY("close_id","opinion_group_spec_id")
 );
 --> statement-breakpoint
 CREATE TABLE "qv_allocation" (
@@ -74,6 +275,19 @@ CREATE TABLE "qv_calculation" (
 	CONSTRAINT "qv_calculation_ready_check" CHECK ((((("status" = 'ready') and (("input_snapshot_id" is not null)) and (("ready_at" is not null)))) or ((("status" <> 'ready') and (("ready_at" is null))))))
 );
 --> statement-breakpoint
+CREATE TABLE "credit_voting_config" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "credit_voting_config_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"credit_budget" integer DEFAULT 100 NOT NULL,
+	"allow_opposition" boolean DEFAULT true NOT NULL,
+	"item_count" integer DEFAULT 0 NOT NULL,
+	"statement_set_revision" integer DEFAULT 0 NOT NULL,
+	"statements_locked_at" timestamp(3),
+	"created_at" timestamp(0) DEFAULT now() NOT NULL,
+	CONSTRAINT "credit_voting_fixed_budget_check" CHECK ("credit_budget" = 100),
+	CONSTRAINT "credit_voting_statement_revision_check" CHECK ("statement_set_revision" >= 0),
+	CONSTRAINT "credit_voting_item_count_check" CHECK ("item_count" >= 0)
+);
+--> statement-breakpoint
 CREATE TABLE "qv_input_allocation" (
 	"snapshot_id" uuid,
 	"ballot_index" integer,
@@ -81,6 +295,16 @@ CREATE TABLE "qv_input_allocation" (
 	"votes" smallint NOT NULL,
 	CONSTRAINT "qv_input_allocation_pkey" PRIMARY KEY("snapshot_id","ballot_index","item_slug_id"),
 	CONSTRAINT "qv_input_allocation_votes_check" CHECK ((("votes" <> 0) and ("votes" >= -10) and ("votes" <= 10)))
+);
+--> statement-breakpoint
+CREATE TABLE "qv_input_ballot_eligibility" (
+	"snapshot_id" uuid,
+	"ballot_index" integer,
+	"user_id" uuid,
+	"is_account_hidden" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "qv_input_ballot_eligibility_pkey" PRIMARY KEY("snapshot_id","ballot_index"),
+	CONSTRAINT "qv_input_ballot_eligibility_account_unique" UNIQUE("snapshot_id","user_id"),
+	CONSTRAINT "qv_input_ballot_eligibility_detached_check" CHECK (((("user_id" is not null)) or ("is_account_hidden" = true)))
 );
 --> statement-breakpoint
 CREATE TABLE "qv_input_ballot" (
@@ -212,6 +436,16 @@ CREATE TABLE "ranking_input_item" (
 	CONSTRAINT "ranking_input_item_position_check" CHECK ("position" >= 0)
 );
 --> statement-breakpoint
+CREATE TABLE "ranking_input_participant_eligibility" (
+	"input_snapshot_id" uuid,
+	"participant_index" integer,
+	"user_id" uuid,
+	"is_account_hidden" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "ranking_input_participant_eligibility_pkey" PRIMARY KEY("input_snapshot_id","participant_index"),
+	CONSTRAINT "ranking_input_participant_eligibility_account_unique" UNIQUE("input_snapshot_id","user_id"),
+	CONSTRAINT "ranking_input_participant_eligibility_detached_check" CHECK (((("user_id" is not null)) or ("is_account_hidden" = true)))
+);
+--> statement-breakpoint
 CREATE TABLE "ranking_input_participant" (
 	"input_snapshot_id" uuid,
 	"participant_index" integer,
@@ -233,6 +467,7 @@ CREATE TABLE "ranking_input_snapshot" (
 	"answer_count" integer NOT NULL,
 	"sealed_at" timestamp(3),
 	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	CONSTRAINT "ranking_input_id_conversation_unique" UNIQUE("id","conversation_id"),
 	CONSTRAINT "ranking_input_snapshot_bounds_check" CHECK ((("participant_count" >= 0) and ("scoring_input_revision" >= 0) and ("algorithm_version" >= 1) and ("item_count" >= 0) and ("answer_count" >= 0))),
 	CONSTRAINT "ranking_input_published_sealed_check" CHECK (((("stats_snapshot_id" is null)) or (("sealed_at" is not null))))
 );
@@ -247,7 +482,9 @@ ALTER TABLE "maxdiff_result" RENAME TO "comparison_response";--> statement-break
 ALTER TABLE "maxdiff_user_entity_score" RENAME TO "comparison_user_entity_score";--> statement-breakpoint
 ALTER TABLE "comparison_answer" RENAME COLUMN "maxdiff_result_id" TO "comparison_response_id";--> statement-breakpoint
 ALTER TABLE "comparison_user_entity_score" RENAME COLUMN "maxdiff_result_id" TO "comparison_response_id";--> statement-breakpoint
+ALTER TABLE "analysis_work_state" DROP CONSTRAINT "analysis_work_state_conversation_spec_unique";--> statement-breakpoint
 ALTER TABLE "project" DROP CONSTRAINT "project_auto_provisioned_for_organization_id_unique";--> statement-breakpoint
+ALTER TABLE "project_contact" DROP CONSTRAINT "project_contact_name_or_affiliation_check";--> statement-breakpoint
 ALTER TABLE "comparison_user_entity_score" RENAME CONSTRAINT "maxdiff_user_entity_score_display_score_check" TO "comparison_user_entity_score_display_score_check";--> statement-breakpoint
 ALTER INDEX "maxdiff_comparison_result_idx" RENAME TO "comparison_answer_response_idx";--> statement-breakpoint
 ALTER INDEX "maxdiff_comparison_active_result_position_unique" RENAME TO "comparison_answer_active_response_position_unique";--> statement-breakpoint
@@ -258,27 +495,42 @@ DROP INDEX "maxdiff_result_complete_idx";--> statement-breakpoint
 ALTER TABLE "comparison_answer" RENAME CONSTRAINT "maxdiff_comparison_maxdiff_result_id_maxdiff_result_id_fk" TO "comparison_answer_response_fk";--> statement-breakpoint
 ALTER TABLE "comparison_user_entity_score" RENAME CONSTRAINT "maxdiff_user_entity_score_maxdiff_result_id_maxdiff_result_id_f" TO "comparison_user_entity_score_response_fk";--> statement-breakpoint
 ALTER TABLE "vote" RENAME CONSTRAINT "vote_current_content_id_vote_content_id_fk" TO "vote_participant_account_fk";--> statement-breakpoint
+ALTER TABLE "analysis_input_snapshot" ADD COLUMN "payload_version" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "analysis_work_state" ADD COLUMN "uses_closing_inputs" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "comparison_response" ADD COLUMN "detached_at" timestamp(3);--> statement-breakpoint
+ALTER TABLE "content_translation_work" ADD COLUMN "gathering_field_id" uuid;--> statement-breakpoint
+ALTER TABLE "content_translation_work" ADD COLUMN "gathering_response_content_id" integer;--> statement-breakpoint
 ALTER TABLE "conversation_email_update_test_attempt" ADD COLUMN "sender_purged_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "conversation_export_generation" ADD COLUMN "source_data_generation" integer;--> statement-breakpoint
 ALTER TABLE "conversation_import" ADD COLUMN "requester_purged_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "deleted_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "credit_voting_config_id" integer;--> statement-breakpoint
+ALTER TABLE "conversation" ADD COLUMN "gathering_config_id" integer;--> statement-breakpoint
 ALTER TABLE "conversation" ADD COLUMN "prioritization_type" text;--> statement-breakpoint
+ALTER TABLE "conversation" ADD COLUMN "participation_mode_settings_source" text DEFAULT 'conversation_override' NOT NULL;--> statement-breakpoint
+ALTER TABLE "conversation_view_snapshot" ADD COLUMN "close_replacement_generation" integer;--> statement-breakpoint
 ALTER TABLE "email" ADD COLUMN "reserved_for_recovery" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "opinion" ADD COLUMN "deleted_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "opinion" ADD COLUMN "account_hidden_at" timestamp(3);--> statement-breakpoint
+ALTER TABLE "opinion" ADD COLUMN "account_hidden_content_retained" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "organization_membership" ADD COLUMN "role" "organization_role" NOT NULL;--> statement-breakpoint
 ALTER TABLE "organization" ADD COLUMN "retired_for_account_deletion_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "phone" ADD COLUMN "reserved_for_recovery" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "polis_conversation_config" ADD COLUMN "allow_participant_statements" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "project" ADD COLUMN "participation_mode" "participation_mode" DEFAULT 'guest'::"participation_mode" NOT NULL;--> statement-breakpoint
 ALTER TABLE "project" ADD COLUMN "retired_for_account_deletion_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "ranking_conversation_config" ADD COLUMN "allow_participant_statements" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_item" ADD COLUMN "excluded_by_moderation" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_snapshot" ADD COLUMN "reused_input_snapshot_id" uuid;--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_snapshot" ADD COLUMN "derived_from_close_id" integer;--> statement-breakpoint
 ALTER TABLE "ranking_item" ADD COLUMN "deleted_at" timestamp(3);--> statement-breakpoint
 ALTER TABLE "ranking_item" ADD COLUMN "account_hidden_at" timestamp(3);--> statement-breakpoint
+ALTER TABLE "ranking_item" ADD COLUMN "account_hidden_content_retained" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "ranking_item" ADD COLUMN "moderation" text;--> statement-breakpoint
 ALTER TABLE "ranking_item" ADD COLUMN "position" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "realtime_event_dispatch_state" ADD COLUMN "replay_floor_delivery_id" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "realtime_event_outbox" ADD COLUMN "delivered_at" timestamp(3);--> statement-breakpoint
+ALTER TABLE "survey_aggregate_snapshot" ADD COLUMN "source_survey_aggregate_snapshot_id" integer;--> statement-breakpoint
 ALTER TABLE "user" ADD COLUMN "contribution_revision" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "user" ADD COLUMN "deletion_reason" text;--> statement-breakpoint
 ALTER TABLE "user" ADD COLUMN "deletion_requested_at" timestamp(3);--> statement-breakpoint
@@ -290,7 +542,7 @@ ALTER TABLE "zk_passport" ADD COLUMN "reserved_for_recovery" boolean DEFAULT fal
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" DROP DEFAULT;--> statement-breakpoint
 DROP TYPE "conversation_type";--> statement-breakpoint
-CREATE TYPE "conversation_type" AS ENUM('polis', 'prioritizing');--> statement-breakpoint
+CREATE TYPE "conversation_type" AS ENUM('gathering', 'polis', 'prioritizing');--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DATA TYPE "conversation_type" USING "conversation_type"::"conversation_type";--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "conversation_type" SET DEFAULT 'polis'::"conversation_type";--> statement-breakpoint
 ALTER TABLE "ranking_score" DROP COLUMN "group_sources_snapshot";--> statement-breakpoint
@@ -611,6 +863,10 @@ ALTER TABLE "ranking_conversation_stats_item" ALTER COLUMN "deleted_at" SET DATA
 ALTER TABLE "ranking_conversation_stats_snapshot" ALTER COLUMN "deleted_at" SET DATA TYPE timestamp(0) USING "deleted_at"::timestamp(0);--> statement-breakpoint
 ALTER TABLE "conversation_participant" ALTER COLUMN "created_at" SET DATA TYPE timestamp(0) USING "created_at"::timestamp(0);--> statement-breakpoint
 ALTER TABLE "conversation" ALTER COLUMN "closed_finalized_at" SET DATA TYPE timestamp(0) USING "closed_finalized_at"::timestamp(0);--> statement-breakpoint
+ALTER TABLE "project_document_file" ALTER COLUMN "compressed_at" SET DATA TYPE timestamp(0) USING "compressed_at"::timestamp(0);--> statement-breakpoint
+ALTER TABLE "project_document_representation" ALTER COLUMN "created_at" SET DATA TYPE timestamp(0) USING "created_at"::timestamp(0);--> statement-breakpoint
+ALTER TABLE "project_document_representation" ALTER COLUMN "deleted_at" SET DATA TYPE timestamp(0) USING "deleted_at"::timestamp(0);--> statement-breakpoint
+ALTER TABLE "project_document_representation" ALTER COLUMN "object_deleted_at" SET DATA TYPE timestamp(0) USING "object_deleted_at"::timestamp(0);--> statement-breakpoint
 DROP INDEX "event_ticket_nullifier_event_active_unique";--> statement-breakpoint
 CREATE UNIQUE INDEX "event_ticket_nullifier_event_active_unique" ON "event_ticket" ("nullifier","event_slug") WHERE "is_deleted" = false;--> statement-breakpoint
 DROP INDEX "phone_hash_active_unique";--> statement-breakpoint
@@ -801,37 +1057,114 @@ DROP INDEX "opinion_group_scope_latest_lineage_idx";--> statement-breakpoint
 CREATE INDEX "opinion_group_scope_latest_lineage_idx" ON "opinion_group" ("scope_id","candidate_id" DESC NULLS LAST) WHERE ("lineage_id" is not null);--> statement-breakpoint
 DROP INDEX "conversation_vote_buffer_drain_idx";--> statement-breakpoint
 CREATE INDEX "conversation_vote_buffer_drain_idx" ON "conversation" ("id") WHERE "conversation_type" = 'polis' AND "is_closed" = true AND "vote_buffer_drained" = false AND "closed_finalized_at" IS NULL;--> statement-breakpoint
+DROP INDEX "project_document_file_original_retirement_idx";--> statement-breakpoint
+CREATE INDEX "project_document_file_original_retirement_idx" ON "project_document_file" ("compressed_at") WHERE "compressed_at" IS NOT NULL AND "deleted_at" IS NULL AND "object_deleted_at" IS NULL;--> statement-breakpoint
+DROP INDEX "project_document_representation_file_encoding_active_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "project_document_representation_file_encoding_active_unique" ON "project_document_representation" ("file_id","encoding") WHERE ("deleted_at" is null);--> statement-breakpoint
+DROP INDEX "project_document_representation_cleanup_idx";--> statement-breakpoint
+CREATE INDEX "project_document_representation_cleanup_idx" ON "project_document_representation" ("created_at") WHERE ("object_deleted_at" is null);--> statement-breakpoint
 ALTER TABLE "comparison_user_entity_score" RENAME CONSTRAINT "maxdiff_user_entity_score_maxdiff_result_id_entity_slug_id_unique" TO "comparison_user_entity_score_response_entity_unique";--> statement-breakpoint
+ALTER TABLE "analysis_input_snapshot" ADD CONSTRAINT "analysis_input_snapshot_scope_unique" UNIQUE("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "analysis_work_state" ADD CONSTRAINT "analysis_work_state_input_spec_unique" UNIQUE("conversation_id","opinion_group_spec_id","uses_closing_inputs");--> statement-breakpoint
 ALTER TABLE "conversation_participant" ADD CONSTRAINT "conversation_participant_id_account_unique" UNIQUE("id","user_id");--> statement-breakpoint
 ALTER TABLE "conversation_participant" ADD CONSTRAINT "conversation_participant_id_conversation_unique" UNIQUE("id","conversation_id");--> statement-breakpoint
-ALTER TABLE "vote_content" ADD CONSTRAINT "vote_content_id_owner_unique" UNIQUE("id","vote_id");--> statement-breakpoint
+ALTER TABLE "conversation" ADD CONSTRAINT "conversation_gathering_config_unique" UNIQUE("id","gathering_config_id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_credit_voting_config_id_key" UNIQUE("credit_voting_config_id");--> statement-breakpoint
+ALTER TABLE "conversation" ADD CONSTRAINT "conversation_gathering_config_id_key" UNIQUE("gathering_config_id");--> statement-breakpoint
+ALTER TABLE "conversation_view_snapshot" ADD CONSTRAINT "conversation_view_snapshot_scope_unique" UNIQUE("id","conversation_id","opinion_group_spec_id");--> statement-breakpoint
+ALTER TABLE "conversation_view_snapshot" ADD CONSTRAINT "conversation_view_snapshot_close_generation_spec_unique" UNIQUE("conversation_id","close_replacement_generation","opinion_group_spec_id");--> statement-breakpoint
+ALTER TABLE "vote_content" ADD CONSTRAINT "vote_content_id_owner_unique" UNIQUE("id","vote_id");--> statement-breakpoint
+CREATE INDEX "analysis_input_baseline_source_idx" ON "analysis_input_baseline" ("baseline_input_snapshot_id");--> statement-breakpoint
+CREATE INDEX "analysis_input_participant_eligibility_user_idx" ON "analysis_input_participant_eligibility" ("user_id");--> statement-breakpoint
+CREATE INDEX "analysis_survey_choice_capture_input_idx" ON "analysis_survey_choice_capture" ("baseline_input_snapshot_id");--> statement-breakpoint
+CREATE INDEX "comparison_input_baseline_source_idx" ON "comparison_input_baseline" ("baseline_input_snapshot_id","conversation_id");--> statement-breakpoint
+CREATE INDEX "comparison_item_moderation_item_idx" ON "comparison_item_moderation" ("ranking_item_id","id");--> statement-breakpoint
+CREATE UNIQUE INDEX "content_translation_work_gathering_field_unique" ON "content_translation_work" ("gathering_field_id","display_language_code") WHERE "source_kind" = 'gathering_field';--> statement-breakpoint
+CREATE UNIQUE INDEX "content_translation_work_gathering_response_unique" ON "content_translation_work" ("gathering_response_content_id","display_language_code") WHERE "source_kind" = 'gathering_response';--> statement-breakpoint
+CREATE INDEX "conversation_draft_project_idx" ON "conversation_draft" ("project_id");--> statement-breakpoint
+CREATE INDEX "conversation_draft_active_list_idx" ON "conversation_draft" ("project_id","created_at","id") WHERE ((("deleted_at" is null)) and (("published_at" is null)));--> statement-breakpoint
+CREATE INDEX "conversation_draft_created_by_idx" ON "conversation_draft" ("created_by_user_id") WHERE ("created_by_user_id" is not null);--> statement-breakpoint
 CREATE INDEX "conversation_export_object_artifact_idx" ON "conversation_export_object" ("artifact_id");--> statement-breakpoint
 CREATE INDEX "conversation_export_object_cleanup_idx" ON "conversation_export_object" ("cleanup_requested_at","id") WHERE ("object_deleted_at" is null);--> statement-breakpoint
 CREATE INDEX "conversation_deleted_idx" ON "conversation" ("deleted_at","id") WHERE ("deleted_at" is not null);--> statement-breakpoint
+CREATE INDEX "gathering_moderation_response_idx" ON "gathering_moderation" ("response_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "gathering_response_author_unique" ON "gathering_response" ("conversation_id","author_id") WHERE "is_seed" = false;--> statement-breakpoint
+CREATE INDEX "gathering_response_author_idx" ON "gathering_response" ("author_id");--> statement-breakpoint
 CREATE INDEX "opinion_deleted_idx" ON "opinion" ("deleted_at","id") WHERE ("deleted_at" is not null);--> statement-breakpoint
 CREATE INDEX "organization_membership_active_admin_idx" ON "organization_membership" ("organization_id","user_id") WHERE ((("deleted_at" is null)) and ("role" = 'admin'));--> statement-breakpoint
 CREATE INDEX "phone_user_idx" ON "phone" ("user_id");--> statement-breakpoint
+CREATE INDEX "polis_analysis_close_generation_close_idx" ON "polis_analysis_close_generation" ("close_id");--> statement-breakpoint
+CREATE INDEX "polis_analysis_close_generation_published_idx" ON "polis_analysis_close_generation" ("close_id","data_generation" DESC NULLS LAST) WHERE ("published_at" is not null);--> statement-breakpoint
+CREATE INDEX "polis_analysis_close_original_view_idx" ON "polis_analysis_close" ("original_view_snapshot_id");--> statement-breakpoint
 CREATE INDEX "project_contact_organization_idx" ON "project_contact" ("organization_id") WHERE ("organization_id" is not null);--> statement-breakpoint
 CREATE INDEX "project_organization_attribution_organization_idx" ON "project_organization_attribution" ("organization_id") WHERE ("organization_id" is not null);--> statement-breakpoint
 CREATE UNIQUE INDEX "project_active_default_organization_unique" ON "project" ("auto_provisioned_for_organization_id") WHERE ("deleted_at" is null);--> statement-breakpoint
 CREATE INDEX "qv_allocation_deleted_idx" ON "qv_allocation" ("deleted_at") WHERE ("deleted_at" is not null);--> statement-breakpoint
 CREATE INDEX "qv_calculation_claim_idx" ON "qv_calculation" ("next_attempt_at","created_at") WHERE "status" in ('queued', 'running');--> statement-breakpoint
+CREATE INDEX "qv_input_ballot_eligibility_user_idx" ON "qv_input_ballot_eligibility" ("user_id");--> statement-breakpoint
 CREATE INDEX "qv_live_stats_refresh_idx" ON "qv_live_stats" ("refreshed_at","conversation_id");--> statement-breakpoint
 CREATE INDEX "qv_command_deleted_idx" ON "qv_response_command" ("deleted_at") WHERE ("deleted_at" is not null);--> statement-breakpoint
 CREATE INDEX "qv_response_conversation_active_idx" ON "qv_response" ("conversation_id") WHERE ((("current_version_id" is not null)) and (("deleted_at" is null)) and (("account_hidden_at" is null)));--> statement-breakpoint
 CREATE INDEX "qv_version_response_idx" ON "qv_response_version" ("response_id");--> statement-breakpoint
 CREATE INDEX "qv_version_deleted_idx" ON "qv_response_version" ("deleted_at") WHERE ("deleted_at" is not null);--> statement-breakpoint
 CREATE INDEX "qv_stats_refresh_pending_idx" ON "qv_stats_refresh" ("conversation_id","id") WHERE ("processed_at" is null);--> statement-breakpoint
+CREATE INDEX "ranking_stats_reused_input_idx" ON "ranking_conversation_stats_snapshot" ("reused_input_snapshot_id") WHERE ("reused_input_snapshot_id" is not null);--> statement-breakpoint
+CREATE UNIQUE INDEX "comparison_closing_result_revision_unique" ON "ranking_conversation_stats_snapshot" ("derived_from_close_id","scoring_input_revision") WHERE ("derived_from_close_id" is not null);--> statement-breakpoint
+CREATE INDEX "ranking_input_participant_eligibility_user_idx" ON "ranking_input_participant_eligibility" ("user_id");--> statement-breakpoint
 CREATE INDEX "ranking_input_snapshot_conversation_idx" ON "ranking_input_snapshot" ("conversation_id","stats_snapshot_id");--> statement-breakpoint
 CREATE INDEX "ranking_input_snapshot_prepared_idx" ON "ranking_input_snapshot" ("conversation_id","scoring_input_revision","created_at","id") WHERE ((("stats_snapshot_id" is null)) and (("sealed_at" is not null)));--> statement-breakpoint
+CREATE INDEX "comparison_moderation_history_idx" ON "ranking_item" ("conversation_id","id") WHERE ("moderation" is not null);--> statement-breakpoint
 CREATE INDEX "ranking_score_conversation_idx" ON "ranking_score" ("conversation_id","id");--> statement-breakpoint
 CREATE INDEX "ranking_score_unclassified_context_idx" ON "ranking_score" ("id") WHERE ((("user_weights_snapshot" is not null)) and ("user_weights_snapshot" <> 'null'::jsonb));--> statement-breakpoint
+CREATE INDEX "survey_aggregate_snapshot_source_idx" ON "survey_aggregate_snapshot" ("source_survey_aggregate_snapshot_id") WHERE ("source_survey_aggregate_snapshot_id" is not null);--> statement-breakpoint
 CREATE INDEX "survey_response_participant_idx" ON "survey_response" ("participant_id");--> statement-breakpoint
 CREATE INDEX "zk_passport_user_idx" ON "zk_passport" ("user_id");--> statement-breakpoint
+ALTER TABLE "analysis_input_baseline" ADD CONSTRAINT "analysis_baseline_certificate_fk" FOREIGN KEY ("baseline_input_snapshot_id") REFERENCES "analysis_input_baseline"("input_snapshot_id");--> statement-breakpoint
+ALTER TABLE "analysis_input_baseline" ADD CONSTRAINT "analysis_baseline_input_scope_fk" FOREIGN KEY ("input_snapshot_id","conversation_id") REFERENCES "analysis_input_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "analysis_input_baseline" ADD CONSTRAINT "analysis_baseline_source_scope_fk" FOREIGN KEY ("baseline_input_snapshot_id","conversation_id") REFERENCES "analysis_input_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "analysis_input_participant_eligibility" ADD CONSTRAINT "analysis_input_participant_eligibility_0WTJjkIS5wfK_fkey" FOREIGN KEY ("input_snapshot_id") REFERENCES "analysis_input_snapshot"("id");--> statement-breakpoint
+ALTER TABLE "analysis_input_participant_eligibility" ADD CONSTRAINT "analysis_input_participant_eligibility_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id");--> statement-breakpoint
+ALTER TABLE "analysis_survey_choice_capture" ADD CONSTRAINT "analysis_survey_choice_capture_ZypB8gXlRYCw_fkey" FOREIGN KEY ("survey_aggregate_snapshot_id") REFERENCES "survey_aggregate_snapshot"("id");--> statement-breakpoint
+ALTER TABLE "analysis_survey_choice_capture" ADD CONSTRAINT "analysis_survey_choice_capture_vrtRtYWy7o3U_fkey" FOREIGN KEY ("baseline_input_snapshot_id") REFERENCES "analysis_input_baseline"("input_snapshot_id");--> statement-breakpoint
+ALTER TABLE "analysis_survey_choice" ADD CONSTRAINT "analysis_survey_choice_SfjaQP4iMcV8_fkey" FOREIGN KEY ("survey_aggregate_snapshot_id") REFERENCES "analysis_survey_choice_capture"("survey_aggregate_snapshot_id");--> statement-breakpoint
+ALTER TABLE "comparison_analysis_close" ADD CONSTRAINT "comparison_analysis_close_scope_fk" FOREIGN KEY ("close_id","conversation_id") REFERENCES "conversation_analysis_close"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_analysis_close" ADD CONSTRAINT "comparison_analysis_close_original_stats_fk" FOREIGN KEY ("original_stats_snapshot_id","conversation_id") REFERENCES "ranking_conversation_stats_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_analysis_close" ADD CONSTRAINT "comparison_close_closing_stats_snapshot_id_fk" FOREIGN KEY ("closing_stats_snapshot_id","conversation_id") REFERENCES "ranking_conversation_stats_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_analysis_close" ADD CONSTRAINT "comparison_close_live_stats_snapshot_id_fk" FOREIGN KEY ("live_stats_snapshot_id","conversation_id") REFERENCES "ranking_conversation_stats_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_analysis_close" ADD CONSTRAINT "comparison_close_served_stats_snapshot_id_fk" FOREIGN KEY ("served_stats_snapshot_id","conversation_id") REFERENCES "ranking_conversation_stats_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_input_baseline" ADD CONSTRAINT "comparison_baseline_input_conversation_fk" FOREIGN KEY ("input_snapshot_id","conversation_id") REFERENCES "ranking_input_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_input_baseline" ADD CONSTRAINT "comparison_baseline_source_conversation_fk" FOREIGN KEY ("baseline_input_snapshot_id","conversation_id") REFERENCES "ranking_input_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "comparison_item_moderation" ADD CONSTRAINT "comparison_item_moderation_ranking_item_id_ranking_item_id_fkey" FOREIGN KEY ("ranking_item_id") REFERENCES "ranking_item"("id");--> statement-breakpoint
+ALTER TABLE "comparison_item_moderation" ADD CONSTRAINT "comparison_item_moderation_moderator_id_user_id_fkey" FOREIGN KEY ("moderator_id") REFERENCES "user"("id");--> statement-breakpoint
+ALTER TABLE "content_translation_work" ADD CONSTRAINT "content_translation_work_oRsuR9SdJa0L_fkey" FOREIGN KEY ("gathering_field_id") REFERENCES "gathering_field"("id");--> statement-breakpoint
+ALTER TABLE "content_translation_work" ADD CONSTRAINT "content_translation_work_bslZw5QOMGRT_fkey" FOREIGN KEY ("gathering_response_content_id") REFERENCES "gathering_response_content"("id");--> statement-breakpoint
+ALTER TABLE "conversation_analysis_close" ADD CONSTRAINT "conversation_analysis_close_l5IkJmDvOgax_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversation"("id");--> statement-breakpoint
+ALTER TABLE "conversation_draft" ADD CONSTRAINT "conversation_draft_project_id_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "project"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "conversation_draft" ADD CONSTRAINT "conversation_draft_created_by_user_id_user_id_fkey" FOREIGN KEY ("created_by_user_id") REFERENCES "user"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "conversation_draft" ADD CONSTRAINT "conversation_draft_gsYlWhuI3zl2_fkey" FOREIGN KEY ("published_conversation_id") REFERENCES "conversation"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "conversation_export_object" ADD CONSTRAINT "conversation_export_object_PtLlWo75via5_fkey" FOREIGN KEY ("artifact_id") REFERENCES "conversation_export_artifact"("id");--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_nju61H63Fkmf_fkey" FOREIGN KEY ("credit_voting_config_id") REFERENCES "credit_voting_config"("id");--> statement-breakpoint
+ALTER TABLE "conversation" ADD CONSTRAINT "conversation_gathering_config_id_gathering_config_id_fkey" FOREIGN KEY ("gathering_config_id") REFERENCES "gathering_config"("id");--> statement-breakpoint
+ALTER TABLE "conversation_view_snapshot" ADD CONSTRAINT "conversation_view_snapshot_close_generation_fk" FOREIGN KEY ("conversation_id","close_replacement_generation") REFERENCES "polis_analysis_close_generation"("conversation_id","data_generation");--> statement-breakpoint
+ALTER TABLE "gathering_answer" ADD CONSTRAINT "gathering_answer_QC8LSTbfId42_fkey" FOREIGN KEY ("config_id","content_id") REFERENCES "gathering_response_content"("config_id","id");--> statement-breakpoint
+ALTER TABLE "gathering_answer" ADD CONSTRAINT "gathering_answer_VsQxkBy9VWIK_fkey" FOREIGN KEY ("config_id","field_id") REFERENCES "gathering_field"("config_id","id");--> statement-breakpoint
+ALTER TABLE "gathering_answer_translation" ADD CONSTRAINT "gathering_answer_translation_iTwwzyxpknjn_fkey" FOREIGN KEY ("content_id","field_id") REFERENCES "gathering_answer"("content_id","field_id");--> statement-breakpoint
+ALTER TABLE "gathering_field" ADD CONSTRAINT "gathering_field_config_id_gathering_config_id_fkey" FOREIGN KEY ("config_id") REFERENCES "gathering_config"("id");--> statement-breakpoint
+ALTER TABLE "gathering_field_translation" ADD CONSTRAINT "gathering_field_translation_field_id_gathering_field_id_fkey" FOREIGN KEY ("field_id") REFERENCES "gathering_field"("id");--> statement-breakpoint
+ALTER TABLE "gathering_moderation" ADD CONSTRAINT "gathering_moderation_response_id_gathering_response_id_fkey" FOREIGN KEY ("response_id") REFERENCES "gathering_response"("id");--> statement-breakpoint
+ALTER TABLE "gathering_moderation" ADD CONSTRAINT "gathering_moderation_moderator_id_user_id_fkey" FOREIGN KEY ("moderator_id") REFERENCES "user"("id");--> statement-breakpoint
+ALTER TABLE "gathering_response_content" ADD CONSTRAINT "gathering_response_content_fYnutAuIh58h_fkey" FOREIGN KEY ("config_id","response_id") REFERENCES "gathering_response"("config_id","id");--> statement-breakpoint
+ALTER TABLE "gathering_response" ADD CONSTRAINT "gathering_response_author_id_user_id_fkey" FOREIGN KEY ("author_id") REFERENCES "user"("id");--> statement-breakpoint
+ALTER TABLE "gathering_response" ADD CONSTRAINT "gathering_response_source_conversation_id_conversation_id_fkey" FOREIGN KEY ("source_conversation_id") REFERENCES "conversation"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "gathering_response" ADD CONSTRAINT "gathering_response_gZoEoHUqVvp3_fkey" FOREIGN KEY ("source_response_content_id") REFERENCES "gathering_response_content"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "gathering_response" ADD CONSTRAINT "gathering_response_Fm8N2oKqOQDJ_fkey" FOREIGN KEY ("conversation_id","config_id") REFERENCES "conversation"("id","gathering_config_id");--> statement-breakpoint
+ALTER TABLE "gathering_response" ADD CONSTRAINT "gathering_response_current_fk" FOREIGN KEY ("id","current_content_id") REFERENCES "gathering_response_content"("response_id","id");--> statement-breakpoint
+ALTER TABLE "gathering_response" ADD CONSTRAINT "gathering_response_baseline_fk" FOREIGN KEY ("id","baseline_content_id") REFERENCES "gathering_response_content"("response_id","id");--> statement-breakpoint
 ALTER TABLE "opinion_group_user" ADD CONSTRAINT "opinion_group_participant_account_fk" FOREIGN KEY ("participant_id","user_id") REFERENCES "conversation_participant"("id","user_id");--> statement-breakpoint
+ALTER TABLE "polis_analysis_close_generation" ADD CONSTRAINT "polis_analysis_close_generation_scope_fk" FOREIGN KEY ("close_id","conversation_id") REFERENCES "conversation_analysis_close"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "polis_analysis_close_generation" ADD CONSTRAINT "polis_analysis_close_generation_capture_fk" FOREIGN KEY ("input_snapshot_id","conversation_id") REFERENCES "analysis_input_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "polis_analysis_close" ADD CONSTRAINT "polis_analysis_close_scope_fk" FOREIGN KEY ("close_id","conversation_id") REFERENCES "conversation_analysis_close"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "polis_analysis_close" ADD CONSTRAINT "polis_analysis_close_original_view_fk" FOREIGN KEY ("original_view_snapshot_id","conversation_id","opinion_group_spec_id") REFERENCES "conversation_view_snapshot"("id","conversation_id","opinion_group_spec_id");--> statement-breakpoint
 ALTER TABLE "qv_allocation" ADD CONSTRAINT "qv_allocation_version_conversation_fk" FOREIGN KEY ("version_id","conversation_id") REFERENCES "qv_response_version"("id","conversation_id");--> statement-breakpoint
 ALTER TABLE "qv_allocation" ADD CONSTRAINT "qv_allocation_item_conversation_fk" FOREIGN KEY ("item_id","conversation_id") REFERENCES "ranking_item"("id","conversation_id");--> statement-breakpoint
 ALTER TABLE "qv_allocation" ADD CONSTRAINT "qv_allocation_content_owner_fk" FOREIGN KEY ("content_id","item_id") REFERENCES "ranking_item_content"("id","ranking_item_id");--> statement-breakpoint
@@ -841,6 +1174,8 @@ ALTER TABLE "qv_calculation" ADD CONSTRAINT "qv_calculation_conversation_id_conv
 ALTER TABLE "qv_calculation" ADD CONSTRAINT "qv_calculation_input_owner_fk" FOREIGN KEY ("input_snapshot_id","id") REFERENCES "qv_input_snapshot"("id","calculation_id");--> statement-breakpoint
 ALTER TABLE "qv_input_allocation" ADD CONSTRAINT "qv_input_allocation_ballot_fk" FOREIGN KEY ("snapshot_id","ballot_index") REFERENCES "qv_input_ballot"("snapshot_id","ballot_index");--> statement-breakpoint
 ALTER TABLE "qv_input_allocation" ADD CONSTRAINT "qv_input_allocation_item_fk" FOREIGN KEY ("snapshot_id","item_slug_id") REFERENCES "qv_input_item"("snapshot_id","item_slug_id");--> statement-breakpoint
+ALTER TABLE "qv_input_ballot_eligibility" ADD CONSTRAINT "qv_input_ballot_eligibility_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id");--> statement-breakpoint
+ALTER TABLE "qv_input_ballot_eligibility" ADD CONSTRAINT "qv_input_ballot_eligibility_ballot_fk" FOREIGN KEY ("snapshot_id","ballot_index") REFERENCES "qv_input_ballot"("snapshot_id","ballot_index");--> statement-breakpoint
 ALTER TABLE "qv_input_ballot" ADD CONSTRAINT "qv_input_ballot_snapshot_id_qv_input_snapshot_id_fkey" FOREIGN KEY ("snapshot_id") REFERENCES "qv_input_snapshot"("id");--> statement-breakpoint
 ALTER TABLE "qv_input_item" ADD CONSTRAINT "qv_input_item_snapshot_id_qv_input_snapshot_id_fkey" FOREIGN KEY ("snapshot_id") REFERENCES "qv_input_snapshot"("id");--> statement-breakpoint
 ALTER TABLE "qv_input_snapshot" ADD CONSTRAINT "qv_input_snapshot_calculation_id_qv_calculation_id_fkey" FOREIGN KEY ("calculation_id") REFERENCES "qv_calculation"("id");--> statement-breakpoint
@@ -852,21 +1187,29 @@ ALTER TABLE "qv_response" ADD CONSTRAINT "qv_response_current_version_owner_fk" 
 ALTER TABLE "qv_response_version" ADD CONSTRAINT "qv_version_response_conversation_fk" FOREIGN KEY ("response_id","conversation_id") REFERENCES "qv_response"("id","conversation_id");--> statement-breakpoint
 ALTER TABLE "qv_result_item" ADD CONSTRAINT "qv_result_input_item_fk" FOREIGN KEY ("snapshot_id","item_slug_id") REFERENCES "qv_input_item"("snapshot_id","item_slug_id");--> statement-breakpoint
 ALTER TABLE "qv_stats_refresh" ADD CONSTRAINT "qv_stats_refresh_conversation_id_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversation"("id");--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_snapshot" ADD CONSTRAINT "ranking_stats_reused_input_conversation_fk" FOREIGN KEY ("reused_input_snapshot_id","conversation_id") REFERENCES "ranking_input_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_snapshot" ADD CONSTRAINT "ranking_stats_derived_close_fk" FOREIGN KEY ("derived_from_close_id","conversation_id") REFERENCES "conversation_analysis_close"("id","conversation_id");--> statement-breakpoint
 ALTER TABLE "ranking_input_answer" ADD CONSTRAINT "ranking_input_answer_participant_fk" FOREIGN KEY ("input_snapshot_id","participant_index") REFERENCES "ranking_input_participant"("input_snapshot_id","participant_index");--> statement-breakpoint
 ALTER TABLE "ranking_input_answer" ADD CONSTRAINT "ranking_input_answer_best_item_fk" FOREIGN KEY ("input_snapshot_id","best_slug_id") REFERENCES "ranking_input_item"("input_snapshot_id","item_slug_id");--> statement-breakpoint
 ALTER TABLE "ranking_input_answer" ADD CONSTRAINT "ranking_input_answer_worst_item_fk" FOREIGN KEY ("input_snapshot_id","worst_slug_id") REFERENCES "ranking_input_item"("input_snapshot_id","item_slug_id");--> statement-breakpoint
 ALTER TABLE "ranking_input_item" ADD CONSTRAINT "ranking_input_item_mDlic55lBiV8_fkey" FOREIGN KEY ("input_snapshot_id") REFERENCES "ranking_input_snapshot"("id");--> statement-breakpoint
+ALTER TABLE "ranking_input_participant_eligibility" ADD CONSTRAINT "ranking_input_participant_eligibility_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id");--> statement-breakpoint
+ALTER TABLE "ranking_input_participant_eligibility" ADD CONSTRAINT "ranking_input_participant_eligibility_participant_fk" FOREIGN KEY ("input_snapshot_id","participant_index") REFERENCES "ranking_input_participant"("input_snapshot_id","participant_index");--> statement-breakpoint
 ALTER TABLE "ranking_input_participant" ADD CONSTRAINT "ranking_input_participant_2En63jjmaTz0_fkey" FOREIGN KEY ("input_snapshot_id") REFERENCES "ranking_input_snapshot"("id");--> statement-breakpoint
 ALTER TABLE "ranking_input_snapshot" ADD CONSTRAINT "ranking_input_snapshot_conversation_id_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversation"("id");--> statement-breakpoint
 ALTER TABLE "ranking_input_snapshot" ADD CONSTRAINT "ranking_input_stats_conversation_fk" FOREIGN KEY ("stats_snapshot_id","conversation_id") REFERENCES "ranking_conversation_stats_snapshot"("id","conversation_id");--> statement-breakpoint
+ALTER TABLE "survey_aggregate_snapshot" ADD CONSTRAINT "survey_aggregate_snapshot_source_fk" FOREIGN KEY ("source_survey_aggregate_snapshot_id") REFERENCES "survey_aggregate_snapshot"("id");--> statement-breakpoint
 ALTER TABLE "vote" ADD CONSTRAINT "vote_current_content_owner_fk" FOREIGN KEY ("current_content_id","id") REFERENCES "vote_content"("id","vote_id");--> statement-breakpoint
 ALTER TABLE "vote" DROP CONSTRAINT "vote_participant_account_fk", ADD CONSTRAINT "vote_participant_account_fk" FOREIGN KEY ("participant_id","author_id") REFERENCES "conversation_participant"("id","user_id");--> statement-breakpoint
+ALTER TABLE "analysis_input_snapshot" ADD CONSTRAINT "analysis_input_snapshot_version_check" CHECK ("payload_version" in (1, 2));--> statement-breakpoint
 ALTER TABLE "comparison_answer" ADD CONSTRAINT "comparison_answer_position_check" CHECK ("position" >= 0);--> statement-breakpoint
 ALTER TABLE "comparison_answer" ADD CONSTRAINT "comparison_answer_distinct_choices_check" CHECK ("best_slug_id" <> "worst_slug_id");--> statement-breakpoint
 ALTER TABLE "comparison_answer" ADD CONSTRAINT "comparison_answer_candidates_check" CHECK (((cardinality("candidate_set") BETWEEN 2 AND 4) and ("candidate_set" @> ARRAY["best_slug_id"::text, "worst_slug_id"::text])));--> statement-breakpoint
 ALTER TABLE "comparison_response" ADD CONSTRAINT "comparison_response_account_binding_check" CHECK (((((("participant_id" is not null)) and (("detached_at" is null)))) or (((("participant_id" is null)) and (("detached_at" is not null))))));--> statement-breakpoint
+ALTER TABLE "content_translation_work" ADD CONSTRAINT "content_translation_work_gathering_source_check" CHECK ((((("source_kind" = 'gathering_field') and (("gathering_field_id" is not null)) and (("gathering_response_content_id" is null)))) or ((("source_kind" = 'gathering_response') and (("gathering_field_id" is null)) and (("gathering_response_content_id" is not null)))) or ((("source_kind" not in ('gathering_field', 'gathering_response')) and (("gathering_field_id" is null)) and (("gathering_response_content_id" is null))))));--> statement-breakpoint
 ALTER TABLE "conversation_email_update_test_attempt" ADD CONSTRAINT "email_update_test_sender_provenance_check" CHECK (((((("sender_purged_at" is null)) and (("requested_by_user_id" is not null)) and (("destination_email_credential_id" is not null)) and (("destination_email_snapshot" is not null)))) or (((("sender_purged_at" is not null)) and (("requested_by_user_id" is null)) and (("destination_email_credential_id" is null)) and (("destination_email_snapshot" is null)) and ("status" not in ('pending', 'claimed', 'attempting'))))));--> statement-breakpoint
 ALTER TABLE "conversation_import" ADD CONSTRAINT "conversation_import_requester_check" CHECK (((((("user_id" is not null)) and (("requester_purged_at" is null)))) or (((("user_id" is null)) and (("requester_purged_at" is not null)) and (("conversation_id" is not null))))));--> statement-breakpoint
+ALTER TABLE "conversation" ADD CONSTRAINT "conversation_participation_mode_settings_source_check" CHECK ("participation_mode_settings_source" in ('project_inherited', 'conversation_override'));--> statement-breakpoint
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_deletion_intent_check" CHECK (((("deleted_at" is null)) or (("current_content_id" is null))));--> statement-breakpoint
 ALTER TABLE "email" ADD CONSTRAINT "email_recovery_reservation_check" CHECK ((("reserved_for_recovery" = false) or ("is_deleted" = true)));--> statement-breakpoint
 ALTER TABLE "opinion_group_user" ADD CONSTRAINT "opinion_group_user_identity_check" CHECK (((("user_id" is not null)) or (("participant_id" is not null))));--> statement-breakpoint
@@ -874,9 +1217,13 @@ ALTER TABLE "opinion" ADD CONSTRAINT "opinion_source_owner_check" CHECK (((("aut
 ALTER TABLE "opinion" ADD CONSTRAINT "opinion_deletion_intent_check" CHECK (((("deleted_at" is null)) or (("current_content_id" is null))));--> statement-breakpoint
 ALTER TABLE "organization" ADD CONSTRAINT "organization_account_retirement_check" CHECK (((("retired_for_account_deletion_at" is null)) or (((("auto_provisioned_for_user_id" is not null)) and (("deleted_at" is not null)) and ("deleted_at" = "retired_for_account_deletion_at"::timestamp(0))))));--> statement-breakpoint
 ALTER TABLE "phone" ADD CONSTRAINT "phone_recovery_reservation_check" CHECK ((("reserved_for_recovery" = false) or ("is_deleted" = true)));--> statement-breakpoint
+ALTER TABLE "project_contact" ADD CONSTRAINT "project_contact_identity_or_email_check" CHECK (((((("email" is not null)) and ("email" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]'))) or (((("first_name" is not null)) and ("first_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]'))) or (((("last_name" is not null)) and ("last_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]'))) or (("organization_id" is not null))));--> statement-breakpoint
 ALTER TABLE "project" ADD CONSTRAINT "project_account_retirement_check" CHECK (((("retired_for_account_deletion_at" is null)) or (((("auto_provisioned_for_organization_id" is not null)) and (("deleted_at" is not null)) and ("deleted_at" = "retired_for_account_deletion_at"::timestamp(0))))));--> statement-breakpoint
 ALTER TABLE "ranking_conversation_stats_item" ADD CONSTRAINT "ranking_stats_item_redacted_source_check" CHECK (((("ranking_item_content_id" is not null)) or (("external_url" is null))));--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_snapshot" ADD CONSTRAINT "comparison_derived_closing_result_check" CHECK (((("derived_from_close_id" is null)) or ((("is_closed" = true) and (("reused_input_snapshot_id" is null))))));--> statement-breakpoint
+ALTER TABLE "ranking_conversation_stats_snapshot" ADD CONSTRAINT "ranking_stats_reused_input_closed_check" CHECK (((("reused_input_snapshot_id" is null)) or ("is_closed" = true)));--> statement-breakpoint
 ALTER TABLE "ranking_item" ADD CONSTRAINT "ranking_item_source_owner_check" CHECK (((("author_id" is not null)) or ("is_seed" = true) or (("deleted_at" is not null)) or (("account_hidden_at" is not null))));--> statement-breakpoint
+ALTER TABLE "ranking_item" ADD CONSTRAINT "ranking_item_participant_moderation_check" CHECK (((("moderation" is null)) or ((("is_seed" = false) and ("moderation" in ('move', 'hide'))))));--> statement-breakpoint
 ALTER TABLE "ranking_item" ADD CONSTRAINT "ranking_item_deletion_intent_check" CHECK (((("deleted_at" is null)) or (("current_content_id" is null))));--> statement-breakpoint
 ALTER TABLE "user" ADD CONSTRAINT "user_contribution_revision_check" CHECK ("contribution_revision" >= 0);--> statement-breakpoint
 ALTER TABLE "user" ADD CONSTRAINT "user_recovery_lifecycle_check" CHECK (((((((("deletion_requested_at" is null)) and (("recoverable_until" is null)))) or ((("is_deleted" = true) and (("deletion_reason" is not null)) and ("deletion_reason" = 'account_deletion') and (("deletion_requested_at" is not null)) and (("recoverable_until" is not null)) and ("recoverable_until" = "deletion_requested_at" + interval '15 days'))))) and (((("purge_started_at" is null)) or ("is_deleted" = true)))));--> statement-breakpoint
@@ -906,7 +1253,7 @@ ALTER TABLE "opinion_group_opinion_stats" DROP CONSTRAINT "opinion_group_opinion
 ALTER TABLE "opinion_group_variant" DROP CONSTRAINT "opinion_group_variant_group_count_check", ADD CONSTRAINT "opinion_group_variant_group_count_check" CHECK ("group_count" >= 2);--> statement-breakpoint
 ALTER TABLE "survey_aggregate_result" DROP CONSTRAINT "survey_aggregate_result_scope_check", ADD CONSTRAINT "survey_aggregate_result_scope_check" CHECK ((((("scope" = 'overall') and (("candidate_id" is null)) and (("group_id" is null)))) or ((("scope" = 'opinion_group') and (("candidate_id" is not null)) and (("group_id" is not null))))));--> statement-breakpoint
 ALTER TABLE "survey_aggregate_result" DROP CONSTRAINT "survey_aggregate_result_suppression_check", ADD CONSTRAINT "survey_aggregate_result_suppression_check" CHECK ((((("is_suppressed" = true) and (("suppressed_count" is null)) and (("suppressed_percentage" is null)) and (("suppression_reason" is not null)))) or ((("is_suppressed" = false) and (("suppressed_count" is not null)) and (("suppression_reason" is null))))));--> statement-breakpoint
-ALTER TABLE "content_translation_work" DROP CONSTRAINT "content_translation_work_source_check", ADD CONSTRAINT "content_translation_work_source_check" CHECK ((((("source_kind" = 'conversation') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is not null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'project') and (("conversation_id" is null)) and (("project_content_id" is not null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'opinion') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is not null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'survey_question') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is not null)) and (("survey_question_option_content_ids" is not null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'ranking_item') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is not null))))));--> statement-breakpoint
+ALTER TABLE "content_translation_work" DROP CONSTRAINT "content_translation_work_source_check", ADD CONSTRAINT "content_translation_work_source_check" CHECK ((((("source_kind" = 'conversation') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is not null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'project') and (("conversation_id" is null)) and (("project_content_id" is not null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'opinion') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is not null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'survey_question') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is not null)) and (("survey_question_option_content_ids" is not null)) and (("ranking_item_content_id" is null)))) or ((("source_kind" = 'ranking_item') and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is not null)))) or ((("source_kind" in ('gathering_field', 'gathering_response')) and (("conversation_id" is not null)) and (("project_content_id" is null)) and (("conversation_content_id" is null)) and (("opinion_content_id" is null)) and (("survey_question_content_id" is null)) and (("survey_question_option_content_ids" is null)) and (("ranking_item_content_id" is null))))));--> statement-breakpoint
 ALTER TABLE "content_translation_work" DROP CONSTRAINT "content_translation_work_running_lease_check", ADD CONSTRAINT "content_translation_work_running_lease_check" CHECK ((((("status" <> 'running') and (("lease_owner" is null)) and (("lease_token" is null)) and (("lease_expires_at" is null)))) or ((("status" = 'running') and (("lease_owner" is not null)) and (("lease_token" is not null)) and (("lease_expires_at" is not null))))));--> statement-breakpoint
 ALTER TABLE "content_translation_work" DROP CONSTRAINT "content_translation_work_priority_rank_check", ADD CONSTRAINT "content_translation_work_priority_rank_check" CHECK ("priority_rank" >= 0 AND "priority_rank" <= 2);--> statement-breakpoint
 ALTER TABLE "conversation_content" DROP CONSTRAINT "conversation_content_source_metadata_check", ADD CONSTRAINT "conversation_content_source_metadata_check" CHECK ((("source_language_provider" IS NULL AND "source_raw_language_code" IS NULL) OR ("source_language_provider" IS NOT NULL AND "source_raw_language_code" IS NOT NULL)));--> statement-breakpoint
@@ -925,7 +1272,7 @@ ALTER TABLE "project_contact" DROP CONSTRAINT "project_contact_email_or_website_
 ALTER TABLE "ranking_item_content" DROP CONSTRAINT "ranking_item_content_source_metadata_check", ADD CONSTRAINT "ranking_item_content_source_metadata_check" CHECK ((("source_language_provider" IS NULL AND "source_raw_language_code" IS NULL) OR ("source_language_provider" IS NOT NULL AND "source_raw_language_code" IS NOT NULL)));--> statement-breakpoint
 ALTER TABLE "ranking_item_content_translation" DROP CONSTRAINT "ranking_item_content_translation_source_metadata_check", ADD CONSTRAINT "ranking_item_content_translation_source_metadata_check" CHECK ((("source_language_provider" IS NULL AND "source_raw_language_code" IS NULL) OR ("source_language_provider" IS NOT NULL AND "source_raw_language_code" IS NOT NULL)));--> statement-breakpoint
 ALTER TABLE "conversation_content_translation" DROP CONSTRAINT "conversation_content_translation_body_plain_text_pair_check", ADD CONSTRAINT "conversation_content_translation_body_plain_text_pair_check" CHECK ((("translated_body" IS NULL AND "translated_body_plain_text" IS NULL) OR ("translated_body" IS NOT NULL AND "translated_body_plain_text" IS NOT NULL)));--> statement-breakpoint
-ALTER TABLE "conversation" DROP CONSTRAINT "conversation_subtype_config_check", ADD CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation_type" = 'polis' AND "polis_config_id" IS NOT NULL AND "ranking_config_id" IS NULL AND "credit_voting_config_id" IS NULL AND "prioritization_type" IS NULL) OR ("conversation_type" = 'prioritizing' AND "polis_config_id" IS NULL AND "prioritization_type" IS NOT NULL AND (("prioritization_type" = 'comparisons' AND "ranking_config_id" IS NOT NULL AND "credit_voting_config_id" IS NULL) OR ("prioritization_type" = 'qv' AND "credit_voting_config_id" IS NOT NULL AND "ranking_config_id" IS NULL)))));--> statement-breakpoint
+ALTER TABLE "conversation" DROP CONSTRAINT "conversation_subtype_config_check", ADD CONSTRAINT "conversation_subtype_config_check" CHECK ((((("conversation_type" = 'gathering') and (("gathering_config_id" is not null)) and (("polis_config_id" is null)) and (("ranking_config_id" is null)) and (("credit_voting_config_id" is null)) and (("prioritization_type" is null)))) or (((("gathering_config_id" is null)) and ((((("conversation_type" = 'polis') and (("polis_config_id" is not null)) and (("ranking_config_id" is null)) and (("credit_voting_config_id" is null)) and (("prioritization_type" is null)))) or ((("conversation_type" = 'prioritizing') and (("polis_config_id" is null)) and (("prioritization_type" is not null)) and ((((("prioritization_type" = 'comparisons') and (("ranking_config_id" is not null)) and (("credit_voting_config_id" is null)))) or ((("prioritization_type" = 'qv') and (("credit_voting_config_id" is not null)) and (("ranking_config_id" is null))))))))))))));--> statement-breakpoint
 ALTER TABLE "polis_conversation_config" DROP CONSTRAINT "polis_conversation_config_preferred_opinion_group_count_check", ADD CONSTRAINT "polis_conversation_config_preferred_opinion_group_count_check" CHECK ("preferred_opinion_group_count" IS NULL OR "preferred_opinion_group_count" >= 2);--> statement-breakpoint
 ALTER TABLE "project_content_translation" DROP CONSTRAINT "project_content_translation_body_plain_text_pair_check", ADD CONSTRAINT "project_content_translation_body_plain_text_pair_check" CHECK ((("translated_body" IS NULL AND "translated_body_plain_text" IS NULL) OR ("translated_body" IS NOT NULL AND "translated_body_plain_text" IS NOT NULL)));--> statement-breakpoint
 ALTER TABLE "ranking_item_content" DROP CONSTRAINT "ranking_item_content_body_plain_text_pair_check", ADD CONSTRAINT "ranking_item_content_body_plain_text_pair_check" CHECK ((("body" IS NULL AND "body_plain_text" IS NULL) OR ("body" IS NOT NULL AND "body_plain_text" IS NOT NULL)));--> statement-breakpoint
@@ -1006,4 +1353,8 @@ ALTER TABLE "survey_answer_option" DROP CONSTRAINT "survey_answer_option_text_pa
 ALTER TABLE "realtime_event_dispatch_state" DROP CONSTRAINT "realtime_event_dispatch_state_singleton_check", ADD CONSTRAINT "realtime_event_dispatch_state_singleton_check" CHECK ("id" = 1);--> statement-breakpoint
 ALTER TABLE "realtime_event_dispatch_state" DROP CONSTRAINT "realtime_event_dispatch_state_sequence_check", ADD CONSTRAINT "realtime_event_dispatch_state_sequence_check" CHECK ((("replay_floor_delivery_id" >= 0) and ("last_delivery_id" >= "replay_floor_delivery_id")));--> statement-breakpoint
 ALTER TABLE "conversation" DROP CONSTRAINT "conversation_closing_state_check", ADD CONSTRAINT "conversation_closing_state_check" CHECK (("is_closed" OR ("closing_target_revision" IS NULL AND "closed_finalized_at" IS NULL)) AND ("closed_finalized_at" IS NULL OR "closing_target_revision" IS NOT NULL));--> statement-breakpoint
-ALTER TABLE "project_contact" DROP CONSTRAINT "project_contact_name_or_affiliation_check", ADD CONSTRAINT "project_contact_name_or_affiliation_check" CHECK (((((("first_name" is not null)) and ("first_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]'))) or (((("last_name" is not null)) and ("last_name" ~ U&'[^\0009-\000d \00a0\1680\2000-\200a\2028\2029\202f\205f\3000\feff]'))) or (("organization_id" is not null))));
+ALTER TABLE "project_document_file" DROP CONSTRAINT "project_document_file_compressed_content_check", ADD CONSTRAINT "project_document_file_compressed_content_check" CHECK ("compressed_at" IS NULL OR "content_type" <> 'application/pdf');--> statement-breakpoint
+ALTER TABLE "project_document_file" DROP CONSTRAINT "project_document_file_original_cleanup_check", ADD CONSTRAINT "project_document_file_original_cleanup_check" CHECK ("object_deleted_at" IS NULL OR "deleted_at" IS NOT NULL OR "compressed_at" IS NOT NULL);--> statement-breakpoint
+ALTER TABLE "project_document_representation" DROP CONSTRAINT "project_document_representation_byte_size_check", ADD CONSTRAINT "project_document_representation_byte_size_check" CHECK ("byte_size" > 0);--> statement-breakpoint
+ALTER TABLE "project_document_representation" DROP CONSTRAINT "project_document_representation_failed_check", ADD CONSTRAINT "project_document_representation_failed_check" CHECK ("status" <> 'failed' OR "deleted_at" IS NOT NULL);--> statement-breakpoint
+ALTER TABLE "project_document_representation" DROP CONSTRAINT "project_document_representation_deleted_object_check", ADD CONSTRAINT "project_document_representation_deleted_object_check" CHECK ("object_deleted_at" IS NULL OR "deleted_at" IS NOT NULL);

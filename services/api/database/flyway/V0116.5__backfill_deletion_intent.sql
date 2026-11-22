@@ -8,7 +8,7 @@ SET search_path = public, pg_temp;
 --> statement-breakpoint
 -- Prepared source: scripts/prepare-deletion-intent-backfill.sql
 
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_1() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_1() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor uuid;
     mb_lower uuid;
@@ -48,11 +48,11 @@ WHERE (is_deleted AND deleted_at IS NULL) AND ("user".id >= mb_lower AND "user".
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_1();
+CALL public.agora_upgrade_0116_5_1();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_1();
+DROP PROCEDURE public.agora_upgrade_0116_5_1();
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_2() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_2() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -94,11 +94,11 @@ WHERE (source.author_id = account.id AND account.is_deleted
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_2();
+CALL public.agora_upgrade_0116_5_2();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_2();
+DROP PROCEDURE public.agora_upgrade_0116_5_2();
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_3() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_3() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -140,11 +140,11 @@ WHERE (source.author_id = account.id AND account.is_deleted
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_3();
+CALL public.agora_upgrade_0116_5_3();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_3();
+DROP PROCEDURE public.agora_upgrade_0116_5_3();
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_4() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_4() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -187,11 +187,11 @@ WHERE (child.project_id = parent.id AND parent.deleted_at IS NOT NULL
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_4();
+CALL public.agora_upgrade_0116_5_4();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_4();
+DROP PROCEDURE public.agora_upgrade_0116_5_4();
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_5() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_5() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -233,11 +233,11 @@ WHERE (child.conversation_id = parent.id AND parent.deleted_at IS NOT NULL
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_5();
+CALL public.agora_upgrade_0116_5_5();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_5();
+DROP PROCEDURE public.agora_upgrade_0116_5_5();
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_6() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_6() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -279,11 +279,11 @@ WHERE (child.conversation_id = parent.id AND parent.deleted_at IS NOT NULL
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_6();
+CALL public.agora_upgrade_0116_5_6();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_6();
+DROP PROCEDURE public.agora_upgrade_0116_5_6();
 --> statement-breakpoint
-CREATE OR REPLACE PROCEDURE public.agora_upgrade_0115_5_7() LANGUAGE plpgsql AS $batch$
+CREATE OR REPLACE PROCEDURE public.agora_upgrade_0116_5_7() LANGUAGE plpgsql AS $batch$
 DECLARE
     mb_cursor bigint;
     mb_lower bigint;
@@ -325,9 +325,9 @@ WHERE (source.author_id = account.id AND account.deletion_reason = 'guest_merge'
 END;
 $batch$;
 --> statement-breakpoint
-CALL public.agora_upgrade_0115_5_7();
+CALL public.agora_upgrade_0116_5_7();
 --> statement-breakpoint
-DROP PROCEDURE public.agora_upgrade_0115_5_7();
+DROP PROCEDURE public.agora_upgrade_0116_5_7();
 --> statement-breakpoint
 RESET lock_timeout;
 RESET search_path;

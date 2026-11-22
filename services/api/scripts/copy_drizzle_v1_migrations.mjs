@@ -22,13 +22,13 @@ import { reviewedMigrations } from "./reviewed_drizzle_migrations.mjs";
 // Pin the converted history, not description-based guesses: historical Drizzle
 // SQL deliberately differs from deployed Flyway SQL and must never be replayed.
 const convertedHistory = {
-    lastDrizzleMigration: "20261109150108_nice_bloodaxe",
-    historyCount: 114,
+    lastDrizzleMigration: "20261114165054_equal_golden_guardian",
+    historyCount: 115,
     historySha256:
-        "104140af0654b9666a29a84fda38f5720e7f4fb614fbf75e485f0c7ba352bf7f",
-    flywayAnchor: "V0114__nice_bloodaxe.sql",
+        "29bea2c6b74165cc2d547c1a41d7f79c240f206b5128f5305de4b7c8eea4b370",
+    flywayAnchor: "V0115__equal_golden_guardian.sql",
     flywayAnchorSha256:
-        "64f34dc760f783fc2f9d3e9bcb41b491d69f06803467c48bca2f61d5616642ce",
+        "5e7126f2c3ace29cd89a99db4cb214e13b853d44818b3d46fd99e75df9b53aeb",
 };
 
 /** @param {Buffer | string} content */

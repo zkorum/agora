@@ -157,6 +157,11 @@ queue.delete("queue:imports")
         ],
         ["services/api/src/devExercise/live.ts", true],
         ["services/api/src/drizzle/live.ts", true],
+        ["services/app/build/_app/immutable/app.js", false],
+        ["services/app/.netlify/functions/handler.js", false],
+        ["services/app/storybook-static/assets/preview.js", false],
+        ["services/app/playwright-report/trace/index.js", false],
+        ["services/app/src/lib/build/cleanup.ts", true],
         ["services/deletion-worker/src/purge/ranking.ts", false],
     ])("scopes exceptions explicitly: %s", (path, production) => {
         expect(isProductionSource(path)).toBe(production);

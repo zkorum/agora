@@ -652,6 +652,108 @@
       "indexes": []
     },
     {
+      "table": "analysis_survey_choice",
+      "columns": [
+        {
+          "name": "survey_aggregate_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "participant_index",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "question_slug_id",
+          "type": "varchar(8)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "option_slug_ids",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "analysis_survey_choice_survey_aggregate_snapshot_id_analysis_survey_choice_capture_survey_aggregate_snapshot_id_fk",
+          "columns": [
+            "survey_aggregate_snapshot_id"
+          ],
+          "targetTable": "analysis_survey_choice_capture",
+          "targetColumns": [
+            "survey_aggregate_snapshot_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "analysis_survey_choice_bounds",
+          "expression": "((\"analysis_survey_choice\".\"participant_index\" >= 0) and (cardinality(\"analysis_survey_choice\".\"option_slug_ids\") > 0))"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": []
+    },
+    {
+      "table": "analysis_survey_choice_capture",
+      "columns": [
+        {
+          "name": "survey_aggregate_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "baseline_input_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "analysis_survey_choice_capture_survey_aggregate_snapshot_id_survey_aggregate_snapshot_id_fk",
+          "columns": [
+            "survey_aggregate_snapshot_id"
+          ],
+          "targetTable": "survey_aggregate_snapshot",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "analysis_survey_choice_capture_baseline_input_snapshot_id_analysis_input_baseline_input_snapshot_id_fk",
+          "columns": [
+            "baseline_input_snapshot_id"
+          ],
+          "targetTable": "analysis_input_baseline",
+          "targetColumns": [
+            "input_snapshot_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "analysis_survey_choice_capture_input_idx",
+          "unique": false,
+          "columns": [
+            "baseline_input_snapshot_id"
+          ]
+        }
+      ]
+    },
+    {
       "table": "analysis_work_state",
       "columns": [
         {
@@ -669,6 +771,12 @@
         {
           "name": "opinion_group_spec_id",
           "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "uses_closing_inputs",
+          "type": "boolean",
           "nullable": false,
           "primaryKey": false
         },
@@ -818,10 +926,11 @@
       ],
       "uniqueConstraints": [
         {
-          "name": "analysis_work_state_conversation_spec_unique",
+          "name": "analysis_work_state_input_spec_unique",
           "columns": [
             "conversation_id",
-            "opinion_group_spec_id"
+            "opinion_group_spec_id",
+            "uses_closing_inputs"
           ]
         }
       ],
@@ -1089,6 +1198,135 @@
       "indexes": []
     },
     {
+      "table": "comparison_analysis_close",
+      "columns": [
+        {
+          "name": "close_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "conversation_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "original_stats_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "closing_stats_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "live_stats_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "served_stats_snapshot_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "processed_closing_revision",
+          "type": "bigint",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "failed_closing_revision",
+          "type": "bigint",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "failed_live_revision",
+          "type": "bigint",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "comparison_analysis_close_scope_fk",
+          "columns": [
+            "close_id",
+            "conversation_id"
+          ],
+          "targetTable": "conversation_analysis_close",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "comparison_analysis_close_original_stats_fk",
+          "columns": [
+            "original_stats_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_conversation_stats_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "comparison_close_closing_stats_snapshot_id_fk",
+          "columns": [
+            "closing_stats_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_conversation_stats_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "comparison_close_live_stats_snapshot_id_fk",
+          "columns": [
+            "live_stats_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_conversation_stats_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "comparison_close_served_stats_snapshot_id_fk",
+          "columns": [
+            "served_stats_snapshot_id",
+            "conversation_id"
+          ],
+          "targetTable": "ranking_conversation_stats_snapshot",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [],
+      "uniqueConstraints": [],
+      "indexes": []
+    },
+    {
       "table": "comparison_answer",
       "columns": [
         {
@@ -1252,6 +1490,88 @@
           "columns": [
             "baseline_input_snapshot_id",
             "conversation_id"
+          ]
+        }
+      ]
+    },
+    {
+      "table": "comparison_item_moderation",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "ranking_item_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "moderator_id",
+          "type": "uuid",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "reason",
+          "type": "varchar(1000)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "nullable": false,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "comparison_item_moderation_ranking_item_id_ranking_item_id_fk",
+          "columns": [
+            "ranking_item_id"
+          ],
+          "targetTable": "ranking_item",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        },
+        {
+          "name": "comparison_item_moderation_moderator_id_user_id_fk",
+          "columns": [
+            "moderator_id"
+          ],
+          "targetTable": "user",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "comparison_item_moderation_action_check",
+          "expression": "\"comparison_item_moderation\".\"action\" in ($1, $2, $3)"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "comparison_item_moderation_item_idx",
+          "unique": false,
+          "columns": [
+            "ranking_item_id",
+            "id"
           ]
         }
       ]
@@ -2203,6 +2523,36 @@
           "primaryKey": false
         },
         {
+          "name": "requested_result_revision",
+          "type": "bigint",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "served_input_mode",
+          "type": "analysis_input_mode",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "served_result_revision",
+          "type": "bigint",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "selection_revision",
+          "type": "bigint",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "minimum_closing_result_revision",
+          "type": "bigint",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
           "name": "finalized_at",
           "type": "timestamp (0)",
           "nullable": false,
@@ -2225,7 +2575,7 @@
       "checks": [
         {
           "name": "conversation_analysis_close_revision_check",
-          "expression": "\"conversation_analysis_close\".\"source_revision\" >= $1"
+          "expression": "((\"conversation_analysis_close\".\"source_revision\" >= 0) and (\"conversation_analysis_close\".\"selection_revision\" >= 0) and (\"conversation_analysis_close\".\"minimum_closing_result_revision\" >= 0) and ((((\"conversation_analysis_close\".\"requested_result_revision\" is null)) or (\"conversation_analysis_close\".\"requested_result_revision\" > 0))) and ((((\"conversation_analysis_close\".\"served_result_revision\" is null)) or (\"conversation_analysis_close\".\"served_result_revision\" > 0))) and (((\"conversation_analysis_close\".\"served_input_mode\" = 'closing') or ((\"conversation_analysis_close\".\"served_result_revision\" is not null)))))"
         }
       ],
       "uniqueConstraints": [
@@ -11328,12 +11678,6 @@
           "primaryKey": false
         },
         {
-          "name": "input_mode",
-          "type": "analysis_input_mode",
-          "nullable": false,
-          "primaryKey": false
-        },
-        {
           "name": "input_snapshot_id",
           "type": "integer",
           "nullable": true,
@@ -11398,7 +11742,6 @@
           "unique": false,
           "columns": [
             "close_id",
-            "input_mode",
             "data_generation"
           ],
           "predicate": "(\"polis_analysis_close_generation\".\"published_at\" is not null)"
@@ -12371,6 +12714,12 @@
           "primaryKey": false
         },
         {
+          "name": "compressed_at",
+          "type": "timestamp (0)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
           "name": "created_at",
           "type": "timestamp (0)",
           "nullable": false,
@@ -12410,6 +12759,14 @@
         {
           "name": "project_document_file_html_scripts_check",
           "expression": "NOT \"project_document_file\".\"html_scripts_enabled\" OR \"project_document_file\".\"content_type\" = 'text/html'"
+        },
+        {
+          "name": "project_document_file_compressed_content_check",
+          "expression": "\"project_document_file\".\"compressed_at\" IS NULL OR \"project_document_file\".\"content_type\" <> 'application/pdf'"
+        },
+        {
+          "name": "project_document_file_original_cleanup_check",
+          "expression": "\"project_document_file\".\"object_deleted_at\" IS NULL OR \"project_document_file\".\"deleted_at\" IS NOT NULL OR \"project_document_file\".\"compressed_at\" IS NOT NULL"
         }
       ],
       "uniqueConstraints": [],
@@ -12439,6 +12796,14 @@
             "project_document_id"
           ],
           "predicate": "\"project_document_file\".\"status\" = 'pending' AND \"project_document_file\".\"deleted_at\" IS NULL"
+        },
+        {
+          "name": "project_document_file_original_retirement_idx",
+          "unique": false,
+          "columns": [
+            "compressed_at"
+          ],
+          "predicate": "\"project_document_file\".\"compressed_at\" IS NOT NULL AND \"project_document_file\".\"deleted_at\" IS NULL AND \"project_document_file\".\"object_deleted_at\" IS NULL"
         }
       ]
     },
@@ -12512,6 +12877,118 @@
             "language_code"
           ],
           "predicate": "(\"project_document_localization\".\"deleted_at\" is null)"
+        }
+      ]
+    },
+    {
+      "table": "project_document_representation",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": true
+        },
+        {
+          "name": "file_id",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "encoding",
+          "type": "project_document_encoding",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "status",
+          "type": "project_document_representation_status",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "object_key",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "byte_size",
+          "type": "integer",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "checksum_sha256",
+          "type": "text",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp (0)",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp (0)",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
+          "name": "object_deleted_at",
+          "type": "timestamp (0)",
+          "nullable": true,
+          "primaryKey": false
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "project_document_representation_file_id_project_document_file_id_fk",
+          "columns": [
+            "file_id"
+          ],
+          "targetTable": "project_document_file",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
+        }
+      ],
+      "checks": [
+        {
+          "name": "project_document_representation_byte_size_check",
+          "expression": "\"project_document_representation\".\"byte_size\" > 0"
+        },
+        {
+          "name": "project_document_representation_failed_check",
+          "expression": "\"project_document_representation\".\"status\" <> 'failed' OR \"project_document_representation\".\"deleted_at\" IS NOT NULL"
+        },
+        {
+          "name": "project_document_representation_deleted_object_check",
+          "expression": "\"project_document_representation\".\"object_deleted_at\" IS NULL OR \"project_document_representation\".\"deleted_at\" IS NOT NULL"
+        }
+      ],
+      "uniqueConstraints": [],
+      "indexes": [
+        {
+          "name": "project_document_representation_file_encoding_active_unique",
+          "unique": true,
+          "columns": [
+            "file_id",
+            "encoding"
+          ],
+          "predicate": "(\"project_document_representation\".\"deleted_at\" is null)"
+        },
+        {
+          "name": "project_document_representation_cleanup_idx",
+          "unique": false,
+          "columns": [
+            "created_at"
+          ],
+          "predicate": "(\"project_document_representation\".\"object_deleted_at\" is null)"
         }
       ]
     },
@@ -14435,6 +14912,12 @@
           "primaryKey": false
         },
         {
+          "name": "excluded_by_moderation",
+          "type": "boolean",
+          "nullable": false,
+          "primaryKey": false
+        },
+        {
           "name": "score",
           "type": "real",
           "nullable": true,
@@ -14569,6 +15052,12 @@
           "primaryKey": false
         },
         {
+          "name": "derived_from_close_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
           "name": "item_count",
           "type": "integer",
           "nullable": false,
@@ -14666,9 +15155,26 @@
             "conversation_id"
           ],
           "onDelete": "no action"
+        },
+        {
+          "name": "ranking_stats_derived_close_fk",
+          "columns": [
+            "derived_from_close_id",
+            "conversation_id"
+          ],
+          "targetTable": "conversation_analysis_close",
+          "targetColumns": [
+            "id",
+            "conversation_id"
+          ],
+          "onDelete": "no action"
         }
       ],
       "checks": [
+        {
+          "name": "comparison_derived_closing_result_check",
+          "expression": "(((\"ranking_conversation_stats_snapshot\".\"derived_from_close_id\" is null)) or (((\"ranking_conversation_stats_snapshot\".\"is_closed\" = true) and ((\"ranking_conversation_stats_snapshot\".\"reused_input_snapshot_id\" is null)))))"
+        },
         {
           "name": "ranking_stats_reused_input_closed_check",
           "expression": "(((\"ranking_conversation_stats_snapshot\".\"reused_input_snapshot_id\" is null)) or (\"ranking_conversation_stats_snapshot\".\"is_closed\" = true))"
@@ -14695,6 +15201,15 @@
             "reused_input_snapshot_id"
           ],
           "predicate": "(\"ranking_conversation_stats_snapshot\".\"reused_input_snapshot_id\" is not null)"
+        },
+        {
+          "name": "comparison_closing_result_revision_unique",
+          "unique": true,
+          "columns": [
+            "derived_from_close_id",
+            "scoring_input_revision"
+          ],
+          "predicate": "(\"ranking_conversation_stats_snapshot\".\"derived_from_close_id\" is not null)"
         },
         {
           "name": "ranking_conversation_stats_snapshot_latest_idx",
@@ -15199,6 +15714,12 @@
           "primaryKey": false
         },
         {
+          "name": "moderation",
+          "type": "text",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
           "name": "position",
           "type": "integer",
           "nullable": false,
@@ -15297,6 +15818,10 @@
           "expression": "(((\"ranking_item\".\"author_id\" is not null)) or (\"ranking_item\".\"is_seed\" = true) or ((\"ranking_item\".\"deleted_at\" is not null)) or ((\"ranking_item\".\"account_hidden_at\" is not null)))"
         },
         {
+          "name": "ranking_item_participant_moderation_check",
+          "expression": "(((\"ranking_item\".\"moderation\" is null)) or (((\"ranking_item\".\"is_seed\" = false) and (\"ranking_item\".\"moderation\" in ('move', 'hide')))))"
+        },
+        {
           "name": "ranking_item_deletion_intent_check",
           "expression": "(((\"ranking_item\".\"deleted_at\" is null)) or ((\"ranking_item\".\"current_content_id\" is null)))"
         }
@@ -15326,6 +15851,15 @@
             "conversation_id",
             "lifecycle_status"
           ]
+        },
+        {
+          "name": "comparison_moderation_history_idx",
+          "unique": false,
+          "columns": [
+            "conversation_id",
+            "id"
+          ],
+          "predicate": "(\"ranking_item\".\"moderation\" is not null)"
         }
       ]
     },
@@ -16443,6 +16977,12 @@
           "primaryKey": false
         },
         {
+          "name": "source_survey_aggregate_snapshot_id",
+          "type": "integer",
+          "nullable": true,
+          "primaryKey": false
+        },
+        {
           "name": "created_at",
           "type": "timestamp (0)",
           "nullable": false,
@@ -16482,6 +17022,17 @@
             "id"
           ],
           "onDelete": "no action"
+        },
+        {
+          "name": "survey_aggregate_snapshot_source_fk",
+          "columns": [
+            "source_survey_aggregate_snapshot_id"
+          ],
+          "targetTable": "survey_aggregate_snapshot",
+          "targetColumns": [
+            "id"
+          ],
+          "onDelete": "no action"
         }
       ],
       "checks": [],
@@ -16500,6 +17051,14 @@
           "columns": [
             "conversation_id"
           ]
+        },
+        {
+          "name": "survey_aggregate_snapshot_source_idx",
+          "unique": false,
+          "columns": [
+            "source_survey_aggregate_snapshot_id"
+          ],
+          "predicate": "(\"survey_aggregate_snapshot\".\"source_survey_aggregate_snapshot_id\" is not null)"
         }
       ]
     },

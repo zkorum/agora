@@ -37,7 +37,7 @@ async function main(): Promise<void> {
         });
     const client = await createPostgresClient(config, log);
     try {
-        const db = drizzle(client);
+        const db = drizzle({ client });
         const cleanupScope = {
             db,
             storage,

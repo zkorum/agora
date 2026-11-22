@@ -108,19 +108,6 @@ describe("read-only comparison retention readiness", () => {
                 "utf8",
             ),
         );
-        await db.transaction(async (tx) => {
-            await tx.execute(
-                sql.raw(
-                    await readFile(
-                        new URL(
-                            "../database/flyway/V0116.2__certify_comparison_input_baselines.sql",
-                            import.meta.url,
-                        ),
-                        "utf8",
-                    ),
-                ),
-            );
-        });
     }, 120_000);
     beforeEach(async () => {
         if (client === undefined) throw new Error("Missing readiness database");

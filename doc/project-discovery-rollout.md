@@ -17,7 +17,7 @@ still qualify. Empty projects and projects
 with only unindexed conversations remain unlisted. The scope is identified by
 `autoProvisionedForOrganizationId`, not by a slug pattern.
 
-The corresponding [Flyway backfill](../services/api/database/flyway/V0118.1__backfill_default_project_directory_visibility.sql)
+The corresponding [Flyway backfill](../services/api/database/flyway/V0116.15__backfill_default_project_directory_visibility.sql)
 changes only project rows and leaves each conversation's indexing intent intact.
 Do not recompute project listing from activities after the backfill. Audit named
 projects with indexed conversations under unlisted parents separately; this
