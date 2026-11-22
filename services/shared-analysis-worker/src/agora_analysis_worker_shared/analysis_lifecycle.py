@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Protocol
 
@@ -8,13 +9,19 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from agora_analysis_worker_shared.generated_models import (
+    AnalysisInputMode,
     AnalysisSnapshot,
+    AnalysisSnapshotResult,
     AnalysisWorkState,
     Conversation,
+    ConversationAnalysisClose,
+    ConversationType,
     ConversationViewSnapshot,
     ConversationViewSnapshotCheckpointReason,
     ConversationViewSnapshotCheckpointReasonEnum,
     OpinionGroupSpec,
+    PolisAnalysisClose,
+    PolisAnalysisCloseGeneration,
     PolisConversationConfig,
 )
 
@@ -24,6 +31,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from sqlalchemy.sql import SQLColumnExpression
     from sqlalchemy.sql.elements import ColumnElement
+    from sqlalchemy.sql.selectable import ScalarSelect
 
 
 class PublicationClaim(Protocol):
@@ -35,6 +43,10 @@ class PublicationClaim(Protocol):
     def data_generation(self) -> int: ...
     @property
     def lease_token(self) -> str: ...
+    @property
+    def opinion_group_spec_id(self) -> int: ...
+    @property
+    def uses_closing_inputs(self) -> bool: ...
 
 
 def closing_retry_ready_condition(
@@ -71,27 +83,127 @@ def lock_analysis_conversations(session: Session, *, conversation_ids: Sequence[
     ).all()
 
 
-def permitted_publication_claim_ids(
+def current_polis_close_condition() -> ColumnElement[bool]:
+    return (
+        (Conversation.id == ConversationAnalysisClose.conversation_id)
+        & (Conversation.vote_buffer_epoch == ConversationAnalysisClose.close_epoch)
+        & (Conversation.closed_finalized_at == ConversationAnalysisClose.finalized_at)
+        & (Conversation.closing_target_revision == ConversationAnalysisClose.source_revision)
+        & Conversation.is_closed.is_(True)
+        & Conversation.vote_buffer_drained.is_(True)
+        & Conversation.deleted_at.is_(None)
+    )
+
+
+def lock_current_polis_close_generation(
+    *, session: Session, claim: PublicationClaim
+) -> PolisAnalysisCloseGeneration | None:
+    lock_analysis_conversations(session, conversation_ids=[claim.conversation_id])
+    return session.scalars(
+        select(PolisAnalysisCloseGeneration)
+        .join(Conversation, Conversation.id == PolisAnalysisCloseGeneration.conversation_id)
+        .join(
+            ConversationAnalysisClose,
+            ConversationAnalysisClose.id == PolisAnalysisCloseGeneration.close_id,
+        )
+        .where(
+            Conversation.id == claim.conversation_id,
+            Conversation.current_content_id.is_not(None),
+            Conversation.conversation_type == ConversationType.polis,
+            Conversation.is_importing.is_(False),
+            current_polis_close_condition(),
+            PolisAnalysisCloseGeneration.data_generation == claim.data_generation,
+            PolisAnalysisCloseGeneration.data_generation
+            == ConversationAnalysisClose.minimum_closing_result_revision,
+        )
+    ).one_or_none()
+
+
+def current_polis_work_revision() -> ColumnElement[int]:
+    """Closing has a close-bound target; Live uses the ordinary config revision."""
+    closing_revision: ScalarSelect[int] = (
+        select(PolisAnalysisCloseGeneration.data_generation)
+        .select_from(ConversationAnalysisClose)
+        .join(
+            PolisAnalysisCloseGeneration,
+            PolisAnalysisCloseGeneration.close_id == ConversationAnalysisClose.id,
+        )
+        .join(PolisAnalysisClose, PolisAnalysisClose.close_id == ConversationAnalysisClose.id)
+        .where(
+            PolisAnalysisClose.opinion_group_spec_id == AnalysisWorkState.opinion_group_spec_id,
+            current_polis_close_condition(),
+            PolisAnalysisCloseGeneration.data_generation
+            == ConversationAnalysisClose.minimum_closing_result_revision,
+        )
+        .correlate(Conversation, AnalysisWorkState)
+        .scalar_subquery()
+    )
+    return case(
+        (AnalysisWorkState.uses_closing_inputs.is_(True), closing_revision),
+        else_=PolisConversationConfig.analysis_data_generation,
+    )
+
+
+@dataclass(frozen=True)
+class AnalysisPublicationAdmission:
+    claim_ids: frozenset[int]
+    initial_close_conversation_ids: frozenset[int]
+
+
+def admit_analysis_publication(
     session: Session, *, claims: Sequence[PublicationClaim]
-) -> set[int]:
+) -> AnalysisPublicationAdmission:
     lock_analysis_conversations(
         session, conversation_ids=[claim.conversation_id for claim in claims]
     )
     states = session.execute(
-        select(Conversation.id, PolisConversationConfig.analysis_data_generation)
+        select(
+            Conversation.id,
+            Conversation.closed_finalized_at,
+            PolisConversationConfig.analysis_data_generation,
+            Conversation.is_closed,
+            Conversation.closing_target_revision,
+        )
         .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
         .where(
             Conversation.id.in_([claim.conversation_id for claim in claims]),
             Conversation.current_content_id.is_not(None),
             Conversation.is_importing.is_(False),
-            Conversation.closed_finalized_at.is_(None),
+            Conversation.deleted_at.is_(None),
+            or_(
+                Conversation.closed_finalized_at.is_(None),
+                Conversation.is_closed.is_(True)
+                & (
+                    PolisConversationConfig.analysis_data_generation
+                    > Conversation.closing_target_revision
+                ),
+            ),
             vote_buffer_ready_for_analysis(),
         )
     ).all()
-    generation_by_conversation = {row.id: row.analysis_data_generation for row in states}
+    state_by_conversation = {row.id: row for row in states}
     permitted: set[int] = set()
+    initial_closes: set[int] = set()
     for claim in claims:
-        if generation_by_conversation.get(claim.conversation_id) == claim.data_generation:
+        if not claim.uses_closing_inputs:
+            state = state_by_conversation.get(claim.conversation_id)
+            allowed = state is not None and state.analysis_data_generation == claim.data_generation
+            if (
+                state is not None
+                and allowed
+                and state.is_closed
+                and state.closed_finalized_at is None
+                and state.closing_target_revision == claim.data_generation
+            ):
+                initial_closes.add(claim.conversation_id)
+        else:
+            binding = lock_current_polis_close_generation(session=session, claim=claim)
+            allowed = (
+                binding is not None
+                and session.get(PolisAnalysisClose, (binding.close_id, claim.opinion_group_spec_id))
+                is not None
+            )
+        if allowed:
             permitted.add(claim.id)
             continue
         # Superseded output is never published. Release its owned lease so the
@@ -118,7 +230,7 @@ def permitted_publication_claim_ids(
                 updated_at=func.now(),
             )
         )
-    return permitted
+    return AnalysisPublicationAdmission(frozenset(permitted), frozenset(initial_closes))
 
 
 def activatable_analysis_view_ids(
@@ -140,7 +252,9 @@ def activatable_analysis_view_ids(
                 ConversationViewSnapshot.id.in_(view_ids),
                 Conversation.current_content_id.is_not(None),
                 Conversation.is_importing.is_(False),
+                Conversation.deleted_at.is_(None),
                 Conversation.closed_finalized_at.is_(None),
+                ConversationViewSnapshot.close_replacement_generation.is_(None),
                 vote_buffer_ready_for_analysis(),
                 AnalysisSnapshot.data_generation
                 == PolisConversationConfig.analysis_data_generation,
@@ -166,6 +280,7 @@ def finalize_closed_analysis(session: Session, *, conversation_ids: list[int]) -
         select(
             Conversation.id,
             Conversation.closing_target_revision,
+            Conversation.vote_buffer_epoch,
             PolisConversationConfig.analysis_data_generation,
         )
         .join(PolisConversationConfig, PolisConversationConfig.id == Conversation.polis_config_id)
@@ -173,6 +288,9 @@ def finalize_closed_analysis(session: Session, *, conversation_ids: list[int]) -
             Conversation.id.in_(conversation_ids),
             Conversation.is_closed.is_(True),
             Conversation.closed_finalized_at.is_(None),
+            Conversation.current_content_id.is_not(None),
+            Conversation.deleted_at.is_(None),
+            Conversation.is_importing.is_(False),
             vote_buffer_ready_for_analysis(),
         )
     ).all()
@@ -185,12 +303,22 @@ def finalize_closed_analysis(session: Session, *, conversation_ids: list[int]) -
                 AnalysisSnapshot,
                 AnalysisSnapshot.id == ConversationViewSnapshot.analysis_snapshot_id,
             )
+            .join(
+                AnalysisSnapshotResult,
+                (AnalysisSnapshotResult.analysis_snapshot_id == AnalysisSnapshot.id)
+                & (AnalysisSnapshotResult.conversation_id == state.id)
+                & (
+                    AnalysisSnapshotResult.opinion_group_spec_id
+                    == ConversationViewSnapshot.opinion_group_spec_id
+                ),
+            )
             .where(
                 ConversationViewSnapshot.conversation_id == state.id,
                 ConversationViewSnapshot.opinion_group_spec_id.in_(spec_ids),
                 ConversationViewSnapshot.is_closed.is_(True),
                 ConversationViewSnapshot.activated_at.is_not(None),
                 AnalysisSnapshot.data_generation == state.analysis_data_generation,
+                AnalysisSnapshot.conversation_id == state.id,
             )
             .order_by(ConversationViewSnapshot.id.desc())
         ).all()
@@ -215,8 +343,29 @@ def finalize_closed_analysis(session: Session, *, conversation_ids: list[int]) -
             .values(values)
             .on_conflict_do_nothing()
         )
-        session.execute(
+        finalized_at = session.execute(
             update(Conversation)
             .where(Conversation.id == state.id)
             .values(closed_finalized_at=func.now())
+            .returning(Conversation.closed_finalized_at)
+        ).scalar_one()
+        close = ConversationAnalysisClose(
+            conversation_id=state.id,
+            close_epoch=state.vote_buffer_epoch,
+            source_revision=state.analysis_data_generation,
+            selected_input_mode=AnalysisInputMode.closing,
+            served_input_mode=AnalysisInputMode.closing,
+            finalized_at=finalized_at,
         )
+        session.add(close)
+        session.flush()
+        session.add_all(
+            PolisAnalysisClose(
+                close_id=close.id,
+                conversation_id=state.id,
+                opinion_group_spec_id=spec_id,
+                original_view_snapshot_id=view_id,
+            )
+            for spec_id, view_id in view_by_spec.items()
+        )
+        session.flush()

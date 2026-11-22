@@ -1,5 +1,19 @@
 {
     "conversation-finalization": [
+        "conversation_analysis_close",
+        "comparison_analysis_close",
+        "polis_analysis_close",
+        "gathering_response",
+        "gathering_response_content",
+        "analysis_input_participant_eligibility",
+        "ranking_input_snapshot",
+        "comparison_input_baseline",
+        "analysis_input_baseline",
+        "ranking_input_participant",
+        "ranking_input_participant_eligibility",
+        "qv_input_snapshot",
+        "qv_input_ballot",
+        "qv_input_ballot_eligibility",
         "qv_calculation_state",
         "qv_calculation",
         "qv_live_stats",
@@ -66,6 +80,11 @@
         "ranking_item_content"
     ],
     "analysis-frame-reads": [
+        "analysis_input_baseline",
+        "analysis_work_state",
+        "conversation_analysis_close",
+        "polis_analysis_close",
+        "polis_analysis_close_generation",
         "user",
         "opinion",
         "opinion_content",
@@ -95,6 +114,8 @@
         "conversation_view_snapshot_checkpoint_reason"
     ],
     "feed-pagination": [
+        "conversation_analysis_close",
+        "comparison_analysis_close",
         "qv_calculation_state",
         "qv_calculation",
         "qv_live_stats",
@@ -145,6 +166,9 @@
         "conversation_content",
         "conversation_moderation",
         "conversation_translation_target_language",
+        "opinion",
+        "opinion_content",
+        "opinion_moderation",
         "survey_config",
         "survey_question",
         "survey_question_content",
@@ -258,6 +282,8 @@
         "notification_import"
     ],
     "project-page-counts": [
+        "conversation_analysis_close",
+        "comparison_analysis_close",
         "qv_calculation_state",
         "qv_calculation",
         "qv_live_stats",
@@ -304,6 +330,8 @@
         "comparison_answer"
     ],
     "conversation-email-update-review": [
+        "gathering_response",
+        "gathering_response_content",
         "user",
         "user_display_language",
         "email",
@@ -355,6 +383,15 @@
     ],
     "security-add-email-backfill": ["user", "email", "phone", "zk_passport"],
     "auth-otp": [
+        "analysis_input_snapshot",
+        "analysis_input_participant_eligibility",
+        "ranking_input_snapshot",
+        "ranking_input_participant_eligibility",
+        "qv_calculation",
+        "qv_input_snapshot",
+        "qv_input_ballot_eligibility",
+        "gathering_response",
+        "gathering_response_content",
         "qv_response",
         "qv_response_version",
         "qv_allocation",
@@ -407,6 +444,10 @@
         "conversation_view_snapshot"
     ],
     "opinion-paging": [
+        "organization",
+        "organization_membership",
+        "project",
+        "project_organization_ownership",
         "survey_config",
         "conversation_moderation",
         "user",
@@ -428,6 +469,8 @@
         "content_translation_work"
     ],
     "conversation-email-update-creation-authorization": [
+        "gathering_response",
+        "gathering_response_content",
         "user",
         "organization",
         "organization_membership",
@@ -474,6 +517,8 @@
         "project_organization_ownership"
     ],
     "conversation-email-update-preference-pagination": [
+        "gathering_response",
+        "gathering_response_content",
         "user",
         "organization",
         "organization_membership",

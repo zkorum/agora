@@ -12,6 +12,7 @@ interface ProjectContactFormInput {
   imagePath: string;
   isFullImagePath: boolean;
   organizationSlug: string | undefined;
+  asksParticipants?: boolean;
 }
 
 function optionalText(value: string): string | undefined {
@@ -40,15 +41,11 @@ export function getProjectContactFormState(input: ProjectContactFormInput) {
     contact.organizationSlug,
   ].some((value) => value !== undefined);
 
+  const requiresEmail = hasInput || input.asksParticipants === true;
   return {
-    requiresOrganization:
-      hasInput &&
-      contact.firstName === undefined &&
-      contact.lastName === undefined,
-    requiresChannel:
-      hasInput &&
-      contact.email === undefined &&
-      contact.websiteUrl === undefined,
-    validation: optionalContactSchema.safeParse(hasInput ? contact : undefined),
+    requiresEmail,
+    validation: optionalContactSchema.safeParse(
+      requiresEmail ? contact : undefined
+    ),
   };
 }

@@ -31,6 +31,12 @@ import {
 } from "../src/service/realtimeEventDispatch.js";
 import { getComparisonResults } from "../src/service/comparison.js";
 import { fetchRankingItems } from "../src/service/rankingItem.js";
+import { setRetainedParticipantAccountHidden } from "../src/shared-backend/retainedParticipantEligibility.js";
+import {
+    QV_CREDIT_BUDGET,
+    QV_RULE_VERSION,
+    QV_ALGORITHM_VERSION,
+} from "../src/shared/utils/qv.js";
 
 const MATRIX =
     "KLUv/SDVhQMAogUTF5CnHQuBKA1MxYna2Iarao8jwiCt/1gCS7COuLEOrUA7bGlWATS074lkYQmKbAC+07DynzTfBtdm42d7ByQ/i41DK0za+ROdTe1qKg0AgBCsKq1qRU4YgORI0OeVwBUCykm+5mmjjG42ABXmEw==";
@@ -64,7 +70,10 @@ describe("purge-safe identity and source contracts", () => {
         db = drizzle({ client });
         const pool = new Pool(connection);
         try {
-            const exported = await pushSchema(schema, drizzlePg({ client: pool }));
+            const exported = await pushSchema(
+                schema,
+                drizzlePg({ client: pool }),
+            );
             await exported.apply();
         } finally {
             await pool.end();
@@ -91,6 +100,15 @@ describe("purge-safe identity and source contracts", () => {
             CREATE TRIGGER vote_bind_conversation_participant BEFORE INSERT OR UPDATE OF author_id, opinion_id, participant_id ON vote FOR EACH ROW EXECUTE FUNCTION bind_conversation_participant();
             CREATE TRIGGER opinion_group_user_bind_conversation_participant BEFORE INSERT OR UPDATE OF user_id, candidate_id, participant_id ON opinion_group_user FOR EACH ROW EXECUTE FUNCTION bind_conversation_participant();
         `);
+        await client.unsafe(
+            readFileSync(
+                new URL(
+                    "../scripts/prepare-retained-participant-eligibility-contract.sql",
+                    import.meta.url,
+                ),
+                "utf8",
+            ),
+        );
         await client.unsafe(
             readFileSync(
                 new URL(
@@ -395,7 +413,244 @@ describe("purge-safe identity and source contracts", () => {
         ).rejects.toMatchObject({ cause: { code: "23514" } });
     });
 
-    it("redacts ranking checkpoints without changing numbers and permits private content erasure", async () => {
+    it("preserves numerical account-exclusion markers through recovery and irreversible unlinking", async () => {
+        const f = await seed();
+        const comparisonConfig = first(
+            await db
+                .insert(schema.rankingConversationConfigTable)
+                .values({ rankingMode: "bws" })
+                .returning(),
+        );
+        const qvConfig = first(
+            await db.insert(schema.qvConfigTable).values({}).returning(),
+        );
+        const comparisonConversation = first(
+            await db
+                .insert(schema.conversationTable)
+                .values({
+                    slugId: "eligcmp1",
+                    projectId: f.project.id,
+                    conversationType: "prioritizing",
+                    prioritizationType: "comparisons",
+                    rankingConfigId: comparisonConfig.id,
+                })
+                .returning(),
+        );
+        const qvConversation = first(
+            await db
+                .insert(schema.conversationTable)
+                .values({
+                    slugId: "eligqv01",
+                    projectId: f.project.id,
+                    conversationType: "prioritizing",
+                    prioritizationType: "qv",
+                    creditVotingConfigId: qvConfig.id,
+                })
+                .returning(),
+        );
+        const comparisonInput = first(
+            await db
+                .insert(schema.rankingInputSnapshotTable)
+                .values({
+                    conversationId: comparisonConversation.id,
+                    comparisonMethod: "bws",
+                    scoringInputRevision: 0,
+                    algorithmVersion: 1,
+                    solidagoVersion: "test",
+                    pipelineConfig: {},
+                    participantCount: 1,
+                    itemCount: 0,
+                    answerCount: 0,
+                })
+                .returning(),
+        );
+        await db.insert(schema.rankingInputParticipantTable).values({
+            inputSnapshotId: comparisonInput.id,
+            participantIndex: 0,
+        });
+        await db.insert(schema.rankingInputParticipantEligibilityTable).values({
+            inputSnapshotId: comparisonInput.id,
+            participantIndex: 0,
+            userId: f.owner.id,
+        });
+        const calculation = first(
+            await db
+                .insert(schema.qvCalculationTable)
+                .values({
+                    conversationId: qvConversation.id,
+                    generation: 1,
+                })
+                .returning(),
+        );
+        const qvInput = first(
+            await db
+                .insert(schema.qvInputSnapshotTable)
+                .values({
+                    calculationId: calculation.id,
+                    creditBudget: QV_CREDIT_BUDGET,
+                    creditPricing: "quadratic",
+                    allowOpposition: true,
+                    statementSetRevision: 0,
+                    ruleVersion: QV_RULE_VERSION,
+                    algorithmVersion: QV_ALGORITHM_VERSION,
+                    participantCount: 1,
+                })
+                .returning(),
+        );
+        await db.insert(schema.qvInputBallotTable).values({
+            snapshotId: qvInput.id,
+            ballotIndex: 0,
+        });
+        await db.insert(schema.qvInputBallotEligibilityTable).values({
+            snapshotId: qvInput.id,
+            ballotIndex: 0,
+            userId: f.owner.id,
+        });
+        await db
+            .insert(schema.analysisInputParticipantEligibilityTable)
+            .values([
+                {
+                    inputSnapshotId: f.input.id,
+                    participantIndex: 0,
+                    userId: f.owner.id,
+                },
+                {
+                    inputSnapshotId: f.input.id,
+                    participantIndex: 1,
+                    userId: f.other.id,
+                },
+            ]);
+        const hiddenAt = new Date("2026-11-15T10:00:00Z");
+        const change = async (value: Date | null) =>
+            await db.transaction(async (tx) => {
+                await tx
+                    .select({ id: schema.userTable.id })
+                    .from(schema.userTable)
+                    .where(eq(schema.userTable.id, f.owner.id))
+                    .for("no key update");
+                await setRetainedParticipantAccountHidden({
+                    db: tx,
+                    userId: f.owner.id,
+                    isAccountHidden: value !== null,
+                });
+            });
+        await change(hiddenAt);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.analysisInputParticipantEligibilityTable)
+                    .where(
+                        eq(
+                            schema.analysisInputParticipantEligibilityTable
+                                .userId,
+                            f.owner.id,
+                        ),
+                    ),
+            ).isAccountHidden,
+        ).toBe(true);
+        await change(null);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.rankingInputParticipantEligibilityTable),
+            ).isAccountHidden,
+        ).toBe(false);
+        expect(
+            first(await db.select().from(schema.qvInputBallotEligibilityTable))
+                .isAccountHidden,
+        ).toBe(false);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.analysisInputParticipantEligibilityTable)
+                    .where(
+                        eq(
+                            schema.analysisInputParticipantEligibilityTable
+                                .userId,
+                            f.owner.id,
+                        ),
+                    ),
+            ).isAccountHidden,
+        ).toBe(false);
+        await change(hiddenAt);
+        await db
+            .update(schema.userTable)
+            .set({ isDeleted: true, purgeStartedAt: new Date() })
+            .where(eq(schema.userTable.id, f.owner.id));
+        await db.transaction(
+            async (tx) =>
+                await unlinkAccountRetainedContributions({
+                    db: tx,
+                    userId: f.owner.id,
+                }),
+        );
+        const detached = first(
+            await db
+                .select()
+                .from(schema.analysisInputParticipantEligibilityTable)
+                .where(
+                    isNull(
+                        schema.analysisInputParticipantEligibilityTable.userId,
+                    ),
+                ),
+        );
+        expect(detached).toEqual({
+            inputSnapshotId: f.input.id,
+            participantIndex: 0,
+            userId: null,
+            isAccountHidden: true,
+        });
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.rankingInputParticipantEligibilityTable),
+            ),
+        ).toMatchObject({
+            userId: null,
+            isAccountHidden: true,
+            participantIndex: 0,
+        });
+        expect(
+            first(await db.select().from(schema.qvInputBallotEligibilityTable)),
+        ).toMatchObject({
+            userId: null,
+            isAccountHidden: true,
+            ballotIndex: 0,
+        });
+        await change(null);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.analysisInputParticipantEligibilityTable)
+                    .where(
+                        isNull(
+                            schema.analysisInputParticipantEligibilityTable
+                                .userId,
+                        ),
+                    ),
+            ),
+        ).toEqual(detached);
+        await expect(
+            db
+                .update(schema.analysisInputParticipantEligibilityTable)
+                .set({ userId: f.other.id })
+                .where(
+                    isNull(
+                        schema.analysisInputParticipantEligibilityTable.userId,
+                    ),
+                ),
+        ).rejects.toMatchObject({ cause: { code: "23514" } });
+        expect(
+            first(await db.select().from(schema.analysisInputSnapshotTable)),
+        ).toEqual(f.input);
+    });
+
+    it("retains account-hidden ranking checkpoint text, then redacts explicit content deletion without changing numbers", async () => {
         const { owner, project, spec } = await seed();
         const config = first(
             await db
@@ -446,6 +701,7 @@ describe("purge-safe identity and source contracts", () => {
                     title: "Private ranking statement",
                     body: "Private body",
                     bodyPlainText: "Private body",
+                    sourceLanguageCode: "en",
                 })
                 .returning(),
         );
@@ -523,7 +779,34 @@ describe("purge-safe identity and source contracts", () => {
             .update(schema.userTable)
             .set({ isDeleted: true, deletedAt: new Date() })
             .where(eq(schema.userTable.id, owner.id));
-        const redacted = first((await getComparisonResults(request)).rankings);
+        expect(
+            first((await getComparisonResults(request)).rankings).isDeleted,
+        ).toBe(true);
+        // A project seed survives a missing administrator, but an explicit
+        // legacy hiding marker still needs historical-retention permission.
+        await db
+            .update(schema.rankingItemTable)
+            .set({ isSeed: true })
+            .where(eq(schema.rankingItemTable.id, item.id));
+        expect(
+            first((await getComparisonResults(request)).rankings).isDeleted,
+        ).toBe(false);
+        await db
+            .update(schema.rankingItemTable)
+            .set({ accountHiddenAt: new Date() })
+            .where(eq(schema.rankingItemTable.id, item.id));
+        expect(
+            first((await getComparisonResults(request)).rankings).isDeleted,
+        ).toBe(true);
+        await db
+            .update(schema.rankingItemTable)
+            .set({
+                isSeed: false,
+                accountHiddenAt: new Date(),
+                accountHiddenContentRetained: true,
+            })
+            .where(eq(schema.rankingItemTable.id, item.id));
+        const retained = first((await getComparisonResults(request)).rankings);
         expect(
             first(
                 await db.select().from(schema.rankingConversationConfigTable),
@@ -540,6 +823,67 @@ describe("purge-safe identity and source contracts", () => {
                     .where(eq(schema.conversationTable.id, conversation.id)),
             ).closingTargetRevision,
         ).toBe(1);
+        expect(retained).toMatchObject({
+            isDeleted: false,
+            itemSlugId: item.slugId,
+            avgRank: 1,
+            score: 0.75,
+            participantCount: 3,
+            displayContent: { translationControl: null },
+        });
+        expect(JSON.stringify(retained)).toContain("Private ranking statement");
+        expect((await fetchRankingItems(request)).items).toEqual([]);
+        await db.insert(schema.rankingItemContentTranslationTable).values({
+            rankingItemContentId: content.id,
+            displayLanguageCode: "fr",
+            translatedTitle: "Proposition conservée",
+            sourceLanguageCode: "en",
+        });
+        const translatedRequest = {
+            ...request,
+            displayPreferences: {
+                ...request.displayPreferences,
+                displayLanguage: "fr",
+                targetLanguage: "fr",
+                spokenLanguages: [],
+                translationAllowed: true,
+            } satisfies Parameters<
+                typeof getComparisonResults
+            >[0]["displayPreferences"],
+        };
+        expect(
+            first((await getComparisonResults(translatedRequest)).rankings),
+        ).toMatchObject({
+            isDeleted: false,
+            displayContent: {
+                status: "available",
+                mode: "translated",
+                content: { title: "Proposition conservée" },
+                translationControl: null,
+            },
+        });
+        await db
+            .update(schema.rankingItemTable)
+            .set({
+                accountHiddenAt: new Date(),
+                authorId: null,
+            })
+            .where(eq(schema.rankingItemTable.id, item.id));
+        expect(first((await getComparisonResults(request)).rankings)).toEqual(
+            retained,
+        );
+        await db
+            .update(schema.rankingItemTable)
+            .set({
+                deletedAt: new Date(),
+                currentContentId: null,
+            })
+            .where(eq(schema.rankingItemTable.id, item.id));
+        const redacted = first((await getComparisonResults(request)).rankings);
+        expect(
+            first((await getComparisonResults(translatedRequest)).rankings)
+                .displayContent,
+        ).toBeNull();
         expect(redacted).toEqual({
             isDeleted: true,
             itemSlugId: item.slugId,
@@ -550,7 +894,6 @@ describe("purge-safe identity and source contracts", () => {
             participantCount: 3,
             lifecycleStatus: "active",
         });
-        expect((await fetchRankingItems(request)).items).toEqual([]);
         await expect(
             db
                 .update(schema.rankingConversationStatsItemTable)
@@ -571,6 +914,15 @@ describe("purge-safe identity and source contracts", () => {
                 authorId: null,
             })
             .where(eq(schema.rankingItemTable.id, item.id));
+        await db
+            .delete(schema.rankingItemContentTranslationTable)
+            .where(
+                eq(
+                    schema.rankingItemContentTranslationTable
+                        .rankingItemContentId,
+                    content.id,
+                ),
+            );
         await db
             .delete(schema.rankingItemContentTable)
             .where(eq(schema.rankingItemContentTable.id, content.id));
@@ -662,6 +1014,13 @@ describe("purge-safe identity and source contracts", () => {
 
     it("retains distinct numerical participants, matrices, metrics and checkpoints after account removal", async () => {
         const fixture = await seed();
+        await db
+            .update(schema.opinionTable)
+            .set({
+                accountHiddenAt: new Date(),
+                accountHiddenContentRetained: true,
+            })
+            .where(eq(schema.opinionTable.id, fixture.opinion.id));
         const before = await db
             .select()
             .from(schema.opinionGroupUserTable)
@@ -683,13 +1042,6 @@ describe("purge-safe identity and source contracts", () => {
             participants: 1,
             memberships: 1,
         });
-        await db
-            .update(schema.opinionTable)
-            .set({ currentContentId: null })
-            .where(eq(schema.opinionTable.id, fixture.opinion.id));
-        await db
-            .delete(schema.opinionContentTable)
-            .where(eq(schema.opinionContentTable.id, fixture.source.id));
         await db
             .delete(schema.userTable)
             .where(eq(schema.userTable.id, fixture.owner.id));
@@ -721,7 +1073,6 @@ describe("purge-safe identity and source contracts", () => {
                 candidateId: fixture.candidate.id,
             },
             kind: "agreements",
-            freshnessOptions: null,
             resolveDisplayContentPreferences: async () => ({
                 displayLanguage: "en",
                 targetLanguage: "en",
@@ -730,11 +1081,18 @@ describe("purge-safe identity and source contracts", () => {
             }),
         });
         expect(list.items).toHaveLength(1);
-        expect(list.items[0].content).toEqual({
-            status: "redacted",
-            reason: "statement_deleted",
+        expect(list.items[0].content).toMatchObject({
+            status: "visible",
+            html: "Private original",
+            displayContent: { translationControl: null },
         });
-        expect(JSON.stringify(list)).not.toContain("Private original");
+        expect(list.items[0].username).toBeUndefined();
+        expect(list.items[0].createdAt).toBeUndefined();
+        expect(
+            list.items[0].clustersStats.every(
+                (stats) => stats.isAuthorInCluster === undefined,
+            ),
+        ).toBe(true);
         expect(list.items[0].numAgrees).toBe(1);
         expect(list.items[0].numDisagrees).toBe(1);
     });

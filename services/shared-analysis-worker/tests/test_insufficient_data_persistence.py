@@ -48,6 +48,7 @@ from agora_analysis_worker_shared.generated_models import (
     SurveyQuestionType,
 )
 from agora_analysis_worker_shared.input_snapshot import VoteInputRow, prepare_input_snapshot
+from agora_analysis_worker_shared.retained_inputs import LiveAnalysisResultInput
 
 if TYPE_CHECKING:
     from sqlalchemy.sql.elements import ColumnElement
@@ -204,7 +205,7 @@ def test_empty_vote_matrix_publishes_activated_zero_count_snapshot(
                 non_retryable_analysis_engine_epoch=None,
                 lease_owner="math-updater",
                 lease_token=lease_token,
-                lease_expires_at=NOW + timedelta(minutes=5),
+                lease_expires_at=datetime.now(UTC) + timedelta(minutes=5),
                 last_error_kind=None,
                 last_error_code=None,
                 last_error_message=None,
@@ -242,7 +243,7 @@ def test_empty_vote_matrix_publishes_activated_zero_count_snapshot(
                 input_hash=prepared_snapshot.input_hash,
             )
         },
-        prepared_input_snapshots_by_conversation_id={10: prepared_snapshot},
+        inputs_by_conversation_id={10: LiveAnalysisResultInput(numerical=prepared_snapshot)},
     )
 
     with Session(engine) as session:
@@ -403,7 +404,7 @@ def test_collapsed_projection_is_persisted_and_waits_for_new_generation(
                 id=50, conversation_id=10, data_generation=2, input_hash=snapshot.input_hash
             )
         },
-        prepared_input_snapshots_by_conversation_id={10: snapshot},
+        inputs_by_conversation_id={10: LiveAnalysisResultInput(numerical=snapshot)},
         bundles_by_conversation_id={10: bundle},
         ai_generation_expected=True,
     )

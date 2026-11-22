@@ -45,6 +45,7 @@ function snapshotOpinionRow(
         currentContentId: 3,
         deletedAt: null,
         accountHiddenAt: null,
+        accountHiddenContentRetained: false,
         numAgrees: 4,
         numDisagrees: 2,
         numPasses: 1,
@@ -105,9 +106,7 @@ describe("opinion translation visibility", () => {
 describe("checkpoint opinion content projection", () => {
     it.each([
         { currentContentId: null },
-        { authorIsDeleted: true },
-        { authorId: null, authorIsDeleted: null, accountHiddenAt: new Date() },
-        { authorIsDeleted: false, accountHiddenAt: new Date() },
+        { deletedAt: new Date() },
         { opinion: null, opinionContentId: null, contentPublicId: null },
     ])(
         "redacts the entire checkpoint DTO while preserving its numerical rows",
@@ -127,6 +126,7 @@ describe("checkpoint opinion content projection", () => {
                 ],
                 displayContentPreferences,
                 viewerUserId: undefined,
+                frameMode: "checkpoint",
             });
             expect(item.content).toEqual({
                 status: "redacted",
@@ -157,6 +157,44 @@ describe("checkpoint opinion content projection", () => {
         },
     );
 
+    it.each([
+        { authorIsDeleted: true },
+        { authorId: null, authorIsDeleted: null, accountHiddenAt: new Date() },
+        { authorIsDeleted: false, accountHiddenAt: new Date() },
+    ])(
+        "retains account-hidden historical text without attribution or new translation access",
+        (overrides) => {
+            const row = snapshotOpinionRow({
+                ...overrides,
+                accountHiddenContentRetained: true,
+            });
+            const item = buildAnalysisOpinionItem({
+                row,
+                conversationParticipantCount: 100,
+                clustersStats: [],
+                displayContentPreferences,
+                viewerUserId: undefined,
+                frameMode: "checkpoint",
+            });
+            expect(item.content).toMatchObject({
+                status: "visible",
+                html: "SECRET ORIGINAL",
+                displayContent: { translationControl: null },
+            });
+            expect(item.username).toBeUndefined();
+            expect(item.createdAt).toBeUndefined();
+            expect(item.updatedAt).toBeUndefined();
+            expect(
+                buildAnalysisOpinionContent({
+                    row,
+                    displayContentPreferences,
+                    viewerUserId: undefined,
+                    frameMode: "live",
+                }),
+            ).toEqual({ status: "redacted", reason: "statement_deleted" });
+        },
+    );
+
     it("retains project seed text without exposing its deleted administrator", () => {
         const item = buildAnalysisOpinionItem({
             row: snapshotOpinionRow({ isSeed: true, authorIsDeleted: true }),
@@ -164,9 +202,51 @@ describe("checkpoint opinion content projection", () => {
             clustersStats: [],
             displayContentPreferences,
             viewerUserId: undefined,
+            frameMode: "checkpoint",
         });
         expect(item.content.status).toBe("visible");
         expect(item.username).toBeUndefined();
+    });
+
+    it("displays an existing historical translation without offering new provider requests", () => {
+        const content = buildAnalysisOpinionContent({
+            row: snapshotOpinionRow({
+                authorIsDeleted: true,
+                accountHiddenAt: new Date(),
+                accountHiddenContentRetained: true,
+            }),
+            displayContentPreferences: {
+                ...displayContentPreferences,
+                displayLanguage: "fr",
+                spokenLanguages: [],
+            },
+            viewerUserId: undefined,
+            frameMode: "checkpoint",
+        });
+        expect(content).toMatchObject({
+            status: "visible",
+            displayContent: {
+                mode: "translated",
+                content: { content: "SECRET TRANSLATION" },
+                translationControl: null,
+            },
+        });
+    });
+
+    it("does not reveal unclassified legacy account-hidden text", () => {
+        const content = buildAnalysisOpinionContent({
+            row: snapshotOpinionRow({
+                authorIsDeleted: true,
+                accountHiddenAt: new Date(),
+            }),
+            displayContentPreferences,
+            viewerUserId: undefined,
+            frameMode: "checkpoint",
+        });
+        expect(content).toEqual({
+            status: "redacted",
+            reason: "statement_deleted",
+        });
     });
 
     it("does not interpret literal deletion-placeholder text as deleted", () => {
@@ -174,6 +254,7 @@ describe("checkpoint opinion content projection", () => {
             row: snapshotOpinionRow({ opinion: "[deleted]" }),
             displayContentPreferences,
             viewerUserId: undefined,
+            frameMode: "checkpoint",
         });
         expect(content.status).toBe("visible");
     });
@@ -188,6 +269,7 @@ describe("checkpoint opinion content projection", () => {
             }),
             displayContentPreferences,
             viewerUserId: undefined,
+            frameMode: "checkpoint",
         });
 
         expect(content).toEqual({
@@ -202,6 +284,7 @@ describe("checkpoint opinion content projection", () => {
             row: snapshotOpinionRow({ currentContentId: null }),
             displayContentPreferences,
             viewerUserId: undefined,
+            frameMode: "checkpoint",
         });
 
         expect(content).toEqual({
@@ -222,6 +305,7 @@ describe("checkpoint opinion content projection", () => {
             }),
             displayContentPreferences,
             viewerUserId: undefined,
+            frameMode: "checkpoint",
         });
 
         expect(content).toMatchObject({

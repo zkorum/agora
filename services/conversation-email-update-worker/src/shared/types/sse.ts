@@ -8,6 +8,7 @@ import {
     zodRegularNotificationItem,
     zodParticipationMode,
     zodConversationTypeConfig,
+    zodComparisonCloseSelectionVersion,
     zodParticipantStatements,
     zodPreferredOpinionGroupCount,
     zodProjectSlug,
@@ -124,6 +125,11 @@ const zodSSEConversationAnalysisUpdatedBaseData = z
         moderatedOpinionCount: z.number().int().nonnegative().optional(),
         hiddenOpinionCount: z.number().int().nonnegative().optional(),
         isClosed: z.boolean().optional(),
+        closedSelectionChanged: z.literal(true).optional(),
+        closingCheckpointIds: z
+            .array(z.number().int().positive())
+            .min(1)
+            .optional(),
         timestamp: z.number(),
     })
     .strict();
@@ -202,6 +208,9 @@ export const zodSSEConversationRankingStatsUpdatedData = z
         conversationSlugId: zodSlugId,
         rankingStatsSnapshotId: z.number().int().positive(),
         checkpointChanged: z.boolean(),
+        closedSelectionChanged: z.literal(true).optional(),
+        comparisonCloseSelectionVersion:
+            zodComparisonCloseSelectionVersion.optional(),
         opinionCount: z.number().int().nonnegative(),
         voteCount: z.number().int().nonnegative(),
         participantCount: z.number().int().nonnegative(),
@@ -233,6 +242,10 @@ export const zodSSEConversationSettingsData = z
         isClosed: z.boolean(),
         isFinalizing: z.boolean().optional(),
         projectAssignment: zodConversationProjectAssignment.optional(),
+        gathering: z
+            .object({ allowNewResponses: z.boolean() })
+            .strict()
+            .optional(),
     })
     .strict()
     .refine(
@@ -240,10 +253,22 @@ export const zodSSEConversationSettingsData = z
             settings.participantStatements === undefined ||
             settings.participantStatements.supported ===
                 (settings.presentation.conversationType === "polis" ||
-                    settings.presentation.prioritizationType === "comparisons"),
+                    (settings.presentation.conversationType ===
+                        "prioritizing" &&
+                        settings.presentation.prioritizationType ===
+                            "comparisons")),
         {
             path: ["participantStatements"],
             message: "Statement capability must match the conversation family",
+        },
+    )
+    .refine(
+        (settings) =>
+            settings.gathering === undefined ||
+            settings.presentation.conversationType === "gathering",
+        {
+            path: ["gathering"],
+            message: "Gathering settings require a Gathering conversation",
         },
     );
 export type SSEConversationSettingsData = z.infer<
@@ -370,6 +395,8 @@ export const zodSSEEventDataByType = {
             conversationSlugId: zodSlugId,
             generation: z.number().int().positive(),
             status: z.enum(["open", "calculating", "ready", "failed"]),
+            closeId: z.number().int().positive().optional(),
+            closedSelectionChanged: z.literal(true).optional(),
         })
         .strict(),
     opinion_source_changed: z
@@ -400,7 +427,12 @@ export const zodSSEEventDataByType = {
                     z
                         .object({
                             opinionSlugId: zodSlugId,
-                            action: z.enum(["redact", "unlink_author"]),
+                            action: z.enum([
+                                "redact",
+                                "unlink_author",
+                                "hide_account",
+                                "restore_account",
+                            ]),
                         })
                         .strict(),
                 )

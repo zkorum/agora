@@ -5,7 +5,7 @@ import {
 } from "@/shared/types/zod.js";
 import {
     conversationTable,
-    creditVotingConfigTable,
+    qvConfigTable,
     polisConversationConfigTable,
     rankingConversationConfigTable,
 } from "@/shared-backend/schema.js";
@@ -40,7 +40,7 @@ export async function fetchCurrentConversationTypeSettings({
             prioritizationType: conversationTable.prioritizationType,
             votingPresentation: polisConversationConfigTable.votingPresentation,
             rankingMode: rankingConversationConfigTable.rankingMode,
-            allowOpposition: creditVotingConfigTable.allowOpposition,
+            allowOpposition: qvConfigTable.allowOpposition,
             aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
             preferredOpinionGroupCount:
                 polisConversationConfigTable.preferredOpinionGroupCount,
@@ -65,11 +65,8 @@ export async function fetchCurrentConversationTypeSettings({
             ),
         )
         .leftJoin(
-            creditVotingConfigTable,
-            eq(
-                creditVotingConfigTable.id,
-                conversationTable.creditVotingConfigId,
-            ),
+            qvConfigTable,
+            eq(qvConfigTable.id, conversationTable.creditVotingConfigId),
         )
         .where(eq(conversationTable.id, conversationId));
     const row = rows.at(0);
@@ -83,14 +80,15 @@ export async function fetchCurrentConversationTypeSettings({
 }
 
 export function parseStoredParticipantStatements(row: {
-    conversationType: "polis" | "prioritizing";
+    conversationType: "polis" | "prioritizing" | "gathering";
     prioritizationType: "comparisons" | "qv" | null;
     polisAllowParticipantStatements: boolean | null;
     comparisonAllowParticipantStatements: boolean | null;
 }) {
     if (
-        row.conversationType === "prioritizing" &&
-        row.prioritizationType === "qv"
+        row.conversationType === "gathering" ||
+        (row.conversationType === "prioritizing" &&
+            row.prioritizationType === "qv")
     )
         return zodParticipantStatements.parse({ supported: false });
     return zodParticipantStatements.parse({
@@ -113,7 +111,7 @@ type StoredConversationTypeConfig = Pick<
         | (typeof rankingConversationConfigTable.$inferSelect)["rankingMode"]
         | null;
     allowOpposition:
-        | (typeof creditVotingConfigTable.$inferSelect)["allowOpposition"]
+        | (typeof qvConfigTable.$inferSelect)["allowOpposition"]
         | null;
 };
 
@@ -124,6 +122,7 @@ export function parseStoredConversationTypeConfig({
     rankingMode,
     allowOpposition,
 }: StoredConversationTypeConfig): ConversationTypeConfig {
+    if (conversationType === "gathering") return { conversationType };
     if (conversationType === "polis") {
         return zodConversationTypeConfig.parse({
             conversationType,

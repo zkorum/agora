@@ -189,6 +189,25 @@ export async function isUserPartOfOrganization({
     return result[0].organizationId;
 }
 
+export async function isCurrentOrganizationMember({
+    db,
+    userId,
+    organizationSlug,
+}: {
+    db: PostgresDatabase;
+    userId: string;
+    organizationSlug: string;
+}): Promise<boolean> {
+    // A single read on the primary sees committed membership revocations.
+    return (
+        (await isUserPartOfOrganization({
+            db: getPrimaryDatabase(db),
+            userId,
+            organizationName: organizationSlug,
+        })) !== undefined
+    );
+}
+
 interface IsUserPartOfOrganizationByIdProps {
     db: PostgresDatabase;
     userId: string;

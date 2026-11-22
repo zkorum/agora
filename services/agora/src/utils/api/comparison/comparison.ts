@@ -393,7 +393,57 @@ export function useComparisonApi() {
       });
     return isCurrent() ? data : undefined;
   }
+  async function moderateItem({
+    request,
+    signal,
+  }: {
+    request: z.infer<typeof Dto.moderateComparisonItemRequest>;
+    signal: AbortSignal;
+  }): Promise<void> {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1PrioritizationComparisonsStatementsModeratePost(
+        request
+      );
+    const encodedUcan = await buildEncodedUcan(url, options);
+    signal.throwIfAborted();
+    await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1PrioritizationComparisonsStatementsModeratePost(
+      request,
+      createRawAxiosRequestConfig({ encodedUcan, signal })
+    );
+  }
+  async function moderationHistory({
+    request,
+    signed,
+    signal,
+  }: {
+    request: z.infer<typeof Dto.comparisonModerationHistoryRequest>;
+    signed: boolean;
+    signal: AbortSignal;
+  }) {
+    const { url, options } =
+      await DefaultApiAxiosParamCreator().apiV1PrioritizationComparisonsStatementsModerationHistoryPost(
+        request
+      );
+    const encodedUcan = signed
+      ? await buildEncodedUcan(url, options)
+      : undefined;
+    const response = await DefaultApiFactory(
+      undefined,
+      undefined,
+      api
+    ).apiV1PrioritizationComparisonsStatementsModerationHistoryPost(
+      request,
+      createRawAxiosRequestConfig({ encodedUcan, signal })
+    );
+    return Dto.comparisonModerationHistoryResponse.parse(response.data);
+  }
   return {
+    moderateItem,
+    moderationHistory,
     createStatement,
     saveComparisonResponse,
     loadComparisonResponse,

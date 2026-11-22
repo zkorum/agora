@@ -1,209 +1,204 @@
 -- WARNING: GENERATED FROM services/shared-backend/src/schema.ts. DO NOT EDIT.
 -- Regenerate with: make sync-api-test-db-fixtures
 
-CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');
+CREATE TYPE "conversation_language_settings_source" AS ENUM('conversation_override', 'project_inherited');
 
-CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'prioritizing');
+CREATE TYPE "conversation_type" AS ENUM('gathering', 'polis', 'prioritizing');
 
-CREATE TYPE "public"."event_slug" AS ENUM('devconnect-2025');
+CREATE TYPE "event_slug" AS ENUM('devconnect-2025');
 
-CREATE TYPE "public"."export_cancellation_reason_enum" AS ENUM('duplicate_in_batch', 'cooldown_active');
+CREATE TYPE "export_cancellation_reason_enum" AS ENUM('duplicate_in_batch', 'cooldown_active');
 
-CREATE TYPE "public"."export_failure_reason_enum" AS ENUM('processing_error', 'timeout', 'server_restart');
+CREATE TYPE "export_failure_reason_enum" AS ENUM('processing_error', 'timeout', 'server_restart');
 
-CREATE TYPE "public"."export_generation_status_enum" AS ENUM('collecting', 'queued', 'processing', 'completed', 'failed');
+CREATE TYPE "export_generation_status_enum" AS ENUM('collecting', 'queued', 'processing', 'completed', 'failed');
 
-CREATE TYPE "public"."export_status_enum" AS ENUM('processing', 'completed', 'failed', 'cancelled');
+CREATE TYPE "export_status_enum" AS ENUM('processing', 'completed', 'failed', 'cancelled');
 
-CREATE TYPE "public"."import_failure_reason_enum" AS ENUM('processing_error', 'timeout', 'server_restart', 'invalid_data_format');
+CREATE TYPE "import_failure_reason_enum" AS ENUM('processing_error', 'timeout', 'server_restart', 'invalid_data_format');
 
-CREATE TYPE "public"."import_status_enum" AS ENUM('processing', 'completed', 'failed');
+CREATE TYPE "import_status_enum" AS ENUM('processing', 'completed', 'failed');
 
-CREATE TYPE "public"."participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
+CREATE TYPE "participation_mode" AS ENUM('account_required', 'strong_verification', 'email_verification', 'guest');
 
 CREATE TABLE "conversation_export_generation" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_export_generation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"slug_id" varchar(8) NOT NULL,
+	"slug_id" varchar(8) NOT NULL UNIQUE,
 	"conversation_id" integer NOT NULL,
-	"status" "export_generation_status_enum" DEFAULT 'collecting' NOT NULL,
-	"collecting_ends_at" timestamp (0) NOT NULL,
+	"status" "export_generation_status_enum" DEFAULT 'collecting'::"export_generation_status_enum" NOT NULL,
+	"collecting_ends_at" timestamp(0) NOT NULL,
 	"source_data_generation" integer,
 	"attempts" integer DEFAULT 0 NOT NULL,
-	"next_attempt_at" timestamp (0),
-	"started_at" timestamp (0),
-	"heartbeat_at" timestamp (0),
-	"completed_at" timestamp (0),
-	"failed_at" timestamp (0),
+	"next_attempt_at" timestamp(0),
+	"started_at" timestamp(0),
+	"heartbeat_at" timestamp(0),
+	"completed_at" timestamp(0),
+	"failed_at" timestamp(0),
 	"failure_reason" "export_failure_reason_enum",
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "conversation_export_generation_slug_id_unique" UNIQUE("slug_id")
+	"created_at" timestamp(0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp(0) DEFAULT now() NOT NULL
 );
 
 CREATE TABLE "conversation_export_request" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_export_request_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"slug_id" varchar(8) NOT NULL,
+	"slug_id" varchar(8) NOT NULL UNIQUE,
 	"conversation_id" integer NOT NULL,
 	"generation_id" integer NOT NULL,
 	"user_id" uuid NOT NULL,
-	"status" "export_status_enum" DEFAULT 'processing' NOT NULL,
+	"status" "export_status_enum" DEFAULT 'processing'::"export_status_enum" NOT NULL,
 	"failure_reason" "export_failure_reason_enum",
 	"cancellation_reason" "export_cancellation_reason_enum",
-	"expires_at" timestamp (0) NOT NULL,
-	"deleted_at" timestamp (0),
-	"started_notified_at" timestamp (0),
-	"completed_notified_at" timestamp (0),
-	"failed_notified_at" timestamp (0),
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "conversation_export_request_slug_id_unique" UNIQUE("slug_id")
+	"expires_at" timestamp(0) NOT NULL,
+	"deleted_at" timestamp(0),
+	"started_notified_at" timestamp(0),
+	"completed_notified_at" timestamp(0),
+	"failed_notified_at" timestamp(0),
+	"created_at" timestamp(0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp(0) DEFAULT now() NOT NULL
 );
 
 CREATE TABLE "conversation_import" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_import_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"slug_id" varchar(8) NOT NULL,
-	"conversation_id" integer,
+	"slug_id" varchar(8) NOT NULL UNIQUE,
+	"conversation_id" integer UNIQUE,
 	"user_id" uuid,
-	"requester_purged_at" timestamp (3),
-	"status" "import_status_enum" DEFAULT 'processing' NOT NULL,
+	"requester_purged_at" timestamp(3),
+	"status" "import_status_enum" DEFAULT 'processing'::"import_status_enum" NOT NULL,
 	"failure_reason" "import_failure_reason_enum",
 	"csv_file_metadata" jsonb,
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "conversation_import_slug_id_unique" UNIQUE("slug_id"),
-	CONSTRAINT "conversation_import_conversation_id_unique" UNIQUE("conversation_id"),
-	CONSTRAINT "conversation_import_requester_check" CHECK ((("conversation_import"."user_id" is not null and "conversation_import"."requester_purged_at" is null) or ("conversation_import"."user_id" is null and "conversation_import"."requester_purged_at" is not null and "conversation_import"."conversation_id" is not null)))
+	"created_at" timestamp(0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp(0) DEFAULT now() NOT NULL,
+	CONSTRAINT "conversation_import_requester_check" CHECK (((((("user_id" is not null)) and (("requester_purged_at" is null)))) or (((("user_id" is null)) and (("requester_purged_at" is not null)) and (("conversation_id" is not null))))))
 );
 
 CREATE TABLE "conversation" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "conversation_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"slug_id" varchar(8) NOT NULL,
+	"slug_id" varchar(8) NOT NULL UNIQUE,
 	"project_id" integer NOT NULL,
-	"current_content_id" integer,
-	"deleted_at" timestamp (3),
-	"polis_config_id" integer,
-	"ranking_config_id" integer,
-	"credit_voting_config_id" integer,
+	"current_content_id" integer UNIQUE,
+	"deleted_at" timestamp(3),
+	"polis_config_id" integer UNIQUE,
+	"ranking_config_id" integer UNIQUE,
+	"credit_voting_config_id" integer UNIQUE,
+	"gathering_config_id" integer UNIQUE,
 	"prioritization_type" text,
 	"dynamic_translation_enabled" boolean DEFAULT false NOT NULL,
 	"conversation_email_update_enabled_override" boolean,
-	"conversation_email_update_override_updated_at" timestamp (0),
+	"conversation_email_update_override_updated_at" timestamp(0),
 	"conversation_email_update_override_updated_by_user_id" uuid,
-	"language_settings_source" "conversation_language_settings_source" DEFAULT 'conversation_override' NOT NULL,
+	"language_settings_source" "conversation_language_settings_source" DEFAULT 'conversation_override'::"conversation_language_settings_source" NOT NULL,
 	"is_indexed" boolean DEFAULT true NOT NULL,
-	"participation_mode" "participation_mode" DEFAULT 'account_required' NOT NULL,
-	"conversation_type" "conversation_type" DEFAULT 'polis' NOT NULL,
+	"participation_mode" "participation_mode" DEFAULT 'account_required'::"participation_mode" NOT NULL,
+	"participation_mode_settings_source" text DEFAULT 'conversation_override' NOT NULL,
+	"conversation_type" "conversation_type" DEFAULT 'polis'::"conversation_type" NOT NULL,
 	"is_importing" boolean DEFAULT false NOT NULL,
 	"is_closed" boolean DEFAULT false NOT NULL,
 	"vote_buffer_epoch" uuid DEFAULT gen_random_uuid() NOT NULL,
 	"vote_buffer_drained" boolean DEFAULT true NOT NULL,
 	"closing_target_revision" bigint,
-	"closed_finalized_at" timestamp (0),
+	"closed_finalized_at" timestamp(0),
 	"is_edited" boolean DEFAULT false NOT NULL,
 	"requires_event_ticket" "event_slug",
-	"created_at" timestamp (0) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (0) DEFAULT now() NOT NULL,
-	"last_reacted_at" timestamp (0) DEFAULT now() NOT NULL,
-	CONSTRAINT "conversation_slug_id_unique" UNIQUE("slug_id"),
-	CONSTRAINT "conversation_current_content_id_unique" UNIQUE("current_content_id"),
-	CONSTRAINT "conversation_polis_config_id_unique" UNIQUE("polis_config_id"),
-	CONSTRAINT "conversation_ranking_config_id_unique" UNIQUE("ranking_config_id"),
-	CONSTRAINT "conversation_credit_voting_config_id_unique" UNIQUE("credit_voting_config_id"),
+	"created_at" timestamp(0) DEFAULT now() NOT NULL,
+	"updated_at" timestamp(0) DEFAULT now() NOT NULL,
+	"last_reacted_at" timestamp(0) DEFAULT now() NOT NULL,
 	CONSTRAINT "conversation_project_id_id_unique" UNIQUE("project_id","id"),
-	CONSTRAINT "conversation_deletion_intent_check" CHECK (("conversation"."deleted_at" is null or "conversation"."current_content_id" is null)),
-	CONSTRAINT "conversation_closing_state_check" CHECK (("conversation"."is_closed" OR ("conversation"."closing_target_revision" IS NULL AND "conversation"."closed_finalized_at" IS NULL)) AND ("conversation"."closed_finalized_at" IS NULL OR "conversation"."closing_target_revision" IS NOT NULL)),
-	CONSTRAINT "conversation_subtype_config_check" CHECK ((("conversation"."conversation_type" = 'polis' AND "conversation"."polis_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL AND "conversation"."credit_voting_config_id" IS NULL AND "conversation"."prioritization_type" IS NULL) OR ("conversation"."conversation_type" = 'prioritizing' AND "conversation"."polis_config_id" IS NULL AND "conversation"."prioritization_type" IS NOT NULL AND (("conversation"."prioritization_type" = 'comparisons' AND "conversation"."ranking_config_id" IS NOT NULL AND "conversation"."credit_voting_config_id" IS NULL) OR ("conversation"."prioritization_type" = 'qv' AND "conversation"."credit_voting_config_id" IS NOT NULL AND "conversation"."ranking_config_id" IS NULL))))),
-	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (("conversation"."conversation_email_update_override_updated_by_user_id" is null or "conversation"."conversation_email_update_override_updated_at" is not null))
+	CONSTRAINT "conversation_gathering_config_unique" UNIQUE("id","gathering_config_id"),
+	CONSTRAINT "conversation_participation_mode_settings_source_check" CHECK ("participation_mode_settings_source" in ('project_inherited', 'conversation_override')),
+	CONSTRAINT "conversation_deletion_intent_check" CHECK (((("deleted_at" is null)) or (("current_content_id" is null)))),
+	CONSTRAINT "conversation_closing_state_check" CHECK (("is_closed" OR ("closing_target_revision" IS NULL AND "closed_finalized_at" IS NULL)) AND ("closed_finalized_at" IS NULL OR "closing_target_revision" IS NOT NULL)),
+	CONSTRAINT "conversation_subtype_config_check" CHECK ((((("conversation_type" = 'gathering') and (("gathering_config_id" is not null)) and (("polis_config_id" is null)) and (("ranking_config_id" is null)) and (("credit_voting_config_id" is null)) and (("prioritization_type" is null)))) or (((("gathering_config_id" is null)) and ((((("conversation_type" = 'polis') and (("polis_config_id" is not null)) and (("ranking_config_id" is null)) and (("credit_voting_config_id" is null)) and (("prioritization_type" is null)))) or ((("conversation_type" = 'prioritizing') and (("polis_config_id" is null)) and (("prioritization_type" is not null)) and ((((("prioritization_type" = 'comparisons') and (("ranking_config_id" is not null)) and (("credit_voting_config_id" is null)))) or ((("prioritization_type" = 'qv') and (("credit_voting_config_id" is not null)) and (("ranking_config_id" is null)))))))))))))),
+	CONSTRAINT "conversation_email_update_override_audit_check" CHECK (((("conversation_email_update_override_updated_by_user_id" is null)) or (("conversation_email_update_override_updated_at" is not null))))
 );
 
 CREATE TABLE "qv_calculation_state" (
-	"conversation_id" integer PRIMARY KEY NOT NULL,
+	"conversation_id" integer PRIMARY KEY,
 	"generation" integer DEFAULT 0 NOT NULL,
 	"current_calculation_id" uuid,
-	CONSTRAINT "qv_calculation_state_generation_check" CHECK ("qv_calculation_state"."generation" >= 0)
+	CONSTRAINT "qv_calculation_state_generation_check" CHECK ("generation" >= 0)
 );
 
 CREATE TABLE "qv_calculation" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"conversation_id" integer NOT NULL,
 	"generation" integer NOT NULL,
 	"status" text DEFAULT 'queued' NOT NULL,
 	"input_snapshot_id" uuid,
 	"lease_token" uuid,
-	"lease_expires_at" timestamp (3),
+	"lease_expires_at" timestamp(3),
 	"attempt_count" integer DEFAULT 0 NOT NULL,
-	"next_attempt_at" timestamp (3) DEFAULT now() NOT NULL,
+	"next_attempt_at" timestamp(3) DEFAULT now() NOT NULL,
 	"error_code" text,
-	"created_at" timestamp (3) DEFAULT now() NOT NULL,
-	"ready_at" timestamp (3),
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	"ready_at" timestamp(3),
 	CONSTRAINT "qv_calculation_generation_unique" UNIQUE("conversation_id","generation"),
 	CONSTRAINT "qv_calculation_id_conversation_unique" UNIQUE("id","conversation_id"),
-	CONSTRAINT "qv_calculation_generation_check" CHECK ("qv_calculation"."generation" >= 1),
-	CONSTRAINT "qv_calculation_attempt_check" CHECK ("qv_calculation"."attempt_count" >= 0),
-	CONSTRAINT "qv_calculation_status_check" CHECK ("qv_calculation"."status" in ('queued', 'running', 'ready', 'failed')),
-	CONSTRAINT "qv_calculation_lease_check" CHECK ((("qv_calculation"."status" = 'running' and "qv_calculation"."lease_token" is not null and "qv_calculation"."lease_expires_at" is not null) or ("qv_calculation"."status" <> 'running' and "qv_calculation"."lease_token" is null and "qv_calculation"."lease_expires_at" is null))),
-	CONSTRAINT "qv_calculation_ready_check" CHECK ((("qv_calculation"."status" = 'ready' and "qv_calculation"."input_snapshot_id" is not null and "qv_calculation"."ready_at" is not null) or ("qv_calculation"."status" <> 'ready' and "qv_calculation"."ready_at" is null)))
+	CONSTRAINT "qv_calculation_generation_check" CHECK ("generation" >= 1),
+	CONSTRAINT "qv_calculation_attempt_check" CHECK ("attempt_count" >= 0),
+	CONSTRAINT "qv_calculation_status_check" CHECK ("status" in ('queued', 'running', 'ready', 'failed')),
+	CONSTRAINT "qv_calculation_lease_check" CHECK ((((("status" = 'running') and (("lease_token" is not null)) and (("lease_expires_at" is not null)))) or ((("status" <> 'running') and (("lease_token" is null)) and (("lease_expires_at" is null)))))),
+	CONSTRAINT "qv_calculation_ready_check" CHECK ((((("status" = 'ready') and (("input_snapshot_id" is not null)) and (("ready_at" is not null)))) or ((("status" <> 'ready') and (("ready_at" is null))))))
 );
 
 CREATE TABLE "qv_live_stats" (
-	"conversation_id" integer PRIMARY KEY NOT NULL,
+	"conversation_id" integer PRIMARY KEY,
 	"participant_count" integer DEFAULT 0 NOT NULL,
 	"revision" bigint DEFAULT 0 NOT NULL,
-	"refreshed_at" timestamp (3),
-	"retry_after" timestamp (3),
-	CONSTRAINT "qv_live_stats_count_check" CHECK ("qv_live_stats"."participant_count" >= 0),
-	CONSTRAINT "qv_live_stats_revision_check" CHECK ("qv_live_stats"."revision" >= 0)
+	"refreshed_at" timestamp(3),
+	"retry_after" timestamp(3),
+	CONSTRAINT "qv_live_stats_count_check" CHECK ("participant_count" >= 0),
+	CONSTRAINT "qv_live_stats_revision_check" CHECK ("revision" >= 0)
 );
 
 CREATE TABLE "qv_stats_refresh" (
 	"id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "qv_stats_refresh_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
 	"conversation_id" integer NOT NULL,
-	"created_at" timestamp (3) DEFAULT now() NOT NULL,
-	"processed_at" timestamp (3)
+	"created_at" timestamp(3) DEFAULT now() NOT NULL,
+	"processed_at" timestamp(3)
 );
 
-CREATE INDEX "conversation_export_generation_conversation_idx" ON "conversation_export_generation" USING btree ("conversation_id");
+CREATE INDEX "conversation_export_generation_conversation_idx" ON "conversation_export_generation" ("conversation_id");
 
-CREATE INDEX "conversation_export_generation_collecting_due_idx" ON "conversation_export_generation" USING btree ("collecting_ends_at","created_at") WHERE "conversation_export_generation"."status" = 'collecting';
+CREATE INDEX "conversation_export_generation_collecting_due_idx" ON "conversation_export_generation" ("collecting_ends_at","created_at") WHERE "status" = 'collecting';
 
-CREATE INDEX "conversation_export_generation_queued_due_idx" ON "conversation_export_generation" USING btree ("next_attempt_at","created_at") WHERE "conversation_export_generation"."status" = 'queued';
+CREATE INDEX "conversation_export_generation_queued_due_idx" ON "conversation_export_generation" ("next_attempt_at","created_at") WHERE "status" = 'queued';
 
-CREATE UNIQUE INDEX "conversation_export_generation_collecting_unique" ON "conversation_export_generation" USING btree ("conversation_id") WHERE "conversation_export_generation"."status" = 'collecting';
+CREATE UNIQUE INDEX "conversation_export_generation_collecting_unique" ON "conversation_export_generation" ("conversation_id") WHERE "status" = 'collecting';
 
-CREATE UNIQUE INDEX "conversation_export_generation_processing_unique" ON "conversation_export_generation" USING btree ("conversation_id") WHERE "conversation_export_generation"."status" = 'processing';
+CREATE UNIQUE INDEX "conversation_export_generation_processing_unique" ON "conversation_export_generation" ("conversation_id") WHERE "status" = 'processing';
 
-CREATE INDEX "conversation_export_request_conversation_idx" ON "conversation_export_request" USING btree ("conversation_id");
+CREATE INDEX "conversation_export_request_conversation_idx" ON "conversation_export_request" ("conversation_id");
 
-CREATE INDEX "conversation_export_request_generation_idx" ON "conversation_export_request" USING btree ("generation_id");
+CREATE INDEX "conversation_export_request_generation_idx" ON "conversation_export_request" ("generation_id");
 
-CREATE INDEX "conversation_export_request_active_history_idx" ON "conversation_export_request" USING btree ("conversation_id","user_id","created_at") WHERE "conversation_export_request"."deleted_at" IS NULL;
+CREATE INDEX "conversation_export_request_active_history_idx" ON "conversation_export_request" ("conversation_id","user_id","created_at") WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "conversation_export_request_expiry_idx" ON "conversation_export_request" USING btree ("expires_at") WHERE "conversation_export_request"."deleted_at" IS NULL;
+CREATE INDEX "conversation_export_request_expiry_idx" ON "conversation_export_request" ("expires_at") WHERE "deleted_at" IS NULL;
 
-CREATE UNIQUE INDEX "conversation_export_request_active_unique" ON "conversation_export_request" USING btree ("conversation_id","user_id") WHERE "conversation_export_request"."status" = 'processing' AND "conversation_export_request"."deleted_at" IS NULL;
+CREATE UNIQUE INDEX "conversation_export_request_active_unique" ON "conversation_export_request" ("conversation_id","user_id") WHERE "status" = 'processing' AND "deleted_at" IS NULL;
 
-CREATE INDEX "conversation_import_status_idx" ON "conversation_import" USING btree ("status");
+CREATE INDEX "conversation_import_status_idx" ON "conversation_import" ("status");
 
-CREATE INDEX "conversation_import_created_idx" ON "conversation_import" USING btree ("created_at");
+CREATE INDEX "conversation_import_created_idx" ON "conversation_import" ("created_at");
 
-CREATE INDEX "conversation_import_user_idx" ON "conversation_import" USING btree ("user_id");
+CREATE INDEX "conversation_import_user_idx" ON "conversation_import" ("user_id");
 
-CREATE UNIQUE INDEX "conversation_import_active_user_unique" ON "conversation_import" USING btree ("user_id") WHERE "conversation_import"."status" = 'processing';
+CREATE UNIQUE INDEX "conversation_import_active_user_unique" ON "conversation_import" ("user_id") WHERE "status" = 'processing';
 
-CREATE INDEX "conversation_deleted_idx" ON "conversation" USING btree ("deleted_at","id") WHERE "conversation"."deleted_at" is not null;
+CREATE INDEX "conversation_deleted_idx" ON "conversation" ("deleted_at","id") WHERE ("deleted_at" is not null);
 
-CREATE INDEX "conversation_feed_idx" ON "conversation" USING btree ("created_at" DESC,"id" DESC) WHERE "conversation"."is_indexed" = true AND "conversation"."is_importing" = false;
+CREATE INDEX "conversation_feed_idx" ON "conversation" ("created_at" DESC,"id" DESC) WHERE "is_indexed" = true AND "is_importing" = false;
 
-CREATE INDEX "conversation_type_importing_idx" ON "conversation" USING btree ("is_importing","conversation_type");
+CREATE INDEX "conversation_type_importing_idx" ON "conversation" ("is_importing","conversation_type");
 
-CREATE INDEX "conversation_vote_buffer_drain_idx" ON "conversation" USING btree ("id") WHERE "conversation"."conversation_type" = 'polis' AND "conversation"."is_closed" = true AND "conversation"."vote_buffer_drained" = false AND "conversation"."closed_finalized_at" IS NULL;
+CREATE INDEX "conversation_vote_buffer_drain_idx" ON "conversation" ("id") WHERE "conversation_type" = 'polis' AND "is_closed" = true AND "vote_buffer_drained" = false AND "closed_finalized_at" IS NULL;
 
-CREATE INDEX "conversation_project_id_idx" ON "conversation" USING btree ("project_id");
+CREATE INDEX "conversation_project_id_idx" ON "conversation" ("project_id");
 
-CREATE INDEX "conversation_project_timeline_idx" ON "conversation" USING btree ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE "conversation"."current_content_id" is not null;
+CREATE INDEX "conversation_project_timeline_idx" ON "conversation" ("project_id","is_importing","created_at" DESC,"id" DESC) WHERE ("current_content_id" is not null);
 
-CREATE INDEX "qv_calculation_claim_idx" ON "qv_calculation" USING btree ("next_attempt_at","created_at") WHERE "qv_calculation"."status" in ('queued', 'running');
+CREATE INDEX "qv_calculation_claim_idx" ON "qv_calculation" ("next_attempt_at","created_at") WHERE "status" in ('queued', 'running');
 
-CREATE INDEX "qv_live_stats_refresh_idx" ON "qv_live_stats" USING btree ("refreshed_at","conversation_id");
+CREATE INDEX "qv_live_stats_refresh_idx" ON "qv_live_stats" ("refreshed_at","conversation_id");
 
-CREATE INDEX "qv_stats_refresh_pending_idx" ON "qv_stats_refresh" USING btree ("conversation_id","id") WHERE "qv_stats_refresh"."processed_at" is null;
+CREATE INDEX "qv_stats_refresh_pending_idx" ON "qv_stats_refresh" ("conversation_id","id") WHERE ("processed_at" is null);

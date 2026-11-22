@@ -1,6 +1,6 @@
 <template>
   <div class="survey-tab">
-    <AnalysisSectionWrapper v-if="!compactMode">
+    <AnalysisSectionWrapper v-if="!compactMode && props.surveyGate?.hasSurvey">
       <template #header>
         <AnalysisTitleHeader
           :show-star-in-title="false"
@@ -52,7 +52,10 @@
           :query="props.surveyQuery"
           :config="asyncStateConfig"
         >
-          <p v-if="!compactMode" class="survey-subtitle">
+          <p v-if="isFrozenClosingSurvey" class="survey-subtitle">
+            {{ t("frozenClosingSurvey") }}
+          </p>
+          <p v-else-if="!compactMode" class="survey-subtitle">
             {{ t("surveySubtitle") }}
           </p>
 
@@ -105,7 +108,10 @@
       </template>
     </AnalysisSectionWrapper>
 
-    <SurveyInformationDialog v-model="showSurveyInfo" />
+    <SurveyInformationDialog
+      v-model="showSurveyInfo"
+      :is-frozen-closing-survey="isFrozenClosingSurvey"
+    />
   </div>
 </template>
 
@@ -155,6 +161,9 @@ const props = withDefaults(
     surveyGate?: SurveyGateSummary;
     surveyQuery: UseQueryReturnType<SurveyResultsAggregatedResponse, Error>;
     surveyResultsOverride?: SurveyResultsAggregatedResponse;
+    polisFrame:
+      | { viewSnapshotId: number; candidateId: number | null }
+      | undefined;
     clusters: Partial<PolisClusters>;
     totalParticipantCount: number;
     compactMode?: boolean;
@@ -237,6 +246,10 @@ const answerCalloutActionLabel = computed(() => {
 const activeSurveyResults = computed(
   () => props.surveyResultsOverride ?? props.surveyQuery.data.value
 );
+const surveySource = computed(() => activeSurveyResults.value?.source);
+const isFrozenClosingSurvey = computed(
+  () => surveySource.value?.kind === "original_close"
+);
 
 const canViewFullResults = computed(() =>
   canViewFullSurveyResults({ surveyResults: activeSurveyResults.value })
@@ -256,6 +269,10 @@ const hasClusterRows = computed(() =>
 const showGroupComponents = computed(
   () =>
     !props.compactMode &&
+    surveySource.value?.kind === "polis_frame" &&
+    props.polisFrame !== undefined &&
+    surveySource.value.viewSnapshotId === props.polisFrame.viewSnapshotId &&
+    surveySource.value.candidateId === props.polisFrame.candidateId &&
     hasClusterRows.value &&
     Object.keys(props.clusters).length > 1
 );

@@ -1,4 +1,4 @@
-export const qvStatementsTranslations = {
+export const qvItemsTranslations = {
   en: {
     qv: "Quadratic voting",
     bws: "Best–worst scaling (BWS)",
@@ -9,7 +9,7 @@ export const qvStatementsTranslations = {
       "Allocate credits to express how strongly you support or oppose statements.",
     bwsDescription:
       "Compare statements by choosing the most and least important.",
-    statements: "Statements to prioritize",
+    items: "Statements to prioritize",
     title: "Title (required)",
     description: "Description (optional)",
     add: "Add statement",
@@ -20,7 +20,7 @@ export const qvStatementsTranslations = {
     edit: "Edit",
     invalid:
       "Each statement needs a title within the content limits. Check its description too.",
-    needStatement: "Add at least one statement.",
+    needItem: "Add at least one statement.",
     opposition: "Allow opposition",
     oppositionHelp:
       "Participants can spend credits to oppose statements as well as support them.",
@@ -32,7 +32,7 @@ export const qvStatementsTranslations = {
     notAllowed: "You cannot edit statements in this activity.",
     conflict:
       "The statements changed or participation has started. Your edits have been kept. Reload the current statements to continue; this replaces your statement edits.",
-    reloadStatements: "Reload current statements",
+    reloadItems: "Reload current statements",
     loadError: "Could not load statements.",
   },
   es: {
@@ -45,7 +45,7 @@ export const qvStatementsTranslations = {
       "Reparte créditos para expresar cuánto apoyas o rechazas las propuestas.",
     bwsDescription:
       "Compara propuestas eligiendo la más y la menos importante.",
-    statements: "Propuestas que priorizar",
+    items: "Propuestas que priorizar",
     title: "Título (obligatorio)",
     description: "Descripción (opcional)",
     add: "Añadir propuesta",
@@ -56,7 +56,7 @@ export const qvStatementsTranslations = {
     edit: "Editar",
     invalid:
       "Cada propuesta necesita un título que respete los límites de contenido. Revisa también su descripción.",
-    needStatement: "Añade al menos una propuesta.",
+    needItem: "Añade al menos una propuesta.",
     opposition: "Permitir oposición",
     oppositionHelp:
       "Los participantes pueden gastar créditos para rechazar propuestas además de apoyarlas.",
@@ -69,7 +69,7 @@ export const qvStatementsTranslations = {
     notAllowed: "No puedes editar las propuestas de esta actividad.",
     conflict:
       "Las propuestas han cambiado o la participación ha comenzado. Tus cambios se han conservado. Recarga las propuestas actuales para continuar; esto sustituye tus cambios en las propuestas.",
-    reloadStatements: "Recargar propuestas actuales",
+    reloadItems: "Recargar propuestas actuales",
     loadError: "No se pudieron cargar las propuestas.",
   },
   fr: {
@@ -82,7 +82,7 @@ export const qvStatementsTranslations = {
       "Répartissez des crédits pour exprimer votre soutien ou votre opposition aux propositions.",
     bwsDescription:
       "Comparez les propositions en choisissant la plus et la moins importante.",
-    statements: "Propositions à prioriser",
+    items: "Propositions à prioriser",
     title: "Titre (obligatoire)",
     description: "Description (facultative)",
     add: "Ajouter une proposition",
@@ -93,7 +93,7 @@ export const qvStatementsTranslations = {
     edit: "Modifier",
     invalid:
       "Chaque proposition doit avoir un titre respectant les limites de contenu. Vérifiez également sa description.",
-    needStatement: "Ajoutez au moins une proposition.",
+    needItem: "Ajoutez au moins une proposition.",
     opposition: "Autoriser l’opposition",
     oppositionHelp:
       "Les participants peuvent dépenser des crédits pour s’opposer aux propositions ou les soutenir.",
@@ -107,7 +107,7 @@ export const qvStatementsTranslations = {
       "Vous ne pouvez pas modifier les propositions de cette activité.",
     conflict:
       "Les propositions ont changé ou la participation a commencé. Vos modifications sont conservées. Rechargez les propositions actuelles pour continuer ; cela remplace vos modifications des propositions.",
-    reloadStatements: "Recharger les propositions actuelles",
+    reloadItems: "Recharger les propositions actuelles",
     loadError: "Impossible de charger les propositions.",
   },
   "zh-Hans": {
@@ -118,7 +118,7 @@ export const qvStatementsTranslations = {
     chooseMethod: "选择优先级排序方法",
     qvDescription: "分配积分，表达你对陈述的支持或反对程度。",
     bwsDescription: "选择最重要和最不重要的陈述进行比较。",
-    statements: "待排序的陈述",
+    items: "待排序的陈述",
     title: "标题（必填）",
     description: "描述（可选）",
     add: "添加陈述",
@@ -128,7 +128,7 @@ export const qvStatementsTranslations = {
     preview: "预览",
     edit: "编辑",
     invalid: "每条陈述都需要符合内容限制的标题。请同时检查描述。",
-    needStatement: "请至少添加一条陈述。",
+    needItem: "请至少添加一条陈述。",
     opposition: "允许反对",
     oppositionHelp: "参与者可以使用积分反对或支持陈述。",
     budget: "每位参与者获得 {credits} 积分。为一条陈述投 3 票需要 9 积分。",
@@ -137,7 +137,7 @@ export const qvStatementsTranslations = {
     notAllowed: "你不能编辑此活动的陈述。",
     conflict:
       "陈述已更改或参与已开始。你的修改已保留。请重新加载当前陈述以继续；这将替换你对陈述的修改。",
-    reloadStatements: "重新加载当前陈述",
+    reloadItems: "重新加载当前陈述",
     loadError: "无法加载陈述。",
   },
   "zh-Hant": {
@@ -148,7 +148,7 @@ export const qvStatementsTranslations = {
     chooseMethod: "選擇優先順序排序方法",
     qvDescription: "分配點數，表達你對陳述的支持或反對程度。",
     bwsDescription: "選擇最重要和最不重要的陳述進行比較。",
-    statements: "待排序的陳述",
+    items: "待排序的陳述",
     title: "標題（必填）",
     description: "描述（選填）",
     add: "新增陳述",
@@ -158,7 +158,7 @@ export const qvStatementsTranslations = {
     preview: "預覽",
     edit: "編輯",
     invalid: "每則陳述都需要符合內容限制的標題。請同時檢查描述。",
-    needStatement: "請至少新增一則陳述。",
+    needItem: "請至少新增一則陳述。",
     opposition: "允許反對",
     oppositionHelp: "參與者可以使用點數反對或支持陳述。",
     budget: "每位參與者獲得 {credits} 點。為一則陳述投 3 票需要 9 點。",
@@ -167,7 +167,7 @@ export const qvStatementsTranslations = {
     notAllowed: "你不能編輯此活動的陳述。",
     conflict:
       "陳述已變更或參與已開始。你的修改已保留。請重新載入目前陳述以繼續；這將取代你對陳述的修改。",
-    reloadStatements: "重新載入目前陳述",
+    reloadItems: "重新載入目前陳述",
     loadError: "無法載入陳述。",
   },
   ja: {
@@ -178,7 +178,7 @@ export const qvStatementsTranslations = {
     chooseMethod: "優先順位の決定方法を選択",
     qvDescription: "クレジットを配分して、意見への賛成や反対の強さを示します。",
     bwsDescription: "最も重要な意見と最も重要でない意見を選んで比較します。",
-    statements: "優先順位を付ける意見",
+    items: "優先順位を付ける意見",
     title: "タイトル（必須）",
     description: "説明（任意）",
     add: "意見を追加",
@@ -189,7 +189,7 @@ export const qvStatementsTranslations = {
     edit: "編集",
     invalid:
       "各意見には内容制限内のタイトルが必要です。説明も確認してください。",
-    needStatement: "意見を1つ以上追加してください。",
+    needItem: "意見を1つ以上追加してください。",
     opposition: "反対を許可",
     oppositionHelp: "参加者はクレジットを使って意見に賛成も反対もできます。",
     budget:
@@ -199,7 +199,7 @@ export const qvStatementsTranslations = {
     notAllowed: "このアクティビティの意見は編集できません。",
     conflict:
       "意見が変更されたか、参加が始まりました。編集内容は保持されています。続行するには現在の意見を再読み込みしてください。意見の編集内容は置き換えられます。",
-    reloadStatements: "現在の意見を再読み込み",
+    reloadItems: "現在の意見を再読み込み",
     loadError: "意見を読み込めませんでした。",
   },
   ar: {
@@ -210,7 +210,7 @@ export const qvStatementsTranslations = {
     chooseMethod: "اختر طريقة لترتيب الأولويات",
     qvDescription: "وزّع الرصيد للتعبير عن مدى تأييدك أو معارضتك للعبارات.",
     bwsDescription: "قارن العبارات باختيار الأكثر والأقل أهمية.",
-    statements: "عبارات لترتيب أولويتها",
+    items: "عبارات لترتيب أولويتها",
     title: "العنوان (مطلوب)",
     description: "الوصف (اختياري)",
     add: "إضافة عبارة",
@@ -220,7 +220,7 @@ export const qvStatementsTranslations = {
     preview: "معاينة",
     edit: "تعديل",
     invalid: "تحتاج كل عبارة إلى عنوان ضمن حدود المحتوى. تحقق من وصفها أيضًا.",
-    needStatement: "أضف عبارة واحدة على الأقل.",
+    needItem: "أضف عبارة واحدة على الأقل.",
     opposition: "السماح بالمعارضة",
     oppositionHelp: "يمكن للمشاركين إنفاق الرصيد لمعارضة العبارات أو تأييدها.",
     budget:
@@ -230,7 +230,7 @@ export const qvStatementsTranslations = {
     notAllowed: "لا يمكنك تعديل عبارات هذا النشاط.",
     conflict:
       "تغيّرت العبارات أو بدأت المشاركة. احتُفظ بتعديلاتك. أعد تحميل العبارات الحالية للمتابعة؛ سيحل ذلك محل تعديلاتك على العبارات.",
-    reloadStatements: "إعادة تحميل العبارات الحالية",
+    reloadItems: "إعادة تحميل العبارات الحالية",
     loadError: "تعذر تحميل العبارات.",
   },
   fa: {
@@ -243,7 +243,7 @@ export const qvStatementsTranslations = {
       "با تخصیص اعتبار، میزان حمایت یا مخالفت خود با گزاره‌ها را بیان کنید.",
     bwsDescription:
       "با انتخاب مهم‌ترین و کم‌اهمیت‌ترین گزاره، آن‌ها را مقایسه کنید.",
-    statements: "گزاره‌های قابل اولویت‌بندی",
+    items: "گزاره‌های قابل اولویت‌بندی",
     title: "عنوان (الزامی)",
     description: "توضیحات (اختیاری)",
     add: "افزودن گزاره",
@@ -254,7 +254,7 @@ export const qvStatementsTranslations = {
     edit: "ویرایش",
     invalid:
       "هر گزاره به عنوانی در محدوده مجاز محتوا نیاز دارد. توضیحات آن را نیز بررسی کنید.",
-    needStatement: "حداقل یک گزاره اضافه کنید.",
+    needItem: "حداقل یک گزاره اضافه کنید.",
     opposition: "اجازه مخالفت",
     oppositionHelp:
       "شرکت‌کنندگان می‌توانند برای مخالفت یا حمایت از گزاره‌ها اعتبار خرج کنند.",
@@ -265,7 +265,7 @@ export const qvStatementsTranslations = {
     notAllowed: "نمی‌توانید گزاره‌های این فعالیت را ویرایش کنید.",
     conflict:
       "گزاره‌ها تغییر کرده‌اند یا مشارکت آغاز شده است. ویرایش‌های شما حفظ شده‌اند. برای ادامه، گزاره‌های فعلی را دوباره بارگیری کنید؛ این کار جایگزین ویرایش‌های شما روی گزاره‌ها می‌شود.",
-    reloadStatements: "بارگیری دوباره گزاره‌های فعلی",
+    reloadItems: "بارگیری دوباره گزاره‌های فعلی",
     loadError: "بارگیری گزاره‌ها ممکن نشد.",
   },
   he: {
@@ -278,7 +278,7 @@ export const qvStatementsTranslations = {
       "הקצו נקודות כדי להביע את עוצמת התמיכה או ההתנגדות שלכם לאמירות.",
     bwsDescription:
       "השוו אמירות באמצעות בחירת החשובה ביותר והחשובה פחות מכולן.",
-    statements: "אמירות לתעדוף",
+    items: "אמירות לתעדוף",
     title: "כותרת (חובה)",
     description: "תיאור (רשות)",
     add: "הוספת אמירה",
@@ -288,7 +288,7 @@ export const qvStatementsTranslations = {
     preview: "תצוגה מקדימה",
     edit: "עריכה",
     invalid: "כל אמירה צריכה כותרת במסגרת מגבלות התוכן. בדקו גם את התיאור שלה.",
-    needStatement: "הוסיפו לפחות אמירה אחת.",
+    needItem: "הוסיפו לפחות אמירה אחת.",
     opposition: "אפשרו התנגדות",
     oppositionHelp:
       "משתתפים יכולים להוציא נקודות גם כדי להתנגד לאמירות וגם כדי לתמוך בהן.",
@@ -299,7 +299,7 @@ export const qvStatementsTranslations = {
     notAllowed: "אין לכם אפשרות לערוך אמירות בפעילות זו.",
     conflict:
       "האמירות השתנו או שההשתתפות החלה. העריכות שלכם נשמרו. טענו מחדש את האמירות הנוכחיות כדי להמשיך; פעולה זו תחליף את העריכות שלכם באמירות.",
-    reloadStatements: "טעינת האמירות הנוכחיות מחדש",
+    reloadItems: "טעינת האמירות הנוכחיות מחדש",
     loadError: "לא ניתן היה לטעון אמירות.",
   },
   ky: {
@@ -312,7 +312,7 @@ export const qvStatementsTranslations = {
       "Билдирүүлөрдү канчалык колдой турганыңызды же аларга каршы экениңизди көрсөтүү үчүн кредиттерди бөлүштүрүңүз.",
     bwsDescription:
       "Эң маанилүү жана эң аз маанилүү билдирүүлөрдү тандап салыштырыңыз.",
-    statements: "Артыкчылыгы аныкталуучу билдирүүлөр",
+    items: "Артыкчылыгы аныкталуучу билдирүүлөр",
     title: "Аталышы (милдеттүү)",
     description: "Сүрөттөмө (милдеттүү эмес)",
     add: "Билдирүү кошуу",
@@ -323,7 +323,7 @@ export const qvStatementsTranslations = {
     edit: "Түзөтүү",
     invalid:
       "Ар бир билдирүүнүн аталышы мазмун чектөөлөрүнө туура келиши керек. Сүрөттөмөсүн да текшериңиз.",
-    needStatement: "Жок дегенде бир билдирүү кошуңуз.",
+    needItem: "Жок дегенде бир билдирүү кошуңуз.",
     opposition: "Каршы добушка уруксат берүү",
     oppositionHelp:
       "Катышуучулар билдирүүлөрдү колдоо үчүн да, каршы чыгуу үчүн да кредиттерди сарптай алышат.",
@@ -335,7 +335,7 @@ export const qvStatementsTranslations = {
     notAllowed: "Бул иш-аракеттин билдирүүлөрүн түзөтө албайсыз.",
     conflict:
       "Билдирүүлөр өзгөрдү же катышуу башталды. Түзөтүүлөрүңүз сакталды. Улантуу үчүн учурдагы билдирүүлөрдү кайра жүктөңүз; бул билдирүүлөргө киргизген түзөтүүлөрүңүздү алмаштырат.",
-    reloadStatements: "Учурдагы билдирүүлөрдү кайра жүктөө",
+    reloadItems: "Учурдагы билдирүүлөрдү кайра жүктөө",
     loadError: "Билдирүүлөрдү жүктөө мүмкүн болгон жок.",
   },
   ru: {
@@ -347,7 +347,7 @@ export const qvStatementsTranslations = {
     qvDescription:
       "Распределите кредиты, чтобы выразить силу поддержки или несогласия с утверждениями.",
     bwsDescription: "Сравнивайте утверждения, выбирая самое и наименее важное.",
-    statements: "Утверждения для приоритизации",
+    items: "Утверждения для приоритизации",
     title: "Заголовок (обязательно)",
     description: "Описание (необязательно)",
     add: "Добавить утверждение",
@@ -358,7 +358,7 @@ export const qvStatementsTranslations = {
     edit: "Изменить",
     invalid:
       "Каждому утверждению нужен заголовок в пределах ограничений содержимого. Также проверьте описание.",
-    needStatement: "Добавьте хотя бы одно утверждение.",
+    needItem: "Добавьте хотя бы одно утверждение.",
     opposition: "Разрешить голоса против",
     oppositionHelp:
       "Участники могут тратить кредиты как на поддержку утверждений, так и на голоса против.",
@@ -370,7 +370,7 @@ export const qvStatementsTranslations = {
     notAllowed: "Вы не можете изменять утверждения этой активности.",
     conflict:
       "Утверждения изменились или началось участие. Ваши правки сохранены. Загрузите текущие утверждения, чтобы продолжить; это заменит ваши правки утверждений.",
-    reloadStatements: "Загрузить текущие утверждения",
+    reloadItems: "Загрузить текущие утверждения",
     loadError: "Не удалось загрузить утверждения.",
   },
 };

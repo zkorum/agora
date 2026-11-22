@@ -278,14 +278,20 @@ const developmentSettings: SettingsInterface[] = [
   },
 ];
 
-const deleteAccountSettings: SettingsInterface[] = [
+const deleteAccountSettings = computed<SettingsInterface[]>(() => [
+  {
+    type: "navigation",
+    label: tRecovery("manageContent"),
+    to: "/user-profile/opinions/",
+    style: "none",
+  },
   {
     type: "action",
     label: deleteAccountLabel.value,
     action: processDeleteAccount,
     style: "negative",
   },
-];
+]);
 
 function processDeleteAccount() {
   const message = isLoggedIn.value
@@ -294,7 +300,7 @@ function processDeleteAccount() {
 
   showDeleteAccountDialog({
     title: t("deleteAccountDialogTitle"),
-    message,
+    message: `${message} ${tRecovery("historicalContentNotice")}`,
     placeholder: t("deleteAccountDialogPlaceholder"),
     errorMessage: t("deleteAccountDialogError"),
     callbackSuccess: () => {

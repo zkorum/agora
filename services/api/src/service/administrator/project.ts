@@ -66,6 +66,7 @@ import {
     type ProjectContentSource,
 } from "../contentTranslation.js";
 import { log } from "@/app.js";
+import { logApiError } from "@/logging/privacy.js";
 import { optionalHttpsUrl } from "@/utils/url.js";
 import {
     getPrimaryDatabase,
@@ -226,8 +227,7 @@ async function insertProjectContact({
         firstName: normalizeOptionalString(contact.firstName),
         lastName: normalizeOptionalString(contact.lastName),
         roleLabel: normalizeOptionalString(contact.roleLabel),
-        email:
-            contact.email === undefined ? null : normalizeEmail(contact.email),
+        email: normalizeEmail(contact.email),
         websiteUrl: normalizeOptionalString(contact.websiteUrl),
         imagePath: normalizeOptionalString(contact.imagePath),
         isFullImagePath: contact.isFullImagePath,
@@ -1125,7 +1125,8 @@ export async function createProject({
                 .values({
                     slug: data.projectSlug,
                     title: data.projectTitle,
-                    directoryVisibility: "listed",
+                    directoryVisibility: data.directoryVisibility ?? "listed",
+                    participationMode: data.participationMode,
                     autoProvisionedForOrganizationId: null,
                     currentContentId: null,
                     dynamicTranslationEnabled:
@@ -1372,11 +1373,10 @@ export async function getAllProjects({
     const projectWhereClause =
         projectSlug === undefined
             ? and(
-                  eq(projectTable.directoryVisibility, "listed"),
+                  isNull(projectTable.autoProvisionedForOrganizationId),
                   isNull(projectTable.deletedAt),
               )
             : and(
-                  eq(projectTable.directoryVisibility, "listed"),
                   isNull(projectTable.deletedAt),
                   eq(projectTable.slug, projectSlug),
               );
@@ -1386,12 +1386,14 @@ export async function getAllProjects({
             projectContentId: projectContentTable.id,
             projectSlug: projectTable.slug,
             projectTitle: projectTable.title,
+            directoryVisibility: projectTable.directoryVisibility,
             subtitle: projectContentTable.subtitle,
             body: projectContentTable.body,
             bodyPlainText: projectContentTable.bodyPlainText,
             bannerPath: projectContentTable.bannerPath,
             bannerIsFullPath: projectContentTable.bannerIsFullPath,
             dynamicTranslationEnabled: projectTable.dynamicTranslationEnabled,
+            participationMode: projectTable.participationMode,
         })
         .from(projectTable)
         .leftJoin(
@@ -1869,6 +1871,8 @@ export async function getAllProjects({
         projectList: projectRows.map((project) => ({
             projectSlug: project.projectSlug,
             projectTitle: project.projectTitle,
+            directoryVisibility: project.directoryVisibility,
+            participationMode: project.participationMode,
             ownerOrganizationSlugs:
                 ownerSlugsByProjectId.get(project.projectId) ?? [],
             subtitle: project.subtitle ?? undefined,
@@ -1914,7 +1918,7 @@ export async function getProjectOptions({
         .from(projectTable)
         .where(
             and(
-                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.autoProvisionedForOrganizationId),
                 isNull(projectTable.deletedAt),
                 projectIds === undefined
                     ? undefined
@@ -2030,6 +2034,39 @@ export async function deleteProject({
             );
         await queueSourceInvalidationEvent(tx);
     });
+}
+
+export async function updateProjectAndScheduleTranslations({
+    db,
+    data,
+    googleCloudCredentials,
+    enqueueTranslationWork,
+}: {
+    db: ProjectOwnershipDatabase;
+    data: UpdateProjectRequest;
+    googleCloudCredentials: GoogleCloudCredentials | undefined;
+    enqueueTranslationWork: (workIds: number[]) => Promise<void>;
+}): Promise<UpdateProjectResponse> {
+    const result = await updateProject({ db, data, googleCloudCredentials });
+    if (!result.success) return result;
+
+    if (result.eagerContentTranslationWorkIds.length > 0) {
+        try {
+            await enqueueTranslationWork(result.eagerContentTranslationWorkIds);
+        } catch (error: unknown) {
+            logApiError({
+                logger: log,
+                level: "error",
+                event: { event: "application_error" },
+                error,
+            });
+        }
+    }
+    return {
+        success: true,
+        projectId: result.projectId,
+        projectSlug: result.projectSlug,
+    };
 }
 
 export async function updateProject({
@@ -2208,6 +2245,7 @@ export async function updateProject({
                 .set({
                     slug: data.projectSlug,
                     title: data.projectTitle,
+                    participationMode: data.participationMode,
                     dynamicTranslationEnabled:
                         normalizedLanguageSettings.dynamicTranslationEnabled,
                     updatedAt: now,

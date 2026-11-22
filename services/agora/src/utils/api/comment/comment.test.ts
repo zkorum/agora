@@ -241,7 +241,7 @@ describe("analysis frame data", () => {
     });
 
     expect(data.conversationViewSnapshotId).toBeUndefined();
-    expect(data.emptyReason).toBe("No analysis is available yet.");
+    expect(data.manifest?.emptyReason).toBe("No analysis is available yet.");
     expect(data.consensusAgree).toEqual([]);
     expect(data.polisClusters).toEqual({});
   });

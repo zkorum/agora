@@ -24,7 +24,7 @@ export async function setQvAccountHidden({
     db: PostgresTransaction;
     userId: string;
     hiddenAt: Date | null;
-}): Promise<void> {
+}): Promise<number[]> {
     const participants = db
         .select({ id: conversationParticipantTable.id })
         .from(conversationParticipantTable)
@@ -38,11 +38,17 @@ export async function setQvAccountHidden({
                 isNull(qvResponseTable.deletedAt),
             ),
         )
-        .returning({ conversationId: qvResponseTable.conversationId });
+        .returning({
+            conversationId: qvResponseTable.conversationId,
+            currentVersionId: qvResponseTable.currentVersionId,
+        });
     await scheduleQvStatsRefresh({
         db,
         conversationIds: changed.map((row) => row.conversationId),
     });
+    return changed.flatMap(({ conversationId, currentVersionId }) =>
+        currentVersionId === null ? [] : [conversationId],
+    );
 }
 
 async function retireResponses({

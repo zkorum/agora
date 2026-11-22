@@ -36,7 +36,7 @@ vi.mock("src/components/translation/ContentTranslationControl.vue", () => ({
   }),
 }));
 
-import QvStatementVotingRow from "./QvStatementVotingRow.vue";
+import QvItemVotingRow from "./QvItemVotingRow.vue";
 
 const apps: App[] = [];
 afterEach(() => {
@@ -48,7 +48,7 @@ afterEach(() => {
 
 function mountRow() {
   const adjust = vi.fn();
-  const app = createApp(QvStatementVotingRow, {
+  const app = createApp(QvItemVotingRow, {
     conversationSlugId: "qv-test",
     item: {
       slugId: "item",
@@ -73,7 +73,7 @@ function mountRow() {
     canIncrease: true,
     onAdjust: adjust,
   });
-  app.use(createI18n({ legacy: false, locale: "en" }));
+  app.use(createI18n({ legacy: false, locale: "en", numberFormats }));
   app.component(
     "QBtn",
     defineComponent({
@@ -161,3 +161,4 @@ describe("QV translated statement controls", () => {
     expect(view.adjust).not.toHaveBeenCalled();
   });
 });
+import { numberFormats } from "src/i18n/numberFormats";

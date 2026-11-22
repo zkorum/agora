@@ -1,4 +1,5 @@
 import { and, asc, eq, exists, isNotNull, isNull, sql } from "drizzle-orm";
+import { httpErrors } from "@fastify/sensible";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     opinionContentTable,
@@ -93,6 +94,8 @@ export async function appendConversationSeedOpinions({
     const rankingItemSources: RankingItemContentSource[] = [];
     if (opinions.length === 0)
         return { addedSeedOpinions, addedOpinions, rankingItemSources };
+    if (conversation.conversationType === "gathering")
+        throw httpErrors.badRequest("Use Gathering seed responses");
 
     // Bound provider concurrency and resolve languages before the sequential persistence loop.
     // Prepared content is reused by both persisters instead of sanitizing/detecting it again.
@@ -207,6 +210,7 @@ export async function fetchConversationSeedOpinions({
     conversationType: ConversationType;
     externalSourceManaged?: boolean;
 }): Promise<EditableSeedOpinion[]> {
+    if (conversationType === "gathering") return [];
     if (conversationType === "prioritizing") {
         const hasVotes = await rankingSeedHasVotes({
             db,

@@ -20,6 +20,8 @@ import {
     voteContentTable,
     voteTable,
     userTable,
+    gatheringResponseTable,
+    gatheringResponseContentTable,
 } from "./schema.js";
 
 export type ConversationEmailParticipationScope =
@@ -199,9 +201,67 @@ export function buildConversationEmailParticipationQuery({
                 ),
             ),
         );
+    const gatheringParticipation = db
+        .select({
+            userId: userTable.id,
+            conversationId: gatheringResponseTable.conversationId,
+        })
+        .from(gatheringResponseTable)
+        .innerJoin(
+            userTable,
+            and(
+                eq(userTable.id, gatheringResponseTable.authorId),
+                eq(userTable.isDeleted, false),
+            ),
+        )
+        .where(
+            and(
+                participationScopeCondition({
+                    db,
+                    conversationId: gatheringResponseTable.conversationId,
+                    participantId: gatheringResponseTable.authorId,
+                    scope,
+                }),
+                eq(gatheringResponseTable.isSeed, false),
+                isNull(gatheringResponseTable.deletedAt),
+                isNull(gatheringResponseTable.accountHiddenAt),
+                isNotNull(gatheringResponseTable.currentContentId),
+                or(
+                    isNull(gatheringResponseTable.moderation),
+                    eq(gatheringResponseTable.moderation, "move"),
+                ),
+                lte(gatheringResponseTable.createdAt, cutoffAt),
+                // A facilitator copying a response is not the author's participation/consent.
+                or(
+                    isNull(gatheringResponseTable.baselineContentId),
+                    exists(
+                        db
+                            .select({ id: gatheringResponseContentTable.id })
+                            .from(gatheringResponseContentTable)
+                            .where(
+                                and(
+                                    eq(
+                                        gatheringResponseContentTable.responseId,
+                                        gatheringResponseTable.id,
+                                    ),
+                                    ne(
+                                        gatheringResponseContentTable.id,
+                                        gatheringResponseTable.baselineContentId,
+                                    ),
+                                    lte(
+                                        gatheringResponseContentTable.createdAt,
+                                        cutoffAt,
+                                    ),
+                                ),
+                            ),
+                    ),
+                ),
+            ),
+        );
     return unionAll(
         voteParticipation,
         opinionParticipation,
         comparisonParticipation,
+        gatheringParticipation,
     );
 }

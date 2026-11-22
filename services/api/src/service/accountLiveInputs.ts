@@ -4,8 +4,10 @@ import type { PostgresTransaction } from "@/shared-backend/db.js";
 import { reconcileOpinionVoteCounters } from "@/shared-backend/conversationCounters.js";
 import { scheduleAnalysisUpdate } from "@/shared-backend/analysisScheduler.js";
 import { setQvAccountHidden } from "@/shared-backend/qvAccountLifecycle.js";
+import { setRetainedParticipantAccountHidden } from "@/shared-backend/retainedParticipantEligibility.js";
 import {
     conversationTable,
+    gatheringResponseTable,
     opinionTable,
     rankingItemTable,
     surveyResponseTable,
@@ -15,6 +17,7 @@ import {
     queueOpinionRedactedEvent,
     queueSourceInvalidationEvent,
 } from "./realtimeEventOutbox.js";
+import { refreshClosedQvLiveInputs } from "./qvLifecycle.js";
 
 type AccountLiveInputChange =
     | { type: "hide"; hiddenAt: Date }
@@ -39,10 +42,32 @@ export async function applyAccountLiveInputChange({
     userId: string;
     change: AccountLiveInputChange;
 }): Promise<void> {
+    await db
+        .update(gatheringResponseTable)
+        .set({
+            accountHiddenAt: change.type === "hide" ? change.hiddenAt : null,
+        })
+        .where(
+            and(
+                eq(gatheringResponseTable.authorId, userId),
+                eq(gatheringResponseTable.isSeed, false),
+                change.type === "restore"
+                    ? isNull(gatheringResponseTable.deletedAt)
+                    : undefined,
+            ),
+        );
+    await setRetainedParticipantAccountHidden({
+        db,
+        userId,
+        isAccountHidden: change.type === "hide",
+    });
     if (change.type === "hide") {
         await db
             .update(opinionTable)
-            .set({ accountHiddenAt: change.hiddenAt })
+            .set({
+                accountHiddenAt: change.hiddenAt,
+                accountHiddenContentRetained: true,
+            })
             .where(
                 and(
                     eq(opinionTable.authorId, userId),
@@ -52,7 +77,10 @@ export async function applyAccountLiveInputChange({
             );
         await db
             .update(rankingItemTable)
-            .set({ accountHiddenAt: change.hiddenAt })
+            .set({
+                accountHiddenAt: change.hiddenAt,
+                accountHiddenContentRetained: true,
+            })
             .where(
                 and(
                     eq(rankingItemTable.authorId, userId),
@@ -63,7 +91,7 @@ export async function applyAccountLiveInputChange({
     } else {
         await db
             .update(opinionTable)
-            .set({ accountHiddenAt: null })
+            .set({ accountHiddenAt: null, accountHiddenContentRetained: false })
             .where(
                 and(
                     eq(opinionTable.authorId, userId),
@@ -74,7 +102,7 @@ export async function applyAccountLiveInputChange({
             );
         await db
             .update(rankingItemTable)
-            .set({ accountHiddenAt: null })
+            .set({ accountHiddenAt: null, accountHiddenContentRetained: false })
             .where(
                 and(
                     eq(rankingItemTable.authorId, userId),
@@ -84,10 +112,14 @@ export async function applyAccountLiveInputChange({
                 ),
             );
     }
-    await setQvAccountHidden({
+    const qvBallotConversationIds = await setQvAccountHidden({
         db,
         userId,
         hiddenAt: change.type === "hide" ? change.hiddenAt : null,
+    });
+    await refreshClosedQvLiveInputs({
+        db,
+        conversationIds: qvBallotConversationIds,
     });
 
     const votedOpinions = await db
@@ -152,7 +184,12 @@ export async function applyAccountLiveInputChange({
         };
         changes.opinions.push({
             opinionSlugId: opinion.slugId,
-            action: opinion.isSeed ? "unlink_author" : "redact",
+            action:
+                change.type === "restore"
+                    ? "restore_account"
+                    : opinion.isSeed
+                      ? "unlink_author"
+                      : "hide_account",
         });
         changes.inputsChanged ||=
             !opinion.isSeed && opinion.currentContentId !== null;
@@ -165,14 +202,18 @@ export async function applyAccountLiveInputChange({
     for (const [conversationId, changes] of [...changesByConversation].sort(
         ([a], [b]) => a - b,
     )) {
-        if (change.type === "hide" && changes.opinions.length > 0)
+        if (changes.opinions.length > 0)
             await queueOpinionRedactedEvent({
                 db,
                 conversationSlugId: changes.slugId,
                 opinions: changes.opinions,
             });
         if (changes.inputsChanged) {
-            await scheduleAnalysisUpdate({ db, conversationId, log });
+            await scheduleAnalysisUpdate({
+                db,
+                conversationId,
+                log,
+            });
         }
     }
     await queueSourceInvalidationEvent(db);

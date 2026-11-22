@@ -20,6 +20,7 @@ import {
 import { lockAccountConversations } from "./accountContributions.js";
 import { findAccountParticipationSource } from "./accountParticipationSources.js";
 import { hasUnclassifiedComparisonAccountContext } from "./comparisonRetention.js";
+import { unlinkRetainedParticipantAccounts } from "./retainedParticipantEligibility.js";
 
 /** Purge-phase contract only; this neither starts purge nor removes private sources. */
 export async function unlinkAccountRetainedContributions({
@@ -82,6 +83,12 @@ export async function unlinkAccountRetainedContributions({
             reason: "legacy_membership_without_participant",
         };
     const scope = await lockAccountConversations({ db, userId, limit });
+    const retainedParticipants = await unlinkRetainedParticipantAccounts({
+        db,
+        userId,
+        limit,
+        conversationIds: scope,
+    });
     const scopedParticipants = db
         .select({ id: conversationParticipantTable.id })
         .from(conversationParticipantTable)
@@ -232,7 +239,7 @@ export async function unlinkAccountRetainedContributions({
         );
     return {
         status: "progress",
-        participants: participants.count,
+        participants: participants.count + retainedParticipants,
         memberships: memberships.count,
         sources: opinions.count + items.count + versions.count,
     };

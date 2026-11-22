@@ -12,16 +12,7 @@ import {
   ref,
   toValue,
 } from "vue";
-
-vi.mock("src/composables/ui/useComponentI18n", () => ({
-  useComponentI18n: (translations: { en: Record<string, string> }) => ({
-    t: (key: string, params: Record<string, string | number> = {}) =>
-      Object.entries(params).reduce(
-        (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-        translations.en[key] ?? key
-      ),
-  }),
-}));
+import { createI18n } from "vue-i18n";
 vi.mock("src/utils/translation/useRankingItemDisplayContent", () => ({
   useRankingItemDisplayContent: (
     input: Parameters<typeof useRankingItemDisplayContent>[0]
@@ -43,7 +34,7 @@ vi.mock("src/utils/translation/useRankingItemDisplayContent", () => ({
 }));
 
 import QvAllocationEditor from "./QvAllocationEditor.vue";
-import type { QvStatement } from "./QvVoting.types";
+import type { QvItem } from "./QvVoting.types";
 
 const mountedApps: App[] = [];
 afterEach(() => {
@@ -51,7 +42,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-function item(slugId: string): QvStatement {
+function item(slugId: string): QvItem {
   return {
     slugId,
     displayContent: {
@@ -68,12 +59,12 @@ async function mountEditor({
   initial = [],
   opposition = true,
   disabled = false,
-  statements = [item("a"), item("b"), item("c")],
+  items = [item("a"), item("b"), item("c")],
 }: {
   initial?: QvAllocation[];
   opposition?: boolean;
   disabled?: boolean;
-  statements?: QvStatement[];
+  items?: QvItem[];
 } = {}) {
   const allocations = ref<QvAllocation[]>(initial);
   const isDisabled = ref(disabled);
@@ -86,7 +77,7 @@ async function mountEditor({
       () => () =>
         h(QvAllocationEditor, {
           conversationSlugId: "qv-test",
-          items: statements,
+          items,
           responseActions: undefined,
           allowOpposition: allowOpposition.value,
           disabled: isDisabled.value,
@@ -98,6 +89,7 @@ async function mountEditor({
         })
     )
   );
+  app.use(createI18n({ legacy: false, locale: "en", numberFormats }));
   app.component(
     "QBtn",
     defineComponent({
@@ -226,7 +218,7 @@ describe("QV allocation editor", () => {
   it("prevents negative allocations when opposition is off", async () => {
     const view = await mountEditor({ opposition: false });
     expect(view.button("Decrease support for: Proposal a").disabled).toBe(true);
-    expect(view.container.textContent).not.toContain("Not support");
+    expect(view.container.querySelector(".legend .opposition")).toBeNull();
     await view.click({ label: "Increase support for: Proposal a" });
     await view.click({ label: "Decrease support for: Proposal a", times: 2 });
     expect(view.allocations.value).toEqual([]);
@@ -268,13 +260,13 @@ describe("QV allocation editor", () => {
   it.each(["pending", "running", "failed", "not_requested"] as const)(
     "does not allow allocating to %s statement content",
     async (status) => {
-      const statement = item("a");
-      statement.displayContent = {
+      const testItem = item("a");
+      testItem.displayContent = {
         sourceVersion: "unavailable",
         status,
         translationControl: null,
       };
-      const view = await mountEditor({ statements: [statement] });
+      const view = await mountEditor({ items: [testItem] });
       expect(view.container.textContent).toContain(
         "Statement text is unavailable"
       );
@@ -288,15 +280,15 @@ describe("QV allocation editor", () => {
   );
 
   it("disables voting on markup-only statement titles", async () => {
-    const statement = item("a");
-    statement.displayContent = {
+    const testItem = item("a");
+    testItem.displayContent = {
       sourceVersion: "empty-title",
       status: "available",
       mode: "original",
       content: { title: "<p><br></p>" },
       translationControl: null,
     };
-    const view = await mountEditor({ statements: [statement] });
+    const view = await mountEditor({ items: [testItem] });
     expect(view.container.textContent).toContain(
       "Statement text is unavailable"
     );
@@ -308,8 +300,8 @@ describe("QV allocation editor", () => {
   });
 
   it("sanitizes rich text instead of rendering executable markup", async () => {
-    const statement = item("a");
-    statement.displayContent = {
+    const testItem = item("a");
+    testItem.displayContent = {
       sourceVersion: "unsafe-html",
       status: "available",
       mode: "original",
@@ -321,7 +313,7 @@ describe("QV allocation editor", () => {
       },
       translationControl: null,
     };
-    const view = await mountEditor({ statements: [statement] });
+    const view = await mountEditor({ items: [testItem] });
     expect(
       view.container.querySelectorAll(
         "script, img, [onclick], [onmouseover], [onerror], a[href^='javascript:']"
@@ -358,3 +350,4 @@ describe("QV allocation editor", () => {
     }
   );
 });
+import { numberFormats } from "src/i18n/numberFormats";

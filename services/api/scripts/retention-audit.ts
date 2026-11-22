@@ -5,16 +5,19 @@ import {
     getTableName,
     isNotNull,
     isNull,
+    lt,
     ne,
     notExists,
+    or,
     sql,
 } from "drizzle-orm";
-import { getTableConfig, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { alias, getTableConfig, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { z } from "zod";
 import type { PostgresTransaction } from "../src/shared-backend/db.js";
 import {
     comparisonAnswerTable,
+    comparisonInputBaselineTable,
     comparisonResponseTable,
     comparisonUserEntityScoreTable,
     conversationTable,
@@ -32,6 +35,11 @@ import {
     readRetentionCatalog,
     type AuditRelation,
 } from "./retention-audit-catalog.js";
+
+const completeBaseline = alias(
+    comparisonInputBaselineTable,
+    "audit_complete_comparison_baseline",
+);
 
 export const auditOptionsSchema = z.object({
     rowLimit: z.number().int().min(1).max(10_000).default(1_000),
@@ -72,6 +80,7 @@ const applicationTables = [
     rankingInputParticipantTable,
     rankingInputItemTable,
     rankingInputAnswerTable,
+    comparisonInputBaselineTable,
     conversationTable,
     conversationParticipantTable,
     userTable,
@@ -91,7 +100,7 @@ function hasColumn({
 }): boolean {
     return (
         catalog
-            .get(getTableName(getColumnTable(column)))
+            .get(z.string().parse(getTableName(getColumnTable(column))))
             ?.columns.includes(column.name) === true
     );
 }
@@ -107,7 +116,8 @@ function missingColumns({
             columns
                 .filter((column) => !hasColumn({ catalog, column }))
                 .map(
-                    (column) => `${getTableName(getColumnTable(column))}.${column.name}`,
+                    (column) =>
+                        `${z.string().parse(getTableName(getColumnTable(column)))}.${column.name}`,
                 ),
         ),
     ];
@@ -142,21 +152,38 @@ export function buildRetentionChecks({
               rankingConversationStatsSnapshotTable.participantCount,
               rankingConversationStatsSnapshotTable.itemCount,
               rankingConversationStatsSnapshotTable.voteCount,
+              rankingConversationStatsSnapshotTable.reusedInputSnapshotId,
+              rankingConversationStatsSnapshotTable.isClosed,
           ]
         : [];
     const captureMatchesSnapshot = and(
-        eq(
-            rankingInputSnapshotTable.statsSnapshotId,
-            rankingConversationStatsSnapshotTable.id,
+        or(
+            and(
+                eq(
+                    rankingInputSnapshotTable.statsSnapshotId,
+                    rankingConversationStatsSnapshotTable.id,
+                ),
+                eq(
+                    rankingInputSnapshotTable.scoringInputRevision,
+                    rankingConversationStatsSnapshotTable.scoringInputRevision,
+                ),
+            ),
+            and(
+                eq(
+                    rankingInputSnapshotTable.id,
+                    rankingConversationStatsSnapshotTable.reusedInputSnapshotId,
+                ),
+                eq(rankingConversationStatsSnapshotTable.isClosed, true),
+                lt(
+                    rankingInputSnapshotTable.scoringInputRevision,
+                    rankingConversationStatsSnapshotTable.scoringInputRevision,
+                ),
+            ),
         ),
         isNotNull(rankingInputSnapshotTable.sealedAt),
         eq(
             rankingInputSnapshotTable.conversationId,
             rankingConversationStatsSnapshotTable.conversationId,
-        ),
-        eq(
-            rankingInputSnapshotTable.scoringInputRevision,
-            rankingConversationStatsSnapshotTable.scoringInputRevision,
         ),
         eq(
             rankingInputSnapshotTable.participantCount,
@@ -317,6 +344,70 @@ export function buildRetentionChecks({
                                           ),
                                   )
                                 : undefined,
+                        ),
+                    )
+                    .limit(limit),
+        },
+        {
+            name: "closed_results_without_complete_baselines",
+            blocking: false,
+            dependencies: [
+                rankingConversationStatsSnapshotTable.id,
+                rankingConversationStatsSnapshotTable.deletedAt,
+                rankingConversationStatsSnapshotTable.isClosed,
+                ...captureColumns,
+                rankingInputSnapshotTable.id,
+                comparisonInputBaselineTable.inputSnapshotId,
+                comparisonInputBaselineTable.baselineInputSnapshotId,
+                comparisonInputBaselineTable.conversationId,
+            ],
+            read: async (db) =>
+                await db
+                    .select({ id: rankingConversationStatsSnapshotTable.id })
+                    .from(rankingConversationStatsSnapshotTable)
+                    .where(
+                        and(
+                            eq(
+                                rankingConversationStatsSnapshotTable.isClosed,
+                                true,
+                            ),
+                            isNull(
+                                rankingConversationStatsSnapshotTable.deletedAt,
+                            ),
+                            notExists(
+                                db
+                                    .select({
+                                        id: rankingInputSnapshotTable.id,
+                                    })
+                                    .from(rankingInputSnapshotTable)
+                                    .innerJoin(
+                                        comparisonInputBaselineTable,
+                                        and(
+                                            eq(
+                                                comparisonInputBaselineTable.inputSnapshotId,
+                                                rankingInputSnapshotTable.id,
+                                            ),
+                                            eq(
+                                                comparisonInputBaselineTable.conversationId,
+                                                rankingInputSnapshotTable.conversationId,
+                                            ),
+                                        ),
+                                    )
+                                    .innerJoin(
+                                        completeBaseline,
+                                        and(
+                                            eq(
+                                                completeBaseline.inputSnapshotId,
+                                                comparisonInputBaselineTable.baselineInputSnapshotId,
+                                            ),
+                                            eq(
+                                                completeBaseline.inputSnapshotId,
+                                                completeBaseline.baselineInputSnapshotId,
+                                            ),
+                                        ),
+                                    )
+                                    .where(captureMatchesSnapshot),
+                            ),
                         ),
                     )
                     .limit(limit),
@@ -525,6 +616,18 @@ export async function runRetentionAudit({
     }
     const requiredTriggers = [
         {
+            table: comparisonInputBaselineTable,
+            names: [
+                "comparison_input_baseline_binding",
+                "comparison_input_baseline_immutable",
+                "comparison_input_baseline_retained",
+            ],
+        },
+        {
+            table: rankingConversationStatsSnapshotTable,
+            names: ["ranking_stats_reused_input_binding"],
+        },
+        {
             table: rankingInputSnapshotTable,
             names: [
                 "ranking_input_binding",
@@ -575,6 +678,14 @@ export async function runRetentionAudit({
     );
     const requiredIndexes = [
         {
+            table: comparisonInputBaselineTable,
+            names: ["comparison_input_baseline_source_idx"],
+        },
+        {
+            table: rankingConversationStatsSnapshotTable,
+            names: ["ranking_stats_reused_input_idx"],
+        },
+        {
             table: rankingScoreTable,
             names: [
                 "ranking_score_conversation_idx",
@@ -612,6 +723,7 @@ export async function runRetentionAudit({
                 "ranking_input_answer",
                 "ranking_input_item",
                 "ranking_input_participant",
+                "comparison_input_baseline",
                 "comparison_response",
                 "comparison_answer",
                 "comparison_user_entity_score",

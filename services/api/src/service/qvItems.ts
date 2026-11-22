@@ -8,7 +8,7 @@ import {
     type UpdateConversationResponse,
 } from "@/shared/types/dto.js";
 import {
-    creditVotingConfigTable,
+    qvConfigTable,
     rankingItemContentTable,
     rankingItemTable,
     userTable,
@@ -28,19 +28,17 @@ import { MAX_SEED_OPINIONS_PER_SUBMISSION } from "@/shared/seedOpinions.js";
 import { htmlToCountedText } from "@/shared/richText.js";
 import { queueSourceInvalidationEvent } from "./realtimeEventOutbox.js";
 
-type QvStatementList = z.infer<typeof Dto.qvStatementList>;
-type StatementUpdate = NonNullable<
-    UpdateConversationRequest["qvStatementUpdate"]
->;
-type StatementChange = StatementUpdate["changes"][number];
-type NormalizedStatementChange =
-    | Extract<StatementChange, { action: "delete" }>
+type QvItemList = z.infer<typeof Dto.qvItemList>;
+type ItemUpdate = NonNullable<UpdateConversationRequest["qvStatementUpdate"]>;
+type ItemChange = ItemUpdate["changes"][number];
+type NormalizedItemChange =
+    | Extract<ItemChange, { action: "delete" }>
     | { action: "add"; content: NormalizedRankingItemContent }
-    | (Omit<Extract<StatementChange, { action: "edit" }>, "content"> & {
+    | (Omit<Extract<ItemChange, { action: "edit" }>, "content"> & {
           content: NormalizedRankingItemContent;
       });
-export type NormalizedQvStatementUpdate = Omit<StatementUpdate, "changes"> & {
-    changes: NormalizedStatementChange[];
+export type NormalizedQvItemUpdate = Omit<ItemUpdate, "changes"> & {
+    changes: NormalizedItemChange[];
 };
 type Failure = Extract<
     UpdateConversationResponse,
@@ -57,10 +55,10 @@ type PreparedChange =
     | { action: "delete"; id: number };
 
 /** Rich-text parsing and local language detection do not belong under write locks. */
-export async function normalizeQvStatementUpdate(
-    update: StatementUpdate,
-): Promise<NormalizedQvStatementUpdate> {
-    const changes: NormalizedStatementChange[] = [];
+export async function normalizeQvItemUpdate(
+    update: ItemUpdate,
+): Promise<NormalizedQvItemUpdate> {
+    const changes: NormalizedItemChange[] = [];
     for (const change of update.changes) {
         if (change.action === "delete") changes.push(change);
         else {
@@ -74,9 +72,7 @@ export async function normalizeQvStatementUpdate(
     return { ...update, changes };
 }
 
-export function getQvStatementLanguageInput(
-    content: NormalizedRankingItemContent,
-) {
+export function getQvItemLanguageInput(content: NormalizedRankingItemContent) {
     return {
         text: [htmlToCountedText(content.title), content.bodyPlainText]
             .filter((text) => text !== null && text.trim() !== "")
@@ -92,7 +88,7 @@ function reject(changeFailure: Failure["changeFailure"]): Failure {
     };
 }
 
-async function loadStatements({
+async function loadItems({
     db,
     conversationId,
 }: {
@@ -123,7 +119,7 @@ async function loadStatements({
         .orderBy(asc(rankingItemTable.position), asc(rankingItemTable.id));
 }
 
-export async function fetchQvStatements({
+export async function fetchQvItems({
     db,
     conversationId,
     configId,
@@ -135,12 +131,12 @@ export async function fetchQvStatements({
     configId: number;
     isClosed: boolean;
     canEdit: boolean;
-}): Promise<QvStatementList> {
+}): Promise<QvItemList> {
     // One statement gives the revision and its contents the same MVCC snapshot.
     const rows = await db
         .select({
-            revision: creditVotingConfigTable.statementSetRevision,
-            statementsLockedAt: creditVotingConfigTable.statementsLockedAt,
+            revision: qvConfigTable.statementSetRevision,
+            itemsLockedAt: qvConfigTable.statementsLockedAt,
             item: {
                 slugId: rankingItemTable.slugId,
                 sourceVersion: rankingItemContentTable.publicId,
@@ -148,7 +144,7 @@ export async function fetchQvStatements({
                 description: rankingItemContentTable.body,
             },
         })
-        .from(creditVotingConfigTable)
+        .from(qvConfigTable)
         .leftJoin(
             rankingItemTable,
             and(
@@ -167,16 +163,16 @@ export async function fetchQvStatements({
                 currentRankingItemSourceCondition(),
             ),
         )
-        .where(eq(creditVotingConfigTable.id, configId))
+        .where(eq(qvConfigTable.id, configId))
         .orderBy(asc(rankingItemTable.position), asc(rankingItemTable.id));
     const row = rows.at(0);
-    return Dto.qvStatementList.parse({
+    return Dto.qvItemList.parse({
         revision: row?.revision,
         editing: !canEdit
             ? { allowed: false, reason: "not_allowed" }
             : isClosed
               ? { allowed: false, reason: "closed" }
-              : row?.statementsLockedAt != null
+              : row?.itemsLockedAt != null
                 ? { allowed: false, reason: "participation_started" }
                 : { allowed: true },
         items: rows.flatMap(({ item }) =>
@@ -193,7 +189,7 @@ export async function fetchQvStatements({
 }
 
 /** Writes hold conversation UPDATE before config UPDATE; unlocked preflights must be repeated under those locks. */
-export async function prepareQvStatementUpdate({
+export async function prepareQvItemUpdate({
     db,
     conversationId,
     configId,
@@ -204,7 +200,7 @@ export async function prepareQvStatementUpdate({
     conversationId: number;
     configId: number;
     isClosed: boolean;
-    update: NormalizedQvStatementUpdate;
+    update: NormalizedQvItemUpdate;
 } & (
     | { db: PostgresTransaction; lockConfig: true }
     | { db: PostgresJsDatabase; lockConfig: false }
@@ -221,8 +217,8 @@ export async function prepareQvStatementUpdate({
     if (isClosed) return reject("closed");
     const configQuery = db
         .select()
-        .from(creditVotingConfigTable)
-        .where(eq(creditVotingConfigTable.id, configId));
+        .from(qvConfigTable)
+        .where(eq(qvConfigTable.id, configId));
     const configs = await (lockConfig
         ? configQuery.for("update")
         : configQuery);
@@ -232,8 +228,8 @@ export async function prepareQvStatementUpdate({
         return reject("participation_started");
     if (config.statementSetRevision !== update.expectedRevision)
         return reject("version_conflict");
-    const statements = await loadStatements({ db, conversationId });
-    const bySlug = new Map(statements.map((item) => [item.slugId, item]));
+    const items = await loadItems({ db, conversationId });
+    const bySlug = new Map(items.map((item) => [item.slugId, item]));
     const seen = new Set<string>();
     const changes: PreparedChange[] = [];
     for (const change of update.changes) {
@@ -293,7 +289,7 @@ export async function prepareQvStatementUpdate({
     };
 }
 
-export async function applyQvStatementUpdate({
+export async function applyQvItemUpdate({
     db,
     prepared,
     conversation,
@@ -305,7 +301,7 @@ export async function applyQvStatementUpdate({
 }: {
     db: PostgresTransaction;
     prepared: Extract<
-        Awaited<ReturnType<typeof prepareQvStatementUpdate>>,
+        Awaited<ReturnType<typeof prepareQvItemUpdate>>,
         { success: true }
     >;
     conversation: { id: number; slugId: string; contentId: number };
@@ -335,7 +331,7 @@ export async function applyQvStatementUpdate({
             ...change.content,
             sourceLanguageMetadata: useGoogleLanguageDetection
                 ? await resolveLanguageMetadata({
-                      ...getQvStatementLanguageInput(change.content),
+                      ...getQvItemLanguageInput(change.content),
                       useGoogleLanguageDetection,
                   })
                 : change.content.sourceLanguageMetadata,
@@ -373,7 +369,7 @@ export async function applyQvStatementUpdate({
                 });
             const content = contents.at(0);
             if (content === undefined)
-                throw new Error("Statement content insertion returned no row");
+                throw new Error("Item content insertion returned no row");
             await db
                 .update(rankingItemTable)
                 .set({ currentContentId: content.id, updatedAt: now })
@@ -393,7 +389,7 @@ export async function applyQvStatementUpdate({
     }
     if (prepared.positions.length > 0) {
         // The new order exists only in the editor input. Apply its assignments
-        // together to avoid a round trip per item under the statement-set lock.
+        // together to avoid a round trip per item under the item-set lock.
         const cases = prepared.positions.map(
             ({ id, position }) => sql`when ${id} then ${position}::integer`,
         );
@@ -413,11 +409,11 @@ export async function applyQvStatementUpdate({
             );
     }
     await db
-        .update(creditVotingConfigTable)
+        .update(qvConfigTable)
         .set({
             statementSetRevision: prepared.revision + 1,
             itemCount: prepared.itemCount,
         })
-        .where(eq(creditVotingConfigTable.id, configId));
+        .where(eq(qvConfigTable.id, configId));
     return sources;
 }

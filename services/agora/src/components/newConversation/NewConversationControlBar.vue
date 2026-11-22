@@ -153,7 +153,7 @@ import {
   type NewConversationControlBarTranslations,
   newConversationControlBarTranslations,
 } from "./NewConversationControlBar.i18n";
-import { qvStatementsTranslations } from "./QvStatements.i18n";
+import { qvItemsTranslations } from "./QvItems.i18n";
 
 interface ControlButton {
   id: string;
@@ -189,7 +189,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { t, locale } = useComponentI18n<NewConversationControlBarTranslations>(
   newConversationControlBarTranslations
 );
-const { t: typeT } = useComponentI18n(qvStatementsTranslations);
+const { t: typeT } = useComponentI18n(qvItemsTranslations);
 const { t: tVotingPresentation } =
   useComponentI18n<VotingPresentationTranslations>(
     votingPresentationTranslations

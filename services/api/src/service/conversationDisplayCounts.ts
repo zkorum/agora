@@ -1,26 +1,47 @@
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    or,
+    sql,
+} from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     getReplicaDatabase,
     type ReplicaDatabase,
 } from "@/shared-backend/db.js";
 import type { SqlExpression } from "@/utils/sqlExpression.js";
+import { fetchGatheringDisplayCounts } from "./gatheringDisplayCounts.js";
 import {
+    comparisonAnalysisCloseTable,
+    conversationAnalysisCloseTable,
     conversationTable,
     conversationViewSnapshotTable,
     rankingConversationConfigTable,
-    creditVotingConfigTable,
+    qvConfigTable,
     rankingConversationStatsSnapshotTable,
     qvLiveStatsTable,
     qvCalculationStateTable,
     qvCalculationTable,
 } from "@/shared-backend/schema.js";
+import { currentAnalysisCloseCondition } from "./closedAnalysisQueries.js";
+import { selectedComparisonStatsSnapshot } from "./comparisonCloseSelection.js";
+import type { z } from "zod";
+import type { zodComparisonCloseSelectionVersion } from "@/shared/types/zod.js";
 
 export interface ConversationDisplayCounts {
+    gatheringResponseCount?: number;
     conversationId: number;
     isClosed: boolean;
-    conversationViewSnapshotId: number;
+    isClosingFinalized: boolean;
+    conversationViewSnapshotId: number | undefined;
     rankingStatsSnapshotId: number | undefined;
+    comparisonCloseSelectionVersion?: z.infer<
+        typeof zodComparisonCloseSelectionVersion
+    >;
     qvStatsRevision: number | undefined;
     qvLifecycle:
         | {
@@ -54,7 +75,8 @@ export function conversationDisplayCount({
 }) {
     // PostgreSQL CASE/greatest have no Drizzle helpers. Imported ranking counts
     // retain the snapshot baseline only until the first completed scoring pass.
-    return sql<number>`case when ${conversationTable.prioritizationType} = 'comparisons' then
+    return sql<number>`case when ${conversationTable.conversationType} = 'gathering' then 0
+        when ${conversationTable.prioritizationType} = 'comparisons' then
         case when ${rankingConversationConfigTable.processedScoringInputRevision} >= 0
             then ${rankingCount} else greatest(${rankingCount}, ${snapshotCount}) end
         when ${conversationTable.prioritizationType} = 'qv' then ${qvCount ?? sql`0`}
@@ -103,6 +125,7 @@ function buildConversationDisplayCountsQuery({
     conversationIds: readonly number[];
 }) {
     const latestSnapshot = latestConversationDisplaySnapshot(db);
+    const closingRankingSnapshot = selectedComparisonStatsSnapshot(db);
     const latestRankingSnapshot = db
         .select({
             rankingStatsSnapshotId: rankingConversationStatsSnapshotTable.id,
@@ -115,6 +138,8 @@ function buildConversationDisplayCountsQuery({
                     conversationTable.id,
                 ),
                 eq(conversationTable.prioritizationType, "comparisons"),
+                isNull(closingRankingSnapshot.id),
+                isNull(rankingConversationStatsSnapshotTable.derivedFromCloseId),
                 isNull(rankingConversationStatsSnapshotTable.deletedAt),
             ),
         )
@@ -127,25 +152,31 @@ function buildConversationDisplayCountsQuery({
     return db
         .select({
             conversationId: conversationTable.id,
+            conversationType: conversationTable.conversationType,
             isClosed: conversationTable.isClosed,
+            closedFinalizedAt: conversationTable.closedFinalizedAt,
             conversationViewSnapshotId:
                 latestSnapshot.conversationViewSnapshotId,
-            rankingStatsSnapshotId:
-                latestRankingSnapshot.rankingStatsSnapshotId,
+            rankingStatsSnapshotId: sql<
+                number | null
+            >`coalesce(${closingRankingSnapshot.id}, ${latestRankingSnapshot.rankingStatsSnapshotId})`,
+            comparisonCloseId: comparisonAnalysisCloseTable.closeId,
+            comparisonSelectionRevision:
+                conversationAnalysisCloseTable.selectionRevision,
             qvStatsRevision: qvLiveStatsTable.revision,
             qvCalculationStatus: qvCalculationTable.status,
             qvGeneration: qvCalculationStateTable.generation,
             opinionCount: conversationDisplayCount({
-                rankingCount: rankingConversationConfigTable.itemCount,
+                rankingCount: sql<number>`coalesce(${closingRankingSnapshot.itemCount}, ${rankingConversationConfigTable.itemCount})`,
                 snapshotCount: latestSnapshot.opinionCount,
-                qvCount: creditVotingConfigTable.itemCount,
+                qvCount: qvConfigTable.itemCount,
             }),
             voteCount: conversationDisplayCount({
-                rankingCount: rankingConversationConfigTable.voteCount,
+                rankingCount: sql<number>`coalesce(${closingRankingSnapshot.voteCount}, ${rankingConversationConfigTable.voteCount})`,
                 snapshotCount: latestSnapshot.voteCount,
             }),
             participantCount: conversationDisplayCount({
-                rankingCount: rankingConversationConfigTable.participantCount,
+                rankingCount: sql<number>`coalesce(${closingRankingSnapshot.participantCount}, ${rankingConversationConfigTable.participantCount})`,
                 snapshotCount: latestSnapshot.participantCount,
                 qvCount:
                     sql<number>`coalesce(${qvLiveStatsTable.participantCount}, 0)`.mapWith(
@@ -153,17 +184,16 @@ function buildConversationDisplayCountsQuery({
                     ),
             }),
             totalOpinionCount: conversationDisplayCount({
-                rankingCount: rankingConversationConfigTable.totalItemCount,
+                rankingCount: sql<number>`coalesce(${closingRankingSnapshot.totalItemCount}, ${rankingConversationConfigTable.totalItemCount})`,
                 snapshotCount: latestSnapshot.totalOpinionCount,
-                qvCount: creditVotingConfigTable.itemCount,
+                qvCount: qvConfigTable.itemCount,
             }),
             totalVoteCount: conversationDisplayCount({
-                rankingCount: rankingConversationConfigTable.totalVoteCount,
+                rankingCount: sql<number>`coalesce(${closingRankingSnapshot.totalVoteCount}, ${rankingConversationConfigTable.totalVoteCount})`,
                 snapshotCount: latestSnapshot.totalVoteCount,
             }),
             totalParticipantCount: conversationDisplayCount({
-                rankingCount:
-                    rankingConversationConfigTable.totalParticipantCount,
+                rankingCount: sql<number>`coalesce(${closingRankingSnapshot.totalParticipantCount}, ${rankingConversationConfigTable.totalParticipantCount})`,
                 snapshotCount: latestSnapshot.totalParticipantCount,
                 qvCount:
                     sql<number>`coalesce(${qvLiveStatsTable.participantCount}, 0)`.mapWith(
@@ -171,16 +201,16 @@ function buildConversationDisplayCountsQuery({
                     ),
             }),
             moderatedOpinionCount:
-                sql<number>`case when ${conversationTable.conversationType} = 'prioritizing' then 0 else ${latestSnapshot.moderatedOpinionCount} end`.mapWith(
+                sql<number>`case when ${conversationTable.conversationType} = 'polis' then ${latestSnapshot.moderatedOpinionCount} else 0 end`.mapWith(
                     Number,
                 ),
             hiddenOpinionCount:
-                sql<number>`case when ${conversationTable.conversationType} = 'prioritizing' then 0 else ${latestSnapshot.hiddenOpinionCount} end`.mapWith(
+                sql<number>`case when ${conversationTable.conversationType} = 'polis' then ${latestSnapshot.hiddenOpinionCount} else 0 end`.mapWith(
                     Number,
                 ),
         })
         .from(conversationTable)
-        .innerJoinLateral(latestSnapshot, sql`true`)
+        .leftJoinLateral(latestSnapshot, sql`true`)
         .leftJoin(
             rankingConversationConfigTable,
             eq(
@@ -188,6 +218,21 @@ function buildConversationDisplayCountsQuery({
                 conversationTable.rankingConfigId,
             ),
         )
+        .leftJoin(
+            conversationAnalysisCloseTable,
+            and(
+                eq(conversationTable.prioritizationType, "comparisons"),
+                currentAnalysisCloseCondition(),
+            ),
+        )
+        .leftJoin(
+            comparisonAnalysisCloseTable,
+            eq(
+                comparisonAnalysisCloseTable.closeId,
+                conversationAnalysisCloseTable.id,
+            ),
+        )
+        .leftJoinLateral(closingRankingSnapshot, sql`true`)
         .leftJoinLateral(latestRankingSnapshot, sql`true`)
         .leftJoin(
             qvCalculationStateTable,
@@ -214,21 +259,28 @@ function buildConversationDisplayCountsQuery({
             eq(qvLiveStatsTable.conversationId, conversationTable.id),
         )
         .leftJoin(
-            creditVotingConfigTable,
-            eq(
-                creditVotingConfigTable.id,
-                conversationTable.creditVotingConfigId,
-            ),
+            qvConfigTable,
+            eq(qvConfigTable.id, conversationTable.creditVotingConfigId),
         )
-        .where(inArray(conversationTable.id, conversationIds));
+        .where(
+            and(
+                inArray(conversationTable.id, conversationIds),
+                or(
+                    eq(conversationTable.conversationType, "gathering"),
+                    isNotNull(latestSnapshot.conversationViewSnapshotId),
+                ),
+            ),
+        );
 }
 
 export async function fetchConversationDisplayCountsByConversationId({
     db,
     conversationIds,
+    userId,
 }: {
     db: PostgresJsDatabase;
     conversationIds: number[];
+    userId?: string;
 }): Promise<Map<number, ConversationDisplayCounts>> {
     const uniqueConversationIds = Array.from(new Set(conversationIds));
     if (uniqueConversationIds.length === 0) return new Map();
@@ -238,11 +290,48 @@ export async function fetchConversationDisplayCountsByConversationId({
     });
 
     const countsByConversationId = new Map<number, ConversationDisplayCounts>();
+    const gatheringCounts = await fetchGatheringDisplayCounts({
+        db,
+        conversationIds: rows
+            .filter((row) => row.conversationType === "gathering")
+            .map((row) => row.conversationId),
+        userId,
+    });
     for (const row of rows) {
-        const { qvGeneration, qvCalculationStatus, ...counts } = row;
+        const {
+            qvGeneration,
+            qvCalculationStatus,
+            conversationType,
+            comparisonCloseId,
+            comparisonSelectionRevision,
+            closedFinalizedAt,
+            ...counts
+        } = row;
+        const gathering =
+            conversationType === "gathering"
+                ? gatheringCounts.get(row.conversationId)
+                : undefined;
         countsByConversationId.set(row.conversationId, {
             ...counts,
+            isClosingFinalized: closedFinalizedAt !== null,
+            conversationViewSnapshotId:
+                row.conversationViewSnapshotId ?? undefined,
+            ...(gathering === undefined
+                ? {}
+                : {
+                      gatheringResponseCount: gathering.responseCount,
+                      participantCount: gathering.participantCount,
+                      totalParticipantCount: gathering.participantCount,
+                  }),
             rankingStatsSnapshotId: row.rankingStatsSnapshotId ?? undefined,
+            comparisonCloseSelectionVersion:
+                comparisonCloseId === null ||
+                comparisonSelectionRevision === null
+                    ? undefined
+                    : {
+                          closeId: comparisonCloseId,
+                          selectionRevision: comparisonSelectionRevision,
+                      },
             qvStatsRevision: row.qvStatsRevision ?? undefined,
             qvLifecycle:
                 qvGeneration === null

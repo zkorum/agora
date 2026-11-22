@@ -385,6 +385,7 @@
           :show-report-button="false"
           :is-live-analysis-paused="isLiveAnalysisPaused"
           :is-conversation-closed="mockSnapshotMetrics.isClosed"
+          :can-edit-conversation="false"
           :is-finalizing="false"
           :navigate-to-discover-tab="handleDevVoteMore"
           :conversation-scroll-context="conversationScrollContext"
@@ -2107,10 +2108,6 @@ const mockAnalysisData = computed<AnalysisData>(() => {
       hiddenOpinionCount: 0,
       isClosed: mockSnapshotMetrics.value.isClosed,
     },
-    emptyReason:
-      mockAnalysisViewState.value.resolvedBy === "unavailable_fixed_count"
-        ? `Agora could not form ${String(requestedAnalysisView.value)} meaningful groups for this checkpoint.`
-        : undefined,
     analysisViewState: mockAnalysisViewState.value,
     hasVotedOnAllAvailableOpinions: voteCompletionMode.value === "complete",
   };

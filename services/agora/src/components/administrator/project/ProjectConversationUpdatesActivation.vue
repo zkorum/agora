@@ -10,7 +10,7 @@
     />
 
     <ZKInfoBanner
-      v-if="!hasParticipantContactEmail"
+      v-if="!hasParticipantContactEmail && !$slots.contact"
       :message="t('missingContact')"
       variant="warning"
       :action-label="t('editParticipantContact')"
@@ -18,7 +18,7 @@
     />
 
     <div
-      v-if="hasParticipantContactEmail || enabled"
+      v-if="hasParticipantContactEmail || enabled || $slots.contact"
       class="conversation-updates-configuration__activation"
     >
       <div>
@@ -31,6 +31,7 @@
         :disable="disabled"
       />
     </div>
+    <slot v-if="enabled" name="contact" />
   </ZKCard>
 </template>
 
@@ -87,9 +88,6 @@ const activationDescription = computed(() =>
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-  }
-
-  &__activation {
     padding-block-start: 1rem;
     border-top: 1px solid $grey-4;
 

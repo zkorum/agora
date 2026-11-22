@@ -1083,7 +1083,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. Accepted account deletion disables access and makes participation ineligible for new live calculations. It hides personal statement text, translations and attribution, including in historical displays. Open results refresh asynchronously. Recovery data remain private for 15 days, then become eligible for permanent cleanup. ",
+              " 4.2. Accepted account deletion disables access and makes participation ineligible for new live calculations. Personal statements are hidden from live views. Retained checkpoints and snapshots may keep permitted statement text and existing translations without public account attribution; numerical inputs and saved results remain unchanged. Open results refresh asynchronously. Necessary recovery data remain private for 15 days, then become eligible for permanent cleanup. ",
             ],
           },
           {
@@ -1102,6 +1102,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. Retained inputs are those used in saved results, not every ballot or calculation. Ordinary deletion does not recalculate saved numbers; separate corrections or re-analysis may change them. Historical AI descriptions are not automatically rewritten; identifying excerpts remain subject to erasure rights. Applicable erasure removes or redacts affected output/translations without generating a replacement. Reopening excludes deleted or permanently detached participation. Conversation/project deletion removes its exclusively owned results and inputs. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "While a conversation stays closed, Live results can refresh using currently eligible inputs. Closing uses inputs retained at closure. Moderation can update the Closing result at the same checkpoint link until reopening, when that link becomes fixed. For opinion-group analysis, we may retain validated survey choices linked by a participant number local to the checkpoint to recalculate group totals. These records contain no free text and do not publish individual choices. ",
             ],
           },
           {
@@ -1226,7 +1232,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. Within your permissions, controls let you manage content/preferences and withdraw or change supported participation, subject to open/closed rules. Account deletion also redacts your personal statements; separate statement deletion is unnecessary. Independent content deletion has no recovery period. ",
+              " 6.5. Within your permissions, controls let you manage content/preferences and withdraw or change supported participation, subject to open/closed rules. Account deletion and content deletion are separate actions. To remove contributed text from retained checkpoints too, manage content before deleting your account. Explicit content deletion redacts text, versions, translations and attribution, with no recovery period. Applicable erasure requests do not require manually deleting every contribution. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Where supported after closing, you may withdraw your entire voting contribution, not individual votes or comparisons. This excludes it from new Live calculations without erasing retained inputs or historical personalization. You cannot vote again until reopening. Withdrawing a required survey excludes your votes from Live calculations; withdrawing an optional survey affects only survey answers. ",
             ],
           },
           {
@@ -1288,7 +1300,7 @@ export const privacyPolicyContent = {
                 tag: "li",
                 children: [
                   { tag: "strong", children: ["At the 15-day deadline:"] },
-                  " Recovery ends. Cleanup removes private account/recovery data, original personal statement text and translations, and unnecessary associations. Statements show a deletion notice without your attribution. ",
+                  " You can no longer recover your account. Cleanup removes private account and recovery data and unnecessary account links. Saved results may still show permitted statement text and existing translations, without your username or profile link. If you deleted the statement itself, its text and translations stay hidden in saved results too. ",
                 ],
               },
             ],
@@ -2432,7 +2444,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. يعطّل حذف الحساب المقبول الوصول ويستبعد المشاركة من الحسابات المباشرة الجديدة. ويخفي نص المقترحات الشخصية وترجماتها ونسبتها إليك، بما في ذلك في العروض التاريخية. وتتحدّث النتائج المفتوحة بصورة غير متزامنة. وتبقى بيانات الاسترداد خاصة لمدة 15 يومًا، ثم تصبح مؤهلة للتنظيف النهائي. ",
+              " 4.2. يعطّل حذف الحساب المقبول الوصول ويستبعد المشاركة من الحسابات المباشرة الجديدة. تُخفى المقترحات الشخصية من العروض الحالية. وقد تحتفظ نقاط التحقق واللقطات المحفوظة بالنص المسموح وترجماته الموجودة دون نسبتها علنًا إلى الحساب؛ وتبقى المدخلات الرقمية والنتائج المحفوظة دون تغيير. وتتحدّث النتائج المفتوحة بصورة غير متزامنة. وتبقى بيانات الاسترداد الضرورية خاصة لمدة 15 يومًا، ثم تصبح مؤهلة للتنظيف النهائي. ",
             ],
           },
           {
@@ -2451,6 +2463,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. المدخلات المحتفظ بها هي المستخدمة في النتائج المحفوظة، لا كل ورقة تصويت أو عملية حساب. ولا يعيد الحذف المعتاد حساب الأرقام المحفوظة؛ وقد تغيّرها تصحيحات أو إعادة تحليل منفصلة. ولا تُعاد كتابة أوصاف الذكاء الاصطناعي التاريخية تلقائيًا؛ وتظل المقتطفات الكاشفة للهوية خاضعة لحقوق المحو. ويزيل المحو المنطبق المخرجات والترجمات المتأثرة أو ينقّحها دون توليد بديل. وتستبعد إعادة الفتح المشاركة المحذوفة أو المفصولة نهائيًا عن الحساب. ويزيل حذف المحادثة أو المشروع النتائج والمدخلات التي يملكها حصريًا. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "ما دامت المحادثة مغلقة، يمكن تحديث النتائج الحالية باستخدام المشاركات المؤهلة حاليًا. تُحسب نتائج الإغلاق باستخدام المدخلات المحتفظ بها عند الإغلاق. وقد يغيّر الإشراف نتيجة الإغلاق على رابط نقطة التحقق نفسه حتى إعادة الفتح، وعندها يثبت ما يشير إليه الرابط. ولإعادة حساب إجماليات مجموعات الرأي، قد نحتفظ بخيارات الاستبيان التي تم التحقق منها مرتبطة برقم مشارك خاص بنقطة التحقق. لا تتضمن هذه السجلات نصوصًا حرة ولا تنشر الخيارات الفردية. ",
             ],
           },
           {
@@ -2571,7 +2589,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. تتيح الأدوات، ضمن صلاحياتك، إدارة المحتوى والتفضيلات وسحب المشاركة المدعومة أو تغييرها، مع مراعاة قواعد الفتح والإغلاق. وينقّح حذف الحساب أيضًا مقترحاتك الشخصية؛ فلا يلزم حذفها منفردة. ولا توجد مهلة استرداد لحذف المحتوى المستقل. ",
+              " 6.5. تتيح الأدوات، ضمن صلاحياتك، إدارة المحتوى والتفضيلات وسحب المشاركة المدعومة أو تغييرها، مع مراعاة قواعد الفتح والإغلاق. حذف الحساب وحذف المحتوى إجراءان منفصلان. لإزالة النص من نقاط التحقق المحفوظة أيضًا، أدِر المحتوى قبل حذف الحساب. يحجب حذف المحتوى الصريح النص ونسخه وترجماته ونسبته إلى صاحبه، دون مهلة استرداد. ولا تتطلب طلبات المحو المنطبقة حذف كل مساهمة يدويًا. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "إذا كانت الميزة متاحة بعد الإغلاق، يمكنك سحب مساهمتك التصويتية كاملة، لا أصواتًا أو مقارنات منفردة. تُستبعد بذلك من الحسابات الجديدة للنتائج الحالية دون محو المدخلات المحتفظ بها أو تخصيص العروض السابقة. لا يمكنك التصويت مجددًا قبل إعادة الفتح. سحب الرد على استبيان إلزامي يستبعد أصواتك من الحسابات الحالية، أما سحب الرد على استبيان اختياري فيؤثر في إجابات الاستبيان فقط. ",
             ],
           },
           {
@@ -2636,7 +2660,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["عند حلول الموعد النهائي بعد 15 يومًا:"],
                   },
-                  " ينتهي الاسترداد. ويزيل التنظيف بيانات الحساب والاسترداد الخاصة والنص الأصلي للمقترحات الشخصية وترجماتها والارتباطات غير الضرورية. وتُعرض المقترحات مع إشعار حذف دون نسبتها إليك. ",
+                  " لم يعد بإمكانك استرداد حسابك. تُزال بيانات الحساب والاسترداد الخاصة والروابط غير الضرورية بالحساب. وقد تظل النتائج المحفوظة تعرض نص المقترح المسموح بعرضه وترجماته الموجودة، من دون اسم المستخدم أو رابط الملف الشخصي. أما إذا حذفت المقترح نفسه، فيظل نصه وترجماته مخفيين في النتائج المحفوظة أيضًا. ",
                 ],
               },
             ],
@@ -3820,7 +3844,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. La eliminación aceptada de la cuenta deshabilita el acceso y excluye la participación de nuevos cálculos en vivo. Oculta el texto de las proposiciones personales, sus traducciones y su atribución, incluso en vistas históricas. Los resultados abiertos se actualizan de forma asíncrona. Los datos de recuperación permanecen privados durante 15 días; después pueden someterse a limpieza permanente. ",
+              " 4.2. La eliminación aceptada de la cuenta deshabilita el acceso y excluye la participación de nuevos cálculos en vivo. Las proposiciones personales se ocultan en las vistas actuales. Los puntos de control y las instantáneas conservados pueden mantener el texto permitido y sus traducciones existentes sin atribución pública a la cuenta; los datos numéricos de entrada y los resultados guardados no cambian. Los resultados abiertos se actualizan de forma asíncrona. Los datos necesarios para la recuperación permanecen privados durante 15 días; después pueden someterse a limpieza permanente. ",
             ],
           },
           {
@@ -3839,6 +3863,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. Los datos de entrada conservados son los utilizados en resultados guardados, no todas las papeletas ni todos los cálculos. La eliminación ordinaria no recalcula las cifras guardadas; las correcciones o los nuevos análisis independientes pueden modificarlas. Las descripciones históricas de IA no se reescriben automáticamente; los fragmentos identificativos siguen sujetos al derecho de supresión. Cuando procede la supresión, se elimina u oculta la información afectada en el resultado y sus traducciones sin generar un sustituto. La reapertura excluye la participación eliminada o desvinculada permanentemente. Eliminar una conversación o un proyecto elimina sus resultados y datos de entrada de propiedad exclusiva. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Mientras la conversación permanezca cerrada, los resultados actuales pueden actualizarse con las participaciones que sigan siendo válidas. El cálculo del cierre usa los datos conservados al cerrar. La moderación puede cambiar el resultado del cierre bajo el mismo enlace; al reabrirse la conversación, ese enlace queda fijo. Para recalcular los totales por grupo de opinión, podemos conservar las opciones validadas de la encuesta asociadas a un número de participante propio del punto de control. Esos registros no contienen texto libre ni publican opciones individuales. ",
             ],
           },
           {
@@ -3965,7 +3995,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. Dentro de sus permisos, los controles permiten gestionar contenido y preferencias y retirar o modificar la participación admitida, según las reglas de apertura o cierre. Eliminar la cuenta también suprime el texto de sus proposiciones personales; no es necesario eliminarlas por separado. La eliminación independiente de contenido no tiene plazo de recuperación. ",
+              " 6.5. Dentro de sus permisos, los controles permiten gestionar contenido y preferencias y retirar o modificar la participación admitida, según las reglas de apertura o cierre. Eliminar la cuenta y eliminar contenido son acciones distintas. Para retirar el texto también de los puntos de control conservados, gestione el contenido antes de eliminar la cuenta. La eliminación explícita de contenido suprime texto, versiones, traducciones y atribución, sin plazo de recuperación. Las solicitudes de supresión aplicables no requieren eliminar manualmente cada contribución. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Cuando se admita después del cierre, podrá retirar toda su participación en la votación, pero no votos o comparaciones individuales. Se excluirá de los nuevos cálculos con datos actuales sin borrar los datos conservados ni la personalización histórica. No podrá volver a votar hasta la reapertura. Retirar las respuestas a una encuesta obligatoria excluye sus votos de los cálculos actuales; en una encuesta opcional solo afecta a las respuestas. ",
             ],
           },
           {
@@ -4030,7 +4066,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["Al cumplirse el plazo de 15 días:"],
                   },
-                  " Finaliza la recuperación. La limpieza elimina los datos privados de cuenta y recuperación, el texto original de las proposiciones personales y sus traducciones, y las asociaciones innecesarias. Las proposiciones muestran un aviso de eliminación sin atribuirle la autoría. ",
+                  " Ya no puede recuperar su cuenta. Durante la limpieza se eliminan los datos privados de la cuenta y de recuperación, así como los vínculos innecesarios con la cuenta. Los resultados guardados aún pueden mostrar el texto permitido de sus proposiciones y las traducciones existentes, sin su nombre de usuario ni enlace a su perfil. Si eliminó la proposición en sí, su texto y sus traducciones permanecen ocultos también en los resultados guardados. ",
                 ],
               },
             ],
@@ -5182,7 +5218,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. پذیرش حذف حساب، دسترسی را غیرفعال و مشارکت را از محاسبات زندهٔ جدید خارج می‌کند. متن گزاره‌های شخصی، ترجمه‌ها و انتساب به شما، از جمله در نمایش‌های تاریخی، پنهان می‌شوند. نتایج باز به‌صورت ناهمگام به‌روز می‌شوند. داده‌های بازیابی 15 روز خصوصی می‌مانند و سپس مشمول پاک‌سازی دائمی می‌شوند. ",
+              " 4.2. پذیرش حذف حساب، دسترسی را غیرفعال و مشارکت را از محاسبات زندهٔ جدید خارج می‌کند. گزاره‌های شخصی از نمایش‌های جاری پنهان می‌شوند. نقاط ثبت وضعیت و نماهای ذخیره‌شده ممکن است متن مجاز و ترجمه‌های موجود را بدون انتساب عمومی به حساب نگه دارند؛ ورودی‌های عددی و نتایج ذخیره‌شده تغییر نمی‌کنند. نتایج باز به‌صورت ناهمگام به‌روز می‌شوند. داده‌های ضروری بازیابی 15 روز خصوصی می‌مانند و سپس مشمول پاک‌سازی دائمی می‌شوند. ",
             ],
           },
           {
@@ -5201,6 +5237,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. ورودی‌های نگهداری‌شده همان ورودی‌های به‌کاررفته در نتایج ذخیره‌شده‌اند، نه همهٔ برگه‌های رأی یا محاسبات. حذف عادی اعداد ذخیره‌شده را دوباره محاسبه نمی‌کند؛ اصلاحات جداگانه یا تحلیل مجدد ممکن است آن‌ها را تغییر دهند. توصیف‌های تاریخی هوش مصنوعی خودکار بازنویسی نمی‌شوند؛ بخش‌های حاوی اطلاعات هویتی همچنان مشمول حق محو هستند. در موارد اعمال حق محو، خروجی/ترجمه‌های مربوط حذف یا بخش‌های مشمول محو در آن‌ها پوشانده می‌شوند، بدون تولید جایگزین. با بازگشایی، مشارکت حذف‌شده یا برای همیشه جداشده کنار گذاشته می‌شود. حذف گفت‌وگو/پروژه، نتایج و ورودی‌های تحت مالکیت انحصاری آن را حذف می‌کند. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "تا وقتی گفت‌وگو بسته است، نتایج زنده ممکن است با مشارکت‌های واجد شرایط فعلی به‌روز شوند. مبنای محاسبهٔ نتیجهٔ زمان بسته‌شدن، داده‌های نگهداری‌شده در همان زمان است. تصمیم‌های مدیریتی می‌توانند نتیجهٔ زمان بسته‌شدن را در همان پیوند نقطهٔ ثبت تغییر دهند؛ با بازگشایی، نتیجهٔ آن پیوند ثابت می‌شود. برای محاسبهٔ دوبارهٔ مجموع‌ها در گروه‌های نظر، ممکن است گزینه‌های تأییدشدهٔ نظرسنجی را با شمارهٔ شرکت‌کننده‌ای مختص همان نقطهٔ ثبت نگه داریم. این سوابق متن آزاد ندارند و انتخاب‌های افراد را منتشر نمی‌کنند. ",
             ],
           },
           {
@@ -5321,7 +5363,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. در حدود مجوزهایتان، ابزارها امکان مدیریت محتوا/ترجیحات و پس‌گرفتن یا تغییر مشارکت پشتیبانی‌شده را با رعایت قواعد باز/بسته بودن فعالیت فراهم می‌کنند. حذف حساب، متن گزاره‌های شخصی شما را نیز حذف می‌کند؛ حذف جداگانهٔ گزاره لازم نیست. حذف مستقل محتوا مهلت بازیابی ندارد. ",
+              " 6.5. در حدود مجوزهایتان، ابزارها امکان مدیریت محتوا/ترجیحات و پس‌گرفتن یا تغییر مشارکت پشتیبانی‌شده را با رعایت قواعد باز/بسته بودن فعالیت فراهم می‌کنند. حذف حساب و حذف محتوا دو اقدام جداگانه‌اند. برای حذف متن از نقاط ثبت وضعیت نگهداری‌شده نیز، پیش از حذف حساب محتوا را مدیریت کنید. حذف صریح محتوا، متن، نسخه‌ها، ترجمه‌ها و انتساب را بدون مهلت بازیابی محو می‌کند. درخواست‌های قابل اعمال محو، نیازمند حذف دستی تک‌تک مشارکت‌ها نیستند. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "در صورت پشتیبانی پس از بسته‌شدن، می‌توانید همهٔ مشارکت رأی‌گیری خود را یکجا پس بگیرید، نه رأی یا مقایسه‌ای جداگانه را. این مشارکت از محاسبات جدید زنده کنار گذاشته می‌شود، بدون آنکه ورودی‌های نگهداری‌شده یا شخصی‌سازی نتایج گذشته پاک شوند. تا بازگشایی نمی‌توانید دوباره رأی دهید. پس گرفتن پاسخ نظرسنجی اجباری رأی‌هایتان را از محاسبات زنده کنار می‌گذارد؛ پس گرفتن پاسخ نظرسنجی اختیاری فقط بر پاسخ‌های نظرسنجی اثر دارد. ",
             ],
           },
           {
@@ -5386,7 +5434,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["در پایان مهلت 15 روزه:"],
                   },
-                  " بازیابی پایان می‌یابد. پاک‌سازی، داده‌های خصوصی حساب/بازیابی، متن اصلی گزاره‌های شخصی و ترجمه‌ها و ارتباطات غیرضروری را حذف می‌کند. گزاره‌ها بدون انتساب به شما، اعلان حذف نشان می‌دهند. ",
+                  " دیگر نمی‌توانید حساب خود را بازیابی کنید. هنگام پاک‌سازی، داده‌های خصوصی حساب و بازیابی و پیوندهای غیرضروری با حساب حذف می‌شوند. نتایج ذخیره‌شده ممکن است همچنان متن گزاره‌هایی را که نمایششان مجاز است و ترجمه‌های موجود آن‌ها را بدون نام کاربری شما یا پیوند به نمایه‌تان نشان دهند. اگر خود گزاره را حذف کرده باشید، متن و ترجمه‌های آن در نتایج ذخیره‌شده نیز پنهان می‌مانند. ",
                 ],
               },
             ],
@@ -6574,7 +6622,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. La suppression acceptée du compte désactive l’accès et exclut la participation des nouveaux calculs des résultats courants. Elle masque le texte des propositions personnelles, leurs traductions et leur attribution, y compris dans les affichages historiques. Les résultats des activités ouvertes s’actualisent de manière asynchrone. Les données de récupération restent privées pendant 15 jours, puis deviennent admissibles au nettoyage définitif. ",
+              " 4.2. La suppression acceptée du compte désactive l’accès et exclut la participation des nouveaux calculs des résultats courants. Les propositions personnelles sont masquées dans les vues courantes. Les points de contrôle et instantanés conservés peuvent garder les textes autorisés et leurs traductions existantes sans attribution publique au compte ; les données numériques d’entrée et les résultats enregistrés restent inchangés. Les résultats des activités ouvertes s’actualisent de manière asynchrone. Les données nécessaires à la récupération restent privées pendant 15 jours, puis deviennent admissibles au nettoyage définitif. ",
             ],
           },
           {
@@ -6593,6 +6641,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. Les données d’entrée conservées sont celles ayant servi aux résultats enregistrés, et non tous les bulletins ou calculs. La suppression ordinaire ne recalcule pas les chiffres enregistrés ; des corrections ou une nouvelle analyse distinctes peuvent les modifier. Les descriptions historiques produites par IA ne sont pas automatiquement réécrites ; les extraits identifiants restent soumis aux droits d’effacement. L’effacement applicable supprime ou occulte les résultats et traductions concernés sans générer de remplacement. La réouverture exclut les participations supprimées ou définitivement dissociées. La suppression d’une conversation ou d’un projet supprime les résultats et données d’entrée dont il est l’unique propriétaire. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Tant qu’une conversation reste close, les résultats actuels peuvent être recalculés à partir des participations encore admissibles. Le calcul de clôture utilise les données conservées à la clôture. La modération peut modifier le résultat de clôture sous le même lien ; ce lien devient fixe à la réouverture. Pour recalculer les totaux par groupe d’opinion, nous pouvons conserver les choix validés du questionnaire associés à un numéro de participant propre au jalon. Ces données ne contiennent pas de texte libre et ne rendent pas publics les choix individuels. ",
             ],
           },
           {
@@ -6723,7 +6777,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. Dans les limites de vos autorisations, les commandes permettent de gérer vos contenus et préférences et de retirer ou modifier les participations prises en charge, selon les règles d’ouverture et de clôture. La suppression du compte occulte aussi vos propositions personnelles ; il est inutile de les supprimer séparément. La suppression indépendante d’un contenu ne bénéficie d’aucun délai de récupération. ",
+              " 6.5. Dans les limites de vos autorisations, les commandes permettent de gérer vos contenus et préférences et de retirer ou modifier les participations prises en charge, selon les règles d’ouverture et de clôture. Supprimer le compte et supprimer un contenu sont deux actions distinctes. Pour retirer aussi le texte des points de contrôle conservés, gérez vos contenus avant de supprimer votre compte. La suppression explicite d’un contenu occulte le texte, ses versions, ses traductions et son attribution, sans délai de récupération. Les demandes d’effacement applicables n’exigent pas de supprimer manuellement chaque contribution. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Lorsque cette option est disponible après la clôture, vous pouvez retirer tous vos votes ensemble, mais pas un vote ou une comparaison isolés. Ils seront exclus des nouveaux calculs sur les données actuelles sans effacer les données conservées ni la personnalisation historique. Vous ne pourrez revoter qu’après la réouverture. Retirer vos réponses à un questionnaire obligatoire exclut vos votes des calculs actuels ; pour un questionnaire facultatif, seules les réponses sont concernées. ",
             ],
           },
           {
@@ -6788,7 +6848,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["À l’échéance des 15 jours :"],
                   },
-                  " La récupération prend fin. Le nettoyage supprime les données privées du compte et de récupération, le texte d’origine des propositions personnelles et leurs traductions, ainsi que les associations inutiles. Les propositions affichent un avis de suppression sans vous être attribuées. ",
+                  " Vous ne pouvez plus récupérer votre compte. Le nettoyage supprime les données privées du compte et de récupération, ainsi que les liens inutiles avec le compte. Les résultats enregistrés peuvent encore afficher le texte des propositions dont la conservation est permise et leurs traductions existantes, sans votre nom d’utilisateur ni lien vers votre profil. Si vous avez supprimé la proposition elle-même, son texte et ses traductions restent masqués dans les résultats enregistrés aussi. ",
                 ],
               },
             ],
@@ -7934,7 +7994,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. מחיקת חשבון שאושרה משביתה גישה ומוציאה את ההשתתפות מקלט לחישובים חיים חדשים. היא מסתירה טקסט, תרגומים וייחוס של הצהרות אישיות, גם בתצוגות היסטוריות. תוצאות פתוחות מתעדכנות באופן אסינכרוני. נתוני השחזור נשארים פרטיים במשך 15 ימים, ולאחר מכן מיועדים לניקוי סופי. ",
+              " 4.2. מחיקת חשבון שאושרה משביתה גישה ומוציאה את ההשתתפות מקלט לחישובים חיים חדשים. הצהרות אישיות מוסתרות מהתצוגות העדכניות. נקודות ביקורת ותמונות מצב שנשמרו עשויות לשמור טקסט מותר ותרגומים קיימים ללא ייחוס פומבי לחשבון; הקלט המספרי והתוצאות שנשמרו אינם משתנים. תוצאות פתוחות מתעדכנות באופן אסינכרוני. נתוני השחזור הנחוצים נשארים פרטיים במשך 15 ימים, ולאחר מכן מיועדים לניקוי סופי. ",
             ],
           },
           {
@@ -7953,6 +8013,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. הקלט שנשמר הוא זה ששימש לתוצאות שנשמרו, לא כל הצבעה או חישוב. מחיקה רגילה אינה מחשבת מחדש מספרים שנשמרו; תיקונים נפרדים או ניתוח חוזר עשויים לשנותם. תיאורי AI היסטוריים אינם נכתבים מחדש אוטומטית; קטעים מזהים נשארים כפופים לזכויות מחיקה. מחיקה לפי דין מסירה את הפלט והתרגומים המושפעים או מוחקת מהם מידע, ללא יצירת תחליף. פתיחה מחדש אינה כוללת השתתפות שנמחקה או שקישורה נותק לצמיתות. מחיקת שיחה או מיזם מסירה תוצאות וקלט שבבעלותם הבלעדית. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "כל עוד הדיון סגור ניתן לעדכן את התוצאות העדכניות לפי ההשתתפות הכשירה כעת. חישוב תוצאת הסגירה מבוסס על הנתונים שנשמרו בעת הסגירה. החלטות ניהול תוכן עשויות לעדכן את תוצאת הסגירה באותו קישור לנקודת הביקורת; עם הפתיחה מחדש התוצאה בקישור מתקבעת. כדי לחשב מחדש סיכומים לפי קבוצת דעה, אנו עשויים לשמור בחירות מאומתות בסקר המקושרות למספר משתתף מקומי לנקודת הביקורת. רשומות אלה אינן מכילות מלל חופשי ואינן מפרסמות בחירות אישיות. ",
             ],
           },
           {
@@ -8073,7 +8139,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. במסגרת הרשאותיכם, הבקרות מאפשרות לנהל תוכן והעדפות ולבטל או לשנות השתתפות נתמכת, בכפוף לכללי פעילות פתוחה או סגורה. מחיקת חשבון מסירה גם את תוכן ההצהרות האישיות שלכם; אין צורך למחוק אותן בנפרד. למחיקת תוכן עצמאית אין תקופת שחזור. ",
+              " 6.5. במסגרת הרשאותיכם, הבקרות מאפשרות לנהל תוכן והעדפות ולבטל או לשנות השתתפות נתמכת, בכפוף לכללי פעילות פתוחה או סגורה. מחיקת חשבון ומחיקת תוכן הן פעולות נפרדות. להסרת הטקסט גם מנקודות ביקורת שנשמרו, נהלו את התוכן לפני מחיקת החשבון. מחיקת תוכן מפורשת מסירה טקסט, גרסאות, תרגומים וייחוס, ללא תקופת שחזור. בקשות מחיקה לפי דין אינן מחייבות מחיקה ידנית של כל תרומה. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "כאשר האפשרות זמינה לאחר הסגירה, ניתן למשוך את מלוא ההשתתפות בהצבעה, אך לא קולות או השוואות בודדים. ההצבעות יוחרגו מחישובים עדכניים חדשים בלי למחוק נתונים שנשמרו או התאמה אישית בתוצאות קודמות. לא ניתן להצביע שוב עד לפתיחה מחדש. משיכת תשובות לסקר חובה מחריגה את ההצבעות מהחישובים העדכניים; משיכת תשובות לסקר רשות משפיעה רק על התשובות לסקר. ",
             ],
           },
           {
@@ -8138,7 +8210,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["במועד האחרון, בתום 15 ימים:"],
                   },
-                  " השחזור מסתיים. הניקוי מסיר נתוני חשבון ושחזור פרטיים, טקסט מקור ותרגומים של הצהרות אישיות וקישורים שאינם נחוצים. הצהרות מציגות הודעת מחיקה ללא ייחוס אליכם. ",
+                  " לא ניתן עוד לשחזר את החשבון. בתהליך הניקוי נמחקים נתוני החשבון והשחזור הפרטיים וכן קישורים מיותרים לחשבון. בתוצאות שנשמרו עדיין עשויים להופיע נוסחי הצהרות שמותר להציג ותרגומים קיימים שלהן, ללא שם המשתמש שלכם או קישור לפרופיל שלכם. אם מחקתם את ההצהרה עצמה, הטקסט והתרגומים שלה נשארים מוסתרים גם בתוצאות שנשמרו. ",
                 ],
               },
             ],
@@ -9288,7 +9360,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. アカウント削除が受理されると、アクセスが無効になり、参加情報は新たな稼働中の計算の対象外になります。過去の表示も含め、個人の意見文の本文、翻訳、投稿者表示を非表示にします。進行中の結果は非同期で更新します。復旧用データは15日間非公開で保持し、その後、恒久的な消去処理の対象とします。 ",
+              " 4.2. アカウント削除が受理されると、アクセスが無効になり、参加情報は新たな稼働中の計算の対象外になります。個人の意見文は現在の表示から非表示になります。保持されたチェックポイントやスナップショットには、許可される本文と既存の翻訳がアカウントの公開表示なしで残る場合があります。数値入力と保存済みの結果は変わりません。進行中の結果は非同期で更新します。必要な復旧用データは15日間非公開で保持し、その後、恒久的な消去処理の対象とします。 ",
             ],
           },
           {
@@ -9307,6 +9379,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. 保持するのは保存済み結果に使用した入力であり、すべての投票や計算ではありません。通常の削除では保存済み数値を再計算しませんが、別途の訂正や再分析により変わる場合があります。過去のAI説明は自動的には書き換えませんが、個人を識別する引用には引き続き消去の権利が適用されます。適用される消去では、代替を生成せずに、対象の出力・翻訳を削除または伏字処理します。再開時には削除済みまたは恒久的に切り離された参加情報を除外します。対話・プロジェクトの削除では、それが単独で所有する結果と入力を削除します。 ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "対話が終了したままでも、現在有効な参加データに基づく結果は更新されることがあります。終了時の結果は、その時点で保持した入力に基づきます。モデレーションにより同じチェックポイントのリンク先にある終了時の結果が更新されることがありますが、対話を再開するとリンク先の結果は固定されます。意見グループごとの合計を再計算するため、確認済みのアンケート選択肢を、そのチェックポイント内だけの参加者番号とともに保持することがあります。この記録には自由記述を含めず、個人の選択を公開しません。 ",
             ],
           },
           {
@@ -9427,7 +9505,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. 権限の範囲内で、コンテンツ・設定の管理と、対応する参加情報の撤回・変更ができます。進行中・終了後のルールに従います。アカウント削除でも個人の意見文の情報を伏せるため、意見文を別途削除する必要はありません。個別のコンテンツ削除には復旧期間がありません。 ",
+              " 6.5. 権限の範囲内で、コンテンツ・設定の管理と、対応する参加情報の撤回・変更ができます。進行中・終了後のルールに従います。アカウント削除とコンテンツ削除は別の操作です。保持されたチェックポイントからも本文を削除する場合は、アカウント削除前にコンテンツを管理してください。明示的なコンテンツ削除では、本文、各版、翻訳、投稿者表示を削除し、復旧期間はありません。適用される消去請求に、すべての投稿の手動削除は必要ありません。 ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "対応する対話では、終了後に投票内容のすべてを一括で取り消せます。個別の票や比較だけを取り消すことはできません。最新データによる今後の集計から除外されますが、保持された入力や過去の結果における個人向け表示は消去されません。再開までは再投票できません。必須アンケートの回答を取り下げると投票も最新データの集計から除外されます。任意アンケートでは回答だけが対象です。 ",
             ],
           },
           {
@@ -9492,7 +9576,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15日間の期限到来時："],
                   },
-                  " 復旧が終了します。消去処理では、非公開のアカウント・復旧用データ、個人の意見文の元の本文と翻訳、不要な関連付けを除去します。意見文には、利用者の投稿者表示を伴わない削除通知を表示します。 ",
+                  " アカウントは復旧できなくなります。消去処理では、非公開のアカウント情報と復旧用データ、不要なアカウントとの関連付けを削除します。保存済みの結果には、表示が認められる意見文とその既存の翻訳が残る場合がありますが、ユーザー名やプロフィールへのリンクは表示されません。意見文自体を削除した場合は、保存済みの結果でも本文と翻訳は非表示のままです。 ",
                 ],
               },
             ],
@@ -10664,7 +10748,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. Кабыл алынган аккаунтту өчүрүү кирүүнү токтотуп, катышууну жаңы учурдагы эсептөөлөргө жараксыз кылат. Жеке билдирүүлөрдүн тексти, котормолору жана авторлук маалыматы, анын ичинде тарыхый көрүнүштөрдө да жашырылат. Ачык жыйынтыктар асинхрондуу жаңыртылат. Калыбына келтирүү маалыматтары 15 күн купуя сакталып, андан кийин биротоло тазалоого жарамдуу болот. ",
+              " 4.2. Кабыл алынган аккаунтту өчүрүү кирүүнү токтотуп, катышууну жаңы учурдагы эсептөөлөргө жараксыз кылат. Жеке билдирүүлөр учурдагы көрүнүштөрдөн жашырылат. Сакталган көзөмөлдүк кесиндилерде жана көз ирмемдик көчүрмөлөрдө уруксат берилген текст жана бар котормолор аккаунтка ачык шилтемесиз калышы мүмкүн; сандык киргизүүлөр жана сакталган жыйынтыктар өзгөрбөйт. Ачык жыйынтыктар асинхрондуу жаңыртылат. Зарыл калыбына келтирүү маалыматтары 15 күн купуя сакталып, андан кийин биротоло тазалоого жарамдуу болот. ",
             ],
           },
           {
@@ -10683,6 +10767,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. Сакталган киргизүүлөр — ар бир бюллетень же эсептөө эмес, сакталган жыйынтыктарда колдонулгандары. Кадимки өчүрүү сакталган сандарды кайра эсептебейт; өзүнчө оңдоолор же кайра талдоо аларды өзгөртүшү мүмкүн. Тарыхый AI сүрөттөмөлөрү автоматтык түрдө кайра жазылбайт; адамды аныктоочу үзүндүлөргө өчүрүү укуктары колдонулат. Тиешелүү өчүрүү алмаштыруучу натыйжа түзбөстөн жабыркаган натыйжаны/котормолорду алып салат же алардан маалыматты өчүрөт. Кайра ачууда өчүрүлгөн же биротоло ажыратылган катышуу эсепке алынбайт. Талкууну/долбоорду өчүрүү ага гана таандык жыйынтыктарды жана киргизүүлөрдү алып салат. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Талкуу жабык турганда да учурдагы жыйынтыктар жарактуу катышуу маалыматтары боюнча жаңыртылышы мүмкүн. Жабылгандагы жыйынтык талкуу жабылганда сакталган маалыматтардан эсептелет. Модерация жабылгандагы жыйынтыкты ошол эле көзөмөлдүк кесиндинин шилтемесинде өзгөртө алат; талкуу кайра ачылганда шилтемедеги жыйынтык бекитилет. Пикир топторунун жалпы көрсөткүчтөрүн кайра эсептөө үчүн текшерилген сурамжылоо тандоолорун ошол кесиндиге гана тиешелүү катышуучу номери менен сакташыбыз мүмкүн. Бул жазуулар эркин текстти камтыбайт жана жеке тандоолор жарыяланбайт. ",
             ],
           },
           {
@@ -10807,7 +10897,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. Уруксаттарыңыздын чегинде башкаруу каражаттары мазмунду/каалоолорду башкарууга жана ачык/жабык эрежелерге ылайык колдоого алынган катышууну кайтарып алууга же өзгөртүүгө мүмкүндүк берет. Аккаунтту өчүрүү жеке билдирүүлөрүңүздөн да маалыматты алып салат; аларды өзүнчө өчүрүүнүн кереги жок. Мазмунду өз алдынча өчүрүүдө калыбына келтирүү мөөнөтү жок. ",
+              " 6.5. Уруксаттарыңыздын чегинде башкаруу каражаттары мазмунду/каалоолорду башкарууга жана ачык/жабык эрежелерге ылайык колдоого алынган катышууну кайтарып алууга же өзгөртүүгө мүмкүндүк берет. Аккаунтту өчүрүү жана мазмунду өчүрүү — өзүнчө аракеттер. Текстти сакталган көзөмөлдүк кесиндилерден да алып салуу үчүн аккаунтту өчүрүүдөн мурун мазмунду башкарыңыз. Мазмунду ачык өчүрүү текстти, версияларды, котормолорду жана авторлук маалыматты калыбына келтирүү мөөнөтүсүз алып салат. Колдонулуучу өчүрүү өтүнүчтөрү ар бир салымды кол менен өчүрүүнү талап кылбайт. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Мүмкүнчүлүк каралган учурда талкуу жабылгандан кийин добуш берүүдөгү салымыңызды толугу менен кайтарып ала аласыз, бирок айрым добуштарды же салыштырууларды өзүнчө кайтарып ала албайсыз. Салым учурдагы маалыматтар боюнча жаңы эсептөөлөргө кирбей калат; сакталган маалыматтар жана мурдагы жыйынтыктардын жекелештирилген көрүнүшү өчүрүлбөйт. Кайра ачылганга чейин добуш бере албайсыз. Милдеттүү сурамжылоонун жообун кайтарып алуу добуштарды учурдагы эсептөөлөрдөн чыгарат; ыктыярдуу сурамжылоодо жооптор гана өзгөрөт. ",
             ],
           },
           {
@@ -10869,7 +10965,7 @@ export const privacyPolicyContent = {
                 tag: "li",
                 children: [
                   { tag: "strong", children: ["15 күндүк акыркы мөөнөттө:"] },
-                  " Калыбына келтирүү аяктайт. Тазалоо купуя аккаунт/калыбына келтирүү маалыматтарын, жеке билдирүүлөрдүн баштапкы текстин жана котормолорун, керексиз байланыштарды алып салат. Билдирүүлөрдө сиздин авторлук маалыматыңызсыз өчүрүү тууралуу белги көрсөтүлөт. ",
+                  " Аккаунтуңузду мындан ары калыбына келтире албайсыз. Тазалоодо аккаунттун жана аны калыбына келтирүүнүн купуя маалыматтары, ошондой эле аккаунт менен керексиз байланыштар өчүрүлөт. Сакталган жыйынтыктарда көрсөтүүгө уруксат берилген билдирүүлөрдүн тексти жана алардын мурдагы котормолору калышы мүмкүн. Колдонуучу атыңыз жана профилиңизге шилтеме көрсөтүлбөйт. Эгер билдирүүнүн өзүн өчүргөн болсоңуз, анын тексти менен котормолору сакталган жыйынтыктарда да көрүнбөйт. ",
                 ],
               },
             ],
@@ -12039,7 +12135,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. Принятый запрос на удаление учётной записи отключает доступ и исключает участие из новых текущих расчётов. Текст личных утверждений, переводы и авторство скрываются, в том числе в исторических представлениях. Открытые результаты обновляются асинхронно. Данные восстановления хранятся непублично 15 дней, после чего подлежат окончательной очистке. ",
+              " 4.2. Принятый запрос на удаление учётной записи отключает доступ и исключает участие из новых текущих расчётов. Личные утверждения скрываются из текущих представлений. Сохранённые контрольные точки и снимки могут сохранять допустимый текст и существующие переводы без публичной привязки к учётной записи; числовые входные данные и сохранённые результаты не меняются. Открытые результаты обновляются асинхронно. Необходимые данные восстановления хранятся непублично 15 дней, после чего подлежат окончательной очистке. ",
             ],
           },
           {
@@ -12058,6 +12154,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. Сохраняются входные данные, использованные в сохранённых результатах, а не каждый бюллетень или расчёт. Обычное удаление не пересчитывает сохранённые показатели; отдельные исправления или повторный анализ могут их изменить. Исторические описания ИИ автоматически не переписываются; идентифицирующие фрагменты по-прежнему подпадают под право на удаление. Применимое удаление убирает результат и переводы полностью или удаляет из них затронутые сведения без создания замены. При повторном открытии удалённое или окончательно отвязанное участие исключается. Удаление обсуждения или проекта удаляет принадлежащие исключительно ему результаты и входные данные. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Пока обсуждение закрыто, текущие результаты могут обновляться по данным, действительным на момент расчёта. Для расчёта результата закрытия используются данные, сохранённые при закрытии. Модерация может менять результат закрытия по той же ссылке на контрольную точку; при повторном открытии результат по ссылке фиксируется. Для пересчёта итогов по группам мнений мы можем сохранять проверенные варианты ответов на опрос с номером участника, действующим только в пределах этой точки. В этих записях нет произвольного текста, индивидуальный выбор не публикуется. ",
             ],
           },
           {
@@ -12184,7 +12286,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. В пределах ваших полномочий средства управления позволяют менять контент и настройки, отзывать или изменять поддерживаемые виды участия с учётом правил открытых и закрытых активностей. Удаление учётной записи также удаляет текст ваших личных утверждений; отдельно удалять их не требуется. Независимое удаление контента не имеет срока восстановления. ",
+              " 6.5. В пределах ваших полномочий средства управления позволяют менять контент и настройки, отзывать или изменять поддерживаемые виды участия с учётом правил открытых и закрытых активностей. Удаление учётной записи и удаление контента — отдельные действия. Чтобы удалить текст также из сохранённых контрольных точек, управляйте контентом до удаления учётной записи. Явное удаление контента скрывает текст, версии, переводы и авторство без срока восстановления. Применимые запросы на удаление данных не требуют вручную удалять каждый вклад. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Если после закрытия доступен отзыв, можно отозвать всё своё участие в голосовании, но не отдельные голоса или сравнения. Оно исключается из новых расчётов по текущим данным; сохранённые исходные данные и персонализация прошлых результатов не удаляются. До повторного открытия голосовать нельзя. Отзыв ответов на обязательный опрос исключает ваши голоса из текущих расчётов; отзыв ответов на необязательный опрос затрагивает только ответы. ",
             ],
           },
           {
@@ -12249,7 +12357,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["По истечении 15-дневного срока:"],
                   },
-                  " Восстановление прекращается. Очистка удаляет непубличные данные учётной записи и восстановления, исходный текст личных утверждений и переводы, а также ненужные связи. Утверждения показывают уведомление об удалении без указания вашего авторства. ",
+                  " Восстановить учётную запись больше нельзя. При очистке удаляются непубличные данные учётной записи и восстановления, а также ненужные связи с учётной записью. В сохранённых результатах по-прежнему могут отображаться тексты высказываний, которые разрешено показывать, и их существующие переводы, но без вашего имени пользователя и ссылки на профиль. Если вы удалили само высказывание, его текст и переводы остаются скрытыми и в сохранённых результатах. ",
                 ],
               },
             ],
@@ -13369,7 +13477,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. 账户删除请求获接受后，访问被禁用，相关参与记录不再纳入新的实时计算。个人陈述文本、译文和署名会被隐藏，包括在历史展示中。开放活动的结果异步更新。恢复数据以私密方式保留15天，此后可进入永久清理。 ",
+              " 4.2. 账户删除请求获接受后，访问被禁用，相关参与记录不再纳入新的实时计算。个人陈述会从当前视图中隐藏。保留的检查点和快照可以继续保留允许保留的文本及现有译文，但不公开关联账户；数值输入和已保存结果保持不变。开放活动的结果异步更新。必要的恢复数据以私密方式保留15天，此后可进入永久清理。 ",
             ],
           },
           {
@@ -13388,6 +13496,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. 保留的输入是已保存结果所使用的输入，并非每一张选票或每一次计算。常规删除不会重新计算已保存的数值；另行更正或重新分析可能使其改变。历史AI描述不会自动改写；可识别身份的摘录仍受删除权约束。适用的删除会移除或遮蔽受影响的输出/译文，不生成替代内容。重新开放时，已删除或永久解除关联的参与记录不再纳入计算。删除对话/项目会移除其独占拥有的结果和输入。 ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "讨论关闭期间，实时结果仍可根据当前符合条件的参与数据更新。结束时的结果根据关闭时保留的数据计算。审核可更新同一检查点链接下的结束时结果；讨论重新开放后，该链接对应的结果即固定。为重新计算各意见群组的汇总数据，我们可能保留已验证的问卷选项，并关联仅在该检查点内使用的参与者编号。这些记录不含自由文本，也不会公开个人选择。 ",
             ],
           },
           {
@@ -13504,7 +13618,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. 在您的权限范围内，相关功能可让您管理内容/偏好，以及撤回或更改受支持的参与记录，但须遵循开放/关闭规则。删除账户也会遮蔽您的个人陈述，无须单独删除陈述。独立删除内容没有恢复期。 ",
+              " 6.5. 在您的权限范围内，相关功能可让您管理内容/偏好，以及撤回或更改受支持的参与记录，但须遵循开放/关闭规则。删除账户与删除内容是两种独立操作。若要同时从保留的检查点中移除文本，请在删除账户前管理内容。明确删除内容会遮蔽文本、各版本、译文和署名，没有恢复期。适用的删除请求不要求您手动删除每项贡献。 ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "在支持此功能的讨论中，关闭后可一次性撤回自己的全部投票，但不能单独撤回某一票或某次比较。今后的实时计算将不再计入这些投票，但保留的输入数据和历史个性化显示不会被清除。重新开放前不能再次投票。撤回必填问卷的回答会使您的投票不再计入实时计算；撤回选填问卷只影响问卷回答。 ",
             ],
           },
           {
@@ -13569,7 +13689,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15天截止时间到达时："],
                   },
-                  " 恢复期结束。清理会移除私密账户/恢复数据、个人陈述原文和译文，以及不必要的关联。陈述显示删除提示，不再显示您的署名。 ",
+                  " 您无法再恢复账户。清理时会删除账户的私密数据、用于恢复的数据及与账户不再需要的关联。已保存的结果仍可能显示允许保留的陈述原文及已有译文，但不会显示您的用户名或个人资料链接。如果您删除了陈述本身，其原文和译文在已保存的结果中也会保持隐藏。 ",
                 ],
               },
             ],
@@ -14687,7 +14807,7 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 4.2. 帳戶刪除請求獲接受後，會停用存取，並使參與資料不再符合新的即時計算資格。個人陳述文字、翻譯及署名會隱藏，包括歷史顯示中的內容。開放中的結果會非同步更新。復原資料會保持非公開 15 天，之後符合永久清理條件。 ",
+              " 4.2. 帳戶刪除請求獲接受後，會停用存取，並使參與資料不再符合新的即時計算資格。個人陳述會從目前檢視中隱藏。保留的檢查點與快照可以保留獲准保留的文字及既有翻譯，但不公開連結帳戶；數值輸入與已儲存結果保持不變。開放中的結果會非同步更新。必要的復原資料會保持非公開 15 天，之後符合永久清理條件。 ",
             ],
           },
           {
@@ -14706,6 +14826,12 @@ export const privacyPolicyContent = {
             tag: "p",
             children: [
               " 4.3. 保留的輸入是已儲存結果所使用的資料，而非每張選票或每次計算。一般刪除不會重新計算已儲存數值；另行更正或重新分析可能改變數值。歷史 AI 描述不會自動改寫；可識別摘錄仍受刪除權利約束。適用的刪除會移除或遮蔽受影響輸出／翻譯，不產生替代內容。重新開啟時，會排除已刪除或永久解除連結的參與資料。刪除對話／專案會移除其專屬結果及輸入。 ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "討論關閉期間，即時結果仍可依目前符合條件的參與資料更新。結束時的結果依關閉時保留的資料計算。審核可更新同一檢查點連結下的結束時結果；討論重新開放後，該連結對應的結果即固定。為重新計算各意見群組的彙總資料，我們可能保留已驗證的問卷選項，並關聯僅在該檢查點內使用的參與者編號。這些紀錄不含自由文字，也不會公開個人選擇。 ",
             ],
           },
           {
@@ -14824,7 +14950,13 @@ export const privacyPolicyContent = {
           {
             tag: "p",
             children: [
-              " 6.5. 在您的權限範圍內，控制項可讓您管理內容／偏好，並依開放／關閉規則撤回或更改支援的參與資料。帳戶刪除也會遮蔽您的個人陳述，無須另行刪除陳述。獨立刪除內容不設復原期間。 ",
+              " 6.5. 在您的權限範圍內，控制項可讓您管理內容／偏好，並依開放／關閉規則撤回或更改支援的參與資料。刪除帳戶與刪除內容是兩種獨立操作。若要同時從保留的檢查點移除文字，請在刪除帳戶前管理內容。明確刪除內容會遮蔽文字、各版本、翻譯及署名，不設復原期間。適用的刪除請求不要求您手動刪除每項貢獻。 ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "在支援此功能的討論中，關閉後可一次撤回自己的全部投票，但不能單獨撤回某一票或某次比較。今後的即時計算將不再計入這些投票，但保留的輸入資料和歷史個人化顯示不會被清除。重新開放前不能再次投票。撤回必填問卷的回答會使您的投票不再計入即時計算；撤回選填問卷只影響問卷回答。 ",
             ],
           },
           {
@@ -14889,7 +15021,7 @@ export const privacyPolicyContent = {
                     tag: "strong",
                     children: ["15 天期限屆滿時："],
                   },
-                  " 復原結束。清理會移除私密帳戶／復原資料、原始個人陳述文字及翻譯，以及不必要的連結。陳述會顯示刪除通知，不附您的署名。 ",
+                  " 您無法再復原帳戶。清理時會刪除帳戶的私人資料、用於復原的資料，以及與帳戶不再需要的關聯。已儲存的結果仍可能顯示允許保留的陳述原文及既有譯文，但不會顯示您的使用者名稱或個人檔案連結。如果您刪除了陳述本身，其原文和譯文在已儲存的結果中也會保持隱藏。 ",
                 ],
               },
             ],

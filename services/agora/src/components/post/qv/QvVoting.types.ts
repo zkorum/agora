@@ -6,7 +6,7 @@ export type QvConversationMetadata = Extract<
   { prioritizationType: "qv" }
 >;
 
-export type QvStatement = Pick<PrioritizationItem, "slugId" | "displayContent">;
+export type QvItem = Pick<PrioritizationItem, "slugId" | "displayContent">;
 
 export interface QvResponseActions {
   dirty: boolean;

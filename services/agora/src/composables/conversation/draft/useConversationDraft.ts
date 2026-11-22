@@ -46,7 +46,7 @@ import type {
   ConversationImportSettings,
   MutationResult,
   PostAsSettings,
-  QvStatementDraft,
+  QvItemDraft,
   UseConversationDraftConfig,
   ValidationResult,
   ValidationState,
@@ -68,7 +68,7 @@ export interface UseConversationDraftReturn {
   inheritProjectLanguages: Ref<boolean>;
   conversationEmailUpdateEnabledOverride: Ref<boolean | undefined>;
   seedOpinions: Ref<string[]>;
-  qvStatements: Ref<QvStatementDraft[]>;
+  qvItems: Ref<QvItemDraft[]>;
   conversationTypeConfig: Ref<Readonly<ConversationTypeConfig>>;
   conversationType: ComputedRef<ConversationType>;
   votingPresentation: ComputedRef<PolisVotingPresentation>;
@@ -148,7 +148,8 @@ export function useConversationDraft(
       if (
         value.supported &&
         (current.conversationType === "polis" ||
-          current.prioritizationType === "comparisons")
+          (current.conversationType === "prioritizing" &&
+            current.prioritizationType === "comparisons"))
       )
         ownedStatementSettings.value = {
           ...current,
@@ -168,7 +169,7 @@ export function useConversationDraft(
     initialDraft.conversationEmailUpdateEnabledOverride
   );
   const seedOpinions = ref<string[]>([...initialDraft.seedOpinions]);
-  const qvStatements = ref<QvStatementDraft[]>(
+  const qvItems = ref<QvItemDraft[]>(
     initialDraft.qvStatements.map((item) => ({ ...item }))
   );
   const aiSuggestionDraftId = ref(initialDraft.aiSuggestionDraftId);
@@ -178,19 +179,20 @@ export function useConversationDraft(
       if (
         value.conversationType === "prioritizing" &&
         value.prioritizationType === "qv" &&
-        qvStatements.value.length === 0
+        qvItems.value.length === 0
       ) {
-        qvStatements.value = seedOpinions.value.map((title) => ({
+        qvItems.value = seedOpinions.value.map((title) => ({
           localKey: uid(),
           title,
           description: "",
         }));
       } else if (
         (value.conversationType === "polis" ||
-          value.prioritizationType === "comparisons") &&
+          (value.conversationType === "prioritizing" &&
+            value.prioritizationType === "comparisons")) &&
         seedOpinions.value.length === 0
       ) {
-        seedOpinions.value = qvStatements.value.map((item) => item.title);
+        seedOpinions.value = qvItems.value.map((item) => item.title);
       }
       ownedStatementSettings.value = changeConversationStatementSettings({
         current: ownedStatementSettings.value,
@@ -245,7 +247,7 @@ export function useConversationDraft(
       conversationEmailUpdateEnabledOverride:
         conversationEmailUpdateEnabledOverride.value,
       seedOpinions: [...seedOpinions.value],
-      qvStatements: qvStatements.value.map((item) => ({ ...item })),
+      qvStatements: qvItems.value.map((item) => ({ ...item })),
       isPrivate: isPrivate.value,
       participationMode: participationMode.value,
       aiLabelingEnabled: aiLabelingEnabled.value,
@@ -477,8 +479,7 @@ export function useConversationDraft(
     const hasSeedOpinionsChanges =
       JSON.stringify(seedOpinions.value) !==
         JSON.stringify(emptyDraft.seedOpinions) ||
-      JSON.stringify(qvStatements.value) !==
-        JSON.stringify(emptyDraft.qvStatements);
+      JSON.stringify(qvItems.value) !== JSON.stringify(emptyDraft.qvStatements);
 
     // Check conversation type changes
     const hasConversationTypeChanges =
@@ -556,7 +557,7 @@ export function useConversationDraft(
     conversationEmailUpdateEnabledOverride.value =
       emptyDraft.conversationEmailUpdateEnabledOverride;
     seedOpinions.value = [];
-    qvStatements.value = [];
+    qvItems.value = [];
     conversationTypeConfig.value = projectConversationTypeConfig(emptyDraft);
     participantStatements.value = emptyDraft.participantStatements;
     aiSuggestionDraftId.value = emptyDraft.aiSuggestionDraftId;
@@ -656,7 +657,7 @@ export function useConversationDraft(
     inheritProjectLanguages,
     conversationEmailUpdateEnabledOverride,
     seedOpinions,
-    qvStatements,
+    qvItems,
     conversationTypeConfig,
     conversationType,
     votingPresentation,

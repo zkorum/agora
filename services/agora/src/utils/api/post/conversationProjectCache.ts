@@ -109,10 +109,7 @@ export async function applyConversationProjectAssignment({
       }),
       ...[
         "analysis",
-        "analysisMetadata",
-        "analysisContent",
-        "analysisFrameGroups",
-        "analysisFrameOpinionList",
+        "analysisFrameContent",
         "survey-completion-counts",
       ].map((family) =>
         queryClient.invalidateQueries({

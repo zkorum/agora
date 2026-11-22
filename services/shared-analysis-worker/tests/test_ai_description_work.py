@@ -5449,6 +5449,20 @@ def test_closing_accepts_only_current_complete_frames(lineage_scan_engine: Engin
         session.flush()
         finalize_closed_analysis(session, conversation_ids=[10])
         session.refresh(conversation)
+        assert conversation.closed_finalized_at is None
+        session.add(
+            AnalysisSnapshotResult(
+                id=32,
+                conversation_id=10,
+                analysis_snapshot_id=31,
+                opinion_group_spec_id=1,
+                outcome=AnalysisResultOutcomeEnum.success,
+                created_at=NOW,
+            )
+        )
+        session.flush()
+        finalize_closed_analysis(session, conversation_ids=[10])
+        session.refresh(conversation)
         assert conversation.closed_finalized_at is not None
         reasons = session.scalars(
             select(ConversationViewSnapshotCheckpointReason).where(

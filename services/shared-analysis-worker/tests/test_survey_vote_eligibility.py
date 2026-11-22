@@ -8,14 +8,17 @@ import pytest
 from sqlalchemy import MetaData, create_engine, func, select, update
 from sqlalchemy.orm import Session
 
-from agora_analysis_worker_shared.db import fetch_vote_input_rows_batch
+from agora_analysis_worker_shared.db import fetch_analysis_input_sources_batch
 from agora_analysis_worker_shared.generated_models import (
     Base,
     Conversation,
     ConversationLanguageSettingsSource,
     ConversationParticipant,
     ConversationType,
+    ModerationReasonEnum,
     Opinion,
+    OpinionModeration,
+    OpinionModerationAction,
     ParticipationMode,
     PolisConversationConfig,
     PolisVotingPresentation,
@@ -34,7 +37,8 @@ from agora_analysis_worker_shared.generated_models import (
     VoteContent,
     VoteEnumAll,
 )
-from agora_analysis_worker_shared.input_snapshot import prepare_input_snapshot
+from agora_analysis_worker_shared.input_snapshot import VoteInputRow, prepare_input_snapshot
+from agora_analysis_worker_shared.retained_inputs import AnalysisSourceCounts
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -42,6 +46,18 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine
 
 NOW = datetime(2026, 10, 18, tzinfo=UTC)
+
+
+def fetch_vote_input_rows_batch(
+    engine: Engine, *, conversation_ids: list[int]
+) -> dict[int, list[VoteInputRow]]:
+    with Session(engine) as session:
+        return {
+            conversation_id: source.effective.votes
+            for conversation_id, source in fetch_analysis_input_sources_batch(
+                session, conversation_ids=conversation_ids
+            ).items()
+        }
 
 
 @pytest.fixture
@@ -211,6 +227,80 @@ def test_required_survey_filters_votes_before_building_analysis_input(engine: En
     assert len(snapshot.votes) == 1
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(Vote)) == 6
+        inputs = fetch_analysis_input_sources_batch(session, conversation_ids=[1])[1]
+        assert inputs.source_counts == AnalysisSourceCounts(vote_count=6, participant_count=6)
+        assert len(inputs.complete.votes) == 1
+
+
+@pytest.mark.parametrize("without_votes", [False, True])
+def test_capture_catalogues_unvoted_opinions_with_the_same_source_and_moderation_policy(
+    engine: Engine, without_votes: bool
+) -> None:
+    with Session(engine) as session, session.begin():
+        session.add_all(
+            Opinion(
+                id=index,
+                slug_id=f"opinion{index}",
+                author_id=UUID(int=1),
+                conversation_id=1,
+                current_content_id=index,
+                deleted_at=NOW if index == 4 else None,
+                account_hidden_at=NOW if index == 5 else None,
+                created_at=NOW,
+                updated_at=NOW,
+                last_reacted_at=NOW,
+            )
+            for index in range(2, 6)
+        )
+        session.add(
+            OpinionModeration(
+                opinion_id=3,
+                moderation_action=OpinionModerationAction.move,
+                moderation_reason=ModerationReasonEnum.other,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+        if without_votes:
+            session.execute(update(Vote).values(current_content_id=None))
+    with Session(engine) as session:
+        inputs = fetch_analysis_input_sources_batch(session, conversation_ids=[1])[1]
+    assert [opinion.opinion_id for opinion in inputs.complete.opinions] == [1, 2, 3]
+    assert [opinion.opinion_id for opinion in inputs.effective.opinions] == [1, 2]
+    snapshot = prepare_input_snapshot(
+        conversation_id=1,
+        data_generation=1,
+        rows=inputs.effective.votes,
+        opinion_rows=inputs.effective.opinions,
+    )
+    assert len(snapshot.opinions) == 2
+    assert snapshot.participant_count == (0 if without_votes else 1)
+
+
+@pytest.mark.parametrize("action", [OpinionModerationAction.hide, OpinionModerationAction.move])
+def test_complete_baseline_is_before_moderation_but_after_survey_and_deletion_eligibility(
+    engine: Engine, action: OpinionModerationAction
+) -> None:
+    with Session(engine) as session, session.begin():
+        session.add(
+            OpinionModeration(
+                opinion_id=1,
+                author_id=UUID(int=2),
+                moderation_action=action,
+                moderation_reason=ModerationReasonEnum.other,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+    with Session(engine) as session:
+        inputs = fetch_analysis_input_sources_batch(session, conversation_ids=[1])[1]
+        assert inputs.effective.votes == []
+        assert [row.user_id for row in inputs.complete.votes] == [UUID(int=1)]
+    with Session(engine) as session, session.begin():
+        session.execute(update(User).where(User.id == UUID(int=1)).values(is_deleted=True))
+    with Session(engine) as session:
+        inputs = fetch_analysis_input_sources_batch(session, conversation_ids=[1])[1]
+        assert inputs.complete.votes == inputs.effective.votes == []
 
 
 @pytest.mark.parametrize("seed", [False, True])

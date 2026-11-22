@@ -93,7 +93,9 @@ describe("read-only comparison retention readiness", () => {
         emptyReport = await runRetentionAudit({ db, options });
         const pool = new Pool(connection);
         try {
-            await (await pushSchema(schema, drizzlePg({ client: pool }))).apply();
+            await (
+                await pushSchema(schema, drizzlePg({ client: pool }))
+            ).apply();
         } finally {
             await pool.end();
         }
@@ -106,6 +108,19 @@ describe("read-only comparison retention readiness", () => {
                 "utf8",
             ),
         );
+        await db.transaction(async (tx) => {
+            await tx.execute(
+                sql.raw(
+                    await readFile(
+                        new URL(
+                            "../database/flyway/V0116.2__certify_comparison_input_baselines.sql",
+                            import.meta.url,
+                        ),
+                        "utf8",
+                    ),
+                ),
+            );
+        });
     }, 120_000);
     beforeEach(async () => {
         if (client === undefined) throw new Error("Missing readiness database");
@@ -201,11 +216,120 @@ describe("read-only comparison retention readiness", () => {
             });
     });
 
+    it.each([false, true] as const)(
+        "recognizes reused closing evidence and classifies baseline support (baseline=%s)",
+        async (withBaseline) => {
+            const f = await seed();
+            const source = first(
+                await db
+                    .insert(schema.rankingConversationStatsSnapshotTable)
+                    .values({
+                        conversationId: f.conversation.id,
+                        itemCount: 0,
+                        totalItemCount: 0,
+                        voteCount: 0,
+                        totalVoteCount: 0,
+                        participantCount: 0,
+                        totalParticipantCount: 0,
+                        scoringInputRevision: 0,
+                        isClosed: false,
+                    })
+                    .returning(),
+            );
+            const capture = await db.transaction(async (tx) => {
+                const input = first(
+                    await tx
+                        .insert(schema.rankingInputSnapshotTable)
+                        .values({
+                            conversationId: f.conversation.id,
+                            comparisonMethod: "bws",
+                            scoringInputRevision: 0,
+                            algorithmVersion: 1,
+                            solidagoVersion: "0.5.0",
+                            pipelineConfig: {},
+                            participantCount: 0,
+                            itemCount: 0,
+                            answerCount: 0,
+                        })
+                        .returning(),
+                );
+                await tx
+                    .update(schema.rankingInputSnapshotTable)
+                    .set({ sealedAt: new Date() })
+                    .where(eq(schema.rankingInputSnapshotTable.id, input.id));
+                if (withBaseline)
+                    await tx
+                        .insert(schema.comparisonInputBaselineTable)
+                        .values({
+                            inputSnapshotId: input.id,
+                            baselineInputSnapshotId: input.id,
+                            conversationId: f.conversation.id,
+                        });
+                await tx
+                    .update(schema.rankingInputSnapshotTable)
+                    .set({ statsSnapshotId: source.id })
+                    .where(eq(schema.rankingInputSnapshotTable.id, input.id));
+                return input;
+            });
+            await db
+                .insert(schema.rankingConversationStatsSnapshotTable)
+                .values({
+                    conversationId: f.conversation.id,
+                    reusedInputSnapshotId: capture.id,
+                    itemCount: 0,
+                    totalItemCount: 0,
+                    voteCount: 0,
+                    totalVoteCount: 0,
+                    participantCount: 0,
+                    totalParticipantCount: 0,
+                    scoringInputRevision: 1,
+                    isClosed: true,
+                });
+            await db
+                .update(schema.rankingConversationStatsSnapshotTable)
+                .set({ deletedAt: new Date() })
+                .where(
+                    eq(
+                        schema.rankingConversationStatsSnapshotTable.id,
+                        source.id,
+                    ),
+                );
+            const report = await runRetentionAudit({ db, options });
+            expect(report.status).toBe("no_detected_data_blockers");
+            expect(
+                report.checks.find(
+                    (check) =>
+                        check.name ===
+                        "retained_snapshots_without_sealed_inputs",
+                )?.measurement,
+            ).toEqual({ status: "counted", count: 0, exact: true });
+            expect(
+                report.checks.find(
+                    (check) =>
+                        check.name ===
+                        "closed_results_without_complete_baselines",
+                ),
+            ).toMatchObject({
+                blocking: false,
+                measurement: {
+                    status: "counted",
+                    count: withBaseline ? 0 : 1,
+                    exact: true,
+                },
+            });
+        },
+    );
+
     it("runs the standalone CLI using only the explicitly selected disposable database", async () => {
         const run = promisify(execFile);
         const result = await run(
             process.execPath,
-            ["--import", "tsx", "scripts/audit-retention-readiness.ts"],
+            [
+                "--disable-warning=DEP0205",
+                "--import",
+                "tsx",
+                "scripts/audit-retention-readiness.ts",
+            ],
             {
                 env: { ...process.env, RETENTION_AUDIT_DATABASE_URL: auditUrl },
                 timeout: 15_000,
@@ -381,7 +505,8 @@ describe("read-only comparison retention readiness", () => {
         expect(
             check.dependencies.some(
                 (column) =>
-                    getTableName(getColumnTable(column)) === "ranking_input_snapshot",
+                    getTableName(getColumnTable(column)) ===
+                    "ranking_input_snapshot",
             ),
         ).toBe(false);
         expect(await read(check.read)).toHaveLength(1);

@@ -29,6 +29,7 @@ import valkey as valkey_lib
 from pydantic import ValidationError
 from sqlalchemy import create_engine, text
 
+from scoring_worker.closing import record_failed_live_result, refresh_pending_closing_results
 from scoring_worker.config import Settings
 from scoring_worker.db import (
     PublicationCallback,
@@ -40,6 +41,7 @@ from scoring_worker.db import (
     prepare_scoring_inputs,
     reconcile_unscored_conversations,
 )
+from scoring_worker.observations import build_participant_counts
 from scoring_worker.scoring import (
     ConversationScoringOutput,
     score_comparison_observations,
@@ -53,11 +55,8 @@ from scoring_worker.valkey_client import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from sqlalchemy import Engine
 
-    from scoring_worker.observations import ComparisonObservation
     from scoring_worker.prepared_inputs import PreparedConversationInputs
 
 logging.basicConfig(
@@ -74,19 +73,6 @@ def _handle_signal(signum: int, frame: object) -> None:
     global _running
     log.info("[Worker] Received signal %d, shutting down...", signum)
     _running = False
-
-
-def build_participant_counts(
-    observations: Sequence[ComparisonObservation],
-) -> dict[str, int]:
-    """Count distinct users per entity from comparisons."""
-    user_entities: dict[str, set[int]] = {}
-    for observation in observations:
-        for slug_id in observation.candidate_set:
-            if slug_id not in user_entities:
-                user_entities[slug_id] = set()
-            user_entities[slug_id].add(observation.user_id)
-    return {sid: len(users) for sid, users in user_entities.items()}
 
 
 def _score_one(
@@ -118,7 +104,7 @@ def _score_one(
                     "inputRevision": inputs.revision,
                     "itemCount": len(inputs.entity_ids),
                     "comparisonCount": len(inputs.tasks),
-                    "participantCount": len(inputs.response_ids),
+                    "participantCount": len(inputs.participants),
                 },
             )
 
@@ -415,6 +401,7 @@ def _run_worker_once() -> None:
         try:
             # Step 2: Capture one MVCC snapshot, release it and persist private
             # prepared evidence without taking lifecycle/config write locks.
+            refresh_pending_closing_results(processing_connection, conversation_ids=conv_ids)
             inputs = prepare_scoring_inputs(
                 processing_connection,
                 conversation_ids=conv_ids,
@@ -490,9 +477,9 @@ def _run_worker_once() -> None:
                                 )
 
                                 # Map per-user scores to DB entries
-                                idx_map = inputs[item.conversation_id].response_ids
+                                participants = inputs[item.conversation_id].participants
                                 for user_idx, user_results in output.user_scores.items():
-                                    result_id = idx_map[user_idx]
+                                    result_id = participants[user_idx].response_id
                                     for r in user_results:
                                         all_user_score_entries.append(
                                             UserScoreEntry(
@@ -506,7 +493,15 @@ def _run_worker_once() -> None:
                                         )
                             else:
                                 to_clear.add(item.conversation_id)
-                        except Exception:
+                        except Exception as error:
+                            if isinstance(
+                                error, (ValueError, ArithmeticError)
+                            ) and record_failed_live_result(
+                                processing_connection,
+                                conversation_id=item.conversation_id,
+                                revision=inputs[item.conversation_id].revision,
+                            ):
+                                continue
                             log.exception(
                                 "[Worker] %s: Solidago failed",
                                 item.slug_id,

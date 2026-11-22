@@ -10,7 +10,7 @@ export function getProjectContactPresentation(contact: ProjectContact) {
           .join(" ")
       : contact.lastName !== undefined
         ? contact.lastName
-        : contact.affiliationName;
+        : (contact.affiliationName ?? contact.email);
   const hasPersonName =
     contact.firstName !== undefined || contact.lastName !== undefined;
   const subtitle = [

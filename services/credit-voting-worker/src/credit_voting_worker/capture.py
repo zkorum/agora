@@ -14,22 +14,26 @@ from credit_voting_worker.generated_models import (
     QvCalculationState,
     QvInputAllocation,
     QvInputBallot,
+    QvInputBallotEligibility,
     QvInputItem,
     QvInputSnapshot,
     QvResponseVersion,
     RankingItem,
     RankingItemContent,
+    User,
 )
 from credit_voting_worker.generated_rules import (
-    CREDIT_VOTING_ALGORITHM_VERSION,
-    CREDIT_VOTING_RULE_VERSION,
+    QV_ALGORITHM_VERSION,
+    QV_RULE_VERSION,
 )
 from credit_voting_worker.inputs import (
+    QvItemInput,
     eligible_response_query,
     load_required_survey,
+    project_live_ballot,
     survey_eligible_accounts,
 )
-from credit_voting_worker.work import Claim, InvalidInputError, lock_claim, renew_claim
+from credit_voting_worker.work import Claim, lock_claim, renew_claim
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -46,6 +50,11 @@ class InputBallotRow(TypedDict):
 class InputAllocationRow(InputBallotRow):
     item_slug_id: str
     votes: int
+
+
+class InputBallotEligibilityRow(InputBallotRow):
+    user_id: UUID
+    is_account_hidden: bool
 
 
 def capture_inputs(
@@ -116,8 +125,8 @@ def capture_inputs(
                 credit_pricing="quadratic",
                 allow_opposition=config.allow_opposition,
                 statement_set_revision=config.statement_set_revision,
-                rule_version=CREDIT_VOTING_RULE_VERSION,
-                algorithm_version=CREDIT_VOTING_ALGORITHM_VERSION,
+                rule_version=QV_RULE_VERSION,
+                algorithm_version=QV_ALGORITHM_VERSION,
                 participant_count=0,
             )
         )
@@ -139,12 +148,16 @@ def capture_inputs(
                     ]
                 )
             )
-        item_by_id = {item.id: (item.slug_id, content.id) for item, content in items}
+        item_by_id = {
+            item.id: QvItemInput(slug_id=item.slug_id, content_id=content.id)
+            for item, content in items
+        }
         survey = load_required_survey(session=session, conversation_id=claim.conversation_id)
         candidates = session.execute(
-            eligible_response_query(conversation_id=claim.conversation_id).execution_options(
-                yield_per=500
-            )
+            eligible_response_query(conversation_id=claim.conversation_id)
+            .order_by(User.id)
+            .with_for_update(read=True, of=User)
+            .execution_options(yield_per=500)
         ).tuples()
         participant_count = 0
         for batch in candidates.partitions(500):
@@ -165,6 +178,7 @@ def capture_inputs(
                 for _, version_id, account_id in batch
                 if eligible_accounts is None or account_id in eligible_accounts
             ]
+            account_by_version = {version_id: account_id for _, version_id, account_id in batch}
             if not versions:
                 continue
             version_rows = session.scalars(
@@ -178,41 +192,38 @@ def capture_inputs(
                 allocations_by_version.setdefault(allocation.version_id, []).append(allocation)
             copied_allocations: list[InputAllocationRow] = []
             ballots: list[InputBallotRow] = []
+            eligibility: list[InputBallotEligibilityRow] = []
             for version in version_rows:
-                rows = allocations_by_version.get(version.id, [])
-                if (
-                    not rows
-                    or version.credit_budget != config.credit_budget
-                    or version.credit_pricing != "quadratic"
-                    or version.allow_opposition != config.allow_opposition
-                    or version.rule_version != CREDIT_VOTING_RULE_VERSION
-                    or version.statement_set_revision != config.statement_set_revision
-                    or sum(row.votes**2 for row in rows) != version.credits_spent
-                    or version.credits_spent > config.credit_budget
-                ):
-                    raise InvalidInputError("Unsupported QV ballot provenance")
-                for row in rows:
-                    item = item_by_id.get(row.item_id)
-                    if (
-                        item is None
-                        or item[1] != row.content_id
-                        or row.deleted_at is not None
-                        or row.votes == 0
-                        or row.votes**2 > config.credit_budget
-                        or (row.votes < 0 and not config.allow_opposition)
-                    ):
-                        raise InvalidInputError("Unavailable QV ballot input")
+                projected = project_live_ballot(
+                    version=version,
+                    allocations=allocations_by_version.get(version.id, []),
+                    config=config,
+                    items=item_by_id,
+                )
+                if not projected:
+                    continue
+                for row in projected:
                     copied_allocations.append(
                         {
                             "snapshot_id": snapshot_id,
                             "ballot_index": participant_count,
-                            "item_slug_id": item[0],
+                            "item_slug_id": row.item_slug_id,
                             "votes": row.votes,
                         }
                     )
                 ballots.append({"snapshot_id": snapshot_id, "ballot_index": participant_count})
+                eligibility.append(
+                    {
+                        "snapshot_id": snapshot_id,
+                        "ballot_index": participant_count,
+                        "user_id": account_by_version[version.id],
+                        "is_account_hidden": False,
+                    }
+                )
                 participant_count += 1
-            session.execute(insert(QvInputBallot).values(ballots))
+            if ballots:
+                session.execute(insert(QvInputBallot).values(ballots))
+                session.execute(insert(QvInputBallotEligibility).values(eligibility))
             for offset in range(0, len(copied_allocations), 1000):
                 session.execute(
                     insert(QvInputAllocation).values(copied_allocations[offset : offset + 1000])

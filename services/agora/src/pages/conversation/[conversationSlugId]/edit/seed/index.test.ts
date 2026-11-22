@@ -340,6 +340,7 @@ async function mountFlow({
       {
         target: { kind: "project", projectSlug: "destination" },
         title: "Destination",
+        participationMode: "guest",
         organizationSlugs: ["owner"],
         premiumFeatures: [],
         defaultLanguageCode: "en",
@@ -356,6 +357,8 @@ async function mountFlow({
     ],
     isIndexed: true,
     participationMode: "account_required",
+    participationModeSettingsSource: "conversation_override",
+    projectParticipationMode: "guest",
     aiLabelingEnabled: true,
     preferredOpinionGroupCount: null,
     createdAt: new Date(),
@@ -510,7 +513,7 @@ describe("QV statement conflict recovery", () => {
     });
     const session = store.session;
     if (session === undefined) throw new Error("Missing QV session");
-    session.qvStatements[0] = {
+    session.qvItems[0] = {
       localKey: "qvseed01",
       title: "Valid title",
       description: "<p></p>".repeat(MAX_BYTES_RICH_TEXT_HTML),
@@ -530,7 +533,7 @@ describe("QV statement conflict recovery", () => {
     const session = store.session;
     if (session === undefined || response.qvStatements === undefined)
       throw new Error("Missing QV session");
-    session.qvStatements[0] = {
+    session.qvItems[0] = {
       localKey: "qvseed01",
       title: "My unsaved edit",
       description: "<p>My description</p>",
@@ -559,19 +562,19 @@ describe("QV statement conflict recovery", () => {
     });
     await nextTick();
     clickButton("Save");
-    await vi.waitFor(() => expect(session.qvStatementsNeedRefresh).toBe(true));
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(true));
     await vi.waitFor(() => expect(session.isSaving).toBe(false));
-    expect(session.qvStatements[0]?.title).toBe("My unsaved edit");
+    expect(session.qvItems[0]?.title).toBe("My unsaved edit");
     expect(session.original.qvStatements?.revision).toBe(1);
     clickButton("Save");
     await nextTick();
     expect(mocks.save).toHaveBeenCalledTimes(1);
 
     clickButton("Reload current statements");
-    await vi.waitFor(() => expect(session.qvStatementsNeedRefresh).toBe(false));
-    expect(session.qvStatements[0]?.title).toBe("Another facilitator's edit");
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(false));
+    expect(session.qvItems[0]?.title).toBe("Another facilitator's edit");
     expect(session.original.qvStatements?.revision).toBe(2);
-    session.qvStatements[0] = {
+    session.qvItems[0] = {
       localKey: "qvseed01",
       title: "An edit based on current content",
       description: "<p>First description</p>",
@@ -599,7 +602,7 @@ describe("QV statement conflict recovery", () => {
     const { store, response } = await mountFlow({ qv: true, newSeeds: [] });
     const session = store.session;
     if (session === undefined) throw new Error("Missing QV session");
-    session.qvStatements[0] = {
+    session.qvItems[0] = {
       localKey: "qvseed01",
       title: "Keep this edit",
       description: "",
@@ -612,13 +615,13 @@ describe("QV statement conflict recovery", () => {
     mocks.getForEdit.mockRejectedValueOnce(new Error("Network unavailable"));
     await nextTick();
     clickButton("Save");
-    await vi.waitFor(() => expect(session.qvStatementsNeedRefresh).toBe(true));
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(true));
     await vi.waitFor(() => expect(session.isSaving).toBe(false));
-    expect(session.qvStatements[0]?.title).toBe("Keep this edit");
+    expect(session.qvItems[0]?.title).toBe("Keep this edit");
     mocks.getForEdit.mockResolvedValueOnce(response);
     clickButton("Reload current statements");
-    await vi.waitFor(() => expect(session.qvStatementsNeedRefresh).toBe(false));
-    expect(session.qvStatements[0]?.title).toBe("First QV statement");
+    await vi.waitFor(() => expect(session.qvItemsNeedRefresh).toBe(false));
+    expect(session.qvItems[0]?.title).toBe("First QV statement");
   });
 });
 
@@ -936,6 +939,7 @@ describe("edit conversation statement step", () => {
       session.original.projectLanguageProject = {
         projectSlug: "seed-project",
         projectTitle: "Source project",
+        participationMode: "guest",
         defaultLanguageCode: "en",
         languageSettings: {
           dynamicTranslationEnabled: false,

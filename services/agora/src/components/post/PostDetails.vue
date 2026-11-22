@@ -59,6 +59,7 @@
           :show-report-button="true"
           :is-live-analysis-paused="isLiveAnalysisPaused"
           :is-conversation-closed="conversationData.metadata.isClosed"
+          :can-edit-conversation="conversationData.interaction.conversationCapabilities.canEdit"
           :is-finalizing="conversationData.metadata.isFinalizing === true"
           :navigate-to-discover-tab="navigateToDiscoverTab"
           :conversation-scroll-context="conversationScrollContext"
@@ -370,7 +371,7 @@ async function refreshAllData(): Promise<void> {
 
   // Invalidate all queries to force fresh data
   invalidateComments(slugId);
-  invalidateAnalysis(slugId);
+  await invalidateAnalysis(slugId);
 
   // Refresh comment data if the component is rendered
   if (opinionSectionRef.value) {

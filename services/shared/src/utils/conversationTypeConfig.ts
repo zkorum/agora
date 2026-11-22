@@ -10,6 +10,9 @@ export function areConversationTypeConfigsEqual({
     left: Readonly<ConversationTypeConfig>;
     right: Readonly<ConversationTypeConfig>;
 }): boolean {
+    if (left.conversationType === "gathering")
+        return right.conversationType === "gathering";
+    if (right.conversationType === "gathering") return false;
     if (left.conversationType === "polis")
         return (
             right.conversationType === "polis" &&
@@ -23,7 +26,6 @@ export function areConversationTypeConfigsEqual({
         );
     return (
         right.prioritizationType === "qv" &&
-        left.creditPricing === right.creditPricing &&
         left.allowOpposition === right.allowOpposition
     );
 }
@@ -60,6 +62,8 @@ export function applyConversationTypeConfig({
 export function projectConversationTypeConfig(
     config: Readonly<ConversationTypeConfig>,
 ): ConversationTypeConfig {
+    if (config.conversationType === "gathering")
+        return { conversationType: "gathering" };
     if (config.conversationType === "polis") {
         return {
             conversationType: "polis",

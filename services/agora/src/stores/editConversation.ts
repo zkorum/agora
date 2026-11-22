@@ -4,7 +4,7 @@ import { getConversationUpdatesOverrideUpdate } from "src/components/newConversa
 import type {
   ConversationFormState,
   PostAsSettings,
-  QvStatementDraft,
+  QvItemDraft,
 } from "src/composables/conversation/draft/conversationDraft.types";
 import type {
   ConversationEmailUpdateConfigurationResponse,
@@ -46,8 +46,8 @@ export interface EditConversationSession extends EditConversationDetails {
   postAs: PostAsSettings;
   newSeedOpinions: string[];
   existingSeedOpinions: ExistingSeedOpinionDraft[];
-  qvStatements: QvStatementDraft[];
-  qvStatementsNeedRefresh: boolean;
+  qvItems: QvItemDraft[];
+  qvItemsNeedRefresh: boolean;
   participantPolicyNeedsRefresh: boolean;
   isSaving: boolean;
 }
@@ -86,14 +86,12 @@ export function buildSeedOpinionChanges(
   });
 }
 
-export function buildQvStatementUpdate(
+export function buildQvItemUpdate(
   session: EditConversationSession
 ): UpdateConversationRequest["qvStatementUpdate"] {
   const original = session.original.qvStatements;
   if (original === undefined) return undefined;
-  const current = new Map(
-    session.qvStatements.map((item) => [item.localKey, item])
-  );
+  const current = new Map(session.qvItems.map((item) => [item.localKey, item]));
   const changes: NonNullable<
     UpdateConversationRequest["qvStatementUpdate"]
   >["changes"] = [];
@@ -120,7 +118,7 @@ export function buildQvStatementUpdate(
         },
       });
   }
-  const order = session.qvStatements.map((item) => item.localKey);
+  const order = session.qvItems.map((item) => item.localKey);
   if (
     changes.length === 0 &&
     JSON.stringify(order) ===
@@ -247,7 +245,7 @@ export const useEditConversationStore = defineStore("editConversation", () => {
       session.value !== undefined &&
       (session.value.newSeedOpinions.length > 0 ||
         hasExistingSeedOpinionChanges(session.value) ||
-        buildQvStatementUpdate(session.value) !== undefined ||
+        buildQvItemUpdate(session.value) !== undefined ||
         hasEditConversationDetailsChanges(session.value))
   );
 
@@ -256,17 +254,17 @@ export const useEditConversationStore = defineStore("editConversation", () => {
       EditConversationSession,
       | "existingSeedOpinions"
       | "aiSuggestionDraftId"
-      | "qvStatements"
-      | "qvStatementsNeedRefresh"
+      | "qvItems"
+      | "qvItemsNeedRefresh"
       | "participantPolicyNeedsRefresh"
     >
   ): void {
     session.value = {
       ...value,
       aiSuggestionDraftId: uid(),
-      qvStatementsNeedRefresh: false,
+      qvItemsNeedRefresh: false,
       participantPolicyNeedsRefresh: false,
-      qvStatements:
+      qvItems:
         value.original.qvStatements?.items.map((item) => ({
           localKey: item.slugId,
           title: item.title,

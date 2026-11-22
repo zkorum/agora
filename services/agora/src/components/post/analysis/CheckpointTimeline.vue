@@ -153,6 +153,7 @@ import {
   ref,
   watch,
 } from "vue";
+import { useI18n } from "vue-i18n";
 
 import type {
   CheckpointTimelineItem,
@@ -193,6 +194,7 @@ const emit = defineEmits<{
 }>();
 
 const $q = useQuasar();
+const { n } = useI18n();
 const timelineRef = ref<HTMLElement | null>(null);
 const savedTimelineScrollLeft = ref<number | undefined>();
 const markerElements = new Map<CheckpointMarkerKey, HTMLElement>();
@@ -321,23 +323,30 @@ function getCheckpointReasonLabels(
 }
 
 function formatElapsedDuration(diffMs: number): string {
+  const format = ({ value, unit }: { value: number; unit: string }) =>
+    n(value, {
+      style: "unit",
+      unit,
+      unitDisplay: "narrow",
+      signDisplay: "always",
+    });
   const minuteCount = Math.max(0, Math.round(diffMs / 60000));
   if (minuteCount < 60) {
-    return `${String(minuteCount)}m`;
+    return format({ value: minuteCount, unit: "minute" });
   }
 
   const hourCount = Math.round(minuteCount / 60);
   if (hourCount < 48) {
-    return `${String(hourCount)}h`;
+    return format({ value: hourCount, unit: "hour" });
   }
 
   const dayCount = Math.round(hourCount / 24);
   if (dayCount < 14) {
-    return `${String(dayCount)}d`;
+    return format({ value: dayCount, unit: "day" });
   }
 
   const weekCount = Math.round(dayCount / 7);
-  return `${String(weekCount)}w`;
+  return format({ value: weekCount, unit: "week" });
 }
 
 function getCheckpointElapsedLabel(
@@ -356,7 +365,7 @@ function getCheckpointElapsedLabel(
       new Date(firstCheckpoint.activatedAt).getTime(),
     0
   );
-  return `+${formatElapsedDuration(diffMs)}`;
+  return formatElapsedDuration(diffMs);
 }
 
 function getMarkerLabel({ index }: { index: number }): string | undefined {

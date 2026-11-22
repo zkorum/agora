@@ -159,7 +159,9 @@ export function parseSqlTables(
             if (!trimmed || trimmed.startsWith("CONSTRAINT")) continue;
             const colMatch = /^"(\w+)"\s+(.+?)$/.exec(trimmed);
             if (!colMatch) continue;
-            const rest = colMatch[2];
+            // Named inline constraints apply to the column, not its type or
+            // default expression. Strip them before parsing either attribute.
+            const rest = colMatch[2].replace(/\s+CONSTRAINT\s+.*$/i, "");
             const nullable = !rest.includes("NOT NULL");
             const hasDefault =
                 rest.includes("DEFAULT") || rest.includes("GENERATED");
@@ -249,10 +251,17 @@ export function mapSqlType(
         const m = /varchar\((\d+)\)/.exec(lower);
         return { pyType: "str", saType: `String(${m ? m[1] : "255"})` };
     }
+    // Preserve native PostgreSQL arrays and their values in SQLite worker fixtures.
     if (lower === "text[]")
-        return { pyType: "list[str]", saType: "ARRAY(Text)" };
+        return {
+            pyType: "list[str]",
+            saType: 'ARRAY(Text).with_variant(JSON(), "sqlite")',
+        };
     if (lower === "integer[]")
-        return { pyType: "list[int]", saType: "ARRAY(Integer)" };
+        return {
+            pyType: "list[int]",
+            saType: 'ARRAY(Integer).with_variant(JSON(), "sqlite")',
+        };
     if (lower.startsWith("timestamp"))
         return { pyType: "datetime", saType: "DateTime" };
     if (lower === "uuid") return { pyType: "uuid_pkg.UUID", saType: "Uuid" };
@@ -444,6 +453,16 @@ export function generateSqlAlchemyModels({
                     mcArgs.push(`server_default=text("${col.defaultValue}")`);
                 } else if (/^-?\d+$/.test(col.defaultValue)) {
                     mcArgs.push(`server_default="${col.defaultValue}"`);
+                } else if (pyType === "str") {
+                    // Preserve literal text defaults in schema-derived SQLite
+                    // fixtures too, without treating arbitrary SQL as a literal.
+                    const literal = /^'((?:[^']|'')*)'(?:::text)?$/.exec(
+                        col.defaultValue,
+                    )?.[1];
+                    if (literal !== undefined)
+                        mcArgs.push(
+                            `server_default=${JSON.stringify(literal.replaceAll("''", "'"))}`,
+                        );
                 } else if (
                     col.sqlType.toLowerCase() === "uuid" &&
                     col.defaultValue === "gen_random_uuid()"

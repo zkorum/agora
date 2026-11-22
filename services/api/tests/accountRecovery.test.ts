@@ -23,6 +23,7 @@ import { findAccountParticipationSource } from "../src/shared-backend/accountPar
 import { deleteUserAccount } from "../src/service/account.js";
 import { getAccountDatabaseTime } from "../src/service/accountDatabaseTime.js";
 import {
+    recoverGuestAccount,
     restoreAccountAfterVerification,
     type VerifiedRecoveryProof,
 } from "../src/service/accountRecovery.js";
@@ -72,7 +73,9 @@ describe("explicit verified account recovery", () => {
         db = drizzle({ client });
         const pool = new Pool(connection);
         try {
-            await (await pushSchema(schema, drizzlePg({ client: pool }))).apply();
+            await (
+                await pushSchema(schema, drizzlePg({ client: pool }))
+            ).apply();
         } finally {
             await pool.end();
         }
@@ -218,6 +221,7 @@ describe("explicit verified account recovery", () => {
             email,
             proof,
             opinionId: opinion.id,
+            conversationId: conversation.id,
             configId: config.id,
         };
     }
@@ -305,8 +309,44 @@ describe("explicit verified account recovery", () => {
 
     it("can merge a recovered guest without transferring retired original keys", async () => {
         const fixture = await seed("guest_device");
+        const input = first(
+            await db
+                .insert(schema.analysisInputSnapshotTable)
+                .values({
+                    conversationId: fixture.conversationId,
+                    dataGeneration: 0,
+                    inputHash: "a".repeat(64),
+                    opinionCount: 1,
+                    participantCount: 1,
+                    voteCount: 1,
+                    compression: "zstd",
+                    payload: "AQ==",
+                })
+                .returning(),
+        );
+        await db
+            .insert(schema.analysisInputParticipantEligibilityTable)
+            .values({
+                inputSnapshotId: input.id,
+                participantIndex: 0,
+                userId: fixture.userId,
+            });
         await deleteUserAccount({ db, userId: fixture.userId });
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.analysisInputParticipantEligibilityTable),
+            ).isAccountHidden,
+        ).toBe(true);
         expect((await restore(fixture)).success).toBe(true);
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.analysisInputParticipantEligibilityTable),
+            ).isAccountHidden,
+        ).toBe(false);
         const destinationId = randomUUID();
         await db
             .insert(schema.userTable)
@@ -332,6 +372,16 @@ describe("explicit verified account recovery", () => {
                     now,
                 }),
         );
+        expect(
+            first(
+                await db
+                    .select()
+                    .from(schema.analysisInputParticipantEligibilityTable),
+            ),
+        ).toMatchObject({
+            userId: fixture.userId,
+            isAccountHidden: true,
+        });
         expect(
             first(
                 await db
@@ -395,6 +445,15 @@ describe("explicit verified account recovery", () => {
     });
 
     async function restore(fixture: Awaited<ReturnType<typeof seed>>) {
+        if (fixture.proof.method === "guest_device") {
+            return await recoverGuestAccount({
+                db,
+                originalDidWrite: fixture.proof.didWrite,
+                freshDidWrite: fixture.freshKey,
+                userAgent: "recovery",
+                sessionLifetimeDays: 30,
+            });
+        }
         return await db.transaction(
             async (tx) =>
                 await restoreAccountAfterVerification({
@@ -421,7 +480,7 @@ describe("explicit verified account recovery", () => {
             method === "qv"
                 ? first(
                       await db
-                          .insert(schema.creditVotingConfigTable)
+                          .insert(schema.qvConfigTable)
                           .values({
                               statementsLockedAt: new Date(),
                           })

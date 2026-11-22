@@ -1,7 +1,7 @@
 <template>
-  <div class="qv-statements">
+  <div class="qv-items">
     <div class="list-actions">
-      <h2>{{ t("statements") }}</h2>
+      <h2>{{ t("items") }}</h2>
       <q-btn
         flat
         :label="preview ? t('edit') : t('preview')"
@@ -9,19 +9,19 @@
       />
     </div>
     <p
-      v-if="showErrors && statements.length === 0"
+      v-if="showErrors && items.length === 0"
       role="alert"
       class="validation-error"
     >
-      {{ t("needStatement") }}
+      {{ t("needItem") }}
     </p>
     <section
-      v-for="(statement, index) in statements"
-      :key="statement.localKey"
-      class="statement-card"
-      :aria-label="`${t('statements')} ${index + 1}`"
+      v-for="(item, index) in items"
+      :key="item.localKey"
+      class="item-card"
+      :aria-label="`${t('items')} ${index + 1}`"
     >
-      <div class="statement-actions">
+      <div class="item-actions">
         <span>{{ index + 1 }}</span>
         <q-btn
           v-if="!disabled"
@@ -38,7 +38,7 @@
           round
           icon="mdi-arrow-down"
           :aria-label="t('down')"
-          :disable="index === statements.length - 1"
+          :disable="index === items.length - 1"
           @click="move({ index, direction: 1 })"
         />
         <q-btn
@@ -47,31 +47,29 @@
           round
           icon="mdi-delete-outline"
           :aria-label="t('remove')"
-          :disable="!allowAdd && statements.length === 1"
-          @click="remove(statement.localKey)"
+          :disable="!allowAdd && items.length === 1"
+          @click="remove(item.localKey)"
         />
       </div>
       <template v-if="preview || disabled">
         <ZKHtmlContent
-          :html-body="statement.title"
+          :html-body="item.title"
           :compact-mode="false"
           :enable-links="false"
           content-role="title"
         />
         <ZKHtmlContent
-          v-if="statement.description"
-          :html-body="statement.description"
+          v-if="item.description"
+          :html-body="item.description"
           :compact-mode="false"
           :enable-links="true"
         />
       </template>
       <template v-else>
-        <label :id="`${statement.localKey}-title-label`">{{
-          t("title")
-        }}</label>
+        <label :id="`${item.localKey}-title-label`">{{ t("title") }}</label>
         <Editor
-          :model-value="statement.title"
-          :aria-labelledby="`${statement.localKey}-title-label`"
+          :model-value="item.title"
+          :aria-labelledby="`${item.localKey}-title-label`"
           :placeholder="t('title')"
           :show-toolbar="false"
           :single-line="true"
@@ -80,15 +78,15 @@
           min-height="2.5rem"
           @update:model-value="
             (value: string) =>
-              update({ key: statement.localKey, field: 'title', value })
+              update({ key: item.localKey, field: 'title', value })
           "
         />
-        <label :id="`${statement.localKey}-description-label`">{{
+        <label :id="`${item.localKey}-description-label`">{{
           t("description")
         }}</label>
         <Editor
-          :model-value="statement.description"
-          :aria-labelledby="`${statement.localKey}-description-label`"
+          :model-value="item.description"
+          :aria-labelledby="`${item.localKey}-description-label`"
           :placeholder="t('description')"
           :show-toolbar="true"
           :single-line="false"
@@ -97,11 +95,11 @@
           min-height="4rem"
           @update:model-value="
             (value: string) =>
-              update({ key: statement.localKey, field: 'description', value })
+              update({ key: item.localKey, field: 'description', value })
           "
         />
         <p
-          v-if="showErrors && !isValid(statement)"
+          v-if="showErrors && !isValid(item)"
           role="alert"
           class="validation-error"
         >
@@ -114,7 +112,7 @@
       outline
       icon="mdi-plus"
       :label="t('add')"
-      :disable="statements.length >= MAX_SEED_OPINIONS_PER_SUBMISSION"
+      :disable="items.length >= MAX_SEED_OPINIONS_PER_SUBMISSION"
       @click="add"
     />
   </div>
@@ -123,30 +121,30 @@
 <script setup lang="ts">
 import { uid } from "quasar";
 import ZKHtmlContent from "src/components/ui-library/ZKHtmlContent.vue";
-import type { QvStatementDraft } from "src/composables/conversation/draft/conversationDraft.types";
+import type { QvItemDraft } from "src/composables/conversation/draft/conversationDraft.types";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateRichTextInput } from "src/shared/richText";
 import { MAX_SEED_OPINIONS_PER_SUBMISSION } from "src/shared/seedOpinions";
 import { MAX_LENGTH_BODY, MAX_LENGTH_OPINION } from "src/shared/shared";
 import { defineAsyncComponent, ref } from "vue";
 
-import { qvStatementsTranslations } from "./QvStatements.i18n";
+import { qvItemsTranslations } from "./QvItems.i18n";
 
 const props = defineProps<{ disabled: boolean; allowAdd: boolean }>();
-const statements = defineModel<QvStatementDraft[]>({ required: true });
-const { t } = useComponentI18n(qvStatementsTranslations);
+const items = defineModel<QvItemDraft[]>({ required: true });
+const { t } = useComponentI18n(qvItemsTranslations);
 const Editor = defineAsyncComponent(
   () => import("src/components/editor/Editor.vue")
 );
 const showErrors = ref(false);
 const preview = ref(false);
 
-function isValid(statement: QvStatementDraft): boolean {
+function isValid(item: QvItemDraft): boolean {
   return (
-    validateRichTextInput({ htmlString: statement.title, mode: "opinion" })
+    validateRichTextInput({ htmlString: item.title, mode: "opinion" })
       .success &&
     validateRichTextInput({
-      htmlString: statement.description,
+      htmlString: item.description,
       mode: "ranking_item",
     }).success
   );
@@ -155,9 +153,9 @@ function validate(): boolean {
   showErrors.value = true;
   preview.value = false;
   return (
-    statements.value.length > 0 &&
-    statements.value.length <= MAX_SEED_OPINIONS_PER_SUBMISSION &&
-    statements.value.every(isValid)
+    items.value.length > 0 &&
+    items.value.length <= MAX_SEED_OPINIONS_PER_SUBMISSION &&
+    items.value.every(isValid)
   );
 }
 function update({
@@ -170,24 +168,21 @@ function update({
   value: string;
 }): void {
   if (props.disabled) return;
-  statements.value = statements.value.map((item) =>
+  items.value = items.value.map((item) =>
     item.localKey === key ? { ...item, [field]: value } : item
   );
 }
 function add(): void {
-  if (
-    props.disabled ||
-    statements.value.length >= MAX_SEED_OPINIONS_PER_SUBMISSION
-  )
+  if (props.disabled || items.value.length >= MAX_SEED_OPINIONS_PER_SUBMISSION)
     return;
-  statements.value = [
-    ...statements.value,
+  items.value = [
+    ...items.value,
     { localKey: uid(), title: "", description: "" },
   ];
 }
 function remove(key: string): void {
   if (props.disabled) return;
-  statements.value = statements.value.filter((item) => item.localKey !== key);
+  items.value = items.value.filter((item) => item.localKey !== key);
 }
 function move({
   index,
@@ -197,28 +192,28 @@ function move({
   direction: -1 | 1;
 }): void {
   if (props.disabled) return;
-  const items = [...statements.value];
-  const item = items.at(index);
+  const reorderedItems = [...items.value];
+  const item = reorderedItems.at(index);
   if (
     item === undefined ||
     index + direction < 0 ||
-    index + direction >= items.length
+    index + direction >= reorderedItems.length
   )
     return;
-  items.splice(index, 1);
-  items.splice(index + direction, 0, item);
-  statements.value = items;
+  reorderedItems.splice(index, 1);
+  reorderedItems.splice(index + direction, 0, item);
+  items.value = reorderedItems;
 }
 defineExpose({ validate });
 </script>
 
 <style scoped lang="scss">
-.qv-statements {
+.qv-items {
   display: grid;
   gap: 1rem;
 }
 .list-actions,
-.statement-actions {
+.item-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -230,10 +225,10 @@ defineExpose({ validate });
   font-size: 1.1rem;
   margin: 0;
 }
-.statement-actions > span {
+.item-actions > span {
   margin-inline-end: auto;
 }
-.statement-card {
+.item-card {
   display: grid;
   gap: 0.75rem;
   padding: 1rem;

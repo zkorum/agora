@@ -55,8 +55,8 @@ and [MDN object-fit](https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 
 ## Conversation indexing and browser translation
 
-Unlisted conversations (`isIndexed: false`) are excluded from search engines with
-`X-Robots-Tag: noindex, nofollow` on their HTML responses. The application nginx
+Conversations with effective `isIndexed: false` tell crawlers not to index their
+HTML responses via `X-Robots-Tag: noindex, nofollow`. The application nginx
 uses an internal POST subrequest to the API's `/api/v1/conversation/indexing`
 endpoint. Only a successful HTTP 200 response with an explicit
 `X-Conversation-Indexing: index` header permits indexing. The value must be exactly
@@ -78,6 +78,11 @@ independently. Until the API endpoint is available, conversation HTML defaults t
 noindex. Actual content authorization remains enforced by the API. This covers
 conversation subroutes and project-scoped URLs, including alternate-case paths.
 Conversation slug IDs retain their original case.
+
+An activity is eligible for indexing only when its project is listed and the
+activity has not opted out. Project HTML uses the same fail-closed lookup via
+`/api/v1/project/indexing` and `X-Project-Indexing`. Neither lookup gates direct
+links or grants participant access.
 
 `ConversationPageMetadata.vue`, mounted at the application root, passively
 observes the active conversation's shared query without initiating requests and

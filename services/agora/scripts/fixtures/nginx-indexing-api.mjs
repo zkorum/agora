@@ -30,9 +30,10 @@ const server = createServer(async (request, response) => {
     response.end(JSON.stringify(observations));
     return;
   }
+  const isProject = request.url === "/api/v1/project/indexing";
   if (
     request.method !== "POST" ||
-    request.url !== "/api/v1/conversation/indexing" ||
+    (!isProject && request.url !== "/api/v1/conversation/indexing") ||
     request.headers["content-type"] !== "application/json"
   ) {
     response.writeHead(400).end();
@@ -49,22 +50,30 @@ const server = createServer(async (request, response) => {
     response.writeHead(400).end();
     return;
   }
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    !("conversationSlugId" in parsed) ||
-    typeof parsed.conversationSlugId !== "string"
-  ) {
+  if (typeof parsed !== "object" || parsed === null) {
+    response.writeHead(400).end();
+    return;
+  }
+  const slug = isProject
+    ? "projectSlug" in parsed
+      ? parsed.projectSlug
+      : undefined
+    : "conversationSlugId" in parsed
+      ? parsed.conversationSlugId
+      : undefined;
+  if (typeof slug !== "string") {
     response.writeHead(400).end();
     return;
   }
 
-  const slug = parsed.conversationSlugId;
+  const policyHeader = isProject
+    ? "X-Project-Indexing"
+    : "X-Conversation-Indexing";
   const observation = {
     slug,
     authorization: request.headers.authorization !== undefined,
     cookie: request.headers.cookie !== undefined,
-    policyHeader: request.headers["x-conversation-indexing"] !== undefined,
+    policyHeader: request.headers[policyHeader.toLowerCase()] !== undefined,
   };
   observations.push(observation);
   if (
@@ -79,7 +88,7 @@ const server = createServer(async (request, response) => {
   if (slug === "slow") {
     setTimeout(() => {
       if (response.destroyed) return;
-      response.setHeader("X-Conversation-Indexing", "index");
+      response.setHeader(policyHeader, "index");
       response.writeHead(200).end("{}");
     }, 2000);
     return;
@@ -89,8 +98,7 @@ const server = createServer(async (request, response) => {
     status: 200,
     policy: "noindex",
   };
-  if (policy !== undefined)
-    response.setHeader("X-Conversation-Indexing", policy);
+  if (policy !== undefined) response.setHeader(policyHeader, policy);
   if (status === 302) response.setHeader("Location", "/unexpected");
   if (status === 401)
     response.setHeader("WWW-Authenticate", 'Basic realm="mock"');

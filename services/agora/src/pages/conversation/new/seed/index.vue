@@ -37,7 +37,7 @@
       />
       <section v-if="isQvDraft" class="seed-opinions-section">
         <p class="section-description">
-          {{ qvT("budget", { credits: CREDIT_VOTING_BUDGET }) }}
+          {{ qvT("budget", { credits: QV_CREDIT_BUDGET }) }}
         </p>
         <q-toggle
           v-model="allowOpposition"
@@ -45,9 +45,9 @@
           :disable="isSubmitButtonLoading"
         />
         <p class="section-description">{{ qvT("oppositionHelp") }}</p>
-        <QvStatementListEditor
+        <QvItemListEditor
           ref="qvEditor"
-          v-model="qvStatements"
+          v-model="qvItems"
           :disabled="isSubmitButtonLoading || isNavigatingAway"
           :allow-add="true"
         />
@@ -154,8 +154,8 @@ import DefaultMenuBar from "src/components/navigation/header/DefaultMenuBar.vue"
 import NewConversationLayout from "src/components/newConversation/NewConversationLayout.vue";
 import NewConversationRouteGuard from "src/components/newConversation/NewConversationRouteGuard.vue";
 import ParticipantStatementsSetting from "src/components/newConversation/ParticipantStatementsSetting.vue";
-import QvStatementListEditor from "src/components/newConversation/QvStatementListEditor.vue";
-import { qvStatementsTranslations } from "src/components/newConversation/QvStatements.i18n";
+import QvItemListEditor from "src/components/newConversation/QvItemListEditor.vue";
+import { qvItemsTranslations } from "src/components/newConversation/QvItems.i18n";
 import SeedOpinionEditor from "src/components/newConversation/SeedOpinionEditor.vue";
 import {
   type SeedOpinionsTranslations,
@@ -168,7 +168,7 @@ import type { SeedOpinionCreateFailure } from "src/composables/conversation/useP
 import { usePublishConversationDraft } from "src/composables/conversation/usePublishConversationDraft";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { validateRichTextInput } from "src/shared/richText";
-import { CREDIT_VOTING_BUDGET } from "src/shared/utils/qv";
+import { QV_CREDIT_BUDGET } from "src/shared/utils/qv";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useNewPostDraftsStore } from "src/stores/newConversationDrafts";
 import { useComparisonApi } from "src/utils/api/comparison/comparison";
@@ -195,7 +195,7 @@ const {
   validateForReview,
   isDraftModified,
   resetDraft,
-  qvStatements,
+  qvItems,
   conversationTypeConfig,
   participantStatements,
 } = useConversationDraft({ syncToStore: true });
@@ -227,8 +227,8 @@ const allowOpposition = computed({
       };
   },
 });
-const { t: qvT } = useComponentI18n(qvStatementsTranslations);
-const qvEditor = ref<InstanceType<typeof QvStatementListEditor>>();
+const { t: qvT } = useComponentI18n(qvItemsTranslations);
+const qvEditor = ref<InstanceType<typeof QvItemListEditor>>();
 
 const { previewGitHubIssues } = useComparisonApi();
 const { publishConversationDraft } = usePublishConversationDraft();

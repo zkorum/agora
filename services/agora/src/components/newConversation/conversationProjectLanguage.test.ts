@@ -12,6 +12,7 @@ import { conversationProjectSettingsTranslations } from "./ConversationProjectSe
 const project = {
   projectSlug: "project",
   projectTitle: "Project",
+  participationMode: "guest",
   defaultLanguageCode: "en",
   languageSettings: {
     dynamicTranslationEnabled: true,

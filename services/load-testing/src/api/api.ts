@@ -364,6 +364,7 @@ export type ApiV1AdministratorProjectCreatePost200ResponseOneOf1ReasonEnum = typ
 export interface ApiV1AdministratorProjectCreatePostRequest {
     'projectSlug': string;
     'projectTitle': string;
+    'directoryVisibility'?: ApiV1AdministratorProjectCreatePostRequestDirectoryVisibilityEnum;
     'ownerOrganizationSlugs': Array<string>;
     'subtitle'?: string;
     'body'?: string;
@@ -374,6 +375,14 @@ export interface ApiV1AdministratorProjectCreatePostRequest {
     'attributions'?: Array<ApiV1AdministratorProjectCreatePostRequestAttributionsInner>;
     'contact'?: ApiV1AdministratorProjectCreatePostRequestContact;
 }
+
+export const ApiV1AdministratorProjectCreatePostRequestDirectoryVisibilityEnum = {
+    Listed: 'listed',
+    Unlisted: 'unlisted',
+} as const;
+
+export type ApiV1AdministratorProjectCreatePostRequestDirectoryVisibilityEnum = typeof ApiV1AdministratorProjectCreatePostRequestDirectoryVisibilityEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestDirectoryVisibilityEnum];
+
 /**
  * @type ApiV1AdministratorProjectCreatePostRequestAttributionsInner
  */
@@ -445,50 +454,14 @@ export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdd
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum];
 
 export interface ApiV1AdministratorProjectCreatePostRequestContact {
-    'firstName': any;
-    'lastName': any;
-    'roleLabel'?: string;
-    'email': string;
-    'organizationSlug': string;
-    'websiteUrl': string;
-    'imagePath'?: string;
-    'isFullImagePath'?: boolean;
-}
-export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf {
-    'firstName': string;
+    'firstName'?: string;
     'lastName'?: string;
     'roleLabel'?: string;
-    'email'?: string;
-    'organizationSlug'?: string;
-    'websiteUrl'?: string;
-    'imagePath'?: string;
-    'isFullImagePath'?: boolean;
-}
-export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf1 {
-    'firstName'?: any;
-    'lastName': string;
-    'roleLabel'?: string;
-    'email'?: string;
-    'organizationSlug'?: string;
-    'websiteUrl'?: string;
-    'imagePath'?: string;
-    'isFullImagePath'?: boolean;
-}
-export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf2 {
-    'firstName'?: any;
-    'lastName'?: any;
-    'roleLabel'?: string;
-    'email'?: string;
-    'organizationSlug': string;
-    'websiteUrl'?: string;
-    'imagePath'?: string;
-    'isFullImagePath'?: boolean;
-}
-export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf3 {
     'email': string;
-}
-export interface ApiV1AdministratorProjectCreatePostRequestContactAllOfAnyOf4 {
-    'websiteUrl': string;
+    'organizationSlug'?: string;
+    'websiteUrl'?: string;
+    'imagePath'?: string;
+    'isFullImagePath'?: boolean;
 }
 export interface ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInner {
     'languageCode': ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum;
@@ -535,6 +508,29 @@ export const ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLan
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum = typeof ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum];
+
+export interface ApiV1AdministratorProjectDirectoryVisibilitySetPost200Response {
+    'directoryVisibility': ApiV1AdministratorProjectDirectoryVisibilitySetPost200ResponseDirectoryVisibilityEnum;
+}
+
+export const ApiV1AdministratorProjectDirectoryVisibilitySetPost200ResponseDirectoryVisibilityEnum = {
+    Listed: 'listed',
+    Unlisted: 'unlisted',
+} as const;
+
+export type ApiV1AdministratorProjectDirectoryVisibilitySetPost200ResponseDirectoryVisibilityEnum = typeof ApiV1AdministratorProjectDirectoryVisibilitySetPost200ResponseDirectoryVisibilityEnum[keyof typeof ApiV1AdministratorProjectDirectoryVisibilitySetPost200ResponseDirectoryVisibilityEnum];
+
+export interface ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest {
+    'projectSlug': string;
+    'directoryVisibility': ApiV1AdministratorProjectDirectoryVisibilitySetPostRequestDirectoryVisibilityEnum;
+}
+
+export const ApiV1AdministratorProjectDirectoryVisibilitySetPostRequestDirectoryVisibilityEnum = {
+    Listed: 'listed',
+    Unlisted: 'unlisted',
+} as const;
+
+export type ApiV1AdministratorProjectDirectoryVisibilitySetPostRequestDirectoryVisibilityEnum = typeof ApiV1AdministratorProjectDirectoryVisibilitySetPostRequestDirectoryVisibilityEnum[keyof typeof ApiV1AdministratorProjectDirectoryVisibilitySetPostRequestDirectoryVisibilityEnum];
 
 export interface ApiV1AdministratorProjectDocumentDeletePostRequest {
     'projectSlug': string;
@@ -645,6 +641,7 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200Response {
 export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInner {
     'projectSlug': string;
     'projectTitle': string;
+    'directoryVisibility': ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerDirectoryVisibilityEnum;
     'ownerOrganizationSlugs': Array<string>;
     'subtitle'?: string;
     'body'?: string;
@@ -657,6 +654,14 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLi
     'attributions': Array<ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner>;
     'contact'?: ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContact;
 }
+
+export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerDirectoryVisibilityEnum = {
+    Listed: 'listed',
+    Unlisted: 'unlisted',
+} as const;
+
+export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerDirectoryVisibilityEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerDirectoryVisibilityEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerDirectoryVisibilityEnum];
+
 /**
  * @type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInner
  */
@@ -2074,8 +2079,8 @@ export type ApiV1AuthZkpVerifyUserStatusAndAuthenticatePost200ResponseAnyOf2Reas
 
 export interface ApiV1ContentTranslationRequestPost200Response {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3;
-    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf4Content;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf5;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf6Content;
     'reason': ApiV1ContentTranslationRequestPost200ResponseReasonEnum;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSetting;
     'blockedReason': ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum;
@@ -2100,12 +2105,12 @@ export type ApiV1ContentTranslationRequestPost200ResponseBlockedReasonEnum = typ
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf {
     'success': boolean;
-    'subject': ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTargetOneOf1;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1 {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1Content {
@@ -2165,8 +2170,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf1Variants {
-    'original': ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
-    'translated'?: ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
+    'original': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
+    'translated'?: ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2KindEnum;
@@ -2188,15 +2193,22 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOf2Variants {
-    'original'?: ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
-    'translated': ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
+    'original'?: ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
+    'translated': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariants {
-    'original': ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
+    'original': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal {
+    'answers': Array<ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginalAnswersInner>;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginalAnswersInner {
+    'fieldId': string;
+    'value': string;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2 {
     'success': boolean;
-    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1;
+    'subject': ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTargetOneOf1;
     'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2Content {
@@ -2256,8 +2268,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf1Variants {
-    'original': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
-    'translated'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
+    'original': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataPayload;
+    'translated'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2KindEnum;
@@ -2279,11 +2291,11 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOf2Variants {
-    'original'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
-    'translated': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
+    'original'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataPayload;
+    'translated': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf2ContentAnyOfVariants {
-    'original': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
+    'original': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataPayload;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3 {
     'success': boolean;
@@ -2347,8 +2359,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf1Variants {
-    'original': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
-    'translated'?: ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'original': ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
+    'translated'?: ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2KindEnum;
@@ -2370,11 +2382,11 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOf2Variants {
-    'original'?: ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
-    'translated': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'original'?: ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
+    'translated': ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf3ContentAnyOfVariants {
-    'original': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'original': ApiV1OpinionEditPost200ResponseOneOfDisplayedOpinionItemDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4 {
     'success': boolean;
@@ -2438,8 +2450,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf1Variants {
-    'original': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
-    'translated'?: ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+    'original': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
+    'translated'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2KindEnum;
@@ -2461,36 +2473,218 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Ini
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2InitialModeEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOf2Variants {
-    'original'?: ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
-    'translated': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+    'original'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
+    'translated': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOf1Content;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf4ContentAnyOfVariants {
-    'original': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+    'original': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5 {
     'success': boolean;
-    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf5Content;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5Content {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2Variants;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentKindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentInitialModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfVariants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfKindEnum = {
+    OriginalOnly: 'original_only',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfInitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1InitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf1Variants {
+    'original': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translated'?: ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2InitialModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOf2Variants {
+    'original'?: ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+    'translated': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf5ContentAnyOfVariants {
+    'original': ApiV1ProjectPageFetchPost200ResponseProjectDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6 {
+    'success': boolean;
+    'subject': ApiV1ContentTranslationRequestPostRequestSubjectOneOf5;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf6Content;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6Content {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2Variants;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentKindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentInitialModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfKindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfInitialModeEnum;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfVariants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfKindEnum = {
+    OriginalOnly: 'original_only',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfKindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfKindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfKindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfInitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfInitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfInitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfInitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1InitialModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf1Variants {
+    'original': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+    'translated'?: ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2 {
+    'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2KindEnum;
+    'sourceVersion': string;
+    'initialMode': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2InitialModeEnum;
+    'translation': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Translation;
+    'variants': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2Variants;
+}
+
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2KindEnum = {
+    Translatable: 'translatable',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2KindEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2InitialModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2InitialModeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2InitialModeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2InitialModeEnum];
+
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOf2Variants {
+    'original'?: ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+    'translated': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6ContentAnyOfVariants {
+    'original': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContentAnyOfContent;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf7 {
+    'success': boolean;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf7ReasonEnum;
     'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSetting;
 }
 
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum = {
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf7ReasonEnum = {
     ContentTranslationNotEnabled: 'content_translation_not_enabled',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf5ReasonEnum];
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf7ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf7ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf7ReasonEnum];
 
-export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf6 {
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOf8 {
     'success': boolean;
-    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum;
-    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum;
+    'reason': ApiV1ContentTranslationRequestPost200ResponseAnyOf8ReasonEnum;
+    'blockedReason': ApiV1ContentTranslationRequestPost200ResponseAnyOf8BlockedReasonEnum;
 }
 
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum = {
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf8ReasonEnum = {
     ParticipationBlocked: 'participation_blocked',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6ReasonEnum];
-export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum = {
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf8ReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf8ReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf8ReasonEnum];
+export const ApiV1ContentTranslationRequestPost200ResponseAnyOf8BlockedReasonEnum = {
     ConversationLocked: 'conversation_locked',
     ConversationClosed: 'conversation_closed',
     AccountRequired: 'account_required',
@@ -2500,7 +2694,7 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnu
     SurveyOutdated: 'survey_outdated',
 } as const;
 
-export type ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf6BlockedReasonEnum];
+export type ApiV1ContentTranslationRequestPost200ResponseAnyOf8BlockedReasonEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf8BlockedReasonEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOf8BlockedReasonEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContent {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentKindEnum;
@@ -2911,8 +3105,8 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Tran
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageOneOf2KindEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageOneOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationSourceLanguageOneOf2KindEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1Variants {
-    'original': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataPayload;
-    'translated'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOf1Content;
+    'original': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
+    'translated'?: ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2 {
     'kind': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2KindEnum;
@@ -3103,11 +3297,14 @@ export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Tran
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationStatusEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationStatusEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationStatusEnum];
 
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2Variants {
-    'original'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataPayload;
-    'translated': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOf1Content;
+    'original'?: ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
+    'translated': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
 }
 export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariants {
-    'original': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataPayload;
+    'original': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
+}
+export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal {
+    'text': string;
 }
 export interface ApiV1ContentTranslationRequestPostRequest {
     'subject': ApiV1ContentTranslationRequestPostRequestSubject;
@@ -3140,17 +3337,16 @@ export type ApiV1ContentTranslationRequestPostRequestRequestModeEnum = typeof Ap
 /**
  * @type ApiV1ContentTranslationRequestPostRequestSubject
  */
-export type ApiV1ContentTranslationRequestPostRequestSubject = ApiV1ContentTranslationRequestPostRequestSubjectOneOf | ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf2 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 | ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTargetOneOf1;
+export type ApiV1ContentTranslationRequestPostRequestSubject = ApiV1ContentTranslationRequestPostRequestSubjectOneOf | ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf2 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf4 | ApiV1ContentTranslationRequestPostRequestSubjectOneOf5 | ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTargetOneOf1;
 
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum;
     'conversationSlugId': string;
-    'opinionSlugId': string;
-    'sourceVersion': string;
+    'fieldId': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum = {
-    Opinion: 'opinion',
+    GatheringField: 'gathering_field',
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum];
@@ -3158,23 +3354,25 @@ export type ApiV1ContentTranslationRequestPostRequestSubjectOneOfKindEnum = type
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf1 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum;
     'conversationSlugId': string;
-    'questionSlugId': string;
+    'responseSlugId': string;
+    'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum = {
-    SurveyQuestion: 'survey_question',
+    GatheringResponse: 'gathering_response',
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf1KindEnum];
 
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf2 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum;
-    'projectSlug': string;
+    'conversationSlugId': string;
+    'opinionSlugId': string;
     'sourceVersion': string;
 }
 
 export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum = {
-    Project: 'project',
+    Opinion: 'opinion',
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum];
@@ -3182,15 +3380,53 @@ export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf2KindEnum = typ
 export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf3 {
     'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum;
     'conversationSlugId': string;
+    'questionSlugId': string;
+}
+
+export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = {
+    SurveyQuestion: 'survey_question',
+} as const;
+
+export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum];
+
+export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf4 {
+    'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum;
+    'projectSlug': string;
+    'sourceVersion': string;
+}
+
+export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum = {
+    Project: 'project',
+} as const;
+
+export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf4KindEnum];
+
+export interface ApiV1ContentTranslationRequestPostRequestSubjectOneOf5 {
+    'kind': ApiV1ContentTranslationRequestPostRequestSubjectOneOf5KindEnum;
+    'conversationSlugId': string;
     'itemSlugId': string;
     'sourceVersion': string;
 }
 
-export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = {
+export const ApiV1ContentTranslationRequestPostRequestSubjectOneOf5KindEnum = {
     RankingItem: 'ranking_item',
 } as const;
 
-export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf3KindEnum];
+export type ApiV1ContentTranslationRequestPostRequestSubjectOneOf5KindEnum = typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf5KindEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestSubjectOneOf5KindEnum];
+
+export interface ApiV1ConversationAnalysisInputModeSetPostRequest {
+    'conversationSlugId': string;
+    'closeId': number;
+    'selectionRevision': number;
+    'inputMode': ApiV1ConversationAnalysisInputModeSetPostRequestInputModeEnum;
+}
+
+export const ApiV1ConversationAnalysisInputModeSetPostRequestInputModeEnum = {
+    Closing: 'closing',
+    Live: 'live',
+} as const;
+
+export type ApiV1ConversationAnalysisInputModeSetPostRequestInputModeEnum = typeof ApiV1ConversationAnalysisInputModeSetPostRequestInputModeEnum[keyof typeof ApiV1ConversationAnalysisInputModeSetPostRequestInputModeEnum];
 
 /**
  * @type ApiV1ConversationClosePost200Response
@@ -3307,7 +3543,7 @@ export type ApiV1ConversationCreatePost200ResponseOneOf1FailureOneOf2ReasonEnum 
 /**
  * @type ApiV1ConversationCreatePostRequest
  */
-export type ApiV1ConversationCreatePostRequest = ApiV1ConversationCreatePostRequestOneOf | ApiV1ConversationCreatePostRequestOneOf1;
+export type ApiV1ConversationCreatePostRequest = ApiV1ConversationCreatePostRequestOneOf | ApiV1ConversationCreatePostRequestOneOf1 | ApiV1ConversationCreatePostRequestOneOf2;
 
 export interface ApiV1ConversationCreatePostRequestOneOf {
     'conversationTitle': string;
@@ -3318,14 +3554,10 @@ export interface ApiV1ConversationCreatePostRequestOneOf {
     'isIndexed': boolean;
     'participationMode': ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum;
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
-    'seedOpinionList': Array<string>;
+    'seedOpinionList'?: Array<string>;
     'conversationEmailUpdateEnabledOverride'?: boolean;
     'conversationType': ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum;
-    'votingPresentation'?: ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum;
-    'allowParticipantStatements'?: boolean;
-    'aiLabelingEnabled'?: boolean;
-    'preferredOpinionGroupCount'?: number | null;
-    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
+    'gathering': ApiV1ConversationCreatePostRequestOneOfGathering;
 }
 
 export const ApiV1ConversationCreatePostRequestOneOfLanguageSettingsSourceEnum = {
@@ -3343,136 +3575,363 @@ export const ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum = {
 
 export type ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfParticipationModeEnum];
 export const ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = {
-    Polis: 'polis',
+    Gathering: 'gathering',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfConversationTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum = {
+
+export interface ApiV1ConversationCreatePostRequestOneOf1 {
+    'conversationTitle': string;
+    'conversationBody'?: string;
+    'projectSlug'?: string;
+    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum;
+    'postAsOrganization': string;
+    'isIndexed': boolean;
+    'participationMode': ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum;
+    'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'seedOpinionList': Array<string>;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum;
+    'votingPresentation'?: ApiV1ConversationCreatePostRequestOneOf1VotingPresentationEnum;
+    'allowParticipantStatements'?: boolean;
+    'aiLabelingEnabled'?: boolean;
+    'preferredOpinionGroupCount'?: number | null;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOf1SurveyConfig | null;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1LanguageSettingsSourceEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1ConversationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1VotingPresentationEnum = {
     List: 'list',
     OneAtATime: 'one_at_a_time',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum = typeof ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfVotingPresentationEnum];
+export type ApiV1ConversationCreatePostRequestOneOf1VotingPresentationEnum = typeof ApiV1ConversationCreatePostRequestOneOf1VotingPresentationEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1VotingPresentationEnum];
 
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfig {
+    'isOptional'?: boolean;
+    'questions': Array<ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInner>;
+}
 /**
- * @type ApiV1ConversationCreatePostRequestOneOf1
+ * @type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInner
  */
-export type ApiV1ConversationCreatePostRequestOneOf1 = ApiV1ConversationCreatePostRequestOneOf1OneOf | ApiV1ConversationCreatePostRequestOneOf1OneOf1;
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInner = ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf | ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1;
 
-export interface ApiV1ConversationCreatePostRequestOneOf1OneOf {
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf {
+    'questionSlugId'?: string;
+    'questionText': string;
+    'isRequired': boolean;
+    'displayOrder': number;
+    'textChangeIsSemantic'?: boolean;
+    'choiceDisplay': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
+    'isPublicAggregateSuppressionEnabled'?: boolean;
+    'options': Array<ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'questionType': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraints;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
+    Auto: 'auto',
+    List: 'list',
+    Dropdown: 'dropdown',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
+    Choice: 'choice',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1 {
+    'questionSlugId'?: string;
+    'questionText': string;
+    'isRequired': boolean;
+    'displayOrder': number;
+    'textChangeIsSemantic'?: boolean;
+    'questionType': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1Constraints;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
+    FreeText: 'free_text',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1Constraints {
+    'type': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
+    'inputMode': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
+    'minPlainTextLength'?: number;
+    'maxPlainTextLength': number;
+    'maxHtmlLength': number;
+    'minValue': number;
+    'maxValue'?: number;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
+    FreeText: 'free_text',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
+    Integer: 'integer',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
+    'type': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
+    'inputMode'?: ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
+    'minPlainTextLength'?: number;
+    'maxPlainTextLength': number;
+    'maxHtmlLength': number;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
+    FreeText: 'free_text',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
+    RichText: 'rich_text',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 {
+    'type': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum;
+    'inputMode': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum;
+    'minValue': number;
+    'maxValue'?: number;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = {
+    FreeText: 'free_text',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = {
+    Integer: 'integer',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraints {
+    'type': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
+    'minSelections': number;
+    'maxSelections'?: number;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
+    Choice: 'choice',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfOptionsInner {
+    'optionSlugId'?: string;
+    'optionText': string;
+    'displayOrder': number;
+    'allowsText'?: boolean;
+    'textChangeIsSemantic'?: boolean;
+}
+/**
+ * @type ApiV1ConversationCreatePostRequestOneOf2
+ */
+export type ApiV1ConversationCreatePostRequestOneOf2 = ApiV1ConversationCreatePostRequestOneOf2OneOf | ApiV1ConversationCreatePostRequestOneOf2OneOf1;
+
+export interface ApiV1ConversationCreatePostRequestOneOf2OneOf {
     'conversationTitle': string;
     'conversationBody'?: string;
     'projectSlug'?: string;
-    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf1OneOfLanguageSettingsSourceEnum;
+    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf2OneOfLanguageSettingsSourceEnum;
     'postAsOrganization': string;
     'isIndexed': boolean;
-    'participationMode': ApiV1ConversationCreatePostRequestOneOf1OneOfParticipationModeEnum;
+    'participationMode': ApiV1ConversationCreatePostRequestOneOf2OneOfParticipationModeEnum;
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'seedOpinionList': Array<string>;
     'conversationEmailUpdateEnabledOverride'?: boolean;
-    'conversationType': ApiV1ConversationCreatePostRequestOneOf1OneOfConversationTypeEnum;
-    'prioritizationType': ApiV1ConversationCreatePostRequestOneOf1OneOfPrioritizationTypeEnum;
-    'comparisonMethod': ApiV1ConversationCreatePostRequestOneOf1OneOfComparisonMethodEnum;
+    'conversationType': ApiV1ConversationCreatePostRequestOneOf2OneOfConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationCreatePostRequestOneOf2OneOfPrioritizationTypeEnum;
+    'comparisonMethod': ApiV1ConversationCreatePostRequestOneOf2OneOfComparisonMethodEnum;
     'allowParticipantStatements'?: boolean;
-    'externalSourceConfig'?: ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfig | null;
+    'externalSourceConfig'?: ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfig | null;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOf1OneOfLanguageSettingsSourceEnum = {
+export const ApiV1ConversationCreatePostRequestOneOf2OneOfLanguageSettingsSourceEnum = {
     ConversationOverride: 'conversation_override',
     ProjectInherited: 'project_inherited',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOfLanguageSettingsSourceEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOfParticipationModeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOfLanguageSettingsSourceEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOfParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOfParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOfParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOfParticipationModeEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOfConversationTypeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOfParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOfParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOfParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOfConversationTypeEnum = {
     Prioritizing: 'prioritizing',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOfConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOfConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOfConversationTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOfPrioritizationTypeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOfConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOfConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOfConversationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOfPrioritizationTypeEnum = {
     Comparisons: 'comparisons',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOfPrioritizationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOfPrioritizationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOfPrioritizationTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOfComparisonMethodEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOfPrioritizationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOfPrioritizationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOfPrioritizationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOfComparisonMethodEnum = {
     Bws: 'bws',
     Pairwise: 'pairwise',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOfComparisonMethodEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOfComparisonMethodEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOfComparisonMethodEnum];
+export type ApiV1ConversationCreatePostRequestOneOf2OneOfComparisonMethodEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOfComparisonMethodEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOfComparisonMethodEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOf1OneOf1 {
+export interface ApiV1ConversationCreatePostRequestOneOf2OneOf1 {
     'conversationTitle': string;
     'conversationBody'?: string;
     'projectSlug'?: string;
-    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf1OneOf1LanguageSettingsSourceEnum;
+    'languageSettingsSource'?: ApiV1ConversationCreatePostRequestOneOf2OneOf1LanguageSettingsSourceEnum;
     'postAsOrganization': string;
     'isIndexed': boolean;
-    'participationMode': ApiV1ConversationCreatePostRequestOneOf1OneOf1ParticipationModeEnum;
+    'participationMode': ApiV1ConversationCreatePostRequestOneOf2OneOf1ParticipationModeEnum;
     'multilingualSetting': ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
     'seedOpinionList'?: Array<string>;
     'conversationEmailUpdateEnabledOverride'?: boolean;
-    'conversationType': ApiV1ConversationCreatePostRequestOneOf1OneOf1ConversationTypeEnum;
-    'prioritizationType': ApiV1ConversationCreatePostRequestOneOf1OneOf1PrioritizationTypeEnum;
-    'creditPricing': ApiV1ConversationCreatePostRequestOneOf1OneOf1CreditPricingEnum;
+    'conversationType': ApiV1ConversationCreatePostRequestOneOf2OneOf1ConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationCreatePostRequestOneOf2OneOf1PrioritizationTypeEnum;
+    'creditPricing': ApiV1ConversationCreatePostRequestOneOf2OneOf1CreditPricingEnum;
     'allowOpposition'?: boolean;
-    'seedStatements': Array<ApiV1ConversationCreatePostRequestOneOf1OneOf1SeedStatementsInner>;
-    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
+    'seedStatements': Array<ApiV1ConversationCreatePostRequestOneOf2OneOf1SeedStatementsInner>;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOf1SurveyConfig | null;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOf1OneOf1LanguageSettingsSourceEnum = {
+export const ApiV1ConversationCreatePostRequestOneOf2OneOf1LanguageSettingsSourceEnum = {
     ConversationOverride: 'conversation_override',
     ProjectInherited: 'project_inherited',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1LanguageSettingsSourceEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOf1ParticipationModeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1LanguageSettingsSourceEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOf1ParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOf1ParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1ParticipationModeEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOf1ConversationTypeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOf1ParticipationModeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1ParticipationModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOf1ConversationTypeEnum = {
     Prioritizing: 'prioritizing',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1ConversationTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOf1PrioritizationTypeEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOf1ConversationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1ConversationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOf1PrioritizationTypeEnum = {
     Qv: 'qv',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOf1PrioritizationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1PrioritizationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1PrioritizationTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOf1OneOf1CreditPricingEnum = {
+export type ApiV1ConversationCreatePostRequestOneOf2OneOf1PrioritizationTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1PrioritizationTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1PrioritizationTypeEnum];
+export const ApiV1ConversationCreatePostRequestOneOf2OneOf1CreditPricingEnum = {
     Quadratic: 'quadratic',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOf1CreditPricingEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1CreditPricingEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOf1CreditPricingEnum];
+export type ApiV1ConversationCreatePostRequestOneOf2OneOf1CreditPricingEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1CreditPricingEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOf1CreditPricingEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOf1OneOf1SeedStatementsInner {
+export interface ApiV1ConversationCreatePostRequestOneOf2OneOf1SeedStatementsInner {
     'title': string;
     'description'?: string;
 }
-export interface ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfig {
-    'sourceType': ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfigSourceTypeEnum;
+export interface ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfig {
+    'sourceType': ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfigSourceTypeEnum;
     'repository': string;
     'label': string;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfigSourceTypeEnum = {
+export const ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfigSourceTypeEnum = {
     GithubIssue: 'github_issue',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf1OneOfExternalSourceConfigSourceTypeEnum];
+export type ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfigSourceTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfigSourceTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfigSourceTypeEnum];
 
+/**
+ * @type ApiV1ConversationCreatePostRequestOneOfGathering
+ */
+export type ApiV1ConversationCreatePostRequestOneOfGathering = ApiV1ConversationCreatePostRequestOneOfGatheringOneOf | ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1;
+
+export interface ApiV1ConversationCreatePostRequestOneOfGatheringOneOf {
+    'gatheringMode': ApiV1ConversationCreatePostRequestOneOfGatheringOneOfGatheringModeEnum;
+    'allowNewResponses'?: boolean;
+    'responseVisibility': ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseVisibilityEnum;
+    'responseFormat': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseFormatInner>;
+    'seedGatheringResponses'?: Array<Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>>;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOfGatheringOneOfGatheringModeEnum = {
+    New: 'new',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOfGatheringOneOfGatheringModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOfGatheringModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOfGatheringModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseVisibilityEnum = {
+    Everyone: 'everyone',
+    Facilitators: 'facilitators',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseVisibilityEnum = typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseVisibilityEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseVisibilityEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1 {
+    'gatheringMode': ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1GatheringModeEnum;
+    'allowNewResponses'?: boolean;
+    'responseVisibility': ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1ResponseVisibilityEnum;
+    'sourceConversationSlugId': string;
+    'selectedResponses': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1SelectedResponsesInner>;
+    'seedGatheringResponses'?: Array<Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>>;
+}
+
+export const ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1GatheringModeEnum = {
+    Amend: 'amend',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1GatheringModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1GatheringModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1GatheringModeEnum];
+export const ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1ResponseVisibilityEnum = {
+    Everyone: 'everyone',
+    Facilitators: 'facilitators',
+} as const;
+
+export type ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1ResponseVisibilityEnum = typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1ResponseVisibilityEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1ResponseVisibilityEnum];
+
+export interface ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1SelectedResponsesInner {
+    'responseSlugId': string;
+    'sourceVersion': string;
+}
+export interface ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseFormatInner {
+    'fieldId': string;
+    'label': string;
+    'required': boolean;
+    'characterLimit': number;
+}
+export interface ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner {
+    'fieldId': string;
+    'value': string;
+}
 export interface ApiV1ConversationCreatePostRequestOneOfMultilingualSetting {
     'additionalLanguageCodes': Array<ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum>;
     'dynamicTranslationEnabled': boolean;
@@ -3494,60 +3953,173 @@ export const ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditiona
 
 export type ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfig {
-    'isOptional'?: boolean;
-    'questions': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner>;
+export interface ApiV1ConversationDraftCreatePost200Response {
+    'projectSlug': string;
+    'conversationType': ApiV1ConversationDraftCreatePost200ResponseConversationTypeEnum;
+    'id': string;
+    'revision': number;
+    'conversationTitle'?: string;
+    'createdAt': string;
+    'updatedAt': string;
+    'content': ApiV1ConversationDraftCreatePost200ResponseContent;
+}
+
+export const ApiV1ConversationDraftCreatePost200ResponseConversationTypeEnum = {
+    Polis: 'polis',
+    Prioritizing: 'prioritizing',
+    Gathering: 'gathering',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseConversationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseConversationTypeEnum];
+
+/**
+ * @type ApiV1ConversationDraftCreatePost200ResponseContent
+ */
+export type ApiV1ConversationDraftCreatePost200ResponseContent = ApiV1ConversationDraftCreatePost200ResponseContentOneOf | ApiV1ConversationDraftCreatePost200ResponseContentOneOf1 | ApiV1ConversationDraftCreatePost200ResponseContentOneOf2;
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOfLanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOfConversationTypeEnum;
+    'gathering'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOfGathering;
+}
+
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfLanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfConversationTypeEnum = {
+    Gathering: 'gathering',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfConversationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfConversationTypeEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf1 {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf1LanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'seedOpinionList'?: Array<string>;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ConversationTypeEnum;
+    'votingPresentation'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf1VotingPresentationEnum;
+    'allowParticipantStatements'?: boolean;
+    'aiLabelingEnabled'?: boolean;
+    'preferredOpinionGroupCount'?: number | null;
+    'surveyConfig'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfig | null;
+}
+
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1LanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1LanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ConversationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1ConversationTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1VotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1VotingPresentationEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1VotingPresentationEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1VotingPresentationEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfig {
+    'isOptional': boolean;
+    'questions': Array<ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInner>;
 }
 /**
- * @type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner
+ * @type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInner
  */
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner = ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf | ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1;
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInner = ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf | ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1;
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf {
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf {
     'questionSlugId'?: string;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
     'textChangeIsSemantic'?: boolean;
-    'choiceDisplay': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
-    'isPublicAggregateSuppressionEnabled'?: boolean;
-    'options': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner>;
-    'questionType': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints;
+    'choiceDisplay': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
+    'isPublicAggregateSuppressionEnabled': boolean;
+    'options': Array<ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfOptionsInner>;
+    'questionType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
+    'constraints': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraints;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
     Auto: 'auto',
     List: 'list',
     Dropdown: 'dropdown',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
     Choice: 'choice',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1 {
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1 {
     'questionSlugId'?: string;
     'questionText': string;
     'isRequired': boolean;
     'displayOrder': number;
     'textChangeIsSemantic'?: boolean;
-    'questionType': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
+    'questionType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
+    'constraints': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1Constraints;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1Constraints {
-    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
-    'inputMode': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1Constraints {
+    'type': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
+    'inputMode': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
@@ -3555,73 +4127,501 @@ export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInn
     'maxValue'?: number;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
     Integer: 'integer',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
-    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
-    'inputMode'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
+    'type': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
+    'inputMode': ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
     RichText: 'rich_text',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1 {
-    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum;
-    'inputMode': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum;
-    'minValue': number;
-    'maxValue'?: number;
+/**
+ * @type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2
+ */
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2 = ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf | ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1 | ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2;
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfLanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfConversationTypeEnum;
+    'prioritizationType'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfPrioritizationTypeEnum | null;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = {
-    FreeText: 'free_text',
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1TypeEnum];
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = {
-    Integer: 'integer',
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfLanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf1InputModeEnum];
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints {
-    'type': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
-    'minSelections': number;
-    'maxSelections'?: number;
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfConversationTypeEnum = {
+    Prioritizing: 'prioritizing',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfConversationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfConversationTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfPrioritizationTypeEnum = {
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfPrioritizationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfPrioritizationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOfPrioritizationTypeEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1 {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1LanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'seedOpinionList'?: Array<string>;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1PrioritizationTypeEnum;
+    'comparisonMethod'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ComparisonMethodEnum;
+    'allowParticipantStatements'?: boolean;
+    'externalSourceConfig'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfExternalSourceConfig | null;
 }
 
-export const ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
-    Choice: 'choice',
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1LanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
 } as const;
 
-export type ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1LanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
 
-export interface ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner {
-    'optionSlugId'?: string;
-    'optionText': string;
-    'displayOrder': number;
-    'allowsText'?: boolean;
-    'textChangeIsSemantic'?: boolean;
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ConversationTypeEnum = {
+    Prioritizing: 'prioritizing',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ConversationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ConversationTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1PrioritizationTypeEnum = {
+    Comparisons: 'comparisons',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1PrioritizationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1PrioritizationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1PrioritizationTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ComparisonMethodEnum = {
+    Bws: 'bws',
+    Pairwise: 'pairwise',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ComparisonMethodEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ComparisonMethodEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf1ComparisonMethodEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2 {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2LanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2PrioritizationTypeEnum;
+    'creditPricing'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2CreditPricingEnum;
+    'allowOpposition'?: boolean;
+    'seedStatements'?: Array<ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2SeedStatementsInner>;
+    'surveyConfig'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfig | null;
 }
+
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2LanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2LanguageSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2LanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ConversationTypeEnum = {
+    Prioritizing: 'prioritizing',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ConversationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2ConversationTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2PrioritizationTypeEnum = {
+    Qv: 'qv',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2PrioritizationTypeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2PrioritizationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2PrioritizationTypeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2CreditPricingEnum = {
+    Quadratic: 'quadratic',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2CreditPricingEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2CreditPricingEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2CreditPricingEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2SeedStatementsInner {
+    'title'?: string;
+    'description'?: string;
+}
+/**
+ * @type ApiV1ConversationDraftCreatePost200ResponseContentOneOfGathering
+ */
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfGathering = ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf | ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1;
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf {
+    'gatheringMode': ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfGatheringModeEnum;
+    'allowNewResponses'?: boolean;
+    'responseVisibility'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseVisibilityEnum;
+    'responseFormat'?: Array<ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseFormatInner>;
+    'seedGatheringResponses'?: Array<Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>>;
+}
+
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfGatheringModeEnum = {
+    New: 'new',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfGatheringModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfGatheringModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfGatheringModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseVisibilityEnum = {
+    Everyone: 'everyone',
+    Facilitators: 'facilitators',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseVisibilityEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseVisibilityEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseVisibilityEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1 {
+    'gatheringMode': ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1GatheringModeEnum;
+    'allowNewResponses'?: boolean;
+    'responseVisibility'?: ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1ResponseVisibilityEnum;
+    'sourceConversationSlugId'?: string;
+    'selectedResponses'?: Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOf1SelectedResponsesInner>;
+    'seedGatheringResponses'?: Array<Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>>;
+}
+
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1GatheringModeEnum = {
+    Amend: 'amend',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1GatheringModeEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1GatheringModeEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1GatheringModeEnum];
+export const ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1ResponseVisibilityEnum = {
+    Everyone: 'everyone',
+    Facilitators: 'facilitators',
+} as const;
+
+export type ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1ResponseVisibilityEnum = typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1ResponseVisibilityEnum[keyof typeof ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOf1ResponseVisibilityEnum];
+
+export interface ApiV1ConversationDraftCreatePost200ResponseContentOneOfGatheringOneOfResponseFormatInner {
+    'fieldId': string;
+    'label'?: string;
+    'required'?: boolean;
+    'characterLimit'?: number;
+}
+export interface ApiV1ConversationDraftCreatePostRequest {
+    'projectSlug': string;
+    'conversationType': ApiV1ConversationDraftCreatePostRequestConversationTypeEnum;
+}
+
+export const ApiV1ConversationDraftCreatePostRequestConversationTypeEnum = {
+    Polis: 'polis',
+    Prioritizing: 'prioritizing',
+    Gathering: 'gathering',
+} as const;
+
+export type ApiV1ConversationDraftCreatePostRequestConversationTypeEnum = typeof ApiV1ConversationDraftCreatePostRequestConversationTypeEnum[keyof typeof ApiV1ConversationDraftCreatePostRequestConversationTypeEnum];
+
+export interface ApiV1ConversationDraftDiscardPostRequest {
+    'draftId': string;
+    'expectedRevision': number;
+}
+export interface ApiV1ConversationDraftGetPostRequest {
+    'draftId': string;
+}
+export interface ApiV1ConversationDraftListPost200Response {
+    'drafts': Array<ApiV1ConversationDraftListPost200ResponseDraftsInner>;
+    'nextCursor'?: ApiV1ConversationDraftListPostRequestBefore;
+}
+export interface ApiV1ConversationDraftListPost200ResponseDraftsInner {
+    'projectSlug': string;
+    'conversationType': ApiV1ConversationDraftListPost200ResponseDraftsInnerConversationTypeEnum;
+    'id': string;
+    'revision': number;
+    'conversationTitle'?: string;
+    'createdAt': string;
+    'updatedAt': string;
+}
+
+export const ApiV1ConversationDraftListPost200ResponseDraftsInnerConversationTypeEnum = {
+    Polis: 'polis',
+    Prioritizing: 'prioritizing',
+    Gathering: 'gathering',
+} as const;
+
+export type ApiV1ConversationDraftListPost200ResponseDraftsInnerConversationTypeEnum = typeof ApiV1ConversationDraftListPost200ResponseDraftsInnerConversationTypeEnum[keyof typeof ApiV1ConversationDraftListPost200ResponseDraftsInnerConversationTypeEnum];
+
+export interface ApiV1ConversationDraftListPostRequest {
+    'projectSlug': string;
+    'before'?: ApiV1ConversationDraftListPostRequestBefore;
+    'limit'?: number;
+}
+export interface ApiV1ConversationDraftListPostRequestBefore {
+    'id': string;
+    'createdAt': string;
+}
+export interface ApiV1ConversationDraftPublishPost200Response {
+    'success': boolean;
+    'conversationSlugId': string;
+    'failure': ApiV1ConversationDraftPublishPost200ResponseAnyOfFailure;
+}
+export interface ApiV1ConversationDraftPublishPost200ResponseAnyOf {
+    'success': boolean;
+    'failure': ApiV1ConversationDraftPublishPost200ResponseAnyOfFailure;
+}
+export interface ApiV1ConversationDraftPublishPost200ResponseAnyOfFailure {
+    'target': ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureTargetEnum;
+    'reason': ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureReasonEnum;
+    'fields': Array<string>;
+}
+
+export const ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureTargetEnum = {
+    Draft: 'draft',
+} as const;
+
+export type ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureTargetEnum = typeof ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureTargetEnum[keyof typeof ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureTargetEnum];
+export const ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureReasonEnum = {
+    InvalidConfiguration: 'invalid_configuration',
+} as const;
+
+export type ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureReasonEnum = typeof ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureReasonEnum[keyof typeof ApiV1ConversationDraftPublishPost200ResponseAnyOfFailureReasonEnum];
+
+export interface ApiV1ConversationDraftPublishPostRequest {
+    'draftId': string;
+    'expectedRevision': number;
+    'postAsOrganization'?: string;
+}
+export interface ApiV1ConversationDraftSavePostRequest {
+    'draftId': string;
+    'expectedRevision': number;
+    'content': ApiV1ConversationDraftSavePostRequestContent;
+}
+/**
+ * @type ApiV1ConversationDraftSavePostRequestContent
+ */
+export type ApiV1ConversationDraftSavePostRequestContent = ApiV1ConversationDraftCreatePost200ResponseContentOneOf | ApiV1ConversationDraftSavePostRequestContentOneOf | ApiV1ConversationDraftSavePostRequestContentOneOf1;
+
+export interface ApiV1ConversationDraftSavePostRequestContentOneOf {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftSavePostRequestContentOneOfLanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'seedOpinionList'?: Array<string>;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftSavePostRequestContentOneOfConversationTypeEnum;
+    'votingPresentation'?: ApiV1ConversationDraftSavePostRequestContentOneOfVotingPresentationEnum;
+    'allowParticipantStatements'?: boolean;
+    'aiLabelingEnabled'?: boolean;
+    'preferredOpinionGroupCount'?: number | null;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOf1SurveyConfig | null;
+}
+
+export const ApiV1ConversationDraftSavePostRequestContentOneOfLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOfLanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOfParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOfConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOfConversationTypeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOfConversationTypeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOfConversationTypeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOfVotingPresentationEnum = {
+    List: 'list',
+    OneAtATime: 'one_at_a_time',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOfVotingPresentationEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOfVotingPresentationEnum];
+
+/**
+ * @type ApiV1ConversationDraftSavePostRequestContentOneOf1
+ */
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1 = ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf | ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf | ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1;
+
+export interface ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfLanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'seedOpinionList'?: Array<string>;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfPrioritizationTypeEnum;
+    'comparisonMethod'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfComparisonMethodEnum;
+    'allowParticipantStatements'?: boolean;
+    'externalSourceConfig'?: ApiV1ConversationCreatePostRequestOneOf2OneOfExternalSourceConfig | null;
+}
+
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfLanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfLanguageSettingsSourceEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfLanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfLanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfConversationTypeEnum = {
+    Prioritizing: 'prioritizing',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfConversationTypeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfConversationTypeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfConversationTypeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfPrioritizationTypeEnum = {
+    Comparisons: 'comparisons',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfPrioritizationTypeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfPrioritizationTypeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfPrioritizationTypeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfComparisonMethodEnum = {
+    Bws: 'bws',
+    Pairwise: 'pairwise',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfComparisonMethodEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfComparisonMethodEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOfComparisonMethodEnum];
+
+export interface ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1 {
+    'conversationTitle'?: string;
+    'conversationBody'?: string;
+    'languageSettingsSource'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1LanguageSettingsSourceEnum;
+    'isIndexed'?: boolean;
+    'participationMode'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeEnum;
+    'participationModeSettingsSource'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeSettingsSourceEnum;
+    'multilingualSetting'?: ApiV1ConversationCreatePostRequestOneOfMultilingualSetting;
+    'conversationEmailUpdateEnabledOverride'?: boolean;
+    'conversationType': ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1PrioritizationTypeEnum;
+    'creditPricing'?: ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1CreditPricingEnum;
+    'allowOpposition'?: boolean;
+    'seedStatements'?: Array<ApiV1ConversationDraftCreatePost200ResponseContentOneOf2OneOf2SeedStatementsInner>;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOf1SurveyConfig | null;
+}
+
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1LanguageSettingsSourceEnum = {
+    ConversationOverride: 'conversation_override',
+    ProjectInherited: 'project_inherited',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1LanguageSettingsSourceEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1LanguageSettingsSourceEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1LanguageSettingsSourceEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeSettingsSourceEnum = {
+    ProjectInherited: 'project_inherited',
+    ConversationOverride: 'conversation_override',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeSettingsSourceEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeSettingsSourceEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ParticipationModeSettingsSourceEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ConversationTypeEnum = {
+    Prioritizing: 'prioritizing',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ConversationTypeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1ConversationTypeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1PrioritizationTypeEnum = {
+    Qv: 'qv',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1PrioritizationTypeEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1PrioritizationTypeEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1PrioritizationTypeEnum];
+export const ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1CreditPricingEnum = {
+    Quadratic: 'quadratic',
+} as const;
+
+export type ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1CreditPricingEnum = typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1CreditPricingEnum[keyof typeof ApiV1ConversationDraftSavePostRequestContentOneOf1OneOf1CreditPricingEnum];
+
 export interface ApiV1ConversationEmailUpdateActionManageOptOutPostRequest {
     'token': string;
     'target': ApiV1ConversationEmailUpdateActionManageOptOutPostRequestTarget;
@@ -5644,7 +6644,7 @@ export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerCon
 /**
  * @type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadata
  */
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadata = ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1;
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadata = ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1 | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2;
 
 export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf {
     'conversationSlugId': string;
@@ -5678,8 +6678,8 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfImportInfo;
     'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfProjectContext;
     'conversationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum;
-    'votingPresentation': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum;
     'participantStatements': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipantStatements;
+    'responseCount': number;
 }
 
 export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipationModeEnum = {
@@ -5691,23 +6691,77 @@ export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerCo
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipationModeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum = {
-    Polis: 'polis',
+    Gathering: 'gathering',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfConversationTypeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum = {
+
+export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1 {
+    'conversationSlugId': string;
+    'currentProjectSlug'?: string;
+    'conversationViewSnapshotId'?: number;
+    'createdAt': string;
+    'updatedAt'?: string;
+    'lastReactedAt': string;
+    'opinionCount': number;
+    'voteCount': number;
+    'participantCount': number;
+    'totalOpinionCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'moderatedOpinionCount': number;
+    'hiddenOpinionCount': number;
+    'authorUsername': string;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipationModeEnum;
+    'isIndexed': boolean;
+    'aiLabelingEnabled': boolean;
+    'preferredOpinionGroupCount': number | null;
+    'contentLanguageMetadata': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadata;
+    'languageSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSetting;
+    'multilingualSetting': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSetting;
+    'isClosed': boolean;
+    'isFinalizing'?: boolean;
+    'isEdited': boolean;
+    'organization'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfOrganization;
+    'moderation': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfModeration;
+    'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfExternalSourceConfig | null;
+    'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfImportInfo;
+    'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfProjectContext;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ConversationTypeEnum;
+    'votingPresentation': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1VotingPresentationEnum;
+    'participantStatements': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipantStatements;
+}
+
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipationModeEnum = {
+    AccountRequired: 'account_required',
+    StrongVerification: 'strong_verification',
+    EmailVerification: 'email_verification',
+    Guest: 'guest',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ConversationTypeEnum = {
+    Polis: 'polis',
+} as const;
+
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ConversationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1VotingPresentationEnum = {
     List: 'list',
     OneAtATime: 'one_at_a_time',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfVotingPresentationEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1VotingPresentationEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1VotingPresentationEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1VotingPresentationEnum];
 
+export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipantStatements {
+    'supported': boolean;
+    'enabled': boolean;
+}
 /**
- * @type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1
+ * @type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2
  */
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1 = ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1;
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2 = ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1;
 
-export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf {
+export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf {
     'conversationSlugId': string;
     'currentProjectSlug'?: string;
     'conversationViewSnapshotId'?: number;
@@ -5723,7 +6777,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'moderatedOpinionCount': number;
     'hiddenOpinionCount': number;
     'authorUsername': string;
-    'participationMode': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfParticipationModeEnum;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfParticipationModeEnum;
     'isIndexed': boolean;
     'aiLabelingEnabled': boolean;
     'preferredOpinionGroupCount': number | null;
@@ -5738,39 +6792,40 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfExternalSourceConfig | null;
     'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfImportInfo;
     'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfProjectContext;
-    'conversationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfConversationTypeEnum;
-    'prioritizationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfPrioritizationTypeEnum;
-    'comparisonMethod': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfComparisonMethodEnum;
-    'participantStatements': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipantStatements;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfPrioritizationTypeEnum;
+    'comparisonMethod': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonMethodEnum;
+    'participantStatements': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipantStatements;
     'rankingStatsSnapshotId'?: number;
+    'comparisonCloseSelectionVersion'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonCloseSelectionVersion;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfParticipationModeEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfParticipationModeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfConversationTypeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfConversationTypeEnum = {
     Prioritizing: 'prioritizing',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfConversationTypeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfPrioritizationTypeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfConversationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfPrioritizationTypeEnum = {
     Comparisons: 'comparisons',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfPrioritizationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfPrioritizationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfPrioritizationTypeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfComparisonMethodEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfPrioritizationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfPrioritizationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfPrioritizationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonMethodEnum = {
     Bws: 'bws',
     Pairwise: 'pairwise',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfComparisonMethodEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfComparisonMethodEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOfComparisonMethodEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonMethodEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonMethodEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonMethodEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1 {
+export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1 {
     'conversationSlugId': string;
     'currentProjectSlug'?: string;
     'conversationViewSnapshotId'?: number;
@@ -5786,7 +6841,7 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'moderatedOpinionCount': number;
     'hiddenOpinionCount': number;
     'authorUsername': string;
-    'participationMode': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipationModeEnum;
+    'participationMode': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ParticipationModeEnum;
     'isIndexed': boolean;
     'aiLabelingEnabled': boolean;
     'preferredOpinionGroupCount': number | null;
@@ -5801,41 +6856,42 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
     'externalSourceConfig': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfExternalSourceConfig | null;
     'importInfo'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfImportInfo;
     'projectContext'?: ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfProjectContext;
-    'conversationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ConversationTypeEnum;
-    'prioritizationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1PrioritizationTypeEnum;
-    'creditPricing': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1CreditPricingEnum;
+    'conversationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ConversationTypeEnum;
+    'prioritizationType': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1PrioritizationTypeEnum;
+    'creditPricing': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1CreditPricingEnum;
     'allowOpposition': boolean;
-    'participantStatements': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipantStatements;
+    'participantStatements': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipantStatements;
     'qvStatsRevision'?: number;
     'qvGeneration'?: number;
 }
 
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipationModeEnum = {
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ParticipationModeEnum = {
     AccountRequired: 'account_required',
     StrongVerification: 'strong_verification',
     EmailVerification: 'email_verification',
     Guest: 'guest',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipationModeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ConversationTypeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ParticipationModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ParticipationModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ParticipationModeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ConversationTypeEnum = {
     Prioritizing: 'prioritizing',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ConversationTypeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1PrioritizationTypeEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ConversationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ConversationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1ConversationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1PrioritizationTypeEnum = {
     Qv: 'qv',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1PrioritizationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1PrioritizationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1PrioritizationTypeEnum];
-export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1CreditPricingEnum = {
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1PrioritizationTypeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1PrioritizationTypeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1PrioritizationTypeEnum];
+export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1CreditPricingEnum = {
     Quadratic: 'quadratic',
 } as const;
 
-export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1CreditPricingEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1CreditPricingEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1CreditPricingEnum];
+export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1CreditPricingEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1CreditPricingEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOf1CreditPricingEnum];
 
-export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipantStatements {
-    'supported': boolean;
+export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonCloseSelectionVersion {
+    'closeId': number;
+    'selectionRevision': number;
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadata {
     'detectedDisplayLanguageCode': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum | null;
@@ -6310,7 +7366,6 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipantStatements {
     'supported': boolean;
-    'enabled': boolean;
 }
 export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfProjectContext {
     'projectSlug': string;
@@ -6533,7 +7588,7 @@ export type ApiV1ConversationGetForEditPost200ResponseOneOf1ReasonEnum = typeof 
 /**
  * @type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig
  */
-export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1;
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 | ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2;
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf {
     'conversationType': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOfConversationTypeEnum;
@@ -6603,6 +7658,16 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConf
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1OneOf1CreditPricingEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1OneOf1CreditPricingEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1OneOf1CreditPricingEnum];
 
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2 {
+    'conversationType': ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2ConversationTypeEnum;
+}
+
+export const ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2ConversationTypeEnum = {
+    Gathering: 'gathering',
+} as const;
+
+export type ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2ConversationTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2ConversationTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2ConversationTypeEnum];
+
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissions {
     'canEditNormalSettings': boolean;
     'canEditConversationContent': boolean;
@@ -6626,7 +7691,7 @@ export type ApiV1ConversationGetForEditPost200ResponseOneOfEditPermissionsRestri
 /**
  * @type ApiV1ConversationGetForEditPost200ResponseOneOfParticipantStatements
  */
-export type ApiV1ConversationGetForEditPost200ResponseOneOfParticipantStatements = ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1OneOf1ParticipantStatements | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipantStatements;
+export type ApiV1ConversationGetForEditPost200ResponseOneOfParticipantStatements = ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf1ParticipantStatements | ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfParticipantStatements;
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfProjectLanguageProject {
     'projectSlug': string;
@@ -6792,7 +7857,7 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfig {
 /**
  * @type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner
  */
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner = ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1;
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInner = ApiV1ConversationDraftCreatePost200ResponseContentOneOf1SurveyConfigQuestionsInnerOneOf | ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf;
 
 export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf {
     'questionSlugId'?: string;
@@ -6800,45 +7865,19 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQues
     'isRequired': boolean;
     'displayOrder': number;
     'textChangeIsSemantic'?: boolean;
-    'choiceDisplay': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum;
-    'isPublicAggregateSuppressionEnabled': boolean;
-    'options': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfOptionsInner>;
     'questionType': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints;
+    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints;
 }
 
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = {
-    Auto: 'auto',
-    List: 'list',
-    Dropdown: 'dropdown',
-} as const;
-
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfChoiceDisplayEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = {
-    Choice: 'choice',
+    FreeText: 'free_text',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfQuestionTypeEnum];
 
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1 {
-    'questionSlugId'?: string;
-    'questionText': string;
-    'isRequired': boolean;
-    'displayOrder': number;
-    'textChangeIsSemantic'?: boolean;
-    'questionType': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum;
-    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
-}
-
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = {
-    FreeText: 'free_text',
-} as const;
-
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1QuestionTypeEnum];
-
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints {
-    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum;
-    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum;
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints {
+    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum;
+    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
@@ -6846,35 +7885,35 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQues
     'maxValue'?: number;
 }
 
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = {
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsTypeEnum];
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = {
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsTypeEnum];
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum = {
     Integer: 'integer',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsInputModeEnum];
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsInputModeEnum];
 
-export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOf {
-    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum;
-    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum;
+export interface ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOf {
+    'type': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum;
+    'inputMode': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum;
     'minPlainTextLength'?: number;
     'maxPlainTextLength': number;
     'maxHtmlLength': number;
 }
 
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = {
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum = {
     FreeText: 'free_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfTypeEnum];
-export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = {
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfTypeEnum];
+export const ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum = {
     RichText: 'rich_text',
 } as const;
 
-export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1ConstraintsAnyOfInputModeEnum];
+export type ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraintsAnyOfInputModeEnum];
 
 /**
  * @type ApiV1ConversationGetPost200Response
@@ -7411,7 +8450,7 @@ export interface ApiV1ConversationUpdatePostRequest {
     'conversationTypeConfig': ApiV1ConversationUpdatePostRequestConversationTypeConfig;
     'expectedConversationTypeConfig'?: ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfig;
     'participantStatementsChange'?: ApiV1ConversationUpdatePostRequestParticipantStatementsChange;
-    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOfSurveyConfig | null;
+    'surveyConfig'?: ApiV1ConversationCreatePostRequestOneOf1SurveyConfig | null;
     'newSeedOpinionList'?: Array<string>;
     'seedOpinionChanges'?: Array<ApiV1ConversationUpdatePostRequestSeedOpinionChangesInner>;
     'qvStatementUpdate'?: ApiV1ConversationUpdatePostRequestQvStatementUpdate;
@@ -7436,7 +8475,7 @@ export type ApiV1ConversationUpdatePostRequestLanguageSettingsSourceEnum = typeo
 /**
  * @type ApiV1ConversationUpdatePostRequestConversationTypeConfig
  */
-export type ApiV1ConversationUpdatePostRequestConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 | ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf;
+export type ApiV1ConversationUpdatePostRequestConversationTypeConfig = ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf1 | ApiV1ConversationGetForEditPost200ResponseOneOfConversationTypeConfigOneOf2 | ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf;
 
 export interface ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOf {
     'conversationType': ApiV1ConversationUpdatePostRequestConversationTypeConfigOneOfConversationTypeEnum;
@@ -7477,7 +8516,7 @@ export type ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInner = Ap
 
 export interface ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInnerOneOf {
     'action': ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInnerOneOfActionEnum;
-    'content': ApiV1ConversationCreatePostRequestOneOf1OneOf1SeedStatementsInner;
+    'content': ApiV1ConversationCreatePostRequestOneOf2OneOf1SeedStatementsInner;
 }
 
 export const ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInnerOneOfActionEnum = {
@@ -7490,7 +8529,7 @@ export interface ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInner
     'action': ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInnerOneOf1ActionEnum;
     'slugId': string;
     'sourceVersion': string;
-    'content': ApiV1ConversationCreatePostRequestOneOf1OneOf1SeedStatementsInner;
+    'content': ApiV1ConversationCreatePostRequestOneOf2OneOf1SeedStatementsInner;
 }
 
 export const ApiV1ConversationUpdatePostRequestQvStatementUpdateChangesInnerOneOf1ActionEnum = {
@@ -7537,6 +8576,419 @@ export interface ApiV1ConversationValidateCsvPost200Response {
 export interface ApiV1ConversationValidateCsvPost200ResponseSummaryFile {
     'isValid': boolean;
     'error'?: string;
+}
+/**
+ * @type ApiV1DevConversationEmailUpdateSnsSimulatePost200Response
+ */
+export type ApiV1DevConversationEmailUpdateSnsSimulatePost200Response = ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf | ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1;
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf {
+    'success': boolean;
+    'result': ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOfResultEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOfResultEnum = {
+    Stored: 'stored',
+    Duplicate: 'duplicate',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOfResultEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOfResultEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOfResultEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1 {
+    'success': boolean;
+    'reason': ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1ReasonEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1ReasonEnum = {
+    AttemptNotFound: 'attempt_not_found',
+    ProviderMessageNotAvailable: 'provider_message_not_available',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1ReasonEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1ReasonEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePost200ResponseOneOf1ReasonEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequest {
+    'target': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTarget;
+    'event': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEvent;
+    'idempotencyKey'?: string;
+}
+/**
+ * @type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEvent
+ */
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEvent = ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1 | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2 | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3 | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4 | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5 | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6;
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOfTypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOfTypeEnum = {
+    Send: 'send',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOfTypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOfTypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOfTypeEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1 {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1TypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1TypeEnum = {
+    Delivery: 'delivery',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1TypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1TypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf1TypeEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2 {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2TypeEnum;
+    'bounceType': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2BounceTypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2TypeEnum = {
+    Bounce: 'bounce',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2TypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2TypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2TypeEnum];
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2BounceTypeEnum = {
+    Permanent: 'Permanent',
+    Transient: 'Transient',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2BounceTypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2BounceTypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf2BounceTypeEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3 {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3TypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3TypeEnum = {
+    Complaint: 'complaint',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3TypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3TypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf3TypeEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4 {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4TypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4TypeEnum = {
+    DeliveryDelay: 'delivery_delay',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4TypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4TypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf4TypeEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5 {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5TypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5TypeEnum = {
+    Reject: 'reject',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5TypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5TypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf5TypeEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6 {
+    'type': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6TypeEnum;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6TypeEnum = {
+    RenderingFailure: 'rendering_failure',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6TypeEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6TypeEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestEventOneOf6TypeEnum];
+
+/**
+ * @type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTarget
+ */
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTarget = ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf | ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1;
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf {
+    'kind': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOfKindEnum;
+    'testAttemptId': string;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOfKindEnum = {
+    Test: 'test',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOfKindEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOfKindEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOfKindEnum];
+
+export interface ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1 {
+    'kind': ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1KindEnum;
+    'deliveryAttemptId': string;
+}
+
+export const ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1KindEnum = {
+    Delivery: 'delivery',
+} as const;
+
+export type ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1KindEnum = typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1KindEnum[keyof typeof ApiV1DevConversationEmailUpdateSnsSimulatePostRequestTargetOneOf1KindEnum];
+
+export interface ApiV1GatheringLoadPost200Response {
+    'gatheringMode': ApiV1GatheringLoadPost200ResponseGatheringModeEnum;
+    'allowNewResponses': boolean;
+    'responseVisibility': ApiV1GatheringLoadPost200ResponseResponseVisibilityEnum;
+    'responseFormat': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfResponseFormatInner>;
+    'fieldDisplayContent': Array<ApiV1GatheringLoadPost200ResponseFieldDisplayContentInner>;
+    'isClosed': boolean;
+}
+
+export const ApiV1GatheringLoadPost200ResponseGatheringModeEnum = {
+    New: 'new',
+    Amend: 'amend',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseGatheringModeEnum = typeof ApiV1GatheringLoadPost200ResponseGatheringModeEnum[keyof typeof ApiV1GatheringLoadPost200ResponseGatheringModeEnum];
+export const ApiV1GatheringLoadPost200ResponseResponseVisibilityEnum = {
+    Everyone: 'everyone',
+    Facilitators: 'facilitators',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseResponseVisibilityEnum = typeof ApiV1GatheringLoadPost200ResponseResponseVisibilityEnum[keyof typeof ApiV1GatheringLoadPost200ResponseResponseVisibilityEnum];
+
+export interface ApiV1GatheringLoadPost200ResponseFieldDisplayContentInner {
+    'fieldId': string;
+    'displayContent': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContent;
+}
+export interface ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentStatusEnum;
+    'mode': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentModeEnum;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
+    'translationControl': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentStatusEnum = typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentStatusEnum[keyof typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentStatusEnum];
+export const ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentModeEnum = typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentModeEnum[keyof typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentModeEnum];
+
+export interface ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfModeEnum;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
+    'translationControl': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfStatusEnum = typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfStatusEnum[keyof typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfStatusEnum];
+export const ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfModeEnum = typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOfModeEnum];
+
+export interface ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOfVariantsOriginal;
+    'translationControl': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1StatusEnum = typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1StatusEnum];
+export const ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1ModeEnum = typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1GatheringLoadPost200ResponseFieldDisplayContentInnerDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1GatheringResponsesDeletePostRequest {
+    'conversationSlugId': string;
+    'responseSlugId': string;
+    'sourceVersion': string;
+}
+export interface ApiV1GatheringResponsesHistoryPostRequest {
+    'conversationSlugId': string;
+    'responseSlugId': string;
+    'beforeSourceVersion'?: string;
+    'limit'?: number;
+}
+export interface ApiV1GatheringResponsesListPost200Response {
+    'responses': Array<ApiV1GatheringResponsesListPost200ResponseResponsesInner>;
+    'nextCursor'?: number;
+    'accessibleCount': number;
+    'participantResponseCount': number;
+}
+export interface ApiV1GatheringResponsesListPost200ResponseResponsesInner {
+    'responseSlugId': string;
+    'sourceVersion': string;
+    'isSeed': boolean;
+    'isOwn': boolean;
+    'authorUsername'?: string;
+    'moderation'?: ApiV1GatheringResponsesListPost200ResponseResponsesInnerModerationEnum;
+    'answers': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>;
+    'displayContent': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContent;
+    'savedAt': string;
+    'baseline'?: ApiV1GatheringResponsesListPost200ResponseResponsesInnerBaseline;
+}
+
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerModerationEnum = {
+    Hide: 'hide',
+    Move: 'move',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerModerationEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerModerationEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerModerationEnum];
+
+export interface ApiV1GatheringResponsesListPost200ResponseResponsesInnerBaseline {
+    'sourceVersion': string;
+    'answers': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>;
+    'displayContent': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContent;
+}
+export interface ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContent {
+    'sourceVersion': string;
+    'status': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentStatusEnum;
+    'mode': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentModeEnum;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
+    'translationControl': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentStatusEnum = {
+    NotRequested: 'not_requested',
+    Pending: 'pending',
+    Running: 'running',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentStatusEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentStatusEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentStatusEnum];
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentModeEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentModeEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentModeEnum];
+
+export interface ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf {
+    'sourceVersion': string;
+    'status': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfStatusEnum;
+    'mode': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfModeEnum;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
+    'translationControl': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfStatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfStatusEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfStatusEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfStatusEnum];
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfModeEnum = {
+    Original: 'original',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfModeEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfModeEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOfModeEnum];
+
+export interface ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1 {
+    'sourceVersion': string;
+    'status': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1StatusEnum;
+    'mode': ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1ModeEnum;
+    'content': ApiV1ContentTranslationRequestPost200ResponseAnyOf1ContentAnyOfVariantsOriginal;
+    'translationControl': ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerDisplayContentAnyOfTranslationControl | null;
+}
+
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1StatusEnum = {
+    Available: 'available',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1StatusEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1StatusEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1StatusEnum];
+export const ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1ModeEnum = {
+    Translated: 'translated',
+} as const;
+
+export type ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1ModeEnum = typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1ModeEnum[keyof typeof ApiV1GatheringResponsesListPost200ResponseResponsesInnerDisplayContentAnyOf1ModeEnum];
+
+export interface ApiV1GatheringResponsesListPostRequest {
+    'conversationSlugId': string;
+    'view'?: ApiV1GatheringResponsesListPostRequestViewEnum;
+    'beforeResponseId'?: number;
+    'limit'?: number;
+}
+
+export const ApiV1GatheringResponsesListPostRequestViewEnum = {
+    Active: 'active',
+    Moderation: 'moderation',
+    Own: 'own',
+} as const;
+
+export type ApiV1GatheringResponsesListPostRequestViewEnum = typeof ApiV1GatheringResponsesListPostRequestViewEnum[keyof typeof ApiV1GatheringResponsesListPostRequestViewEnum];
+
+export interface ApiV1GatheringResponsesModeratePostRequest {
+    'conversationSlugId': string;
+    'responseSlugId': string;
+    'action': ApiV1GatheringResponsesModeratePostRequestActionEnum;
+    'reason': string;
+}
+
+export const ApiV1GatheringResponsesModeratePostRequestActionEnum = {
+    Hide: 'hide',
+    Move: 'move',
+    Restore: 'restore',
+} as const;
+
+export type ApiV1GatheringResponsesModeratePostRequestActionEnum = typeof ApiV1GatheringResponsesModeratePostRequestActionEnum[keyof typeof ApiV1GatheringResponsesModeratePostRequestActionEnum];
+
+export interface ApiV1GatheringResponsesReadPostRequest {
+    'conversationSlugId': string;
+    'responseSlugId': string;
+}
+export interface ApiV1GatheringResponsesSavePostRequest {
+    'conversationSlugId': string;
+    'change': ApiV1GatheringResponsesSavePostRequestChange;
+}
+/**
+ * @type ApiV1GatheringResponsesSavePostRequestChange
+ */
+export type ApiV1GatheringResponsesSavePostRequestChange = ApiV1GatheringResponsesSavePostRequestChangeOneOf | ApiV1GatheringResponsesSavePostRequestChangeOneOf1 | ApiV1GatheringResponsesSavePostRequestChangeOneOf2;
+
+export interface ApiV1GatheringResponsesSavePostRequestChangeOneOf {
+    'action': ApiV1GatheringResponsesSavePostRequestChangeOneOfActionEnum;
+    'answers': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>;
+}
+
+export const ApiV1GatheringResponsesSavePostRequestChangeOneOfActionEnum = {
+    Submit: 'submit',
+} as const;
+
+export type ApiV1GatheringResponsesSavePostRequestChangeOneOfActionEnum = typeof ApiV1GatheringResponsesSavePostRequestChangeOneOfActionEnum[keyof typeof ApiV1GatheringResponsesSavePostRequestChangeOneOfActionEnum];
+
+export interface ApiV1GatheringResponsesSavePostRequestChangeOneOf1 {
+    'action': ApiV1GatheringResponsesSavePostRequestChangeOneOf1ActionEnum;
+    'answers': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>;
+}
+
+export const ApiV1GatheringResponsesSavePostRequestChangeOneOf1ActionEnum = {
+    Seed: 'seed',
+} as const;
+
+export type ApiV1GatheringResponsesSavePostRequestChangeOneOf1ActionEnum = typeof ApiV1GatheringResponsesSavePostRequestChangeOneOf1ActionEnum[keyof typeof ApiV1GatheringResponsesSavePostRequestChangeOneOf1ActionEnum];
+
+export interface ApiV1GatheringResponsesSavePostRequestChangeOneOf2 {
+    'action': ApiV1GatheringResponsesSavePostRequestChangeOneOf2ActionEnum;
+    'responseSlugId': string;
+    'sourceVersion': string;
+    'answers': Array<ApiV1ConversationCreatePostRequestOneOfGatheringOneOfSeedGatheringResponsesInnerInner>;
+}
+
+export const ApiV1GatheringResponsesSavePostRequestChangeOneOf2ActionEnum = {
+    Edit: 'edit',
+} as const;
+
+export type ApiV1GatheringResponsesSavePostRequestChangeOneOf2ActionEnum = typeof ApiV1GatheringResponsesSavePostRequestChangeOneOf2ActionEnum[keyof typeof ApiV1GatheringResponsesSavePostRequestChangeOneOf2ActionEnum];
+
+export interface ApiV1GatheringSettingsUpdatePostRequest {
+    'conversationSlugId': string;
+    'allowNewResponses': boolean;
 }
 export interface ApiV1ManagementAccessPost200Response {
     'organizations': Array<ApiV1ManagementAccessPost200ResponseOrganizationsInner>;
@@ -8102,6 +9554,52 @@ export const ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseIn
 
 export type ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum = typeof ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum[keyof typeof ApiV1OpinionFetchAnalysisCheckpointsByConversationPost200ResponseInnerReasonsInnerReasonEnum];
 
+export interface ApiV1OpinionFetchAnalysisFrameContentByFramePost200Response {
+    'groups': ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200Response;
+    'agreements': ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreements;
+    'disagreements': ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreements;
+    'divisive': ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisive;
+}
+export interface ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreements {
+    'frameKey': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey;
+    'kind': ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreementsKindEnum;
+    'items': Array<ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInner>;
+}
+
+export const ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreementsKindEnum = {
+    Agreements: 'agreements',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreementsKindEnum = typeof ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreementsKindEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseAgreementsKindEnum];
+
+export interface ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreements {
+    'frameKey': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey;
+    'kind': ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreementsKindEnum;
+    'items': Array<ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInner>;
+}
+
+export const ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreementsKindEnum = {
+    Disagreements: 'disagreements',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreementsKindEnum = typeof ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreementsKindEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDisagreementsKindEnum];
+
+export interface ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisive {
+    'frameKey': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey;
+    'kind': ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisiveKindEnum;
+    'items': Array<ApiV1OpinionFetchAnalysisFrameGroupsByFramePost200ResponseClustersValueRepresentativeInner>;
+}
+
+export const ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisiveKindEnum = {
+    Divisive: 'divisive',
+} as const;
+
+export type ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisiveKindEnum = typeof ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisiveKindEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameContentByFramePost200ResponseDivisiveKindEnum];
+
+export interface ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest {
+    'conversationSlugId': string;
+    'frameKey': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey;
+}
 export interface ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response {
     'frameKey': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey;
     'groupDescriptionDisplay': ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplay;
@@ -8246,9 +9744,10 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest {
     'freshness'?: ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequestFreshness | null;
 }
 export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Response {
+    'closedAnalysisSelection'?: ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelection;
     'frameKey'?: ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseFrameKey;
     'conversationViewSnapshot'?: ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseConversationViewSnapshot;
-    'counters'?: ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseCounters;
+    'counters'?: ApiV1RankingBwsResultsPost200ResponseCounters;
     'emptyReason'?: string;
     'analysisViewResolution': ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseAnalysisViewResolution;
     'aiLabelsExpected': boolean;
@@ -8579,17 +10078,6 @@ export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200Resp
 export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseConversationViewSnapshot {
     'conversationViewSnapshotId': number;
     'analysisSnapshotId': number;
-    'opinionCount': number;
-    'voteCount': number;
-    'participantCount': number;
-    'totalOpinionCount': number;
-    'totalVoteCount': number;
-    'totalParticipantCount': number;
-    'moderatedOpinionCount': number;
-    'hiddenOpinionCount': number;
-    'isClosed': boolean;
-}
-export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPost200ResponseCounters {
     'opinionCount': number;
     'voteCount': number;
     'participantCount': number;
@@ -8942,6 +10430,45 @@ export interface ApiV1PrioritizationComparisonsStatementsCreatePostRequest {
     'conversationSlugId': string;
     'statementBody': string;
 }
+export interface ApiV1PrioritizationComparisonsStatementsModeratePostRequest {
+    'conversationSlugId': string;
+    'itemSlugId': string;
+    'action': ApiV1PrioritizationComparisonsStatementsModeratePostRequestActionEnum;
+    'reason': string;
+}
+
+export const ApiV1PrioritizationComparisonsStatementsModeratePostRequestActionEnum = {
+    Move: 'move',
+    Hide: 'hide',
+    Restore: 'restore',
+} as const;
+
+export type ApiV1PrioritizationComparisonsStatementsModeratePostRequestActionEnum = typeof ApiV1PrioritizationComparisonsStatementsModeratePostRequestActionEnum[keyof typeof ApiV1PrioritizationComparisonsStatementsModeratePostRequestActionEnum];
+
+export interface ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200Response {
+    'items': Array<ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInner>;
+    'nextBeforeId'?: number;
+}
+export interface ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInner {
+    'id': number;
+    'itemSlugId': string;
+    'action': ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInnerActionEnum;
+    'title': string;
+    'body'?: string;
+    'reason': string;
+}
+
+export const ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInnerActionEnum = {
+    Move: 'move',
+    Hide: 'hide',
+} as const;
+
+export type ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInnerActionEnum = typeof ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInnerActionEnum[keyof typeof ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200ResponseItemsInnerActionEnum];
+
+export interface ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest {
+    'conversationSlugId': string;
+    'beforeId'?: number;
+}
 export interface ApiV1PrioritizationQvLoadPost200Response {
     'viewerId'?: string;
     'statementSetRevision': number;
@@ -9074,6 +10601,8 @@ export interface ApiV1PrioritizationQvResultsPost200ResponseOneOf3 {
     'status': ApiV1PrioritizationQvResultsPost200ResponseOneOf3StatusEnum;
     'generation': number;
     'calculationId': string;
+    'refreshStatus'?: ApiV1PrioritizationQvResultsPost200ResponseOneOf3RefreshStatusEnum;
+    'closedAnalysisSelection'?: ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelection;
     'capturedAt': string;
     'participantCount': number;
     'items': Array<ApiV1PrioritizationQvResultsPost200ResponseOneOf3ItemsInner>;
@@ -9084,12 +10613,70 @@ export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3StatusEnum = {
 } as const;
 
 export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3StatusEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3StatusEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3StatusEnum];
+export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3RefreshStatusEnum = {
+    Calculating: 'calculating',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3RefreshStatusEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3RefreshStatusEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3RefreshStatusEnum];
+
+/**
+ * @type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelection
+ */
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelection = ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf | ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1;
+
+export interface ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf {
+    'closeId': number;
+    'selectionRevision': number;
+    'isSwitchable': boolean;
+    'servedInputMode': ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfServedInputModeEnum;
+    'status': ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfStatusEnum;
+}
+
+export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfServedInputModeEnum = {
+    Closing: 'closing',
+    Live: 'live',
+} as const;
+
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfServedInputModeEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfServedInputModeEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfServedInputModeEnum];
+export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfStatusEnum = {
+    Ready: 'ready',
+} as const;
+
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfStatusEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfStatusEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOfStatusEnum];
+
+export interface ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1 {
+    'closeId': number;
+    'selectionRevision': number;
+    'isSwitchable': boolean;
+    'servedInputMode': ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1ServedInputModeEnum;
+    'status': ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1StatusEnum;
+    'requestedInputMode': ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1RequestedInputModeEnum;
+}
+
+export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1ServedInputModeEnum = {
+    Closing: 'closing',
+    Live: 'live',
+} as const;
+
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1ServedInputModeEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1ServedInputModeEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1ServedInputModeEnum];
+export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1StatusEnum = {
+    Pending: 'pending',
+    Failed: 'failed',
+} as const;
+
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1StatusEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1StatusEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1StatusEnum];
+export const ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1RequestedInputModeEnum = {
+    Closing: 'closing',
+    Live: 'live',
+} as const;
+
+export type ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1RequestedInputModeEnum = typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1RequestedInputModeEnum[keyof typeof ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelectionOneOf1RequestedInputModeEnum];
 
 export interface ApiV1PrioritizationQvResultsPost200ResponseOneOf3ItemsInner {
     'itemSlugId': string;
     'sourceVersion': string;
-    'title': string;
-    'body'?: string;
+    'displayContent': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContent;
     'supportUnits': number;
     'oppositionUnits': number;
     'netUnits': number;
@@ -9391,6 +10978,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf {
 export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum = {
     Polis: 'polis',
     Prioritizing: 'prioritizing',
+    Gathering: 'gathering',
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOfConversationTypeEnum];
@@ -9417,6 +11005,7 @@ export interface ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1 {
 export const ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = {
     Polis: 'polis',
     Prioritizing: 'prioritizing',
+    Gathering: 'gathering',
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum = typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseActivitiesInnerOneOf1ConversationTypeEnum];
@@ -9850,6 +11439,19 @@ export interface ApiV1RankingBwsLoadPostRequest {
 }
 export interface ApiV1RankingBwsResultsPost200Response {
     'rankings': Array<ApiV1RankingBwsResultsPost200ResponseRankingsInner>;
+    'closedAnalysisSelection'?: ApiV1PrioritizationQvResultsPost200ResponseOneOf3ClosedAnalysisSelection;
+    'counters'?: ApiV1RankingBwsResultsPost200ResponseCounters;
+}
+export interface ApiV1RankingBwsResultsPost200ResponseCounters {
+    'opinionCount': number;
+    'voteCount': number;
+    'participantCount': number;
+    'totalOpinionCount': number;
+    'totalVoteCount': number;
+    'totalParticipantCount': number;
+    'moderatedOpinionCount': number;
+    'hiddenOpinionCount': number;
+    'isClosed': boolean;
 }
 /**
  * @type ApiV1RankingBwsResultsPost200ResponseRankingsInner
@@ -9863,6 +11465,7 @@ export interface ApiV1RankingBwsResultsPost200ResponseRankingsInnerOneOf {
     'participantCount': number;
     'lifecycleStatus': ApiV1RankingBwsResultsPost200ResponseRankingsInnerOneOfLifecycleStatusEnum;
     'isDeleted': boolean;
+    'participantSubmitted'?: boolean;
     'displayContent': ApiV1PrioritizationQvLoadPost200ResponseItemsInnerDisplayContent;
     'externalUrl': string | null;
 }
@@ -10142,7 +11745,7 @@ export interface ApiV1SurveyAnswerSavePost200ResponseOneOfRecoveryOneOfFormQuest
     'isPublicAggregateSuppressionEnabled': boolean;
     'options': Array<ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfOptionsInner>;
     'questionType': ApiV1SurveyAnswerSavePost200ResponseOneOfRecoveryOneOfFormQuestionsInnerQuestionTypeEnum;
-    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
+    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints;
     'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswer;
     'isPassed': boolean;
     'isMissingRequired': boolean;
@@ -10235,7 +11838,7 @@ export interface ApiV1SurveyConfigUpdatePostRequest {
 }
 export interface ApiV1SurveyConfigUpdatePostRequestSurveyConfig {
     'isOptional'?: boolean;
-    'questions': Array<ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInner>;
+    'questions': Array<ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInner>;
 }
 /**
  * @type ApiV1SurveyFormFetchPost200Response
@@ -10270,7 +11873,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInner {
     'isPublicAggregateSuppressionEnabled': boolean;
     'options': Array<ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfOptionsInner>;
     'questionType': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerQuestionTypeEnum;
-    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
+    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints;
     'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswer;
     'isPassed': boolean;
     'isMissingRequired': boolean;
@@ -10380,7 +11983,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneO
     'isPublicAggregateSuppressionEnabled': boolean;
     'options': Array<ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfOptionsInner>;
     'questionType': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfQuestionTypeEnum;
-    'constraints': ApiV1ConversationCreatePostRequestOneOfSurveyConfigQuestionsInnerOneOfConstraints;
+    'constraints': ApiV1ConversationCreatePostRequestOneOf1SurveyConfigQuestionsInnerOneOfConstraints;
     'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswer;
     'isPassed': boolean;
     'isMissingRequired': boolean;
@@ -10410,7 +12013,7 @@ export interface ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneO
     'displayOrder': number;
     'textChangeIsSemantic'?: boolean;
     'questionType': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOf1QuestionTypeEnum;
-    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOf1Constraints;
+    'constraints': ApiV1ConversationGetForEditPost200ResponseOneOfSurveyConfigQuestionsInnerOneOfConstraints;
     'currentAnswer'?: ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfOneOfCurrentAnswer;
     'isPassed': boolean;
     'isMissingRequired': boolean;
@@ -10475,12 +12078,22 @@ export interface ApiV1SurveyResponseWithdrawPost200ResponseOneOf {
     'participationStatus': ApiV1ConversationParticipationStatusPost200Response;
     'recovery': ApiV1SurveyAnswerSavePost200ResponseOneOfRecovery;
 }
+export interface ApiV1SurveyResponseWithdrawPostRequest {
+    'conversationSlugId': string;
+    'expectedForm'?: ApiV1SurveyResponseWithdrawPostRequestExpectedForm;
+    'skipEmailUpdateConsent'?: boolean;
+}
+export interface ApiV1SurveyResponseWithdrawPostRequestExpectedForm {
+    'surveyConfigId': number;
+    'currentRevision': number;
+}
 export interface ApiV1SurveyResultsAggregatedPost200Response {
     'hasSurvey': boolean;
     'accessLevel': ApiV1SurveyResultsAggregatedPost200ResponseAccessLevelEnum;
     'suppressionThreshold': number;
     'suppressedRows': Array<ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner>;
     'fullRows'?: Array<ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner>;
+    'source'?: ApiV1SurveyResultsAggregatedPost200ResponseSource;
     'questionDisplayContents': Array<ApiV1SurveyResultsAggregatedPost200ResponseQuestionDisplayContentsInner>;
 }
 
@@ -10496,6 +12109,35 @@ export interface ApiV1SurveyResultsAggregatedPost200ResponseQuestionDisplayConte
     'sourceContent': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContentAnyOfContent;
     'displayContent': ApiV1SurveyFormFetchPost200ResponseOneOfQuestionsInnerAllOfDisplayContent;
 }
+/**
+ * @type ApiV1SurveyResultsAggregatedPost200ResponseSource
+ */
+export type ApiV1SurveyResultsAggregatedPost200ResponseSource = ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf | ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1;
+
+export interface ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf {
+    'kind': ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOfKindEnum;
+    'viewSnapshotId': number;
+    'candidateId'?: number;
+}
+
+export const ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOfKindEnum = {
+    PolisFrame: 'polis_frame',
+} as const;
+
+export type ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOfKindEnum = typeof ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOfKindEnum[keyof typeof ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOfKindEnum];
+
+export interface ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1 {
+    'kind': ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1KindEnum;
+    'viewSnapshotId': number;
+    'originalViewSnapshotId': number;
+}
+
+export const ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1KindEnum = {
+    OriginalClose: 'original_close',
+} as const;
+
+export type ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1KindEnum = typeof ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1KindEnum[keyof typeof ApiV1SurveyResultsAggregatedPost200ResponseSourceOneOf1KindEnum];
+
 export interface ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInner {
     'scope': ApiV1SurveyResultsAggregatedPost200ResponseSuppressedRowsInnerScopeEnum;
     'clusterId': string;
@@ -11226,6 +12868,29 @@ export type ApiV1VoteCastPostRequestChosenOptionEnum = typeof ApiV1VoteCastPostR
 export interface ApiV1VoteCastPostRequestClientAction {
     'sessionId': string;
     'sequence': number;
+}
+export interface ApiV1VoteWithdrawPostRequest {
+    'conversationSlugId': string;
+    'closeEpoch': string;
+    'expectedViewerId': string;
+}
+/**
+ * @type ApiV1VoteWithdrawStatusPost200Response
+ */
+export type ApiV1VoteWithdrawStatusPost200Response = ApiV1VoteWithdrawStatusPost200ResponseOneOf | ApiV1VoteWithdrawStatusPost200ResponseOneOf1;
+
+export interface ApiV1VoteWithdrawStatusPost200ResponseOneOf {
+    'available': boolean;
+}
+export interface ApiV1VoteWithdrawStatusPost200ResponseOneOf1 {
+    'available': boolean;
+    'closeEpoch': string;
+}
+export interface ProjectIndexingRequest {
+    'projectSlug': string;
+}
+export interface ProjectIndexingResponse {
+    'isIndexed': boolean;
 }
 
 /**
@@ -12035,6 +13700,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectGetProjectDetailsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest} apiV1AdministratorProjectDirectoryVisibilitySetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDirectoryVisibilitySetPost: async (apiV1AdministratorProjectDirectoryVisibilitySetPostRequest: ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1AdministratorProjectDirectoryVisibilitySetPostRequest' is not null or undefined
+            assertParamExists('apiV1AdministratorProjectDirectoryVisibilitySetPost', 'apiV1AdministratorProjectDirectoryVisibilitySetPostRequest', apiV1AdministratorProjectDirectoryVisibilitySetPostRequest)
+            const localVarPath = `/api/v1/administrator/project/directory-visibility/set`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -12875,6 +14578,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1ConversationAnalysisInputModeSetPostRequest} apiV1ConversationAnalysisInputModeSetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationAnalysisInputModeSetPost: async (apiV1ConversationAnalysisInputModeSetPostRequest: ApiV1ConversationAnalysisInputModeSetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationAnalysisInputModeSetPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationAnalysisInputModeSetPost', 'apiV1ConversationAnalysisInputModeSetPostRequest', apiV1ConversationAnalysisInputModeSetPostRequest)
+            const localVarPath = `/api/v1/conversation/analysis/input-mode/set`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationAnalysisInputModeSetPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -13018,6 +14759,234 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftCreatePostRequest} apiV1ConversationDraftCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftCreatePost: async (apiV1ConversationDraftCreatePostRequest: ApiV1ConversationDraftCreatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationDraftCreatePostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDraftCreatePost', 'apiV1ConversationDraftCreatePostRequest', apiV1ConversationDraftCreatePostRequest)
+            const localVarPath = `/api/v1/conversation/draft/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationDraftCreatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftDiscardPostRequest} apiV1ConversationDraftDiscardPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftDiscardPost: async (apiV1ConversationDraftDiscardPostRequest: ApiV1ConversationDraftDiscardPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationDraftDiscardPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDraftDiscardPost', 'apiV1ConversationDraftDiscardPostRequest', apiV1ConversationDraftDiscardPostRequest)
+            const localVarPath = `/api/v1/conversation/draft/discard`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationDraftDiscardPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftGetPostRequest} apiV1ConversationDraftGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftGetPost: async (apiV1ConversationDraftGetPostRequest: ApiV1ConversationDraftGetPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationDraftGetPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDraftGetPost', 'apiV1ConversationDraftGetPostRequest', apiV1ConversationDraftGetPostRequest)
+            const localVarPath = `/api/v1/conversation/draft/get`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationDraftGetPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftListPostRequest} apiV1ConversationDraftListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftListPost: async (apiV1ConversationDraftListPostRequest: ApiV1ConversationDraftListPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationDraftListPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDraftListPost', 'apiV1ConversationDraftListPostRequest', apiV1ConversationDraftListPostRequest)
+            const localVarPath = `/api/v1/conversation/draft/list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationDraftListPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftPublishPostRequest} apiV1ConversationDraftPublishPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftPublishPost: async (apiV1ConversationDraftPublishPostRequest: ApiV1ConversationDraftPublishPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationDraftPublishPostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDraftPublishPost', 'apiV1ConversationDraftPublishPostRequest', apiV1ConversationDraftPublishPostRequest)
+            const localVarPath = `/api/v1/conversation/draft/publish`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationDraftPublishPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftSavePostRequest} apiV1ConversationDraftSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftSavePost: async (apiV1ConversationDraftSavePostRequest: ApiV1ConversationDraftSavePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ConversationDraftSavePostRequest' is not null or undefined
+            assertParamExists('apiV1ConversationDraftSavePost', 'apiV1ConversationDraftSavePostRequest', apiV1ConversationDraftSavePostRequest)
+            const localVarPath = `/api/v1/conversation/draft/save`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationDraftSavePostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -14660,6 +16629,348 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1DevConversationEmailUpdateSnsSimulatePostRequest} apiV1DevConversationEmailUpdateSnsSimulatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1DevConversationEmailUpdateSnsSimulatePost: async (apiV1DevConversationEmailUpdateSnsSimulatePostRequest: ApiV1DevConversationEmailUpdateSnsSimulatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1DevConversationEmailUpdateSnsSimulatePostRequest' is not null or undefined
+            assertParamExists('apiV1DevConversationEmailUpdateSnsSimulatePost', 'apiV1DevConversationEmailUpdateSnsSimulatePostRequest', apiV1DevConversationEmailUpdateSnsSimulatePostRequest)
+            const localVarPath = `/api/v1/dev/conversation/email-update/sns/simulate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1DevConversationEmailUpdateSnsSimulatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringLoadPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringLoadPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/gathering/load`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesDeletePostRequest} apiV1GatheringResponsesDeletePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesDeletePost: async (apiV1GatheringResponsesDeletePostRequest: ApiV1GatheringResponsesDeletePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringResponsesDeletePostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringResponsesDeletePost', 'apiV1GatheringResponsesDeletePostRequest', apiV1GatheringResponsesDeletePostRequest)
+            const localVarPath = `/api/v1/gathering/responses/delete`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringResponsesDeletePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesHistoryPostRequest} apiV1GatheringResponsesHistoryPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesHistoryPost: async (apiV1GatheringResponsesHistoryPostRequest: ApiV1GatheringResponsesHistoryPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringResponsesHistoryPostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringResponsesHistoryPost', 'apiV1GatheringResponsesHistoryPostRequest', apiV1GatheringResponsesHistoryPostRequest)
+            const localVarPath = `/api/v1/gathering/responses/history`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringResponsesHistoryPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesListPostRequest} apiV1GatheringResponsesListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesListPost: async (apiV1GatheringResponsesListPostRequest: ApiV1GatheringResponsesListPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringResponsesListPostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringResponsesListPost', 'apiV1GatheringResponsesListPostRequest', apiV1GatheringResponsesListPostRequest)
+            const localVarPath = `/api/v1/gathering/responses/list`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringResponsesListPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesModeratePostRequest} apiV1GatheringResponsesModeratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesModeratePost: async (apiV1GatheringResponsesModeratePostRequest: ApiV1GatheringResponsesModeratePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringResponsesModeratePostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringResponsesModeratePost', 'apiV1GatheringResponsesModeratePostRequest', apiV1GatheringResponsesModeratePostRequest)
+            const localVarPath = `/api/v1/gathering/responses/moderate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringResponsesModeratePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesReadPostRequest} apiV1GatheringResponsesReadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesReadPost: async (apiV1GatheringResponsesReadPostRequest: ApiV1GatheringResponsesReadPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringResponsesReadPostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringResponsesReadPost', 'apiV1GatheringResponsesReadPostRequest', apiV1GatheringResponsesReadPostRequest)
+            const localVarPath = `/api/v1/gathering/responses/read`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringResponsesReadPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesSavePostRequest} apiV1GatheringResponsesSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesSavePost: async (apiV1GatheringResponsesSavePostRequest: ApiV1GatheringResponsesSavePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringResponsesSavePostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringResponsesSavePost', 'apiV1GatheringResponsesSavePostRequest', apiV1GatheringResponsesSavePostRequest)
+            const localVarPath = `/api/v1/gathering/responses/save`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringResponsesSavePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringSettingsUpdatePostRequest} apiV1GatheringSettingsUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringSettingsUpdatePost: async (apiV1GatheringSettingsUpdatePostRequest: ApiV1GatheringSettingsUpdatePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1GatheringSettingsUpdatePostRequest' is not null or undefined
+            assertParamExists('apiV1GatheringSettingsUpdatePost', 'apiV1GatheringSettingsUpdatePostRequest', apiV1GatheringSettingsUpdatePostRequest)
+            const localVarPath = `/api/v1/gathering/settings/update`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1GatheringSettingsUpdatePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -15208,6 +17519,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest} apiV1OpinionFetchAnalysisFrameContentByFramePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchAnalysisFrameContentByFramePost: async (apiV1OpinionFetchAnalysisFrameContentByFramePostRequest: ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1OpinionFetchAnalysisFrameContentByFramePostRequest' is not null or undefined
+            assertParamExists('apiV1OpinionFetchAnalysisFrameContentByFramePost', 'apiV1OpinionFetchAnalysisFrameContentByFramePostRequest', apiV1OpinionFetchAnalysisFrameContentByFramePostRequest)
+            const localVarPath = `/api/v1/opinion/fetch-analysis-frame-content-by-frame`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest} apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -15740,6 +18089,81 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1PrioritizationComparisonsStatementsModeratePostRequest} apiV1PrioritizationComparisonsStatementsModeratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1PrioritizationComparisonsStatementsModeratePost: async (apiV1PrioritizationComparisonsStatementsModeratePostRequest: ApiV1PrioritizationComparisonsStatementsModeratePostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1PrioritizationComparisonsStatementsModeratePostRequest' is not null or undefined
+            assertParamExists('apiV1PrioritizationComparisonsStatementsModeratePost', 'apiV1PrioritizationComparisonsStatementsModeratePostRequest', apiV1PrioritizationComparisonsStatementsModeratePostRequest)
+            const localVarPath = `/api/v1/prioritization/comparisons/statements/moderate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PrioritizationComparisonsStatementsModeratePostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest} apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1PrioritizationComparisonsStatementsModerationHistoryPost: async (apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest: ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest' is not null or undefined
+            assertParamExists('apiV1PrioritizationComparisonsStatementsModerationHistoryPost', 'apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest', apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest)
+            const localVarPath = `/api/v1/prioritization/comparisons/statements/moderation-history`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -16150,6 +18574,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiV1AdministratorProjectGetProjectDetailsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Resolve the indexing policy for project HTML responses
+         * @param {ProjectIndexingRequest} projectIndexingRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectIndexingPost: async (projectIndexingRequest: ProjectIndexingRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'projectIndexingRequest' is not null or undefined
+            assertParamExists('apiV1ProjectIndexingPost', 'projectIndexingRequest', projectIndexingRequest)
+            const localVarPath = `/api/v1/project/indexing`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(projectIndexingRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -16909,13 +19367,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @param {ApiV1ConversationParticipationStatusPostRequest} apiV1ConversationParticipationStatusPostRequest 
+         * @param {ApiV1SurveyResponseWithdrawPostRequest} apiV1SurveyResponseWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1SurveyResponseWithdrawPost: async (apiV1ConversationParticipationStatusPostRequest: ApiV1ConversationParticipationStatusPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'apiV1ConversationParticipationStatusPostRequest' is not null or undefined
-            assertParamExists('apiV1SurveyResponseWithdrawPost', 'apiV1ConversationParticipationStatusPostRequest', apiV1ConversationParticipationStatusPostRequest)
+        apiV1SurveyResponseWithdrawPost: async (apiV1SurveyResponseWithdrawPostRequest: ApiV1SurveyResponseWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1SurveyResponseWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1SurveyResponseWithdrawPost', 'apiV1SurveyResponseWithdrawPostRequest', apiV1SurveyResponseWithdrawPostRequest)
             const localVarPath = `/api/v1/survey/response/withdraw`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -16938,7 +19396,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ConversationParticipationStatusPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1SurveyResponseWithdrawPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -17565,6 +20023,82 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @param {ApiV1VoteWithdrawPostRequest} apiV1VoteWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1VoteWithdrawPost: async (apiV1VoteWithdrawPostRequest: ApiV1VoteWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1VoteWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1VoteWithdrawPost', 'apiV1VoteWithdrawPostRequest', apiV1VoteWithdrawPostRequest)
+            const localVarPath = `/api/v1/vote/withdraw`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1VoteWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1VoteWithdrawStatusPost: async (apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiV1ModerationConversationWithdrawPostRequest' is not null or undefined
+            assertParamExists('apiV1VoteWithdrawStatusPost', 'apiV1ModerationConversationWithdrawPostRequest', apiV1ModerationConversationWithdrawPostRequest)
+            const localVarPath = `/api/v1/vote/withdraw/status`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiV1ModerationConversationWithdrawPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {any} body 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -17899,6 +20433,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest} apiV1AdministratorProjectDirectoryVisibilitySetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1AdministratorProjectDirectoryVisibilitySetPost(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest: ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1AdministratorProjectDirectoryVisibilitySetPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1AdministratorProjectDirectoryVisibilitySetPost(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1AdministratorProjectDirectoryVisibilitySetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -18168,6 +20714,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1ConversationAnalysisInputModeSetPostRequest} apiV1ConversationAnalysisInputModeSetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationAnalysisInputModeSetPost(apiV1ConversationAnalysisInputModeSetPostRequest: ApiV1ConversationAnalysisInputModeSetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonCloseSelectionVersion>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationAnalysisInputModeSetPost(apiV1ConversationAnalysisInputModeSetPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationAnalysisInputModeSetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -18212,6 +20770,78 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDeletePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftCreatePostRequest} apiV1ConversationDraftCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationDraftCreatePost(apiV1ConversationDraftCreatePostRequest: ApiV1ConversationDraftCreatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationDraftCreatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDraftCreatePost(apiV1ConversationDraftCreatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDraftCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftDiscardPostRequest} apiV1ConversationDraftDiscardPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationDraftDiscardPost(apiV1ConversationDraftDiscardPostRequest: ApiV1ConversationDraftDiscardPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDraftDiscardPost(apiV1ConversationDraftDiscardPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDraftDiscardPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftGetPostRequest} apiV1ConversationDraftGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationDraftGetPost(apiV1ConversationDraftGetPostRequest: ApiV1ConversationDraftGetPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationDraftCreatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDraftGetPost(apiV1ConversationDraftGetPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDraftGetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftListPostRequest} apiV1ConversationDraftListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationDraftListPost(apiV1ConversationDraftListPostRequest: ApiV1ConversationDraftListPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationDraftListPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDraftListPost(apiV1ConversationDraftListPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDraftListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftPublishPostRequest} apiV1ConversationDraftPublishPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationDraftPublishPost(apiV1ConversationDraftPublishPostRequest: ApiV1ConversationDraftPublishPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationDraftPublishPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDraftPublishPost(apiV1ConversationDraftPublishPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDraftPublishPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftSavePostRequest} apiV1ConversationDraftSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ConversationDraftSavePost(apiV1ConversationDraftSavePostRequest: ApiV1ConversationDraftSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationDraftCreatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ConversationDraftSavePost(apiV1ConversationDraftSavePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ConversationDraftSavePost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -18742,6 +21372,114 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1DevConversationEmailUpdateSnsSimulatePostRequest} apiV1DevConversationEmailUpdateSnsSimulatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1DevConversationEmailUpdateSnsSimulatePost(apiV1DevConversationEmailUpdateSnsSimulatePostRequest: ApiV1DevConversationEmailUpdateSnsSimulatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1DevConversationEmailUpdateSnsSimulatePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1DevConversationEmailUpdateSnsSimulatePost(apiV1DevConversationEmailUpdateSnsSimulatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1DevConversationEmailUpdateSnsSimulatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringLoadPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1GatheringLoadPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringLoadPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringLoadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesDeletePostRequest} apiV1GatheringResponsesDeletePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringResponsesDeletePost(apiV1GatheringResponsesDeletePostRequest: ApiV1GatheringResponsesDeletePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringResponsesDeletePost(apiV1GatheringResponsesDeletePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringResponsesDeletePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesHistoryPostRequest} apiV1GatheringResponsesHistoryPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringResponsesHistoryPost(apiV1GatheringResponsesHistoryPostRequest: ApiV1GatheringResponsesHistoryPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ApiV1GatheringResponsesListPost200ResponseResponsesInner>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringResponsesHistoryPost(apiV1GatheringResponsesHistoryPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringResponsesHistoryPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesListPostRequest} apiV1GatheringResponsesListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringResponsesListPost(apiV1GatheringResponsesListPostRequest: ApiV1GatheringResponsesListPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1GatheringResponsesListPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringResponsesListPost(apiV1GatheringResponsesListPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringResponsesListPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesModeratePostRequest} apiV1GatheringResponsesModeratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringResponsesModeratePost(apiV1GatheringResponsesModeratePostRequest: ApiV1GatheringResponsesModeratePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringResponsesModeratePost(apiV1GatheringResponsesModeratePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringResponsesModeratePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesReadPostRequest} apiV1GatheringResponsesReadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringResponsesReadPost(apiV1GatheringResponsesReadPostRequest: ApiV1GatheringResponsesReadPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1GatheringResponsesListPost200ResponseResponsesInner>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringResponsesReadPost(apiV1GatheringResponsesReadPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringResponsesReadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesSavePostRequest} apiV1GatheringResponsesSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringResponsesSavePost(apiV1GatheringResponsesSavePostRequest: ApiV1GatheringResponsesSavePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1GatheringResponsesListPost200ResponseResponsesInner>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringResponsesSavePost(apiV1GatheringResponsesSavePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringResponsesSavePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringSettingsUpdatePostRequest} apiV1GatheringSettingsUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1GatheringSettingsUpdatePost(apiV1GatheringSettingsUpdatePostRequest: ApiV1GatheringSettingsUpdatePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1GatheringSettingsUpdatePost(apiV1GatheringSettingsUpdatePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1GatheringSettingsUpdatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -18919,6 +21657,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest} apiV1OpinionFetchAnalysisFrameContentByFramePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1OpinionFetchAnalysisFrameContentByFramePost(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest: ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1OpinionFetchAnalysisFrameContentByFramePost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1OpinionFetchAnalysisFrameContentByFramePost(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1OpinionFetchAnalysisFrameContentByFramePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest} apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -19087,6 +21837,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {ApiV1PrioritizationComparisonsStatementsModeratePostRequest} apiV1PrioritizationComparisonsStatementsModeratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1PrioritizationComparisonsStatementsModeratePost(apiV1PrioritizationComparisonsStatementsModeratePostRequest: ApiV1PrioritizationComparisonsStatementsModeratePostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PrioritizationComparisonsStatementsModeratePost(apiV1PrioritizationComparisonsStatementsModeratePostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PrioritizationComparisonsStatementsModeratePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest} apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1PrioritizationComparisonsStatementsModerationHistoryPost(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest: ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1PrioritizationComparisonsStatementsModerationHistoryPost(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1PrioritizationComparisonsStatementsModerationHistoryPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -19215,6 +21989,18 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectEmailUpdateSummaryGetPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectEmailUpdateSummaryGetPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Resolve the indexing policy for project HTML responses
+         * @param {ProjectIndexingRequest} projectIndexingRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1ProjectIndexingPost(projectIndexingRequest: ProjectIndexingRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectIndexingResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1ProjectIndexingPost(projectIndexingRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1ProjectIndexingPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -19458,12 +22244,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {ApiV1ConversationParticipationStatusPostRequest} apiV1ConversationParticipationStatusPostRequest 
+         * @param {ApiV1SurveyResponseWithdrawPostRequest} apiV1SurveyResponseWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiV1SurveyResponseWithdrawPost(apiV1ConversationParticipationStatusPostRequest: ApiV1ConversationParticipationStatusPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1SurveyResponseWithdrawPost200Response>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1SurveyResponseWithdrawPost(apiV1ConversationParticipationStatusPostRequest, options);
+        async apiV1SurveyResponseWithdrawPost(apiV1SurveyResponseWithdrawPostRequest: ApiV1SurveyResponseWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1SurveyResponseWithdrawPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1SurveyResponseWithdrawPost(apiV1SurveyResponseWithdrawPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1SurveyResponseWithdrawPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -19665,6 +22451,30 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VoteCastPost(apiV1VoteCastPostRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VoteCastPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1VoteWithdrawPostRequest} apiV1VoteWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1VoteWithdrawPost(apiV1VoteWithdrawPostRequest: ApiV1VoteWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VoteWithdrawPost(apiV1VoteWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VoteWithdrawPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiV1VoteWithdrawStatusPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiV1VoteWithdrawStatusPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiV1VoteWithdrawStatusPost(apiV1ModerationConversationWithdrawPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.apiV1VoteWithdrawStatusPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -19895,6 +22705,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest} apiV1AdministratorProjectDirectoryVisibilitySetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1AdministratorProjectDirectoryVisibilitySetPost(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest: ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1AdministratorProjectDirectoryVisibilitySetPost200Response> {
+            return localVarFp.apiV1AdministratorProjectDirectoryVisibilitySetPost(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -20095,6 +22914,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1ConversationAnalysisInputModeSetPostRequest} apiV1ConversationAnalysisInputModeSetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationAnalysisInputModeSetPost(apiV1ConversationAnalysisInputModeSetPostRequest: ApiV1ConversationAnalysisInputModeSetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOf2OneOfComparisonCloseSelectionVersion> {
+            return localVarFp.apiV1ConversationAnalysisInputModeSetPost(apiV1ConversationAnalysisInputModeSetPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -20128,6 +22956,60 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftCreatePostRequest} apiV1ConversationDraftCreatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftCreatePost(apiV1ConversationDraftCreatePostRequest: ApiV1ConversationDraftCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationDraftCreatePost200Response> {
+            return localVarFp.apiV1ConversationDraftCreatePost(apiV1ConversationDraftCreatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftDiscardPostRequest} apiV1ConversationDraftDiscardPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftDiscardPost(apiV1ConversationDraftDiscardPostRequest: ApiV1ConversationDraftDiscardPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf> {
+            return localVarFp.apiV1ConversationDraftDiscardPost(apiV1ConversationDraftDiscardPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftGetPostRequest} apiV1ConversationDraftGetPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftGetPost(apiV1ConversationDraftGetPostRequest: ApiV1ConversationDraftGetPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationDraftCreatePost200Response> {
+            return localVarFp.apiV1ConversationDraftGetPost(apiV1ConversationDraftGetPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftListPostRequest} apiV1ConversationDraftListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftListPost(apiV1ConversationDraftListPostRequest: ApiV1ConversationDraftListPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationDraftListPost200Response> {
+            return localVarFp.apiV1ConversationDraftListPost(apiV1ConversationDraftListPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftPublishPostRequest} apiV1ConversationDraftPublishPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftPublishPost(apiV1ConversationDraftPublishPostRequest: ApiV1ConversationDraftPublishPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationDraftPublishPost200Response> {
+            return localVarFp.apiV1ConversationDraftPublishPost(apiV1ConversationDraftPublishPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ConversationDraftSavePostRequest} apiV1ConversationDraftSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ConversationDraftSavePost(apiV1ConversationDraftSavePostRequest: ApiV1ConversationDraftSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationDraftCreatePost200Response> {
+            return localVarFp.apiV1ConversationDraftSavePost(apiV1ConversationDraftSavePostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -20525,6 +23407,87 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1DevConversationEmailUpdateSnsSimulatePostRequest} apiV1DevConversationEmailUpdateSnsSimulatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1DevConversationEmailUpdateSnsSimulatePost(apiV1DevConversationEmailUpdateSnsSimulatePostRequest: ApiV1DevConversationEmailUpdateSnsSimulatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1DevConversationEmailUpdateSnsSimulatePost200Response> {
+            return localVarFp.apiV1DevConversationEmailUpdateSnsSimulatePost(apiV1DevConversationEmailUpdateSnsSimulatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringLoadPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1GatheringLoadPost200Response> {
+            return localVarFp.apiV1GatheringLoadPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesDeletePostRequest} apiV1GatheringResponsesDeletePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesDeletePost(apiV1GatheringResponsesDeletePostRequest: ApiV1GatheringResponsesDeletePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf> {
+            return localVarFp.apiV1GatheringResponsesDeletePost(apiV1GatheringResponsesDeletePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesHistoryPostRequest} apiV1GatheringResponsesHistoryPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesHistoryPost(apiV1GatheringResponsesHistoryPostRequest: ApiV1GatheringResponsesHistoryPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ApiV1GatheringResponsesListPost200ResponseResponsesInner>> {
+            return localVarFp.apiV1GatheringResponsesHistoryPost(apiV1GatheringResponsesHistoryPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesListPostRequest} apiV1GatheringResponsesListPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesListPost(apiV1GatheringResponsesListPostRequest: ApiV1GatheringResponsesListPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1GatheringResponsesListPost200Response> {
+            return localVarFp.apiV1GatheringResponsesListPost(apiV1GatheringResponsesListPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesModeratePostRequest} apiV1GatheringResponsesModeratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesModeratePost(apiV1GatheringResponsesModeratePostRequest: ApiV1GatheringResponsesModeratePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf> {
+            return localVarFp.apiV1GatheringResponsesModeratePost(apiV1GatheringResponsesModeratePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesReadPostRequest} apiV1GatheringResponsesReadPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesReadPost(apiV1GatheringResponsesReadPostRequest: ApiV1GatheringResponsesReadPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1GatheringResponsesListPost200ResponseResponsesInner> {
+            return localVarFp.apiV1GatheringResponsesReadPost(apiV1GatheringResponsesReadPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringResponsesSavePostRequest} apiV1GatheringResponsesSavePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringResponsesSavePost(apiV1GatheringResponsesSavePostRequest: ApiV1GatheringResponsesSavePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1GatheringResponsesListPost200ResponseResponsesInner> {
+            return localVarFp.apiV1GatheringResponsesSavePost(apiV1GatheringResponsesSavePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1GatheringSettingsUpdatePostRequest} apiV1GatheringSettingsUpdatePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1GatheringSettingsUpdatePost(apiV1GatheringSettingsUpdatePostRequest: ApiV1GatheringSettingsUpdatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf> {
+            return localVarFp.apiV1GatheringSettingsUpdatePost(apiV1GatheringSettingsUpdatePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -20657,6 +23620,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest} apiV1OpinionFetchAnalysisFrameContentByFramePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1OpinionFetchAnalysisFrameContentByFramePost(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest: ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1OpinionFetchAnalysisFrameContentByFramePost200Response> {
+            return localVarFp.apiV1OpinionFetchAnalysisFrameContentByFramePost(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest} apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -20783,6 +23755,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @param {ApiV1PrioritizationComparisonsStatementsModeratePostRequest} apiV1PrioritizationComparisonsStatementsModeratePostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1PrioritizationComparisonsStatementsModeratePost(apiV1PrioritizationComparisonsStatementsModeratePostRequest: ApiV1PrioritizationComparisonsStatementsModeratePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiV1PrioritizationComparisonsStatementsModeratePost(apiV1PrioritizationComparisonsStatementsModeratePostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest} apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1PrioritizationComparisonsStatementsModerationHistoryPost(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest: ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1PrioritizationComparisonsStatementsModerationHistoryPost200Response> {
+            return localVarFp.apiV1PrioritizationComparisonsStatementsModerationHistoryPost(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -20879,6 +23869,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1ProjectEmailUpdateSummaryGetPost(apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ProjectEmailUpdateSummaryGetPost200Response> {
             return localVarFp.apiV1ProjectEmailUpdateSummaryGetPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Resolve the indexing policy for project HTML responses
+         * @param {ProjectIndexingRequest} projectIndexingRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1ProjectIndexingPost(projectIndexingRequest: ProjectIndexingRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProjectIndexingResponse> {
+            return localVarFp.apiV1ProjectIndexingPost(projectIndexingRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -21061,12 +24060,12 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @param {ApiV1ConversationParticipationStatusPostRequest} apiV1ConversationParticipationStatusPostRequest 
+         * @param {ApiV1SurveyResponseWithdrawPostRequest} apiV1SurveyResponseWithdrawPostRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiV1SurveyResponseWithdrawPost(apiV1ConversationParticipationStatusPostRequest: ApiV1ConversationParticipationStatusPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1SurveyResponseWithdrawPost200Response> {
-            return localVarFp.apiV1SurveyResponseWithdrawPost(apiV1ConversationParticipationStatusPostRequest, options).then((request) => request(axios, basePath));
+        apiV1SurveyResponseWithdrawPost(apiV1SurveyResponseWithdrawPostRequest: ApiV1SurveyResponseWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1SurveyResponseWithdrawPost200Response> {
+            return localVarFp.apiV1SurveyResponseWithdrawPost(apiV1SurveyResponseWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -21215,6 +24214,24 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1VoteCastPost200Response> {
             return localVarFp.apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1VoteWithdrawPostRequest} apiV1VoteWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1VoteWithdrawPost(apiV1VoteWithdrawPostRequest: ApiV1VoteWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1ConversationEmailUpdateActionUnsubscribePost200ResponseOneOf> {
+            return localVarFp.apiV1VoteWithdrawPost(apiV1VoteWithdrawPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiV1VoteWithdrawStatusPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiV1VoteWithdrawStatusPost200Response> {
+            return localVarFp.apiV1VoteWithdrawStatusPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -21458,6 +24475,16 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest} apiV1AdministratorProjectDirectoryVisibilitySetPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1AdministratorProjectDirectoryVisibilitySetPost(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest: ApiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1AdministratorProjectDirectoryVisibilitySetPost(apiV1AdministratorProjectDirectoryVisibilitySetPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1AdministratorProjectDocumentDeletePostRequest} apiV1AdministratorProjectDocumentDeletePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -21681,6 +24708,16 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1ConversationAnalysisInputModeSetPostRequest} apiV1ConversationAnalysisInputModeSetPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationAnalysisInputModeSetPost(apiV1ConversationAnalysisInputModeSetPostRequest: ApiV1ConversationAnalysisInputModeSetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationAnalysisInputModeSetPost(apiV1ConversationAnalysisInputModeSetPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -21717,6 +24754,66 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ConversationDeletePost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationDraftCreatePostRequest} apiV1ConversationDraftCreatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationDraftCreatePost(apiV1ConversationDraftCreatePostRequest: ApiV1ConversationDraftCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDraftCreatePost(apiV1ConversationDraftCreatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationDraftDiscardPostRequest} apiV1ConversationDraftDiscardPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationDraftDiscardPost(apiV1ConversationDraftDiscardPostRequest: ApiV1ConversationDraftDiscardPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDraftDiscardPost(apiV1ConversationDraftDiscardPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationDraftGetPostRequest} apiV1ConversationDraftGetPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationDraftGetPost(apiV1ConversationDraftGetPostRequest: ApiV1ConversationDraftGetPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDraftGetPost(apiV1ConversationDraftGetPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationDraftListPostRequest} apiV1ConversationDraftListPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationDraftListPost(apiV1ConversationDraftListPostRequest: ApiV1ConversationDraftListPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDraftListPost(apiV1ConversationDraftListPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationDraftPublishPostRequest} apiV1ConversationDraftPublishPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationDraftPublishPost(apiV1ConversationDraftPublishPostRequest: ApiV1ConversationDraftPublishPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDraftPublishPost(apiV1ConversationDraftPublishPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ConversationDraftSavePostRequest} apiV1ConversationDraftSavePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ConversationDraftSavePost(apiV1ConversationDraftSavePostRequest: ApiV1ConversationDraftSavePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ConversationDraftSavePost(apiV1ConversationDraftSavePostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -22159,6 +25256,96 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1DevConversationEmailUpdateSnsSimulatePostRequest} apiV1DevConversationEmailUpdateSnsSimulatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1DevConversationEmailUpdateSnsSimulatePost(apiV1DevConversationEmailUpdateSnsSimulatePostRequest: ApiV1DevConversationEmailUpdateSnsSimulatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1DevConversationEmailUpdateSnsSimulatePost(apiV1DevConversationEmailUpdateSnsSimulatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringLoadPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringLoadPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringResponsesDeletePostRequest} apiV1GatheringResponsesDeletePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringResponsesDeletePost(apiV1GatheringResponsesDeletePostRequest: ApiV1GatheringResponsesDeletePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringResponsesDeletePost(apiV1GatheringResponsesDeletePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringResponsesHistoryPostRequest} apiV1GatheringResponsesHistoryPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringResponsesHistoryPost(apiV1GatheringResponsesHistoryPostRequest: ApiV1GatheringResponsesHistoryPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringResponsesHistoryPost(apiV1GatheringResponsesHistoryPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringResponsesListPostRequest} apiV1GatheringResponsesListPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringResponsesListPost(apiV1GatheringResponsesListPostRequest: ApiV1GatheringResponsesListPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringResponsesListPost(apiV1GatheringResponsesListPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringResponsesModeratePostRequest} apiV1GatheringResponsesModeratePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringResponsesModeratePost(apiV1GatheringResponsesModeratePostRequest: ApiV1GatheringResponsesModeratePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringResponsesModeratePost(apiV1GatheringResponsesModeratePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringResponsesReadPostRequest} apiV1GatheringResponsesReadPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringResponsesReadPost(apiV1GatheringResponsesReadPostRequest: ApiV1GatheringResponsesReadPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringResponsesReadPost(apiV1GatheringResponsesReadPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringResponsesSavePostRequest} apiV1GatheringResponsesSavePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringResponsesSavePost(apiV1GatheringResponsesSavePostRequest: ApiV1GatheringResponsesSavePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringResponsesSavePost(apiV1GatheringResponsesSavePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1GatheringSettingsUpdatePostRequest} apiV1GatheringSettingsUpdatePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1GatheringSettingsUpdatePost(apiV1GatheringSettingsUpdatePostRequest: ApiV1GatheringSettingsUpdatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1GatheringSettingsUpdatePost(apiV1GatheringSettingsUpdatePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
@@ -22306,6 +25493,16 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest} apiV1OpinionFetchAnalysisFrameContentByFramePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1OpinionFetchAnalysisFrameContentByFramePost(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest: ApiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1OpinionFetchAnalysisFrameContentByFramePost(apiV1OpinionFetchAnalysisFrameContentByFramePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest} apiV1OpinionFetchAnalysisFrameGroupsByFramePostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -22446,6 +25643,26 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @param {ApiV1PrioritizationComparisonsStatementsModeratePostRequest} apiV1PrioritizationComparisonsStatementsModeratePostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1PrioritizationComparisonsStatementsModeratePost(apiV1PrioritizationComparisonsStatementsModeratePostRequest: ApiV1PrioritizationComparisonsStatementsModeratePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1PrioritizationComparisonsStatementsModeratePost(apiV1PrioritizationComparisonsStatementsModeratePostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest} apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1PrioritizationComparisonsStatementsModerationHistoryPost(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest: ApiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1PrioritizationComparisonsStatementsModerationHistoryPost(apiV1PrioritizationComparisonsStatementsModerationHistoryPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {ApiV1RankingBwsStatsCheckpointsPostRequest} apiV1RankingBwsStatsCheckpointsPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -22552,6 +25769,16 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1ProjectEmailUpdateSummaryGetPost(apiV1AdministratorProjectGetProjectDetailsPostRequest: ApiV1AdministratorProjectGetProjectDetailsPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1ProjectEmailUpdateSummaryGetPost(apiV1AdministratorProjectGetProjectDetailsPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Resolve the indexing policy for project HTML responses
+     * @param {ProjectIndexingRequest} projectIndexingRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1ProjectIndexingPost(projectIndexingRequest: ProjectIndexingRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1ProjectIndexingPost(projectIndexingRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -22755,12 +25982,12 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @param {ApiV1ConversationParticipationStatusPostRequest} apiV1ConversationParticipationStatusPostRequest 
+     * @param {ApiV1SurveyResponseWithdrawPostRequest} apiV1SurveyResponseWithdrawPostRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public apiV1SurveyResponseWithdrawPost(apiV1ConversationParticipationStatusPostRequest: ApiV1ConversationParticipationStatusPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiV1SurveyResponseWithdrawPost(apiV1ConversationParticipationStatusPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiV1SurveyResponseWithdrawPost(apiV1SurveyResponseWithdrawPostRequest: ApiV1SurveyResponseWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1SurveyResponseWithdrawPost(apiV1SurveyResponseWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -22926,6 +26153,26 @@ export class DefaultApi extends BaseAPI {
      */
     public apiV1VoteCastPost(apiV1VoteCastPostRequest: ApiV1VoteCastPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiV1VoteCastPost(apiV1VoteCastPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1VoteWithdrawPostRequest} apiV1VoteWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1VoteWithdrawPost(apiV1VoteWithdrawPostRequest: ApiV1VoteWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1VoteWithdrawPost(apiV1VoteWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {ApiV1ModerationConversationWithdrawPostRequest} apiV1ModerationConversationWithdrawPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiV1VoteWithdrawStatusPost(apiV1ModerationConversationWithdrawPostRequest: ApiV1ModerationConversationWithdrawPostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiV1VoteWithdrawStatusPost(apiV1ModerationConversationWithdrawPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -37,7 +37,7 @@ function contactConstraint(name: string) {
     return constraint.value;
 }
 
-const identity = contactConstraint("project_contact_name_or_affiliation_check");
+const identity = contactConstraint("project_contact_identity_or_email_check");
 const channel = contactConstraint("project_contact_email_or_website_check");
 
 describe("contact constraint SQL serialization", () => {
@@ -92,13 +92,12 @@ describe("contact constraint predicates in PostgreSQL", () => {
                     projectId: 1,
                     firstName: blank,
                     lastName: blank,
-                    email: "contact@example.com",
+                    websiteUrl: "https://example.com/contact",
                 }),
             ).rejects.toMatchObject({
                 cause: {
                     code: "23514",
-                    constraint_name:
-                        "project_contact_name_or_affiliation_check",
+                    constraint_name: "project_contact_identity_or_email_check",
                 },
             });
             await expect(
@@ -118,21 +117,31 @@ describe("contact constraint predicates in PostgreSQL", () => {
     );
 
     it.each([
+        {
+            firstName: undefined,
+            lastName: undefined,
+            organizationId: undefined,
+        },
         { firstName: "Alex", lastName: undefined, organizationId: undefined },
         { firstName: "", lastName: "Martin", organizationId: undefined },
         { firstName: undefined, lastName: undefined, organizationId: 1 },
-    ])("accepts a name or a selectable organization (%j)", async (contact) => {
-        await db
-            .insert(projectContactTable)
-            .values({ projectId: 1, ...contact, email: "contact@example.com" });
-        const rows = await db
-            .select({
-                identity: identity.mapWith(Boolean),
-                channel: channel.mapWith(Boolean),
-            })
-            .from(projectContactTable);
-        expect(rows).toEqual([{ identity: true, channel: true }]);
-    });
+    ])(
+        "accepts email with optional name and affiliation (%j)",
+        async (contact) => {
+            await db.insert(projectContactTable).values({
+                projectId: 1,
+                ...contact,
+                email: "contact@example.com",
+            });
+            const rows = await db
+                .select({
+                    identity: identity.mapWith(Boolean),
+                    channel: channel.mapWith(Boolean),
+                })
+                .from(projectContactTable);
+            expect(rows).toEqual([{ identity: true, channel: true }]);
+        },
+    );
 
     it("reads the organization's logo by default while preserving a contact image override", async () => {
         const [project] = await db

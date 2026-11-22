@@ -35,6 +35,7 @@ import { reconcileQvCalculationLifecycle } from "./qvCalculationState";
 import { reconcileQvStats } from "./qvStatsUpdate";
 import {
   clearRetainedConversationRankingStatsUpdate,
+  compareComparisonCloseSelectionVersions,
   getRetainedConversationRankingStatsUpdate,
 } from "./rankingStatsUpdate";
 
@@ -76,11 +77,27 @@ export function applyConversationRankingStatsUpdate({
     return conversation;
   }
   const previousSnapshotId = conversation.metadata.rankingStatsSnapshotId;
-  if (
-    previousSnapshotId !== undefined &&
-    data.rankingStatsSnapshotId <= previousSnapshotId
-  ) {
+  const previousVersion = conversation.metadata.comparisonCloseSelectionVersion;
+  const incomingVersion = data.comparisonCloseSelectionVersion;
+  if (data.closedSelectionChanged === true && !conversation.metadata.isClosed) {
+    // A publication for the previous close must not undo reopening.
     return conversation;
+  }
+  if (previousVersion !== undefined && incomingVersion !== undefined) {
+    if (
+      compareComparisonCloseSelectionVersions({
+        left: incomingVersion,
+        right: previousVersion,
+      }) <= 0
+    )
+      return conversation;
+  } else {
+    if (previousVersion !== undefined && data.isClosed) return conversation;
+    if (
+      previousSnapshotId !== undefined &&
+      data.rankingStatsSnapshotId <= previousSnapshotId
+    )
+      return conversation;
   }
 
   return {
@@ -88,6 +105,7 @@ export function applyConversationRankingStatsUpdate({
     metadata: {
       ...conversation.metadata,
       rankingStatsSnapshotId: data.rankingStatsSnapshotId,
+      comparisonCloseSelectionVersion: incomingVersion ?? previousVersion,
       opinionCount: data.opinionCount,
       voteCount: data.voteCount,
       participantCount: data.participantCount,
@@ -153,14 +171,47 @@ function preserveNewerSnapshotMetadata({
   ) {
     const cachedSnapshotId = cachedMetadata.rankingStatsSnapshotId;
     const fetchedSnapshotId = fetchedMetadata.rankingStatsSnapshotId;
-    if (
+    const cachedVersion = cachedMetadata.comparisonCloseSelectionVersion;
+    const fetchedVersion = fetchedMetadata.comparisonCloseSelectionVersion;
+    const acceptPublication =
       cachedSnapshotId === undefined ||
       (fetchedSnapshotId !== undefined &&
         (fetchedSnapshotId > cachedSnapshotId ||
           (fetchedSnapshotId === cachedSnapshotId &&
-            cachedConversation === cachedConversationBeforeFetch)))
-    ) {
-      return fetchedConversation;
+            cachedConversation === cachedConversationBeforeFetch)));
+    const acceptFetched = (() => {
+      if (cachedVersion === undefined) return acceptPublication;
+      if (fetchedVersion === undefined)
+        return !fetchedMetadata.isClosed && acceptPublication;
+      if (
+        !cachedMetadata.isClosed &&
+        cachedVersion.closeId === fetchedVersion.closeId
+      )
+        return false;
+      const order = compareComparisonCloseSelectionVersions({
+        left: fetchedVersion,
+        right: cachedVersion,
+      });
+      return (
+        order > 0 ||
+        (order === 0 && cachedConversation === cachedConversationBeforeFetch)
+      );
+    })();
+    if (acceptFetched) {
+      // Keep the last close watermark on an open cache entry until a later
+      // close replaces it. A delayed read of that old close cannot reopen it.
+      if (cachedVersion === undefined || fetchedVersion !== undefined)
+        return fetchedConversation;
+      return {
+        ...fetchedConversation,
+        conversationData: {
+          ...fetchedConversation.conversationData,
+          metadata: {
+            ...fetchedMetadata,
+            comparisonCloseSelectionVersion: cachedVersion,
+          },
+        },
+      };
     }
 
     return {
@@ -170,6 +221,7 @@ function preserveNewerSnapshotMetadata({
         metadata: {
           ...fetchedMetadata,
           rankingStatsSnapshotId: cachedSnapshotId,
+          comparisonCloseSelectionVersion: cachedVersion,
           opinionCount: cachedMetadata.opinionCount,
           voteCount: cachedMetadata.voteCount,
           participantCount: cachedMetadata.participantCount,
@@ -236,9 +288,7 @@ function mergeRetainedRankingStatsUpdate({
   if (
     update === undefined ||
     metadata.conversationType !== "prioritizing" ||
-    metadata.prioritizationType !== "comparisons" ||
-    (metadata.rankingStatsSnapshotId !== undefined &&
-      metadata.rankingStatsSnapshotId >= update.rankingStatsSnapshotId)
+    metadata.prioritizationType !== "comparisons"
   ) {
     return conversation;
   }

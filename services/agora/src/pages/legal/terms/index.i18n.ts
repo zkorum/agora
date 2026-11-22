@@ -530,7 +530,7 @@ export const termsOfServiceContent: Record<
                 content: [
                   { text: "Individual content:", kind: "strong" },
                   {
-                    text: " Authorized content deletion hides affected content immediately, without the account's recovery window. You need not separately delete personal statements before deleting your account to obtain their redaction. Withdrawal controls follow the activity's open/closed rules and do not rewrite retained results. After permanent unlinking, account controls cannot retrieve, change or withdraw detached numerical records.",
+                    text: " Authorized content deletion hides affected text, versions, translations and attribution immediately, including in retained checkpoints, without the account's recovery window. Account deletion hides personal statements from live views but may retain permitted historical text without public account attribution. Manage content separately before deleting your account if you want that text removed too; applicable erasure requests do not require manually deleting every contribution. Withdrawal controls follow the activity's open/closed rules and do not rewrite retained results. After permanent unlinking, account controls cannot retrieve, change or withdraw detached numerical records.",
                   },
                 ],
               },
@@ -1406,7 +1406,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " يخفي حذف المحتوى المصرّح به المحتوى المتأثر فورًا، دون مهلة استرداد الحساب. ولا يلزم حذف المقترحات الشخصية منفردة قبل حذف الحساب للحصول على تنقيحها. وتتبع أدوات سحب المشاركة قواعد النشاط المفتوح أو المغلق، ولا تعيد كتابة النتائج المحتفظ بها. وبعد فك الارتباط نهائيًا، لا تستطيع أدوات الحساب استرجاع السجلات الرقمية المفصولة أو تغييرها أو سحبها.",
+                    text: " يخفي حذف المحتوى المصرّح به النص ونسخه وترجماته ونسبته إلى صاحبه فورًا، بما في ذلك في نقاط التحقق المحفوظة، دون مهلة استرداد الحساب. يخفي حذف الحساب المقترحات الشخصية من العروض الحالية، لكنه قد يحتفظ بالنص التاريخي المسموح دون نسبته علنًا إلى الحساب. أدِر المحتوى منفصلًا قبل حذف الحساب إذا أردت إزالة ذلك النص أيضًا؛ ولا تتطلب طلبات المحو المنطبقة حذف كل مساهمة يدويًا. وتتبع أدوات سحب المشاركة قواعد النشاط المفتوح أو المغلق، ولا تعيد كتابة النتائج المحتفظ بها. وبعد فك الارتباط نهائيًا، لا تستطيع أدوات الحساب استرجاع السجلات الرقمية المفصولة أو تغييرها أو سحبها.",
                   },
                 ],
               },
@@ -2304,7 +2304,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " La eliminación autorizada de contenido oculta de inmediato el contenido afectado, sin el plazo de recuperación de la cuenta. No necesita eliminar por separado sus proposiciones personales antes de eliminar la cuenta para que se suprima su texto. Los controles de retirada siguen las reglas de apertura o cierre de la actividad y no reescriben los resultados conservados. Tras la desvinculación permanente, los controles de cuenta no pueden recuperar, modificar ni retirar los registros numéricos desvinculados.",
+                    text: " La eliminación autorizada de contenido oculta inmediatamente el texto, sus versiones, traducciones y atribución, también en los puntos de control conservados, sin el plazo de recuperación de la cuenta. Eliminar la cuenta oculta las proposiciones personales en las vistas actuales, pero puede conservar el texto histórico permitido sin atribución pública a la cuenta. Gestione el contenido por separado antes de eliminar la cuenta si también desea retirar ese texto; las solicitudes de supresión aplicables no requieren eliminar manualmente cada contribución. Los controles de retirada siguen las reglas de apertura o cierre de la actividad y no reescriben los resultados conservados. Tras la desvinculación permanente, los controles de cuenta no pueden recuperar, modificar ni retirar los registros numéricos desvinculados.",
                   },
                 ],
               },
@@ -3202,7 +3202,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " حذف مجاز محتوا، محتوای مربوط را فوراً و بدون مهلت بازیابی حساب پنهان می‌کند. برای پاک شدن متن گزاره‌های شخصی، لازم نیست پیش از حذف حساب آن‌ها را جداگانه حذف کنید. ابزارهای پس‌گرفتن مشارکت تابع قواعد باز/بسته بودن فعالیت‌اند و نتایج نگهداری‌شده را بازنویسی نمی‌کنند. پس از قطع دائمی پیوند، ابزارهای حساب نمی‌توانند سوابق عددی جداشده را بازیابی، تغییر یا پس بگیرند.",
+                    text: " حذف مجاز محتوا، متن، نسخه‌ها، ترجمه‌ها و انتساب را فوراً، از جمله در نقاط ثبت وضعیت نگهداری‌شده، بدون مهلت بازیابی حساب پنهان می‌کند. حذف حساب گزاره‌های شخصی را از نمایش‌های جاری پنهان می‌کند، اما ممکن است متن تاریخی مجاز را بدون انتساب عمومی به حساب نگه دارد. اگر حذف آن متن را نیز می‌خواهید، پیش از حذف حساب محتوا را جداگانه مدیریت کنید؛ درخواست‌های قابل اعمال محو، نیازمند حذف دستی تک‌تک مشارکت‌ها نیستند. ابزارهای پس‌گرفتن مشارکت تابع قواعد باز/بسته بودن فعالیت‌اند و نتایج نگهداری‌شده را بازنویسی نمی‌کنند. پس از قطع دائمی پیوند، ابزارهای حساب نمی‌توانند سوابق عددی جداشده را بازیابی، تغییر یا پس بگیرند.",
                   },
                 ],
               },
@@ -4101,7 +4101,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " La suppression autorisée d’un contenu masque immédiatement le contenu concerné, sans le délai de récupération du compte. Il n’est pas nécessaire de supprimer séparément vos propositions personnelles avant de supprimer votre compte pour obtenir leur occultation. Les commandes de retrait suivent les règles d’ouverture et de clôture de l’activité et ne réécrivent pas les résultats conservés. Après la suppression définitive des liens, les commandes du compte ne permettent plus de retrouver, modifier ou retirer les données numériques dissociées.",
+                    text: " La suppression autorisée d’un contenu masque immédiatement le texte, ses versions, ses traductions et son attribution, y compris dans les points de contrôle conservés, sans le délai de récupération du compte. La suppression du compte masque les propositions personnelles dans les vues courantes, mais peut conserver le texte historique autorisé sans attribution publique au compte. Gérez vos contenus séparément avant de supprimer votre compte si vous souhaitez aussi retirer ce texte ; les demandes d’effacement applicables n’exigent pas de supprimer manuellement chaque contribution. Les commandes de retrait suivent les règles d’ouverture et de clôture de l’activité et ne réécrivent pas les résultats conservés. Après la suppression définitive des liens, les commandes du compte ne permettent plus de retrouver, modifier ou retirer les données numériques dissociées.",
                   },
                 ],
               },
@@ -4999,7 +4999,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " מחיקת תוכן מורשית מסתירה אותו מיד, ללא חלון שחזור החשבון. אין צורך למחוק הצהרות אישיות בנפרד לפני מחיקת החשבון כדי שיוסר תוכנן. בקרות ביטול השתתפות כפופות לכללי פעילות פתוחה או סגורה ואינן משנות תוצאות שנשמרו. לאחר ניתוק סופי, בקרות החשבון אינן מאפשרות לאחזר, לשנות או לבטל רשומות מספריות שקישורן נותק.",
+                    text: " מחיקת תוכן מורשית מסתירה מיד את הטקסט, הגרסאות, התרגומים והייחוס, גם בנקודות ביקורת שנשמרו, ללא חלון שחזור החשבון. מחיקת חשבון מסתירה הצהרות אישיות מהתצוגות העדכניות, אך עשויה לשמור טקסט היסטורי מותר ללא ייחוס פומבי לחשבון. נהלו את התוכן בנפרד לפני מחיקת החשבון אם ברצונכם להסיר גם טקסט זה; בקשות מחיקה לפי דין אינן מחייבות מחיקה ידנית של כל תרומה. בקרות ביטול השתתפות כפופות לכללי פעילות פתוחה או סגורה ואינן משנות תוצאות שנשמרו. לאחר ניתוק סופי, בקרות החשבון אינן מאפשרות לאחזר, לשנות או לבטל רשומות מספריות שקישורן נותק.",
                   },
                 ],
               },
@@ -5897,7 +5897,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 権限に基づくコンテンツ削除では、対象を直ちに非表示にし、アカウントの復旧期間は適用しません。個人の意見文の情報を伏せるために、アカウント削除前にそれらを別途削除する必要はありません。撤回機能は活動の進行中・終了後のルールに従い、保持済みの結果を書き換えません。恒久的な関連付け解除後は、アカウント操作機能で切り離された数値記録を取得、変更または撤回することはできません。",
+                    text: " 権限に基づくコンテンツ削除では、保持されたチェックポイントを含め、本文、各版、翻訳、投稿者表示を直ちに非表示にし、アカウントの復旧期間は適用しません。アカウント削除では個人の意見文は現在の表示から非表示になりますが、許可される過去の本文はアカウントの公開表示なしで残る場合があります。その本文も削除したい場合は、アカウント削除前にコンテンツを別途管理してください。適用される消去請求に、すべての投稿の手動削除は必要ありません。撤回機能は活動の進行中・終了後のルールに従い、保持済みの結果を書き換えません。恒久的な関連付け解除後は、アカウント操作機能で切り離された数値記録を取得、変更または撤回することはできません。",
                   },
                 ],
               },
@@ -6796,7 +6796,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Уруксат берилген мазмунду өчүрүү тиешелүү мазмунду дароо жашырат; аккаунттун калыбына келтирүү мөөнөтү колдонулбайт. Жеке билдирүүлөрүңүздөн маалыматты алып салдыруу үчүн аккаунтту өчүрүүдөн мурун аларды өзүнчө өчүрүүнүн кереги жок. Катышууну кайтарып алуу каражаттарына аракеттин ачык/жабык эрежелери колдонулат жана алар сакталган жыйынтыктарды кайра жазбайт. Байланыш биротоло алынгандан кийин аккаунттун башкаруу каражаттары ажыратылган сандык жазууларды алууга, өзгөртүүгө же кайтарып алууга мүмкүндүк бербейт.",
+                    text: " Уруксат берилген мазмунду өчүрүү текстти, версияларды, котормолорду жана авторлук маалыматты, анын ичинде сакталган көзөмөлдүк кесиндилерде дароо жашырат; аккаунттун калыбына келтирүү мөөнөтү колдонулбайт. Аккаунтту өчүрүү жеке билдирүүлөрдү учурдагы көрүнүштөрдөн жашырат, бирок уруксат берилген тарыхый текстти аккаунтка ачык шилтемесиз сакташы мүмкүн. Ал текстти да алып салгыңыз келсе, аккаунтту өчүрүүдөн мурун мазмунду өзүнчө башкарыңыз; колдонулуучу өчүрүү өтүнүчтөрү ар бир салымды кол менен өчүрүүнү талап кылбайт. Катышууну кайтарып алуу каражаттарына аракеттин ачык/жабык эрежелери колдонулат жана алар сакталган жыйынтыктарды кайра жазбайт. Байланыш биротоло алынгандан кийин аккаунттун башкаруу каражаттары ажыратылган сандык жазууларды алууга, өзгөртүүгө же кайтарып алууга мүмкүндүк бербейт.",
                   },
                 ],
               },
@@ -7695,7 +7695,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " Разрешённое удаление контента немедленно скрывает затронутый контент без срока восстановления учётной записи. Для удаления текста личных утверждений не нужно отдельно удалять их перед удалением учётной записи. Средства отзыва участия подчиняются правилам открытых и закрытых активностей и не переписывают сохранённые результаты. После окончательного удаления связей средства управления учётной записью не позволяют получать, изменять или отзывать отвязанные числовые записи.",
+                    text: " Разрешённое удаление контента немедленно скрывает текст, версии, переводы и авторство, в том числе в сохранённых контрольных точках, без срока восстановления учётной записи. Удаление учётной записи скрывает личные утверждения из текущих представлений, но может сохранять допустимый исторический текст без публичной привязки к учётной записи. Если вы хотите удалить и этот текст, управляйте контентом отдельно до удаления учётной записи; применимые запросы на удаление данных не требуют вручную удалять каждый вклад. Средства отзыва участия подчиняются правилам открытых и закрытых активностей и не переписывают сохранённые результаты. После окончательного удаления связей средства управления учётной записью не позволяют получать, изменять или отзывать отвязанные числовые записи.",
                   },
                 ],
               },
@@ -8593,7 +8593,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 经授权删除内容会立即隐藏受影响的内容，不适用账户恢复期。您无须在删除账户前单独删除个人陈述，它们也会被遮蔽。撤回功能遵循活动的开放/关闭规则，不会改写保留的结果。永久解除关联后，账户功能无法检索、更改或撤回已解除关联的数值记录。",
+                    text: " 经授权删除内容会立即隐藏文本、各版本、译文和署名，包括保留的检查点中的内容，不适用账户恢复期。删除账户会从当前视图中隐藏个人陈述，但允许保留的历史文本可能继续存在，而不公开关联账户。若您也希望移除该文本，请在删除账户前单独管理内容；适用的删除请求不要求您手动删除每项贡献。撤回功能遵循活动的开放/关闭规则，不会改写保留的结果。永久解除关联后，账户功能无法检索、更改或撤回已解除关联的数值记录。",
                   },
                 ],
               },
@@ -9491,7 +9491,7 @@ export const termsOfServiceContent: Record<
                     kind: "strong",
                   },
                   {
-                    text: " 經授權刪除內容後，受影響內容會立即隱藏，不適用帳戶復原期間。您無須先另行刪除個人陳述，再刪除帳戶，便可獲得遮蔽處理。撤回控制項依活動的開放／關閉規則運作，不會改寫保留的結果。永久解除連結後，帳戶控制項無法取回、更改或撤回已解除連結的數值紀錄。",
+                    text: " 經授權刪除內容後，文字、各版本、翻譯及署名會立即隱藏，包括保留的檢查點中的內容，不適用帳戶復原期間。刪除帳戶會從目前檢視隱藏個人陳述，但獲准保留的歷史文字可能繼續存在，而不公開連結帳戶。若您也希望移除該文字，請在刪除帳戶前另行管理內容；適用的刪除請求不要求您手動刪除每項貢獻。撤回控制項依活動的開放／關閉規則運作，不會改寫保留的結果。永久解除連結後，帳戶控制項無法取回、更改或撤回已解除連結的數值紀錄。",
                   },
                 ],
               },

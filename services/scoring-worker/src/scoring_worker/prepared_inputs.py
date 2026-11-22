@@ -18,6 +18,12 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
+class ComparisonParticipant:
+    response_id: int
+    user_id: UUID
+
+
+@dataclass(frozen=True)
 class PreparedTask:
     observation: ComparisonObservation
     original_candidate_set: tuple[str, ...]
@@ -33,7 +39,7 @@ class PreparedConversationInputs:
     ranking_items: tuple[RankingItemSnapshotInput, ...]
     entity_ids: tuple[str, ...]
     tasks: tuple[PreparedTask, ...]
-    response_ids: Mapping[int, int]
+    participants: Mapping[int, ComparisonParticipant]
     total_vote_count: int
     total_participant_count: int
 
@@ -42,12 +48,18 @@ class PreparedConversationInputs:
         return tuple(task.observation for task in self.tasks)
 
 
-def prepare_tasks(
+@dataclass(frozen=True)
+class ComparisonTaskProjection:
+    tasks: tuple[PreparedTask, ...]
+    # Dense scoring index -> input participant index. Neither is an account ID.
+    source_participant_indices: tuple[int, ...]
+
+
+def project_comparison_tasks(
     *,
     entity_ids: Sequence[str],
     comparisons: Sequence[ComparisonRow],
-    response_ids: Mapping[int, int],
-) -> tuple[tuple[PreparedTask, ...], Mapping[int, int]]:
+) -> ComparisonTaskProjection:
     active_entities = set(entity_ids)
     local_indices: dict[int, int] = {}
     positions: dict[int, int] = {}
@@ -68,6 +80,21 @@ def prepare_tasks(
                 position=position,
             )
         )
-    return tuple(tasks), MappingProxyType(
-        {index: response_ids[original] for original, index in local_indices.items()}
+    return ComparisonTaskProjection(
+        tasks=tuple(tasks), source_participant_indices=tuple(local_indices)
+    )
+
+
+def prepare_tasks(
+    *,
+    entity_ids: Sequence[str],
+    comparisons: Sequence[ComparisonRow],
+    participants: Mapping[int, ComparisonParticipant],
+) -> tuple[tuple[PreparedTask, ...], Mapping[int, ComparisonParticipant]]:
+    projection = project_comparison_tasks(entity_ids=entity_ids, comparisons=comparisons)
+    return projection.tasks, MappingProxyType(
+        {
+            index: participants[source]
+            for index, source in enumerate(projection.source_participant_indices)
+        }
     )

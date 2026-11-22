@@ -20,7 +20,11 @@ import {
 } from "./conversationEmailUpdateController.js";
 import { lockConversationEmailUpdateProject } from "../src/service/conversationEmailUpdateProjectLock.js";
 import { hasScopedProjectCapability } from "../src/service/organizationAuthorization.js";
-import { createConversationEmailUpdateService as createCoreService } from "../src/service/conversationEmailUpdate.js";
+import {
+    buildWorkspaceAudienceEstimateQuery,
+    createConversationEmailUpdateService as createCoreService,
+} from "../src/service/conversationEmailUpdate.js";
+import { buildConversationEmailParticipationQuery } from "../src/shared-backend/conversationEmailUpdateParticipation.js";
 import {
     getConversationEmailUpdateActor,
     getOwnedEmailUpdateReviewId,
@@ -47,6 +51,7 @@ import {
     conversationEmailUpdateConversationTable,
     conversationEmailUpdateTestAttemptTable,
     conversationEmailUpdateDeliveryTable,
+    conversationEmailUpdateEmailSuppressionTable,
     conversationEmailUpdateUserProjectPreferenceTable,
 } from "../src/shared-backend/schema.js";
 import {
@@ -796,6 +801,82 @@ describe("locked Conversation Email Update reviews", () => {
             ).toMatchObject({ success: true });
             expect(replicaSelect).not.toHaveBeenCalled();
         });
+    });
+
+    it("materializes only participation in the selected conversations before the cutoff", async () => {
+        await prepare();
+        const [update] = await db.select().from(conversationEmailUpdateTable);
+        if (update === undefined) throw new Error("Missing review");
+        const [config] = await db
+            .insert(polisConversationConfigTable)
+            .values({})
+            .returning({ id: polisConversationConfigTable.id });
+        if (config === undefined)
+            throw new Error("Missing Polis configuration");
+        const [unselected] = await db
+            .insert(conversationTable)
+            .values({
+                projectId: 1,
+                slugId: "unselect",
+                polisConfigId: config.id,
+            })
+            .returning({ id: conversationTable.id });
+        if (unselected === undefined) throw new Error("Missing conversation");
+        await db.insert(opinionTable).values([
+            {
+                slugId: "outside1",
+                authorId: participant,
+                conversationId: unselected.id,
+                currentContentId: 1,
+                createdAt: past,
+            },
+            {
+                slugId: "toolate1",
+                authorId: owner,
+                conversationId: 1,
+                currentContentId: 1,
+                createdAt: new Date("2026-01-03T00:00:00Z"),
+            },
+        ]);
+        expect(
+            await buildConversationEmailParticipationQuery({
+                db,
+                scope: { kind: "update", updateId: update.id },
+                cutoffAt: new Date("2026-01-02T00:00:00Z"),
+            }),
+        ).toEqual([{ conversationId: 1, userId: participant }]);
+    });
+
+    it("counts a participant once and excludes an actively suppressed address", async () => {
+        await db.insert(opinionTable).values({
+            slugId: "opinion2",
+            authorId: participant,
+            conversationId: 1,
+            currentContentId: 1,
+            createdAt: past,
+        });
+        const estimate = () =>
+            buildWorkspaceAudienceEstimateQuery({
+                db,
+                cutoffAt: new Date("2026-01-02T00:00:00Z"),
+                conversationIds: [1],
+                projectIds: [1],
+                projectPreferenceConversationIds: [1],
+                conversationPreferenceConversationIds: [],
+            });
+        expect(await estimate()).toEqual([
+            { conversationId: 1, eligibleCount: 1 },
+        ]);
+
+        await db.insert(conversationEmailUpdateEmailSuppressionTable).values({
+            canonicalEmail: "participant@example.com",
+            reason: "permanent_bounce",
+            sourceSnsTopicArn: "fixture-topic",
+            sourceSnsMessageId: "fixture-event",
+            sourceSesMessageId: "fixture-message",
+            sourceEventOccurredAt: past,
+        });
+        expect(await estimate()).toEqual([]);
     });
 
     it("prepares snapshots without a test, delivery, active links or tokens", async () => {

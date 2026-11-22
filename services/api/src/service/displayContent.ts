@@ -9,6 +9,60 @@ import type {
     LocalizedContentTranslationStatus,
 } from "@/shared/types/zod.js";
 
+export interface ContentDisplayPreferences {
+    displayLanguage: SupportedDisplayLanguageCodes;
+    targetLanguage: SupportedDisplayLanguageCodes;
+    spokenLanguages: SupportedSpokenLanguageCodes[];
+    translationAllowed: boolean;
+}
+
+export type ContentDisplayRequest =
+    | { kind: "original" }
+    | {
+          kind: "localized";
+          displayLanguage: SupportedDisplayLanguageCodes;
+          spokenLanguages: SupportedSpokenLanguageCodes[];
+      };
+
+export const originalContentDisplayRequest: ContentDisplayRequest = {
+    kind: "original",
+};
+
+export function toStandardDisplayedContent<TOriginal, TTranslated>({
+    content,
+    preferences,
+    mode,
+}: {
+    content: DisplayableLocalizedContentWithVariants<TOriginal, TTranslated>;
+    preferences: Omit<ContentDisplayPreferences, "targetLanguage">;
+    mode?: LocalizedContentDisplayMode;
+}) {
+    return toDisplayedContent({
+        content,
+        ...preferences,
+        mode,
+        buildOriginal: ({ original, translationControl }) => ({
+            sourceVersion: content.sourceVersion,
+            status: "available" as const,
+            mode: "original" as const,
+            content: original,
+            translationControl,
+        }),
+        buildTranslated: ({ translated, translationControl }) => ({
+            sourceVersion: content.sourceVersion,
+            status: "available" as const,
+            mode: "translated" as const,
+            content: translated,
+            translationControl,
+        }),
+        buildUnavailable: ({ status, translationControl }) => ({
+            sourceVersion: content.sourceVersion,
+            status,
+            translationControl,
+        }),
+    });
+}
+
 export interface DisplayedContentTranslationControl {
     status: LocalizedContentTranslationStatus;
     sourceLanguageLabel?: string;

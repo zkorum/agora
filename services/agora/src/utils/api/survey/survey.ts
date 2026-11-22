@@ -12,6 +12,7 @@ import {
   type SurveyConfigDeleteResponse,
   type SurveyConfigUpdateResponse,
   type SurveyFormFetchResponse,
+  type SurveyResponseWithdrawRequest,
   type SurveyResponseWithdrawResponse,
   type SurveyResultsAggregatedResponse,
   type SurveyStatusCheckResponse,
@@ -174,10 +175,12 @@ export function useBackendSurveyApi() {
 
   async function withdrawSurveyResponse({
     conversationSlugId,
+    expectedForm,
     skipEmailUpdateConsent,
     isCurrent,
   }: {
     conversationSlugId: string;
+    expectedForm: NonNullable<SurveyResponseWithdrawRequest["expectedForm"]>;
     skipEmailUpdateConsent: boolean;
     isCurrent: () => boolean;
   }): Promise<
@@ -186,7 +189,11 @@ export function useBackendSurveyApi() {
     | { status: "cancelled" }
   > {
     try {
-      const params = { conversationSlugId, skipEmailUpdateConsent };
+      const params = {
+        conversationSlugId,
+        expectedForm,
+        skipEmailUpdateConsent,
+      };
       const { url, options } =
         await DefaultApiAxiosParamCreator().apiV1SurveyResponseWithdrawPost(
           params

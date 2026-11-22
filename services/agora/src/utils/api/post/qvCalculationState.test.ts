@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/vue-query";
+import { Dto } from "src/shared/types/dto";
 import { describe, expect, it } from "vitest";
 import { computed } from "vue";
 
@@ -12,7 +13,77 @@ import {
 } from "./qvCalculationState";
 
 const slug = "qvtest01";
+function fallback(refreshStatus: "calculating" | "failed") {
+  return Dto.qvResultsResponse.parse({
+    status: "ready",
+    generation: 2,
+    calculationId: "00000000-0000-4000-8000-000000000001",
+    capturedAt: new Date(),
+    participantCount: 0,
+    items: [],
+    refreshStatus,
+  });
+}
+
 describe("QV calculation lifecycle frontier", () => {
+  it.each(["calculating", "failed"] as const)(
+    "accepts a fallback during %s without suppressing its replacement event",
+    (refreshStatus) => {
+      const queryClient = new QueryClient();
+      retainQvCalculationEvent({
+        queryClient,
+        data: {
+          conversationSlugId: slug,
+          generation: 2,
+          status: refreshStatus,
+        },
+      });
+      const result = fallback(refreshStatus);
+      expect(
+        acceptQvResultRead({ queryClient, slug, epoch: 0, result })
+      ).toEqual(result);
+      expect(getQvCalculationFrontier({ queryClient, slug })).toMatchObject({
+        generation: 2,
+        status: refreshStatus,
+        hasAcceptedResult: true,
+      });
+      expect(
+        retainQvCalculationEvent({
+          queryClient,
+          data: { conversationSlugId: slug, generation: 2, status: "ready" },
+        })
+      ).toBe(true);
+      expect(
+        acceptQvResultRead({ queryClient, slug, epoch: 0, result })
+      ).toBeUndefined();
+    }
+  );
+
+  it("does not accept an old fallback after reopening or during local lifecycle work", () => {
+    const queryClient = new QueryClient();
+    const result = fallback("calculating");
+    const change = beginQvLifecycleChange({ queryClient, slug });
+    expect(
+      acceptQvResultRead({
+        queryClient,
+        slug,
+        epoch: change.epoch,
+        result,
+      })
+    ).toBeUndefined();
+    settleQvLifecycleChange({ queryClient, slug, change });
+    retainQvCalculationEvent({
+      queryClient,
+      data: { conversationSlugId: slug, generation: 3, status: "open" },
+    });
+    expect(
+      acceptQvResultRead({ queryClient, slug, epoch: change.epoch, result })
+    ).toBeUndefined();
+    expect(
+      getQvCalculationFrontier({ queryClient, slug }).hasAcceptedResult
+    ).toBe(false);
+  });
+
   it("rejects late ready events after reopen and regressing states after publication", () => {
     const queryClient = new QueryClient();
     const ready = {

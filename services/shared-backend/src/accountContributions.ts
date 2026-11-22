@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import type { PostgresTransaction } from "./db.js";
 import {
     conversationTable,
+    gatheringResponseTable,
     conversationParticipantTable,
     comparisonResponseTable,
     opinionTable,
@@ -9,6 +10,13 @@ import {
     rankingItemTable,
     surveyResponseTable,
     voteTable,
+    analysisInputParticipantEligibilityTable,
+    analysisInputSnapshotTable,
+    rankingInputParticipantEligibilityTable,
+    rankingInputSnapshotTable,
+    qvInputBallotEligibilityTable,
+    qvInputSnapshotTable,
+    qvCalculationTable,
 } from "./schema.js";
 
 /** Lock the complete contribution scope before changing account/source eligibility. */
@@ -26,6 +34,14 @@ export async function lockAccountConversations({
         .from(voteTable)
         .innerJoin(opinionTable, eq(opinionTable.id, voteTable.opinionId))
         .where(eq(voteTable.authorId, userId))
+        .unionAll(
+            db
+                .select({
+                    conversationId: gatheringResponseTable.conversationId,
+                })
+                .from(gatheringResponseTable)
+                .where(eq(gatheringResponseTable.authorId, userId)),
+        )
         .unionAll(
             db
                 .select({ conversationId: opinionTable.conversationId })
@@ -69,6 +85,60 @@ export async function lockAccountConversations({
                 })
                 .from(comparisonResponseTable)
                 .where(eq(comparisonResponseTable.participantId, userId)),
+        )
+        .unionAll(
+            db
+                .select({
+                    conversationId: analysisInputSnapshotTable.conversationId,
+                })
+                .from(analysisInputParticipantEligibilityTable)
+                .innerJoin(
+                    analysisInputSnapshotTable,
+                    eq(
+                        analysisInputSnapshotTable.id,
+                        analysisInputParticipantEligibilityTable.inputSnapshotId,
+                    ),
+                )
+                .where(
+                    eq(analysisInputParticipantEligibilityTable.userId, userId),
+                ),
+        )
+        .unionAll(
+            db
+                .select({
+                    conversationId: rankingInputSnapshotTable.conversationId,
+                })
+                .from(rankingInputParticipantEligibilityTable)
+                .innerJoin(
+                    rankingInputSnapshotTable,
+                    eq(
+                        rankingInputSnapshotTable.id,
+                        rankingInputParticipantEligibilityTable.inputSnapshotId,
+                    ),
+                )
+                .where(
+                    eq(rankingInputParticipantEligibilityTable.userId, userId),
+                ),
+        )
+        .unionAll(
+            db
+                .select({ conversationId: qvCalculationTable.conversationId })
+                .from(qvInputBallotEligibilityTable)
+                .innerJoin(
+                    qvInputSnapshotTable,
+                    eq(
+                        qvInputSnapshotTable.id,
+                        qvInputBallotEligibilityTable.snapshotId,
+                    ),
+                )
+                .innerJoin(
+                    qvCalculationTable,
+                    eq(
+                        qvCalculationTable.id,
+                        qvInputSnapshotTable.calculationId,
+                    ),
+                )
+                .where(eq(qvInputBallotEligibilityTable.userId, userId)),
         );
     const query = db
         .select({ id: conversationTable.id })

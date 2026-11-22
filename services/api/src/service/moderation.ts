@@ -88,6 +88,21 @@ interface ModerateByCommentSlugIdProps {
     isSiteModerator: boolean;
 }
 
+async function lockOpinionModerationConversation({
+    db,
+    conversationId,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number;
+}): Promise<void> {
+    // Serialize the old-action read, the mutation, and the freshness update.
+    await db
+        .select({ id: conversationTable.id })
+        .from(conversationTable)
+        .where(eq(conversationTable.id, conversationId))
+        .for("no key update");
+}
+
 export async function moderateByCommentSlugId({
     commentSlugId,
     db,
@@ -105,6 +120,7 @@ export async function moderateByCommentSlugId({
         });
 
     await db.transaction(async (tx) => {
+        await lockOpinionModerationConversation({ db: tx, conversationId });
         const now = nowZeroMs();
         const moderationRows = await tx
             .select({
@@ -151,13 +167,14 @@ export async function moderateByCommentSlugId({
                 moderationReason: moderationReason,
                 moderationExplanation: moderationExplanation,
             });
+        }
 
-            // Reconcile counters (automatically enqueues math update)
-            // Moderation affects opinionCount, voteCount, and participantCount
+        if (existingModeration?.moderationAction !== moderationAction) {
             await scheduleConversationAnalysisRefresh({
                 db: tx,
                 conversationId,
                 log,
+                moderationChanged: true,
             });
         }
 
@@ -320,19 +337,15 @@ export async function withdrawModerationReportByCommentSlugId({
     commentSlugId,
     isSiteModerator,
 }: WithdrawModerationReportByCommentSlugIdProps) {
-    const { getCommentIdFromCommentSlugId } = useCommonComment();
-    const commentId = await getCommentIdFromCommentSlugId({
-        db: db,
-        commentSlugId: commentSlugId,
-    });
-
     const { getOpinionMetadataFromOpinionSlugId } = useCommonComment();
-    const { conversationId } = await getOpinionMetadataFromOpinionSlugId({
-        db,
-        opinionSlugId: commentSlugId,
-    });
+    const { conversationId, opinionId } =
+        await getOpinionMetadataFromOpinionSlugId({
+            db,
+            opinionSlugId: commentSlugId,
+        });
 
     await db.transaction(async (tx) => {
+        await lockOpinionModerationConversation({ db: tx, conversationId });
         const moderationRows = await tx
             .select({
                 id: opinionModerationTable.id,
@@ -341,7 +354,7 @@ export async function withdrawModerationReportByCommentSlugId({
             .from(opinionModerationTable)
             .where(
                 and(
-                    eq(opinionModerationTable.opinionId, commentId),
+                    eq(opinionModerationTable.opinionId, opinionId),
                     isNull(opinionModerationTable.deletedAt),
                 ),
             )
@@ -385,6 +398,7 @@ export async function withdrawModerationReportByCommentSlugId({
             db: tx,
             conversationId,
             log,
+            moderationChanged: true,
         });
     });
 }

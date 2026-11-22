@@ -343,6 +343,7 @@ describe("withdrawSurveyResponse", () => {
             now: new Date("2026-01-02T00:00:00.000Z"),
             currentDisplayLanguage: "es",
             requireCompletedSurvey: false,
+            skipClosedCheck: true,
         });
         expect(transactionMock).not.toHaveBeenCalled();
     });

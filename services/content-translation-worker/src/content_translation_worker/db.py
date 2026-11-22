@@ -11,11 +11,17 @@ from typing import TYPE_CHECKING, Literal, TypedDict
 import bleach
 from sqlalchemy import and_, func, or_, select, true, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import aliased
 
 from content_translation_worker.events import (
     ContentTranslationEventData,
     build_content_translation_event_data,
     build_project_content_translation_event_data,
+)
+from content_translation_worker.gathering_sources import (
+    fetch_gathering_field_source,
+    fetch_gathering_response_source,
+    gathering_translation_targets,
 )
 from content_translation_worker.generated_models import (
     AnalysisSnapshotOpinion,
@@ -26,6 +32,8 @@ from content_translation_worker.generated_models import (
     ConversationContent,
     ConversationContentTranslation,
     ConversationViewSnapshot,
+    GatheringAnswerTranslation,
+    GatheringFieldTranslation,
     LanguageDetectionProvider,
     Opinion,
     OpinionContent,
@@ -36,6 +44,13 @@ from content_translation_worker.generated_models import (
     ProjectContent,
     ProjectContentTranslation,
     ProjectContentTranslationSourceKind,
+    QvCalculation,
+    QvCalculationState,
+    QvInputItem,
+    QvInputSnapshot,
+    RankingConversationStatsCheckpoint,
+    RankingConversationStatsItem,
+    RankingConversationStatsSnapshot,
     RankingItem,
     RankingItemContent,
     RankingItemContentTranslation,
@@ -55,6 +70,11 @@ from content_translation_worker.models import (
     ContentRevision,
     ConversationSource,
     ConversationTranslationBundle,
+    GatheringFieldRevision,
+    GatheringFieldSource,
+    GatheringFieldTranslationBundle,
+    GatheringResponseSource,
+    GatheringResponseTranslationBundle,
     OpinionSource,
     OpinionTranslationBundle,
     PreparedContentTranslation,
@@ -80,6 +100,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from sqlalchemy.sql.elements import ColumnElement
 
+    from content_translation_worker.generated_models import DisplayLanguageCode
     from content_translation_worker.models import (
         SourceRevision,
         TranslationBundle,
@@ -95,6 +116,8 @@ SUPPORTED_SOURCE_KINDS = {
     ContentTranslationSourceKind.project,
     ContentTranslationSourceKind.ranking_item,
     ContentTranslationSourceKind.survey_question,
+    ContentTranslationSourceKind.gathering_field,
+    ContentTranslationSourceKind.gathering_response,
 }
 ALLOWED_TRANSLATED_HTML_TAGS = frozenset(
     {"b", "strong", "i", "em", "strike", "s", "u", "p", "br", "ul", "ol", "li"}
@@ -522,6 +545,21 @@ def retry_failed_eager_work(
 
 
 def _source_revision_for_work_row(row: ContentTranslationWork) -> SourceRevision | None:
+    if row.source_kind == ContentTranslationSourceKind.gathering_field:
+        return (
+            None
+            if row.gathering_field_id is None
+            else GatheringFieldRevision(content_id=row.gathering_field_id)
+        )
+    if row.source_kind == ContentTranslationSourceKind.gathering_response:
+        return (
+            None
+            if row.gathering_response_content_id is None
+            else ContentRevision(
+                kind=ContentTranslationSourceKind.gathering_response,
+                content_id=row.gathering_response_content_id,
+            )
+        )
     if row.source_kind == ContentTranslationSourceKind.project:
         if row.project_content_id is None:
             return None
@@ -641,6 +679,8 @@ def claim_content_translation_work(
                     survey_question_content_id=row.survey_question_content_id,
                     survey_question_option_content_ids=row.survey_question_option_content_ids,
                     ranking_item_content_id=row.ranking_item_content_id,
+                    gathering_field_id=row.gathering_field_id,
+                    gathering_response_content_id=row.gathering_response_content_id,
                     display_language_code=target,
                     priority_rank=row.priority_rank,
                     status=ContentTranslationWorkStatus.pending,
@@ -693,6 +733,8 @@ def claim_content_translation_work(
 
 
 def _work_source_condition(revision: SourceRevision) -> ColumnElement[bool]:
+    if isinstance(revision, GatheringFieldRevision):
+        return ContentTranslationWork.gathering_field_id == revision.content_id
     if isinstance(revision, SurveyRevision):
         return and_(
             ContentTranslationWork.survey_question_content_id == revision.content_id,
@@ -704,6 +746,9 @@ def _work_source_condition(revision: SourceRevision) -> ColumnElement[bool]:
         ContentTranslationSourceKind.conversation: ContentTranslationWork.conversation_content_id,
         ContentTranslationSourceKind.opinion: ContentTranslationWork.opinion_content_id,
         ContentTranslationSourceKind.ranking_item: ContentTranslationWork.ranking_item_content_id,
+        ContentTranslationSourceKind.gathering_response: (
+            ContentTranslationWork.gathering_response_content_id
+        ),
     }
     return columns[revision.kind] == revision.content_id
 
@@ -713,8 +758,11 @@ def prepare_claimed_work(
     *,
     claim: ClaimedContentTranslationWork,
 ) -> PreparedContentTranslation | ProcessWorkResult:
-    lock_active_claim(session, claim=claim)
-    if claim.source_kind == ContentTranslationSourceKind.opinion:
+    source = _fetch_source_for_active_claim(session, claim=claim)
+    if (
+        isinstance(claim.source_revision, ContentRevision)
+        and claim.source_kind == ContentTranslationSourceKind.opinion
+    ):
         eligibility = _get_opinion_source_eligibility(
             session,
             opinion_content_id=claim.source_revision.content_id,
@@ -722,7 +770,6 @@ def prepare_claimed_work(
         if eligibility == "hidden" or eligibility == "deleted_author":
             _mark_ineligible_source(session, claim=claim, reason=eligibility)
             return ProcessWorkResult(work_id=claim.id, status="ineligible_source")
-    source = _fetch_claim_source(session, claim=claim)
     if source is None:
         _mark_missing_source(session, claim=claim)
         return ProcessWorkResult(work_id=claim.id, status="missing_source")
@@ -737,10 +784,52 @@ def prepare_claimed_work(
     return PreparedContentTranslation(claim=claim, source=source)
 
 
+def _fetch_source_for_active_claim(
+    session: Session,
+    *,
+    claim: ClaimedContentTranslationWork,
+) -> TranslationSource | None:
+    lifecycle_locked = claim.source_kind in {
+        ContentTranslationSourceKind.ranking_item,
+        ContentTranslationSourceKind.gathering_field,
+        ContentTranslationSourceKind.gathering_response,
+    }
+    # Producers acquire source lifecycle locks before work rows. Reverse ordering
+    # here would deadlock language-setting edits against publication or failure handling.
+    if not lifecycle_locked:
+        lock_active_claim(session, claim=claim)
+    source = _fetch_claim_source(session, claim=claim)
+    if lifecycle_locked:
+        lock_active_claim(session, claim=claim)
+    return source
+
+
 def _fetch_claim_source(
     session: Session, *, claim: ClaimedContentTranslationWork
 ) -> TranslationSource | None:
     revision = claim.source_revision
+    if (
+        isinstance(revision, GatheringFieldRevision)
+        or revision.kind == ContentTranslationSourceKind.gathering_response
+    ):
+        source = (
+            fetch_gathering_field_source(session, field_id=revision.content_id)
+            if isinstance(revision, GatheringFieldRevision)
+            else fetch_gathering_response_source(session, content_id=revision.content_id)
+        )
+        if source is None or source.conversation_slug_id != claim.conversation_slug_id:
+            return None
+        allowed_targets = gathering_translation_targets(
+            session,
+            conversation_slug_id=source.conversation_slug_id,
+        )
+        # Chinese-script work shares a lease and local conversion.
+        # Either configured script admits the pair.
+        if not allowed_targets.intersection(
+            translation_target_languages(claim.display_language_code)
+        ):
+            return None
+        return source
     if isinstance(revision, SurveyRevision):
         return _fetch_survey_question_source(
             session,
@@ -755,12 +844,32 @@ def _fetch_claim_source(
         case ContentTranslationSourceKind.opinion:
             return _fetch_opinion_source(session, opinion_content_id=revision.content_id)
         case ContentTranslationSourceKind.ranking_item:
-            return _fetch_ranking_item_source(session, ranking_item_content_id=revision.content_id)
+            return fetch_ranking_item_source(session, ranking_item_content_id=revision.content_id)
 
 
 def _has_fresh_translation(
     session: Session, *, claim: ClaimedContentTranslationWork, source: TranslationSource
 ) -> bool:
+    if isinstance(source, GatheringFieldSource):
+        return (
+            session.scalar(
+                select(GatheringFieldTranslation.field_id).where(
+                    GatheringFieldTranslation.field_id == source.content_id,
+                    GatheringFieldTranslation.display_language_code == claim.display_language_code,
+                )
+            )
+            is not None
+        )
+    if isinstance(source, GatheringResponseSource):
+        translated_fields = set(
+            session.scalars(
+                select(GatheringAnswerTranslation.field_id).where(
+                    GatheringAnswerTranslation.content_id == source.content_id,
+                    GatheringAnswerTranslation.display_language_code == claim.display_language_code,
+                )
+            )
+        )
+        return translated_fields == {answer.field_id for answer in source.answers}
     if isinstance(source, ProjectSource):
         return _has_fresh_project_translation(session, claim=claim, source=source)
     if isinstance(source, ConversationSource):
@@ -770,6 +879,14 @@ def _has_fresh_translation(
     if isinstance(source, RankingItemSource):
         return _has_fresh_ranking_item_translation(session, claim=claim, source=source)
     return _has_fresh_survey_question_translation(session, claim=claim, source=source)
+
+
+class GatheringAnswerTranslationValues(TypedDict):
+    content_id: int
+    field_id: uuid.UUID
+    display_language_code: DisplayLanguageCode
+    translated_value: str
+    source_language_code: SpokenLanguageCode | None
 
 
 def publish_translation_bundle(
@@ -799,6 +916,46 @@ def publish_translation_bundle(
         _persist_opinion_translation(session, bundle=bundle)
     elif isinstance(bundle, RankingItemTranslationBundle):
         _persist_ranking_item_translation(session, bundle=bundle)
+    elif isinstance(bundle, GatheringFieldTranslationBundle):
+        for translation in bundle.translations:
+            language = translation.result.source_raw_language_code
+            session.execute(
+                pg_insert(GatheringFieldTranslation)
+                .values(
+                    field_id=bundle.source.content_id,
+                    display_language_code=translation.display_language_code,
+                    translated_label=remove_non_display_control_characters(
+                        translation.result.translated_text
+                    ),
+                    source_language_code=None
+                    if language is None
+                    else _normalize_google_translate_source_language_code(language),
+                )
+                .on_conflict_do_nothing()
+            )
+    elif isinstance(bundle, GatheringResponseTranslationBundle):
+        # No response identities or status events are emitted onto public conversation topics.
+        rows: list[GatheringAnswerTranslationValues] = []
+        for translation in bundle.translations:
+            for answer in translation.answers:
+                language = answer.result.source_raw_language_code
+                rows.append(
+                    {
+                        "content_id": bundle.source.content_id,
+                        "field_id": answer.field_id,
+                        "display_language_code": translation.language,
+                        "translated_value": remove_non_display_control_characters(
+                            answer.result.translated_text
+                        ),
+                        "source_language_code": None
+                        if language is None
+                        else _normalize_google_translate_source_language_code(language),
+                    }
+                )
+        if rows:
+            session.execute(
+                pg_insert(GatheringAnswerTranslation).values(rows).on_conflict_do_nothing()
+            )
     else:
         _persist_survey_translation(session, bundle=bundle)
     _mark_completed(session, claim=claim)
@@ -808,8 +965,7 @@ def publish_translation_bundle(
 def fail_claimed_work(
     session: Session, *, claim: ClaimedContentTranslationWork, error_type: str
 ) -> ProcessWorkResult:
-    lock_active_claim(session, claim=claim)
-    source = _fetch_claim_source(session, claim=claim)
+    source = _fetch_source_for_active_claim(session, claim=claim)
     _mark_failed(
         session,
         claim=claim,
@@ -834,6 +990,9 @@ def fail_claimed_work(
                 _insert_ranking_item_translation_event(
                     session, source=source, target_language_code=target.value, status="failed"
                 )
+            elif isinstance(source, (GatheringFieldSource, GatheringResponseSource)):
+                # Gathering reads recover through authorized polling, not public SSE.
+                continue
             else:
                 _insert_survey_question_translation_event(
                     session, source=source, target_language_code=target.value, status="failed"
@@ -1157,11 +1316,89 @@ def _fetch_survey_question_source(
     )
 
 
-def _fetch_ranking_item_source(
+def fetch_ranking_item_source(
     session: Session,
     *,
     ranking_item_content_id: int,
 ) -> RankingItemSource | None:
+    observed = session.execute(
+        select(RankingItem.author_id, RankingItem.conversation_id, RankingItem.is_seed)
+        .join(RankingItemContent, RankingItemContent.ranking_item_id == RankingItem.id)
+        .where(RankingItemContent.id == ranking_item_content_id)
+    ).one_or_none()
+    if observed is None:
+        return None
+    if not observed.is_seed:
+        if observed.author_id is None:
+            return None
+        account = session.scalar(
+            select(User.id)
+            .where(User.id == observed.author_id, User.is_deleted.is_(False))
+            .with_for_update(read=True)
+        )
+        if account is None:
+            return None
+    parent = session.scalar(
+        select(Conversation.id)
+        .where(Conversation.id == observed.conversation_id)
+        .with_for_update(read=True)
+    )
+    if parent is None:
+        return None
+    # Check accepted historical references in a new statement after any lifecycle-lock wait.
+    baseline = aliased(RankingConversationStatsSnapshot)
+    first_snapshot = (
+        select(baseline.id)
+        .where(baseline.conversation_id == Conversation.id, baseline.deleted_at.is_(None))
+        .order_by(baseline.created_at, baseline.id)
+        .limit(1)
+        .correlate(Conversation)
+        .scalar_subquery()
+    )
+    comparison_revision = (
+        select(RankingConversationStatsItem.id)
+        .join(
+            RankingConversationStatsSnapshot,
+            RankingConversationStatsSnapshot.id == RankingConversationStatsItem.stats_snapshot_id,
+        )
+        .where(
+            RankingConversationStatsItem.ranking_item_content_id == RankingItemContent.id,
+            RankingConversationStatsSnapshot.conversation_id == Conversation.id,
+            RankingConversationStatsItem.deleted_at.is_(None),
+            RankingConversationStatsSnapshot.deleted_at.is_(None),
+            or_(
+                RankingConversationStatsSnapshot.id == first_snapshot,
+                select(RankingConversationStatsCheckpoint.id)
+                .where(
+                    RankingConversationStatsCheckpoint.stats_snapshot_id
+                    == RankingConversationStatsSnapshot.id
+                )
+                .exists(),
+            ),
+        )
+        .correlate(RankingItemContent, Conversation)
+        .exists()
+    )
+    qv_revision = (
+        select(QvInputItem.item_slug_id)
+        .select_from(QvCalculationState)
+        .join(QvCalculation, QvCalculation.id == QvCalculationState.current_calculation_id)
+        .join(QvInputSnapshot, QvInputSnapshot.id == QvCalculation.input_snapshot_id)
+        .join(QvInputItem, QvInputItem.snapshot_id == QvInputSnapshot.id)
+        .where(
+            QvCalculationState.conversation_id == Conversation.id,
+            QvCalculation.conversation_id == Conversation.id,
+            QvCalculation.status == "ready",
+            Conversation.is_closed.is_(True),
+            Conversation.closed_finalized_at.is_not(None),
+            QvInputItem.item_slug_id == RankingItem.slug_id,
+            QvInputItem.source_version == RankingItemContent.public_id,
+            QvInputItem.title == RankingItemContent.title,
+            QvInputItem.body.is_not_distinct_from(RankingItemContent.body),
+        )
+        .correlate(Conversation, RankingItem, RankingItemContent)
+        .exists()
+    )
     row = session.execute(
         select(
             Conversation.slug_id.label("conversation_slug_id"),
@@ -1182,12 +1419,22 @@ def _fetch_ranking_item_source(
         .where(
             and_(
                 RankingItemContent.id == ranking_item_content_id,
-                RankingItem.current_content_id == RankingItemContent.id,
+                RankingItem.conversation_id == observed.conversation_id,
+                RankingItem.author_id.is_not_distinct_from(observed.author_id),
+                RankingItem.is_seed == observed.is_seed,
+                RankingItem.current_content_id.is_not(None),
+                or_(
+                    RankingItem.current_content_id == RankingItemContent.id,
+                    comparison_revision,
+                    qv_revision,
+                ),
                 RankingItem.deleted_at.is_(None),
                 RankingItem.account_hidden_at.is_(None),
+                RankingItem.moderation.is_(None),
                 or_(RankingItem.is_seed.is_(True), User.is_deleted.is_(False)),
                 Conversation.current_content_id.is_not(None),
                 Conversation.deleted_at.is_(None),
+                Conversation.is_importing.is_(False),
             )
         )
         .limit(1)

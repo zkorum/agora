@@ -8,6 +8,8 @@ import type {
 export function defaultConversationStatementSettings(
     config: Readonly<ConversationTypeConfig>,
 ): ConversationStatementSettings {
+    if (config.conversationType === "gathering")
+        return { ...config, participantStatements: { supported: false } };
     if (config.conversationType === "polis")
         return {
             ...config,

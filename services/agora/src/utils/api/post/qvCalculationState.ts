@@ -17,6 +17,9 @@ interface Frontier {
   readonly epoch: number;
   readonly pendingEpochs: readonly number[];
   readonly requiresFreshRead: boolean;
+  readonly hasAcceptedResult: boolean;
+  readonly closeId?: number;
+  readonly selectionRevision?: number;
 }
 let nextEpoch = 0;
 const clients = new WeakMap<QueryClient, ReturnType<typeof createState>>();
@@ -45,6 +48,7 @@ function current({
       epoch: 0,
       pendingEpochs: [],
       requiresFreshRead: false,
+      hasAcceptedResult: false,
     }
   );
 }
@@ -68,7 +72,13 @@ function setFrontier({
   value.value = new Map(value.value).set(slug, frontier);
 }
 function phase(status: CalculationEvent["status"]): number {
-  return status === "open" ? 0 : status === "calculating" ? 1 : 2;
+  return status === "open"
+    ? 0
+    : status === "calculating"
+      ? 1
+      : status === "failed"
+        ? 2
+        : 3;
 }
 export function retainQvCalculationEvent({
   queryClient,
@@ -84,10 +94,28 @@ export function retainQvCalculationEvent({
       phase(data.status) <= phase(previous.status))
   )
     return false;
+  const closeId =
+    data.closeId ??
+    (data.generation === previous.generation ? previous.closeId : undefined);
   setFrontier({
     queryClient,
     slug: data.conversationSlugId,
-    frontier: { ...previous, generation: data.generation, status: data.status },
+    frontier: {
+      ...previous,
+      generation: data.generation,
+      status: data.status,
+      closeId,
+      selectionRevision:
+        closeId !== undefined && closeId === previous.closeId
+          ? previous.selectionRevision
+          : undefined,
+      hasAcceptedResult:
+        data.status === "ready" ||
+        data.closeId !== undefined ||
+        (previous.hasAcceptedResult &&
+          (data.generation === previous.generation ||
+            (closeId !== undefined && closeId === previous.closeId))),
+    },
   });
   return true;
 }
@@ -154,27 +182,35 @@ export function acceptQvResultRead({
   result: Result;
 }): Result | undefined {
   const previous = current({ queryClient, slug });
+  const selection =
+    result.status === "ready" ? result.closedAnalysisSelection : undefined;
+  const status =
+    result.status === "ready"
+      ? (result.refreshStatus ?? result.status)
+      : result.status;
   if (
     previous.pendingEpochs.length > 0 ||
     previous.epoch !== epoch ||
     result.generation < previous.generation ||
     (result.generation === previous.generation &&
-      phase(result.status) < phase(previous.status))
+      (phase(status) < phase(previous.status) ||
+        (selection !== undefined &&
+          selection.closeId === previous.closeId &&
+          selection.selectionRevision < (previous.selectionRevision ?? 0))))
   )
     return undefined;
-  if (result.generation > 0)
-    retainQvCalculationEvent({
-      queryClient,
-      data: {
-        conversationSlugId: slug,
-        generation: result.generation,
-        status: result.status,
-      },
-    });
   setFrontier({
     queryClient,
     slug,
-    frontier: { ...current({ queryClient, slug }), requiresFreshRead: false },
+    frontier: {
+      ...previous,
+      generation: result.generation,
+      status,
+      requiresFreshRead: false,
+      hasAcceptedResult: result.status === "ready",
+      closeId: selection?.closeId,
+      selectionRevision: selection?.selectionRevision,
+    },
   });
   return result;
 }
@@ -217,7 +253,8 @@ export function reconcileQvCalculationLifecycle<
       !frontier.requiresFreshRead &&
       frontier.generation === generation &&
       (metadata.isClosed !== (frontier.status !== "open") ||
-        (phase(frontier.status) === 2 && metadata.isFinalizing === true)))
+        ((phase(frontier.status) >= 2 || frontier.hasAcceptedResult) &&
+          metadata.isFinalizing === true)))
   ) {
     return {
       ...conversation,
@@ -225,7 +262,8 @@ export function reconcileQvCalculationLifecycle<
         ...metadata,
         qvGeneration: frontier.generation,
         isClosed: frontier.status !== "open",
-        isFinalizing: frontier.status === "calculating",
+        isFinalizing:
+          frontier.status === "calculating" && !frontier.hasAcceptedResult,
       },
     };
   }

@@ -72,6 +72,12 @@ Once dependencies are provisioned, run `python -m credit_voting_worker` in the s
   statement content and rule/algorithm provenance. Snapshot-local ballot indices
   have no account, participant, response or version foreign keys. Capture commits
   completely before computation; retries reuse its saved pointer, never recapture.
+- Capture checks each original ballot's rules and full quadratic spending before
+  projecting currently available allocations. An unavailable item/version or a
+  retired allocation removes only that allocation, without redistributing credits,
+  changing surviving signed votes or rewriting the saved ballot. A fully excluded
+  ballot does not count as a captured participant. Invalid original provenance
+  still fails rather than being hidden by projection.
 - Capture and SQL tally stages continuously lock the job row and renew the lease
   before releasing that lock. A standalone heartbeat would block on that same row;
   the transaction lock is the stronger active-stage ownership fence. Expired claims

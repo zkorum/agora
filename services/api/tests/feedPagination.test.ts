@@ -397,10 +397,15 @@ describe("server-owned feed pagination", () => {
                 personalUserId: authorId,
             });
             const deletedProject = await addProject({ slug: "deleted" });
+            const unlistedProject = await addProject({ slug: "link-only" });
             await db
                 .update(projectTable)
                 .set({ deletedAt: new Date() })
                 .where(eq(projectTable.id, deletedProject));
+            await db
+                .update(projectTable)
+                .set({ directoryVisibility: "unlisted" })
+                .where(eq(projectTable.id, unlistedProject));
             await addConversation({
                 slugId: "muted001",
                 projectId: mutedProject,
@@ -408,6 +413,10 @@ describe("server-owned feed pagination", () => {
             await addConversation({
                 slugId: "project1",
                 projectId: deletedProject,
+            });
+            await addConversation({
+                slugId: "unlist01",
+                projectId: unlistedProject,
             });
             await addConversation({ slugId: "nosnap01", snapshot: false });
             const hidden = await addConversation({ slugId: "hidden01" });

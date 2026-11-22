@@ -577,7 +577,7 @@ async function resolveExplicitConversationCreateTarget({
         .where(
             and(
                 eq(projectTable.slug, projectSlug),
-                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.autoProvisionedForOrganizationId),
                 isNull(projectTable.deletedAt),
                 eq(organizationTable.slug, postAsOrganizationSlug),
                 isNull(organizationTable.deletedAt),
@@ -676,6 +676,7 @@ export async function getConversationCreateProjectOptions({
                 projectSlug: projectTable.slug,
                 projectTitle: projectTable.title,
                 sourceLanguageCode: projectContentTable.sourceLanguageCode,
+                participationMode: projectTable.participationMode,
                 dynamicTranslationEnabled:
                     projectTable.dynamicTranslationEnabled,
                 conversationEmailUpdateDefaultEnabled:
@@ -715,7 +716,7 @@ export async function getConversationCreateProjectOptions({
                 and(
                     eq(organizationTable.id, organization.organizationId),
                     isNull(organizationTable.deletedAt),
-                    eq(projectTable.directoryVisibility, "listed"),
+                    isNull(projectTable.autoProvisionedForOrganizationId),
                     isNull(projectTable.deletedAt),
                 ),
             ),
@@ -891,6 +892,7 @@ export async function getConversationCreateProjectOptions({
                 sourceLanguageToDisplayLanguage({
                     sourceLanguageCode: project.sourceLanguageCode,
                 }) ?? getImplicitDefaultDisplayLanguage(),
+            participationMode: project.participationMode,
             languageSettings: {
                 dynamicTranslationEnabled: project.dynamicTranslationEnabled,
                 targetLanguageCodes:

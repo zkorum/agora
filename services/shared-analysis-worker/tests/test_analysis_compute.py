@@ -20,7 +20,12 @@ from agora_analysis_worker_shared.generated_models import (
     AnalysisResultOutcomeEnum,
     OpinionGroupCandidateHiddenReasonEnum,
 )
-from agora_analysis_worker_shared.input_snapshot import VoteInputRow, prepare_input_snapshot
+from agora_analysis_worker_shared.input_snapshot import (
+    OpinionInputRow,
+    VoteInputRow,
+    prepare_input_snapshot,
+)
+from agora_analysis_worker_shared.retained_inputs import RetainedAnalysisInput
 
 USER_A = UUID("00000000-0000-0000-0000-00000000000a")
 USER_B = UUID("00000000-0000-0000-0000-00000000000b")
@@ -113,6 +118,47 @@ def _snapshot_rows() -> list[VoteInputRow]:
     return rows
 
 
+def test_real_engine_keeps_unvoted_catalogue_entries_out_of_group_computation() -> None:
+    rows = _snapshot_rows()
+    prepared = prepare_input_snapshot(conversation_id=10, data_generation=3, rows=rows)
+    with_catalogue = prepare_input_snapshot(
+        conversation_id=10,
+        data_generation=3,
+        rows=rows,
+        opinion_rows=[
+            OpinionInputRow(
+                conversation_id=10,
+                data_generation=3,
+                opinion_id=opinion_id,
+                opinion_content_id=opinion_id + 1000,
+            )
+            for opinion_id in (99, 100, 101, 102, 103)
+        ],
+    )
+    original = compute_analysis_bundle(snapshot=prepared, config=_single_variant_config())
+    actual = compute_analysis_bundle(snapshot=with_catalogue, config=_single_variant_config())
+    assert actual.outcome == original.outcome == AnalysisResultOutcomeEnum.success
+    metrics_by_id = {
+        with_catalogue.opinions[metrics.local_opinion_index].opinion_id: metrics
+        for metrics in actual.snapshot_opinions
+    }
+    for opinion_id in (99, 103):
+        metrics = metrics_by_id[opinion_id]
+        assert (metrics.num_agrees, metrics.num_disagrees, metrics.num_passes) == (0, 0, 0)
+        assert metrics.routing_priority is None
+    assert sorted(
+        len(group.local_participant_indexes) for group in actual.candidates[0].groups
+    ) == [
+        2,
+        2,
+    ]
+    assert {
+        with_catalogue.opinions[representative.local_opinion_index].opinion_id
+        for group in actual.candidates[0].groups
+        for representative in group.representative_opinions
+    } <= {100, 101, 102}
+
+
 def _fake_result(group_count: int) -> FakeRedDwarfResult:
     cluster_ids = [0, 0, 1, 1] if group_count == 2 else [0, 0, 1, 2]
     participants_df = pd.DataFrame(
@@ -180,6 +226,38 @@ def _fake_result(group_count: int) -> FakeRedDwarfResult:
         repness=repness,
         consensus={"agree": [{"tid": 0, "p-success": 0.8}], "disagree": []},
     )
+
+
+def test_retained_numerical_input_runs_the_same_engine_without_account_identifiers() -> None:
+    prepared = prepare_input_snapshot(conversation_id=10, data_generation=3, rows=_snapshot_rows())
+    retained = RetainedAnalysisInput(
+        conversation_id=prepared.conversation_id,
+        data_generation=prepared.data_generation,
+        participant_count=len(prepared.participants),
+        opinions=tuple(prepared.opinions),
+        votes=tuple(prepared.votes),
+    )
+
+    def runner(
+        *,
+        votes: list[dict[str, int]],
+        min_user_vote_threshold: int,
+        max_group_count: int,
+        force_group_count: int | None = None,
+        candidate_group_counts: list[int] | None = None,
+    ) -> object:
+        assert all(set(vote) == {"participant_id", "statement_id", "vote"} for vote in votes)
+        return FakeRedDwarfSuccess(result=_fake_result(2))
+
+    expected = compute_analysis_bundle(
+        snapshot=prepared, config=_single_variant_config(), run_red_dwarf_pipeline=runner
+    )
+    actual = compute_analysis_bundle(
+        snapshot=retained, config=_single_variant_config(), run_red_dwarf_pipeline=runner
+    )
+    assert actual == expected
+    assert actual.outcome == AnalysisResultOutcomeEnum.success
+    assert "user_id" not in repr(retained)
 
 
 def _fake_result_with_repness(

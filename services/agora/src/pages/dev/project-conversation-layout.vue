@@ -174,6 +174,7 @@
             }"
             :is-live-analysis-paused="false"
             :is-conversation-closed="conversation.isClosed"
+            :can-edit-conversation="false"
             :is-finalizing="false"
             :navigate-to-discover-tab="showStatementsTab"
             :conversation-scroll-context="conversationScrollContext"
@@ -594,7 +595,6 @@ const devAnalysisData = computed<AnalysisData>(() => ({
   consensusDisagree: [],
   controversial: [],
   polisClusters: {},
-  emptyReason: "not_enough_votes",
   hasVotedOnAllAvailableOpinions: false,
 }));
 

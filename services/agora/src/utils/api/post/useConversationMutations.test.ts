@@ -78,6 +78,7 @@ import {
   useUpdateConversationMutation,
 } from "./useConversationMutations";
 import {
+  applyConversationRankingStatsUpdate,
   type ConversationDetail,
   useConversationQuery,
 } from "./useConversationQuery";
@@ -451,7 +452,10 @@ describe("conversation lifecycle freshness", () => {
         const metadata = value.conversationData.metadata;
         if (metadata.conversationType === "polis")
           metadata.conversationViewSnapshotId = id;
-        else if (metadata.prioritizationType === "comparisons")
+        else if (
+          metadata.conversationType === "prioritizing" &&
+          metadata.prioritizationType === "comparisons"
+        )
           metadata.rankingStatsSnapshotId = id;
       }
       current.conversationData.metadata.isClosed = true;
@@ -470,6 +474,107 @@ describe("conversation lifecycle freshness", () => {
       });
     }
   );
+
+  it("uses the close selection version rather than ranking snapshot order", async () => {
+    const config = {
+      conversationType: "prioritizing",
+      prioritizationType: "comparisons",
+      comparisonMethod: "bws",
+    } as const;
+    const { queryClient } = mountMutation(config);
+    const withResult = ({
+      snapshotId,
+      selectionRevision,
+      voteCount,
+    }: {
+      snapshotId: number;
+      selectionRevision: number;
+      voteCount: number;
+    }) => {
+      const value = conversation(config);
+      const metadata = value.conversationData.metadata;
+      if (
+        metadata.conversationType !== "prioritizing" ||
+        metadata.prioritizationType !== "comparisons"
+      )
+        throw new Error("Missing comparison fixture");
+      metadata.isClosed = true;
+      metadata.rankingStatsSnapshotId = snapshotId;
+      metadata.voteCount = voteCount;
+      metadata.comparisonCloseSelectionVersion = {
+        closeId: 8,
+        selectionRevision,
+      };
+      return value;
+    };
+    const live = withResult({
+      snapshotId: 42,
+      selectionRevision: 1,
+      voteCount: 3,
+    });
+    const closing = withResult({
+      snapshotId: 7,
+      selectionRevision: 2,
+      voteCount: 9,
+    });
+    queryClient.setQueryData(key, live);
+    mocks.fetch.mockResolvedValue(closing);
+    await queryClient.refetchQueries({ queryKey: key, exact: true });
+    expect(
+      queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+        .metadata
+    ).toMatchObject({ rankingStatsSnapshotId: 7, voteCount: 9 });
+
+    mocks.fetch.mockResolvedValue(live);
+    await queryClient.refetchQueries({ queryKey: key, exact: true });
+    expect(
+      queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+        .metadata
+    ).toMatchObject({ rankingStatsSnapshotId: 7, voteCount: 9 });
+
+    const event = {
+      conversationSlugId: slug,
+      rankingStatsSnapshotId: 7,
+      checkpointChanged: false,
+      closedSelectionChanged: true,
+      comparisonCloseSelectionVersion: { closeId: 8, selectionRevision: 2 },
+      opinionCount: 2,
+      voteCount: 9,
+      participantCount: 4,
+      totalOpinionCount: 2,
+      totalVoteCount: 9,
+      totalParticipantCount: 4,
+      moderatedOpinionCount: 0,
+      hiddenOpinionCount: 0,
+      isClosed: true,
+      timestamp: 1,
+    } as const;
+    expect(
+      applyConversationRankingStatsUpdate({
+        conversation: live.conversationData,
+        data: event,
+      }).metadata
+    ).toMatchObject({ rankingStatsSnapshotId: 7, voteCount: 9 });
+    const reopened = withResult({
+      snapshotId: 7,
+      selectionRevision: 2,
+      voteCount: 9,
+    });
+    reopened.conversationData.metadata.isClosed = false;
+    expect(
+      applyConversationRankingStatsUpdate({
+        conversation: reopened.conversationData,
+        data: event,
+      }).metadata.isClosed
+    ).toBe(false);
+    queryClient.setQueryData(key, reopened);
+    mocks.fetch.mockResolvedValue(closing);
+    await queryClient.refetchQueries({ queryKey: key, exact: true });
+    expect(
+      queryClient.getQueryData<ConversationDetail>(key)?.conversationData
+        .metadata.isClosed
+    ).toBe(false);
+  });
 });
 
 describe("conversation presentation edits", () => {

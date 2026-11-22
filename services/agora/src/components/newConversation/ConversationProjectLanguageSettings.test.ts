@@ -93,6 +93,7 @@ describe("project language editing", () => {
                 project: {
                   projectSlug: "project",
                   projectTitle: "Project",
+                  participationMode: "guest",
                   defaultLanguageCode: "en",
                   languageSettings: {
                     dynamicTranslationEnabled: true,

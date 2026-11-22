@@ -62,38 +62,53 @@
             emit-value
             map-options
             :disable="editingLanguageCode !== undefined"
-            :label="requiredLabel(languageLabel)"
+            :label="languageLabel"
+            label-slot
+            v-bind="{ 'aria-required': true }"
             :options="availableLanguageOptions"
-          />
-          <q-input
+          >
+            <template #label
+              ><ZKFieldLabel
+                :label="languageLabel"
+                required
+                :required-text="undefined"
+            /></template>
+          </q-select>
+          <ZKInput
             v-model="draftTitleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="
-              dynamicTranslationEnabled
-                ? optionalLabel(projectTitleLabel)
-                : requiredLabel(projectTitleLabel)
-            "
+            :label="projectTitleLabel"
+            :required="!dynamicTranslationEnabled"
           />
-          <q-input
+          <ZKInput
             v-model="draftSubtitleInput"
             outlined
             :maxlength="MAX_LENGTH_TITLE"
-            :label="subtitleInputLabel"
+            :label="subtitleLabel"
+            :required="effectiveLocalizedSubtitleRequired"
           />
           <div class="grid-full">
+            <ZKFieldLabel
+              :id="bodyLabelId"
+              :label="bodyLabel"
+              :required="effectiveLocalizedBodyRequired"
+              :required-text="undefined"
+            />
             <ProjectBodyEditor
               v-model="draftBody"
               v-model:plain-text="draftBodyPlainText"
               v-model:is-over-limit="isDraftBodyOverLimit"
-              :placeholder="bodyPlaceholder"
+              :placeholder="bodyLabel"
               :disabled="false"
+              :labelled-by="bodyLabelId"
+              :required="effectiveLocalizedBodyRequired"
             />
           </div>
           <q-input
             v-model="draftBannerPathInput"
             outlined
-            :label="optionalLabel(bannerPathLabel)"
+            :label="bannerPathLabel"
           />
           <q-checkbox
             v-model="draftBannerIsFullPath"
@@ -159,10 +174,19 @@
 </template>
 
 <script setup lang="ts">
+import ZKFieldLabel from "src/components/ui-library/ZKFieldLabel.vue";
+import ZKInput from "src/components/ui-library/ZKInput.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import { MAX_LENGTH_TITLE } from "src/shared/shared";
 import type { AdminProject } from "src/shared/types/dto";
-import { computed, type Ref, ref, watch, type WritableComputedRef } from "vue";
+import {
+  computed,
+  type Ref,
+  ref,
+  useId,
+  watch,
+  type WritableComputedRef,
+} from "vue";
 
 import ProjectBodyEditor from "./ProjectBodyEditor.vue";
 
@@ -192,8 +216,6 @@ const props = defineProps<{
   machineTranslationPreviewDescription: string;
   useMachineTranslationButtonLabel: string;
   machineTranslationIncompleteLabel: string;
-  requiredSuffix: string;
-  optionalSuffix: string;
   localizedSubtitleRequired: boolean;
   localizedBodyRequired: boolean;
   targetLanguageCodes: SupportedDisplayLanguageCodes[];
@@ -206,6 +228,7 @@ const localizations = defineModel<ProjectContentLocalization[]>({
   required: true,
 });
 
+const bodyLabelId = useId();
 const draftLanguageCode = ref<SupportedDisplayLanguageCodes>(
   props.displayLanguageOptions[0]?.value ?? "en"
 );
@@ -260,18 +283,6 @@ const effectiveLocalizedBodyRequired = computed(
   () => !props.dynamicTranslationEnabled && props.localizedBodyRequired
 );
 
-const subtitleInputLabel = computed(() =>
-  effectiveLocalizedSubtitleRequired.value
-    ? requiredLabel(props.subtitleLabel)
-    : optionalLabel(props.subtitleLabel)
-);
-
-const bodyPlaceholder = computed(() =>
-  effectiveLocalizedBodyRequired.value
-    ? requiredLabel(props.bodyLabel)
-    : optionalLabel(props.bodyLabel)
-);
-
 const hasLocalizedTitle = computed(
   () => optionalString(draftTitle.value) !== undefined
 );
@@ -318,14 +329,6 @@ function stringInputModel(
       source.value = String(value ?? "");
     },
   });
-}
-
-function requiredLabel(label: string): string {
-  return `${label} (${props.requiredSuffix})`;
-}
-
-function optionalLabel(label: string): string {
-  return `${label} (${props.optionalSuffix})`;
 }
 
 function optionalString(value: string): string | undefined {

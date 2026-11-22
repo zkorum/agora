@@ -18,7 +18,7 @@
     <template v-else-if="items !== undefined">
       <p v-if="isClosed" class="notice" role="status">{{ t("closed") }}</p>
       <p v-else-if="isLocked" class="notice" role="status">{{ t("locked") }}</p>
-      <p v-if="statementsChanged" class="notice" role="alert">
+      <p v-if="itemsChanged" class="notice" role="alert">
         {{ t("changed") }}
       </p>
       <p v-if="conflict" class="notice" role="alert">
@@ -44,7 +44,7 @@
         :disabled="
           isClosed ||
           isLocked ||
-          statementsChanged ||
+          itemsChanged ||
           itemsQuery.isError.value ||
           isLeaving ||
           sessionRefreshRequired ||
@@ -146,7 +146,7 @@ const {
   pending,
   conflict,
   hasUnsavedChanges,
-  statementsChanged,
+  itemsChanged,
 } = state;
 const items = computed(() => snapshot.value?.items);
 const allowOpposition = computed(

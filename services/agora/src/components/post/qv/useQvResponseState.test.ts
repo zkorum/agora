@@ -43,6 +43,44 @@ function snapshot(
 }
 
 describe("QV saved baseline and explicit commands", () => {
+  it("updates translated display without discarding unsaved allocations or advancing source revisions", () => {
+    const state = useQvResponseState();
+    state.receive(snapshot(saved()));
+    state.allocations.value = [{ itemId, votes: 5 }];
+    const translated: z.infer<typeof Dto.qvLoadResponse> = {
+      ...snapshot(saved()),
+      items: [
+        {
+          slugId: itemId,
+          displayContent: {
+            sourceVersion,
+            status: "available",
+            mode: "translated",
+            content: { title: "Proposition traduite" },
+            translationControl: {
+              status: "completed",
+              alternateMode: "original",
+              canRequestAlternate: true,
+            },
+          },
+        },
+      ],
+    };
+    state.receive(translated);
+    expect(state.snapshot.value?.items[0]?.displayContent).toMatchObject({
+      mode: "translated",
+    });
+    expect(state.allocations.value).toEqual([{ itemId, votes: 5 }]);
+    expect(state.baseline.value.saved?.allocations[0]?.votes).toBe(3);
+    expect(state.itemsChanged.value).toBe(false);
+    expect(
+      state.begin({ action: "save", conversationSlugId: "qvtest01" })?.request
+    ).toMatchObject({
+      expectedStatementSetRevision: 0,
+      allocations: [{ itemId, sourceVersion, votes: 5 }],
+    });
+  });
+
   it("loads a saved response as a clean baseline and keeps local edits separate", () => {
     const state = useQvResponseState();
     state.receive(snapshot(saved()));
@@ -126,7 +164,7 @@ describe("QV saved baseline and explicit commands", () => {
     state.receive(snapshot());
     state.allocations.value = [{ itemId, votes: 3 }];
     state.receive({ ...snapshot(), statementSetRevision: 1, items: [] });
-    expect(state.statementsChanged.value).toBe(true);
+    expect(state.itemsChanged.value).toBe(true);
     expect(state.snapshot.value?.items).toHaveLength(1);
     expect(state.canSave.value).toBe(false);
     state.discard();

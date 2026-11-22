@@ -8,9 +8,7 @@
         >
           <template #action-button>
             <div @click="handleActionButtonClick()">
-              <AnalysisActionButton
-                :type="getButtonType()"
-              />
+              <AnalysisActionButton :type="getButtonType()" />
             </div>
           </template>
         </AnalysisTitleHeader>
@@ -50,6 +48,7 @@ const props = defineProps<{
   clusterKey: PolisKey | undefined; // happens when the user has not been found to belong to a given cluster
   aiLabel: string | undefined;
   aiSummary: string | undefined;
+  canVote: boolean;
   hasVotedOnAllAvailableOpinions: boolean | undefined;
   navigateToDiscoverTab: () => void;
 }>();
@@ -95,7 +94,7 @@ const bannerMessage = computed(() => {
 });
 
 const shouldShowVoteBanner = computed(
-  () => props.hasVotedOnAllAvailableOpinions !== true
+  () => props.canVote && props.hasVotedOnAllAvailableOpinions !== true
 );
 </script>
 

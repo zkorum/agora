@@ -108,17 +108,19 @@ describe("optional choice text persistence", () => {
             "V0089.1__separate_ranking_scoring_invalidations.sql",
             "V0105__exclude_survey_annotations_from_scoring.sql",
         ]) {
-            await db.execute(
-                sql.raw(
-                    readFileSync(
-                        new URL(
-                            `../database/flyway/${migration}`,
-                            import.meta.url,
-                        ),
-                        "utf8",
-                    ),
-                ),
-            );
+            // The fixture uses current table names, not the pre-rename schema.
+            const scoringTriggers = readFileSync(
+                new URL(`../database/flyway/${migration}`, import.meta.url),
+                "utf8",
+            )
+                .replaceAll("maxdiff_result_id", "comparison_response_id")
+                .replaceAll("maxdiff_result", "comparison_response")
+                .replaceAll("maxdiff_comparison", "comparison_answer")
+                .replaceAll(
+                    "conversation.conversation_type = 'ranking'",
+                    "conversation.prioritization_type = 'comparisons'",
+                );
+            await db.execute(sql.raw(scoringTriggers));
         }
     }, 120_000);
 
@@ -1393,16 +1395,22 @@ describe("optional choice text persistence", () => {
             const { withdrawSurveyResponse } = await surveyModulePromise;
             await configure({ isOptional });
             const { question, first } = await firstQuestion();
-            await save({
+            const saved = await save({
                 questionSlugId: question.slugId,
                 answer: {
                     questionType: "choice",
                     optionSlugIds: [first.slugId],
                 },
             });
+            if (!saved.success)
+                throw new Error("Missing saved survey response");
             const selectReplica = vi.fn(() => db);
             const request = {
                 db: withReplicas(db, [db], selectReplica),
+                expectedForm: {
+                    surveyConfigId: saved.surveyConfigId,
+                    currentRevision: saved.currentRevision,
+                },
                 conversationSlugId,
                 didWrite: "did:test:survey",
                 userAgent: "Vitest",
@@ -1455,6 +1463,39 @@ describe("optional choice text persistence", () => {
             expect(selectReplica).not.toHaveBeenCalled();
         },
     );
+
+    it("preserves the response when withdrawal was confirmed before a survey became required", async () => {
+        const { withdrawSurveyResponse } = await surveyModulePromise;
+        await configure({ isOptional: true });
+        const { question, first } = await firstQuestion();
+        const saved = await save({
+            questionSlugId: question.slugId,
+            answer: { questionType: "choice", optionSlugIds: [first.slugId] },
+        });
+        if (!saved.success) throw new Error("Missing saved survey response");
+        await editSurvey((config) => ({ ...config, isOptional: false }));
+        await expect(
+            withdrawSurveyResponse({
+                db,
+                conversationSlugId,
+                didWrite: "did:test:survey",
+                userAgent: "Vitest",
+                now,
+                currentDisplayLanguage: "en",
+                skipEmailUpdateConsent: false,
+                getEmailUpdateOnboardingAction: async () => undefined,
+                expectedForm: {
+                    surveyConfigId: saved.surveyConfigId,
+                    currentRevision: saved.currentRevision,
+                },
+            }),
+        ).rejects.toMatchObject({ statusCode: 409 });
+        const state = await loadState();
+        expect(state.response?.withdrawnAt).toBeNull();
+        expect(
+            state.answersByQuestionId.get(question.id)?.optionSlugIds,
+        ).toEqual([first.slugId]);
+    });
 
     it("returns eligibility from the existing answer transaction without a replica reread", async () => {
         const { saveSurveyAnswer } = await surveyModulePromise;

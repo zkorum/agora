@@ -14,13 +14,24 @@ import {
     buildQvCommandReceiptQuery,
     buildQvOwnerResponseQuery,
     buildQvSavedAllocationsQuery,
-    buildQvStatementSourcesQuery,
+    buildQvItemSourcesQuery,
 } from "../src/service/qvQueries.js";
 import * as schema from "../src/shared-backend/schema.js";
 import { Dto } from "../src/shared/types/dto.js";
 import { updateConversation } from "../src/service/postEdit.js";
 import { closeConversation, openConversation } from "../src/service/post.js";
 import { fetchQvResults } from "../src/service/qvResults.js";
+import {
+    getActiveSurveyConfigRecord,
+    saveSurveyAnswer,
+    setSurveyConfigForConversation,
+    withdrawSurveyResponse,
+} from "../src/service/survey.js";
+import {
+    getClosedVoteWithdrawalStatus,
+    withdrawClosedVotes,
+} from "../src/service/closedVoteWithdrawal.js";
+import { setClosedAnalysisInputMode } from "../src/service/closedAnalysisSelection.js";
 import { resolveConversationCreateTarget } from "../src/service/projectAccess.js";
 import type { VoteBuffer } from "../src/service/voteBuffer.js";
 import {
@@ -35,10 +46,10 @@ import {
 } from "../src/shared-backend/qvAccountLifecycle.js";
 import { lockAccountConversations } from "../src/shared-backend/accountContributions.js";
 import {
-    normalizeQvStatementUpdate,
-    prepareQvStatementUpdate,
-    applyQvStatementUpdate,
-} from "../src/service/qvStatements.js";
+    normalizeQvItemUpdate,
+    prepareQvItemUpdate,
+    applyQvItemUpdate,
+} from "../src/service/qvItems.js";
 
 function first<T>(rows: T[]): T {
     const row = rows.at(0);
@@ -92,7 +103,9 @@ describe("QV explicit saved responses", () => {
         });
         const pool = new Pool(connection);
         try {
-            await (await pushSchema(schema, drizzlePg({ client: pool }))).apply();
+            await (
+                await pushSchema(schema, drizzlePg({ client: pool }))
+            ).apply();
         } finally {
             await pool.end();
         }
@@ -118,8 +131,8 @@ describe("QV explicit saved responses", () => {
     }
     async function fixture({
         allowOpposition = true,
-        statementCount = 2,
-    }: { allowOpposition?: boolean; statementCount?: number } = {}) {
+        itemCount = 2,
+    }: { allowOpposition?: boolean; itemCount?: number } = {}) {
         const actor = await identity();
         const project = first(
             await db
@@ -133,8 +146,8 @@ describe("QV explicit saved responses", () => {
         );
         const config = first(
             await db
-                .insert(schema.creditVotingConfigTable)
-                .values({ allowOpposition, itemCount: statementCount })
+                .insert(schema.qvConfigTable)
+                .values({ allowOpposition, itemCount })
                 .returning(),
         );
         const conversation = first(
@@ -164,8 +177,8 @@ describe("QV explicit saved responses", () => {
             .update(schema.conversationTable)
             .set({ currentContentId: content.id })
             .where(eq(schema.conversationTable.id, conversation.id));
-        const statements = [];
-        for (let position = 0; position < statementCount; position++) {
+        const items = [];
+        for (let position = 0; position < itemCount; position++) {
             const item = first(
                 await db
                     .insert(schema.rankingItemTable)
@@ -192,7 +205,7 @@ describe("QV explicit saved responses", () => {
                 .update(schema.rankingItemTable)
                 .set({ currentContentId: version.id })
                 .where(eq(schema.rankingItemTable.id, item.id));
-            statements.push({
+            items.push({
                 itemId: item.slugId,
                 sourceVersion: version.publicId,
                 id: item.id,
@@ -200,8 +213,8 @@ describe("QV explicit saved responses", () => {
             });
         }
         const allocation = {
-            itemId: first(statements).itemId,
-            sourceVersion: first(statements).sourceVersion,
+            itemId: first(items).itemId,
+            sourceVersion: first(items).sourceVersion,
             votes: 3,
         };
         const context = {
@@ -237,7 +250,7 @@ describe("QV explicit saved responses", () => {
             config,
             conversation,
             content,
-            statements,
+            items,
             allocation,
             context,
             request,
@@ -353,10 +366,8 @@ describe("QV explicit saved responses", () => {
                 const before = first(
                     await db
                         .select()
-                        .from(schema.creditVotingConfigTable)
-                        .where(
-                            eq(schema.creditVotingConfigTable.id, f.config.id),
-                        ),
+                        .from(schema.qvConfigTable)
+                        .where(eq(schema.qvConfigTable.id, f.config.id)),
                 );
                 const conversationBefore = first(
                     await db
@@ -398,13 +409,8 @@ describe("QV explicit saved responses", () => {
                     first(
                         await db
                             .select()
-                            .from(schema.creditVotingConfigTable)
-                            .where(
-                                eq(
-                                    schema.creditVotingConfigTable.id,
-                                    f.config.id,
-                                ),
-                            ),
+                            .from(schema.qvConfigTable)
+                            .where(eq(schema.qvConfigTable.id, f.config.id)),
                     ),
                 ).toEqual(before);
                 expect(
@@ -456,13 +462,13 @@ describe("QV explicit saved responses", () => {
         });
         expect(
             loaded.items.map((item) => item.displayContent.sourceVersion),
-        ).toEqual(f.statements.map((item) => item.sourceVersion));
+        ).toEqual(f.items.map((item) => item.sourceVersion));
         expect(
             first(
                 await db
                     .select()
-                    .from(schema.creditVotingConfigTable)
-                    .where(eq(schema.creditVotingConfigTable.id, f.config.id)),
+                    .from(schema.qvConfigTable)
+                    .where(eq(schema.qvConfigTable.id, f.config.id)),
             ).statementsLockedAt,
         ).toBeNull();
         expect(
@@ -748,7 +754,7 @@ describe("QV explicit saved responses", () => {
                     .returning(),
             );
             await tx.insert(schema.qvInputItemTable).values(
-                f.statements.map((item, index) => ({
+                f.items.map((item, index) => ({
                     snapshotId: snapshot.id,
                     itemSlugId: item.itemId,
                     sourceVersion: item.sourceVersion,
@@ -757,7 +763,7 @@ describe("QV explicit saved responses", () => {
                 })),
             );
             await tx.insert(schema.qvResultItemTable).values(
-                f.statements.map((item) => ({
+                f.items.map((item) => ({
                     snapshotId: snapshot.id,
                     itemSlugId: item.itemId,
                     supportUnits: 3,
@@ -863,6 +869,316 @@ describe("QV explicit saved responses", () => {
         ).toEqual({ status: "calculating", generation: 3 });
     });
 
+    it.each([false, true])(
+        "stages Live after survey withdrawal during the first tally only when eligibility changes (optional=%s)",
+        async (isOptional) => {
+            const f = await fixture();
+            const conversationId = f.conversation.id;
+            const conversationSlugId = f.conversation.slugId;
+            const request = {
+                ...f.context,
+                conversationSlugId,
+                skipEmailUpdateConsent: true,
+                getEmailUpdateOnboardingAction: () =>
+                    Promise.resolve(undefined),
+            };
+            await db.transaction(
+                async (tx) =>
+                    await setSurveyConfigForConversation({
+                        db: tx,
+                        conversationSlugId,
+                        conversationId,
+                        now: request.now,
+                        surveyConfig: {
+                            isOptional,
+                            questions: [
+                                {
+                                    questionType: "choice",
+                                    choiceDisplay: "list",
+                                    questionText: "Question",
+                                    isRequired: true,
+                                    isPublicAggregateSuppressionEnabled: false,
+                                    displayOrder: 0,
+                                    constraints: {
+                                        type: "choice",
+                                        minSelections: 1,
+                                        maxSelections: 1,
+                                    },
+                                    options: [
+                                        { optionText: "One", displayOrder: 0 },
+                                        { optionText: "Two", displayOrder: 1 },
+                                    ],
+                                },
+                            ],
+                        },
+                    }),
+            );
+            const config = await getActiveSurveyConfigRecord({
+                db,
+                conversationId,
+            });
+            if (config === undefined) throw new Error("Missing fixture survey");
+            const question = first(config.questions);
+            await expect(
+                saveSurveyAnswer({
+                    ...request,
+                    questionSlugId: question.slugId,
+                    expectedQuestionSemanticVersion:
+                        question.currentSemanticVersion,
+                    knownSurveyRevision: config.currentRevision,
+                    answer: {
+                        questionType: "choice",
+                        optionSlugIds: [first(question.options).slugId],
+                    },
+                }),
+            ).resolves.toMatchObject({ success: true });
+            await expect(
+                saveQvResponse({ ...f.context, request: f.request }),
+            ).resolves.toMatchObject({ success: true });
+            await db
+                .update(schema.conversationTable)
+                .set({ isClosed: true })
+                .where(eq(schema.conversationTable.id, conversationId));
+            await db
+                .insert(schema.qvCalculationStateTable)
+                .values({ conversationId, generation: 1 });
+            await db
+                .insert(schema.qvCalculationTable)
+                .values({ conversationId, generation: 1 });
+            await expect(
+                withdrawSurveyResponse(request),
+            ).resolves.toMatchObject({ success: true });
+            await expect(
+                withdrawSurveyResponse(request),
+            ).resolves.toMatchObject({ success: true });
+            const jobs = await db
+                .select({ generation: schema.qvCalculationTable.generation })
+                .from(schema.qvCalculationTable)
+                .where(
+                    eq(
+                        schema.qvCalculationTable.conversationId,
+                        conversationId,
+                    ),
+                )
+                .orderBy(schema.qvCalculationTable.generation);
+            expect(jobs.map((job) => job.generation)).toEqual(
+                isOptional ? [1] : [1, 2],
+            );
+            await expect(
+                fetchQvResults({ db, conversationSlugId }),
+            ).resolves.toMatchObject({ status: "calculating", generation: 1 });
+        },
+    );
+
+    it("withdraws a finalized QV ballot once and never replaces the original aggregate with pending work", async () => {
+        const f = await fixture();
+        await expect(
+            saveQvResponse({ ...f.context, request: f.request }),
+        ).resolves.toMatchObject({ success: true });
+        const {
+            id: conversationId,
+            slugId: conversationSlugId,
+            voteBufferEpoch,
+        } = f.conversation;
+        const owner = { db, conversationSlugId, userId: f.actor.userId };
+        const action = {
+            db,
+            didWrite: f.actor.didWrite,
+            userId: f.actor.userId,
+            now: f.context.now,
+            request: {
+                conversationSlugId,
+                expectedViewerId: f.actor.userId,
+                closeEpoch: voteBufferEpoch,
+            },
+        };
+        const { calculationId, closeId } = await db.transaction(async (tx) => {
+            const [job] = await tx
+                .insert(schema.qvCalculationTable)
+                .values({ conversationId, generation: 1 })
+                .returning();
+            const [snapshot] = await tx
+                .insert(schema.qvInputSnapshotTable)
+                .values({
+                    calculationId: job.id,
+                    creditBudget: 100,
+                    creditPricing: "quadratic",
+                    allowOpposition: true,
+                    statementSetRevision: 0,
+                    ruleVersion: 1,
+                    algorithmVersion: 1,
+                    participantCount: 1,
+                })
+                .returning();
+            const item = first(f.items);
+            await tx.insert(schema.qvInputItemTable).values({
+                snapshotId: snapshot.id,
+                itemSlugId: item.itemId,
+                sourceVersion: item.sourceVersion,
+                position: 0,
+                title: "Closing",
+            });
+            await tx.insert(schema.qvResultItemTable).values({
+                snapshotId: snapshot.id,
+                itemSlugId: item.itemId,
+                supportUnits: 3,
+                oppositionUnits: 0,
+                netUnits: 3,
+                supportingParticipantCount: 1,
+                opposingParticipantCount: 0,
+                rank: 1,
+            });
+            await tx
+                .update(schema.qvCalculationTable)
+                .set({
+                    inputSnapshotId: snapshot.id,
+                    status: "ready",
+                    readyAt: new Date(),
+                })
+                .where(eq(schema.qvCalculationTable.id, job.id));
+            await tx.insert(schema.qvCalculationStateTable).values({
+                conversationId,
+                generation: 1,
+                currentCalculationId: job.id,
+            });
+            const [closed] = await tx
+                .update(schema.conversationTable)
+                .set({
+                    isClosed: true,
+                    closingTargetRevision: 1,
+                    closedFinalizedAt: new Date(),
+                })
+                .where(eq(schema.conversationTable.id, conversationId))
+                .returning();
+            if (closed.closedFinalizedAt === null)
+                throw new Error("Missing finalization");
+            const close = first(
+                await tx
+                    .insert(schema.conversationAnalysisCloseTable)
+                    .values({
+                        conversationId,
+                        closeEpoch: voteBufferEpoch,
+                        finalizedAt: closed.closedFinalizedAt,
+                        sourceRevision: 1,
+                    })
+                    .returning(),
+            );
+            return { calculationId: job.id, closeId: close.id };
+        });
+        await expect(getClosedVoteWithdrawalStatus(owner)).resolves.toEqual({
+            available: true,
+            closeEpoch: voteBufferEpoch,
+        });
+        await expect(withdrawClosedVotes(action)).resolves.toEqual({
+            success: true,
+        });
+        await expect(withdrawClosedVotes(action)).resolves.toEqual({
+            success: true,
+        });
+        await expect(getClosedVoteWithdrawalStatus(owner)).resolves.toEqual({
+            available: false,
+        });
+        await expect(
+            fetchQvResults({ db, conversationSlugId }),
+        ).resolves.toMatchObject({
+            status: "ready",
+            generation: 2,
+            calculationId,
+            participantCount: 1,
+            closedAnalysisSelection: {
+                status: "ready",
+                servedInputMode: "closing",
+            },
+        });
+        const switchToLive = {
+            db,
+            userId: f.actor.userId,
+            request: {
+                conversationSlugId,
+                closeId,
+                selectionRevision: 0,
+                inputMode: "live" as const,
+            },
+        };
+        await expect(
+            setClosedAnalysisInputMode(switchToLive),
+        ).rejects.toMatchObject({ statusCode: 403 });
+        const organization = first(
+            await db
+                .insert(schema.organizationTable)
+                .values({
+                    slug: randomUUID().slice(0, 8),
+                    displayName: "QV facilitators",
+                    defaultLanguageCode: "en",
+                    isFullImagePath: false,
+                    directoryVisibility: "unlisted",
+                })
+                .returning(),
+        );
+        await db.insert(schema.organizationMembershipTable).values({
+            role: "manager",
+            organizationId: organization.id,
+            userId: f.actor.userId,
+        });
+        await db.insert(schema.projectOrganizationOwnershipTable).values({
+            projectId: f.conversation.projectId,
+            organizationId: organization.id,
+        });
+        const updated = await setClosedAnalysisInputMode(switchToLive);
+        await expect(setClosedAnalysisInputMode(switchToLive)).resolves.toEqual(
+            updated,
+        );
+        const expectFallback = async (status: "pending" | "failed") => {
+            await expect(
+                fetchQvResults({ db, conversationSlugId }),
+            ).resolves.toMatchObject({
+                status: "ready",
+                calculationId,
+                closedAnalysisSelection: {
+                    status,
+                    servedInputMode: "closing",
+                    requestedInputMode: "live",
+                },
+            });
+        };
+        await expectFallback("pending");
+        await db
+            .update(schema.qvCalculationTable)
+            .set({ status: "failed" })
+            .where(
+                and(
+                    eq(
+                        schema.qvCalculationTable.conversationId,
+                        conversationId,
+                    ),
+                    eq(schema.qvCalculationTable.generation, 2),
+                ),
+            );
+        await expectFallback("failed");
+        await setClosedAnalysisInputMode({
+            ...switchToLive,
+            request: {
+                ...switchToLive.request,
+                inputMode: "closing",
+                selectionRevision: updated.selectionRevision,
+            },
+        });
+        await expect(
+            fetchQvResults({ db, conversationSlugId }),
+        ).resolves.toMatchObject({
+            status: "ready",
+            calculationId,
+            closedAnalysisSelection: {
+                status: "ready",
+                servedInputMode: "closing",
+            },
+        });
+        await openConversation({ db, conversationSlugId, valkey: undefined });
+        await expect(withdrawClosedVotes(action)).rejects.toMatchObject({
+            statusCode: 409,
+        });
+    });
+
     it("saves, replaces and withdraws explicitly, preserving immutable versions and the permanent lock", async () => {
         const f = await fixture();
         const saved = await saveQvResponse({
@@ -926,8 +1242,8 @@ describe("QV explicit saved responses", () => {
             first(
                 await db
                     .select()
-                    .from(schema.creditVotingConfigTable)
-                    .where(eq(schema.creditVotingConfigTable.id, f.config.id)),
+                    .from(schema.qvConfigTable)
+                    .where(eq(schema.qvConfigTable.id, f.config.id)),
             ).statementsLockedAt,
         ).not.toBeNull();
     });
@@ -1046,7 +1362,7 @@ describe("QV explicit saved responses", () => {
     it("registers an unknown guest only for the explicit command and admits a sparse +7 / -6 ballot", async () => {
         const f = await fixture();
         const didWrite = `did:key:qv-new-${randomUUID()}`;
-        const second = first(f.statements.slice(1));
+        const second = first(f.items.slice(1));
         const saved = await saveQvResponse({
             ...f.context,
             didWrite,
@@ -1082,14 +1398,14 @@ describe("QV explicit saved responses", () => {
 
     it("serializes actual statement deletion against the first accepted response", async () => {
         const f = await fixture();
-        const statement = first(f.statements);
-        const update = await normalizeQvStatementUpdate({
+        const item = first(f.items);
+        const update = await normalizeQvItemUpdate({
             expectedRevision: 0,
             changes: [
                 {
                     action: "delete",
-                    slugId: statement.itemId,
-                    sourceVersion: statement.sourceVersion,
+                    slugId: item.itemId,
+                    sourceVersion: item.sourceVersion,
                 },
             ],
         });
@@ -1099,7 +1415,7 @@ describe("QV explicit saved responses", () => {
                 .from(schema.conversationTable)
                 .where(eq(schema.conversationTable.id, f.conversation.id))
                 .for("update");
-            const prepared = await prepareQvStatementUpdate({
+            const prepared = await prepareQvItemUpdate({
                 db: tx,
                 conversationId: f.conversation.id,
                 configId: f.config.id,
@@ -1108,7 +1424,7 @@ describe("QV explicit saved responses", () => {
                 lockConfig: true,
             });
             if (prepared.success)
-                await applyQvStatementUpdate({
+                await applyQvItemUpdate({
                     db: tx,
                     prepared,
                     conversation: {
@@ -1173,7 +1489,7 @@ describe("QV explicit saved responses", () => {
         "rejects %s without locking statements or persisting a response",
         async (kind) => {
             const f = await fixture({ allowOpposition: kind !== "opposition" });
-            const other = first(f.statements.slice(1));
+            const other = first(f.items.slice(1));
             const request = {
                 ...f.request,
                 allocations:
@@ -1214,10 +1530,8 @@ describe("QV explicit saved responses", () => {
                 first(
                     await db
                         .select()
-                        .from(schema.creditVotingConfigTable)
-                        .where(
-                            eq(schema.creditVotingConfigTable.id, f.config.id),
-                        ),
+                        .from(schema.qvConfigTable)
+                        .where(eq(schema.qvConfigTable.id, f.config.id)),
                 ).statementsLockedAt,
             ).toBeNull();
             expect(
@@ -1580,8 +1894,8 @@ describe("QV explicit saved responses", () => {
             first(
                 await db
                     .select()
-                    .from(schema.creditVotingConfigTable)
-                    .where(eq(schema.creditVotingConfigTable.id, f.config.id)),
+                    .from(schema.qvConfigTable)
+                    .where(eq(schema.qvConfigTable.id, f.config.id)),
             ).statementsLockedAt,
         ).not.toBeNull();
     });
@@ -1625,8 +1939,8 @@ describe("QV explicit saved responses", () => {
             db.insert(schema.qvAllocationTable).values({
                 versionId: leftResponse.currentVersionId,
                 conversationId: left.conversation.id,
-                itemId: first(right.statements).id,
-                contentId: first(right.statements).contentId,
+                itemId: first(right.items).id,
+                contentId: first(right.items).contentId,
                 votes: 1,
             }),
         ).rejects.toThrow();
@@ -1634,8 +1948,8 @@ describe("QV explicit saved responses", () => {
             db.insert(schema.qvAllocationTable).values({
                 versionId: leftResponse.currentVersionId,
                 conversationId: left.conversation.id,
-                itemId: first(left.statements.slice(1)).id,
-                contentId: first(right.statements).contentId,
+                itemId: first(left.items.slice(1)).id,
+                contentId: first(right.items).contentId,
                 votes: 1,
             }),
         ).rejects.toThrow();
@@ -1686,7 +2000,7 @@ describe("QV explicit saved responses", () => {
     });
     it("canonicalizes sparse allocation order for command retries", async () => {
         const f = await fixture();
-        const second = first(f.statements.slice(1));
+        const second = first(f.items.slice(1));
         const request = {
             ...f.request,
             allocations: [
@@ -1713,11 +2027,11 @@ describe("QV explicit saved responses", () => {
 
     it("keeps Save/load query counts constant for one versus 100 allocations", async () => {
         const measurements = [];
-        for (const statementCount of [1, 100]) {
-            const f = await fixture({ statementCount });
+        for (const itemCount of [1, 100]) {
+            const f = await fixture({ itemCount });
             const request = {
                 ...f.request,
-                allocations: f.statements.map(({ itemId, sourceVersion }) => ({
+                allocations: f.items.map(({ itemId, sourceVersion }) => ({
                     itemId,
                     sourceVersion,
                     votes: 1,
@@ -1779,9 +2093,9 @@ describe("QV explicit saved responses", () => {
                 ).toBe(false);
                 recordedQueries = [];
                 const snapshot = await f.load();
-                expect(snapshot.items).toHaveLength(statementCount);
+                expect(snapshot.items).toHaveLength(itemCount);
                 expect(snapshot.response.saved?.allocations).toHaveLength(
-                    statementCount,
+                    itemCount,
                 );
                 const loadQueries = recordedQueries.length;
                 expect(
@@ -1935,12 +2249,12 @@ describe("QV explicit saved responses", () => {
     });
 
     it("uses indexed QV lookups among 20,000 unrelated responses, allocations and statements", async () => {
-        const f = await fixture({ statementCount: 100 });
+        const f = await fixture({ itemCount: 100 });
         await saveQvResponse({
             ...f.context,
             request: {
                 ...f.request,
-                allocations: f.statements.map(({ itemId, sourceVersion }) => ({
+                allocations: f.items.map(({ itemId, sourceVersion }) => ({
                     itemId,
                     sourceVersion,
                     votes: 1,
@@ -2000,13 +2314,13 @@ describe("QV explicit saved responses", () => {
                         })),
                     )
                     .returning({ id: schema.qvResponseVersionTable.id });
-                const statement = first(unrelated.statements);
+                const item = first(unrelated.items);
                 await tx.insert(schema.qvAllocationTable).values(
                     versions.map((version) => ({
                         versionId: version.id,
                         conversationId: unrelated.conversation.id,
-                        itemId: statement.id,
-                        contentId: statement.contentId,
+                        itemId: item.id,
+                        contentId: item.contentId,
                         votes: 1,
                     })),
                 );
@@ -2098,7 +2412,7 @@ describe("QV explicit saved responses", () => {
             {
                 name: "statement listing",
                 table: "ranking_item",
-                query: buildQvStatementSourcesQuery({
+                query: buildQvItemSourcesQuery({
                     db,
                     conversationId: f.conversation.id,
                 }),
@@ -2109,7 +2423,7 @@ describe("QV explicit saved responses", () => {
                 query: buildQvAllocationItemsQuery({
                     db,
                     conversationId: f.conversation.id,
-                    itemSlugs: f.statements.map(({ itemId }) => itemId),
+                    itemSlugs: f.items.map(({ itemId }) => itemId),
                 }),
             },
         ];

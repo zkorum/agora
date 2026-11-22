@@ -1,7 +1,8 @@
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
     conversationParticipantTable,
+    type conversationTable,
     qvAllocationTable,
     qvResponseTable,
     qvResponseCommandTable,
@@ -73,13 +74,16 @@ export function buildQvOwnerResponseQuery({
     db,
     userId,
     conversationId,
+    savedOnly = false,
 }: {
     db: PostgresJsDatabase;
     userId: string;
-    conversationId: number;
+    conversationId: number | typeof conversationTable.id;
+    savedOnly?: boolean;
 }) {
     return db
         .select({
+            id: qvResponseTable.id,
             revision: qvResponseTable.revision,
             versionId: qvResponseTable.currentVersionId,
         })
@@ -94,6 +98,9 @@ export function buildQvOwnerResponseQuery({
                 eq(conversationParticipantTable.conversationId, conversationId),
                 isNull(qvResponseTable.deletedAt),
                 isNull(qvResponseTable.accountHiddenAt),
+                savedOnly
+                    ? isNotNull(qvResponseTable.currentVersionId)
+                    : undefined,
             ),
         );
 }
@@ -137,7 +144,7 @@ export function buildQvSavedAllocationsQuery({
 }
 
 /** QV has no comparison lifecycle, external source or scoring joins. */
-export function buildQvStatementSourcesQuery({
+export function buildQvItemSourcesQuery({
     db,
     conversationId,
 }: {

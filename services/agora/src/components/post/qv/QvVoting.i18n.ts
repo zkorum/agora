@@ -1,83 +1,86 @@
+import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
+
+const english = {
+  title: "Quadratic voting",
+  instruction: "Give more votes to the statements you care about.",
+  explanation:
+    "Each statement’s cost is its votes squared: 3 votes cost 9 credits. You have {budget} credits in total.",
+  signedHelp:
+    "Use positive votes to support a statement and negative votes to express that you do not support it.",
+  supportOnlyHelp:
+    "This activity accepts support votes only. Reduce votes to zero to remove your support.",
+  support: "Support",
+  opposition: "Do not support",
+  item: "Statement",
+  votes: "Votes",
+  credits: "Credits",
+  creditCost: "{credits} credits",
+  oneCredit: "1 credit",
+  increase: "Increase support for: {title}",
+  decrease: "Decrease support for: {title}",
+  voteValue: "Votes for {title}: {votes}",
+  squareLabel: "Votes: {votes}. Credits used: {credits} of {budget}.",
+  remaining: "{remaining} / {budget} credits remaining",
+  unused: "You do not have to spend all your credits.",
+  unsaved: "You have unsaved changes.",
+  localOnly: "These changes exist only in this page and are not counted.",
+  save: "Save response",
+  retryCommand: "Retry pending request",
+  savedBaseline:
+    "Your saved response is on file. Local changes only replace it when you save again.",
+  notSaved: "No response saved yet. Only an explicit save counts.",
+  saved: "Response saved.",
+  withdrawn: "Saved response withdrawn.",
+  saveError: "The request was not accepted. Your local changes have been kept.",
+  commandUncertain:
+    "We could not confirm the outcome. Retry the pending request before saving further changes or discarding.",
+  sessionRefreshError:
+    "Your session could not be refreshed. Refresh it before continuing.",
+  responseConflict:
+    "Your saved response changed elsewhere or this snapshot is stale. Discard local changes to load the current saved response.",
+  withdraw: "Withdraw saved response",
+  withdrawTitle: "Withdraw your saved response?",
+  withdrawMessage:
+    "Your saved response will no longer count. Local changes will be cleared. You can save a new response while voting is open.",
+  savingUnavailable:
+    "Preview only. These allocations are not saved or counted.",
+  discard: "Discard changes",
+  discardTitle: "Discard your changes?",
+  discardMessage:
+    "Your unsaved changes will be lost. Your saved response, if any, will not be changed.",
+  keepEditing: "Keep editing",
+  pendingLeaveMessage:
+    "A response request is still pending and may already have been saved. Leaving discards local edits but does not cancel that request.",
+  closed: "Voting is closed. You cannot edit or submit a response.",
+  locked: "Voting is unavailable while this activity is locked.",
+  changed:
+    "The statements have changed. Discard your local changes to load the current statements.",
+  loadError: "Unable to load the statements.",
+  retry: "Retry",
+  empty: "No statements to prioritize yet.",
+  itemUnavailable:
+    "Statement text is unavailable. Voting on this statement is disabled.",
+  analysisTitle: "Quadratic voting results",
+  analysisOpen:
+    "Community results will be available after this activity closes.",
+  analysisUnavailable: "Results are not available yet.",
+  analysisCalculating: "Calculating results…",
+  analysisFailed: "Results could not be calculated.",
+  analysisEmpty: "No eligible saved responses were included.",
+  basedOnParticipants: "Participants included: {count}",
+  netVotes: "Net votes: {count}",
+  supportVotes: "Support votes: {count}",
+  oppositionVotes: "Opposition votes: {count}",
+  backToItems: "View statements",
+};
+
 export const qvVotingTranslations = {
-  en: {
-    title: "Quadratic voting",
-    instruction: "Give more votes to the statements you care about.",
-    explanation:
-      "Each statement’s cost is its votes squared: 3 votes cost 9 credits. You have {budget} credits in total.",
-    signedHelp:
-      "Use positive votes to support a statement and negative votes to express that you do not support it.",
-    supportOnlyHelp:
-      "This activity accepts support votes only. Reduce votes to zero to remove your support.",
-    support: "Support",
-    notSupport: "Not support",
-    statement: "Statement",
-    votes: "Votes",
-    credits: "Credits",
-    creditCost: "{credits} credits",
-    oneCredit: "1 credit",
-    increase: "Increase support for: {title}",
-    decrease: "Decrease support for: {title}",
-    voteValue: "{votes} votes for: {title}",
-    squareLabel: "{votes} votes use {credits} of {budget} credits",
-    remaining: "{remaining} / {budget} credits remaining",
-    unused: "You do not have to spend all your credits.",
-    unsaved: "You have unsaved changes.",
-    localOnly: "These changes exist only in this page and are not counted.",
-    save: "Save response",
-    retryCommand: "Retry pending request",
-    savedBaseline:
-      "Your saved response counts. Local changes do not replace it until you save again.",
-    notSaved: "No response saved yet. Only an explicit save counts.",
-    saved: "Response saved.",
-    withdrawn: "Saved response withdrawn.",
-    saveError:
-      "The request was not accepted. Your local changes have been kept.",
-    commandUncertain:
-      "We could not confirm the outcome. Retry the pending request before saving further changes or discarding.",
-    sessionRefreshError:
-      "Your response was saved, but your session could not be refreshed. Reload before continuing.",
-    responseConflict:
-      "Your saved response changed elsewhere or this snapshot is stale. Discard local changes to load the current saved response.",
-    withdraw: "Withdraw saved response",
-    withdrawTitle: "Withdraw your saved response?",
-    withdrawMessage:
-      "Your saved response will no longer count. Local changes will be cleared. You can save a new response while voting is open.",
-    savingUnavailable:
-      "Preview only. These allocations are not saved or counted.",
-    discard: "Discard changes",
-    discardTitle: "Discard your changes?",
-    discardMessage:
-      "Your unsaved changes will be lost. Your saved response, if any, will not be changed.",
-    keepEditing: "Keep editing",
-    pendingLeaveMessage:
-      "A response request is still pending and may already have been saved. Leaving discards local edits but does not cancel that request.",
-    closed: "Voting is closed. You cannot change your response.",
-    locked: "Voting is unavailable while this activity is locked.",
-    changed:
-      "The statements have changed. Discard your local changes to load the current statements.",
-    loadError: "Unable to load the statements.",
-    retry: "Retry",
-    empty: "No statements to prioritize yet.",
-    statementUnavailable:
-      "Statement text is unavailable. Voting on this statement is disabled.",
-    analysisTitle: "Quadratic voting results",
-    analysisOpen:
-      "Community results will be available after this activity closes.",
-    analysisUnavailable: "Results are not available yet.",
-    analysisCalculating: "Calculating results…",
-    analysisFailed: "Results could not be calculated.",
-    analysisEmpty: "No eligible saved responses were included.",
-    basedOnParticipants: "Based on {count} participants.",
-    netVotes: "Net votes: {count}",
-    supportVotes: "Support votes: {count}",
-    oppositionVotes: "Opposition votes: {count}",
-    backToStatements: "View statements",
-  },
+  en: english,
   fr: {
     analysisCalculating: "Calcul des résultats…",
     analysisFailed: "Les résultats n’ont pas pu être calculés.",
     analysisEmpty: "Aucune réponse enregistrée admissible n’a été incluse.",
-    basedOnParticipants: "Sur la base de {count} participants.",
+    basedOnParticipants: "Nombre de participants pris en compte : {count}",
     netVotes: "Voix nettes : {count}",
     supportVotes: "Voix de soutien : {count}",
     oppositionVotes: "Voix d’opposition : {count}",
@@ -91,8 +94,8 @@ export const qvVotingTranslations = {
     supportOnlyHelp:
       "Cette activité accepte uniquement des voix de soutien. Ramenez les voix à zéro pour retirer votre soutien.",
     support: "Soutenir",
-    notSupport: "Ne pas soutenir",
-    statement: "Proposition",
+    opposition: "Ne pas soutenir",
+    item: "Proposition",
     votes: "Voix",
     credits: "Crédits",
     creditCost: "{credits} crédits",
@@ -109,7 +112,7 @@ export const qvVotingTranslations = {
     save: "Enregistrer la réponse",
     retryCommand: "Réessayer la demande en attente",
     savedBaseline:
-      "Votre réponse enregistrée est comptée. Les modifications locales ne la remplacent qu’après un nouvel enregistrement.",
+      "Votre réponse a été enregistrée. Les modifications locales ne la remplacent que si vous enregistrez à nouveau.",
     notSaved:
       "Aucune réponse enregistrée. Seul un enregistrement explicite est compté.",
     saved: "Réponse enregistrée.",
@@ -119,7 +122,7 @@ export const qvVotingTranslations = {
     commandUncertain:
       "Le résultat n’a pas pu être confirmé. Réessayez la demande en attente avant d’enregistrer d’autres modifications ou de les abandonner.",
     sessionRefreshError:
-      "Votre réponse a été enregistrée, mais votre session n’a pas pu être actualisée. Rechargez la page avant de continuer.",
+      "Votre session n’a pas pu être actualisée. Actualisez-la avant de continuer.",
     responseConflict:
       "Votre réponse enregistrée a changé ailleurs ou cet aperçu est périmé. Abandonnez les modifications locales pour charger la réponse actuelle.",
     withdraw: "Retirer la réponse enregistrée",
@@ -135,7 +138,8 @@ export const qvVotingTranslations = {
     keepEditing: "Continuer à modifier",
     pendingLeaveMessage:
       "Une demande est en attente et a peut-être déjà été enregistrée. Quitter abandonne les modifications locales, mais n’annule pas cette demande.",
-    closed: "Le vote est fermé. Vous ne pouvez pas modifier votre réponse.",
+    closed:
+      "Le vote est clos. Vous ne pouvez ni modifier ni soumettre de réponse.",
     locked:
       "Le vote n’est pas disponible lorsque cette activité est verrouillée.",
     changed:
@@ -143,12 +147,647 @@ export const qvVotingTranslations = {
     loadError: "Impossible de charger les propositions.",
     retry: "Réessayer",
     empty: "Aucune proposition à prioriser pour le moment.",
-    statementUnavailable:
+    itemUnavailable:
       "Le texte de la proposition n’est pas disponible. Le vote sur cette proposition est désactivé.",
     analysisTitle: "Résultats du vote quadratique",
     analysisOpen:
       "Les résultats collectifs seront disponibles après la fermeture de cette activité.",
     analysisUnavailable: "Les résultats ne sont pas encore disponibles.",
-    backToStatements: "Voir les propositions",
+    backToItems: "Voir les propositions",
   },
-};
+  es: {
+    title: "Votación cuadrática",
+    instruction: "Da más votos a las propuestas que más te importan.",
+    explanation:
+      "El coste de cada propuesta es el cuadrado de sus votos: 3 votos cuestan 9 créditos. Dispones de {budget} créditos.",
+    signedHelp:
+      "Usa votos positivos para indicar que apoyas una propuesta y negativos para indicar que no la apoyas.",
+    supportOnlyHelp:
+      "Solo se admiten votos de apoyo. Reduce los votos a cero para retirar tu apoyo.",
+    support: "Apoyo",
+    opposition: "Sin apoyo",
+    item: "Propuesta",
+    votes: "Votos",
+    credits: "Créditos",
+    creditCost: "{credits} créditos",
+    oneCredit: "1 crédito",
+    increase: "Aumentar el apoyo a: {title}",
+    decrease: "Reducir el apoyo a: {title}",
+    voteValue: "Votos para «{title}»: {votes}",
+    squareLabel: "Votos: {votes}. Créditos utilizados: {credits} de {budget}.",
+    remaining: "Créditos disponibles: {remaining} de {budget}",
+    unused: "No tienes que gastar todos los créditos.",
+    unsaved: "Tienes cambios sin guardar.",
+    localOnly: "Estos cambios solo existen en esta página y no se cuentan.",
+    save: "Guardar respuesta",
+    retryCommand: "Reintentar la solicitud pendiente",
+    savedBaseline:
+      "Tu respuesta está guardada. Los cambios locales solo la sustituyen cuando vuelves a guardar.",
+    notSaved:
+      "Aún no has guardado ninguna respuesta. Solo se cuentan las respuestas guardadas.",
+    saved: "Respuesta guardada.",
+    withdrawn: "Respuesta guardada retirada.",
+    saveError:
+      "No se aceptó la solicitud. Se han conservado tus cambios locales.",
+    commandUncertain:
+      "No se pudo confirmar el resultado. Reintenta la solicitud pendiente antes de guardar más cambios o descartarlos.",
+    sessionRefreshError:
+      "No se pudo actualizar la sesión. Actualízala antes de continuar.",
+    responseConflict:
+      "La respuesta guardada cambió en otra sesión o esta versión ya no está actualizada. Descarta los cambios locales para cargar la respuesta actual.",
+    withdraw: "Retirar la respuesta guardada",
+    withdrawTitle: "¿Retirar tu respuesta guardada?",
+    withdrawMessage:
+      "Tu respuesta dejará de contar. Los cambios locales se borrarán. Puedes guardar otra respuesta mientras la votación esté abierta.",
+    savingUnavailable:
+      "Solo vista previa. Este reparto no se guarda ni se cuenta.",
+    discard: "Descartar cambios",
+    discardTitle: "¿Descartar tus cambios?",
+    discardMessage:
+      "Se perderán los cambios sin guardar. Tu respuesta guardada, si la hay, no cambiará.",
+    keepEditing: "Seguir editando",
+    pendingLeaveMessage:
+      "Hay una solicitud pendiente que podría haberse guardado. Salir descarta los cambios locales, pero no cancela la solicitud.",
+    closed:
+      "La votación está cerrada. No puedes editar ni enviar otra respuesta.",
+    locked: "No se puede votar mientras la actividad esté bloqueada.",
+    changed:
+      "Las propuestas han cambiado. Descarta los cambios locales para cargar las actuales.",
+    loadError: "No se pudieron cargar las propuestas.",
+    retry: "Reintentar",
+    empty: "Todavía no hay propuestas que priorizar.",
+    itemUnavailable:
+      "El texto no está disponible. No se puede votar por esta propuesta.",
+    analysisTitle: "Resultados de la votación cuadrática",
+    analysisOpen:
+      "Los resultados colectivos estarán disponibles después del cierre.",
+    analysisUnavailable: "Los resultados aún no están disponibles.",
+    analysisCalculating: "Calculando resultados…",
+    analysisFailed: "No se pudieron calcular los resultados.",
+    analysisEmpty:
+      "No se incluyó ninguna respuesta guardada que cumpliera los requisitos.",
+    basedOnParticipants: "Participantes incluidos: {count}",
+    netVotes: "Votos netos: {count}",
+    supportVotes: "Votos a favor: {count}",
+    oppositionVotes: "Votos en contra: {count}",
+    backToItems: "Ver propuestas",
+  },
+  ar: {
+    title: "التصويت التربيعي",
+    instruction: "امنح المقترحات التي تهمك أكثر عددًا أكبر من الأصوات.",
+    explanation:
+      "تكلفة كل مقترح تساوي مربع عدد أصواته: ثلاثة أصوات تكلّف تسع نقاط. رصيدك الإجمالي {budget} نقطة.",
+    signedHelp:
+      "استخدم الأصوات الموجبة لتأييد المقترح والسالبة للتعبير عن عدم تأييدك له.",
+    supportOnlyHelp:
+      "يقبل هذا النشاط أصوات التأييد فقط. اسحب تأييدك بتخفيض عدد الأصوات إلى الصفر.",
+    support: "تأييد",
+    opposition: "عدم التأييد",
+    item: "المقترح",
+    votes: "الأصوات",
+    credits: "النقاط",
+    creditCost: "النقاط: {credits}",
+    oneCredit: "نقطة واحدة",
+    increase: "زيادة التأييد للمقترح: {title}",
+    decrease: "تقليل التأييد للمقترح: {title}",
+    voteValue: "الأصوات للمقترح «{title}»: {votes}",
+    squareLabel: "الأصوات: {votes}. النقاط المستخدمة: {credits} من {budget}.",
+    remaining: "النقاط المتبقية: {remaining} من {budget}",
+    unused: "لا يلزم إنفاق كل النقاط.",
+    unsaved: "لديك تغييرات غير محفوظة.",
+    localOnly: "هذه التغييرات محلية لهذه الصفحة ولا تُحتسب.",
+    save: "حفظ الرد",
+    retryCommand: "إعادة محاولة الطلب المعلّق",
+    savedBaseline:
+      "ردك محفوظ. لا تحلّ التغييرات المحلية محلّه إلا عند الحفظ مجددًا.",
+    notSaved: "لم يُحفظ أي رد بعد. لا تُحتسب إلا الردود المحفوظة.",
+    saved: "حُفظ الرد.",
+    withdrawn: "سُحب الرد المحفوظ.",
+    saveError: "لم يُقبل الطلب. احتُفظ بتغييراتك المحلية.",
+    commandUncertain:
+      "تعذّر تأكيد النتيجة. أعد محاولة الطلب المعلّق قبل حفظ تغييرات أخرى أو تجاهلها.",
+    sessionRefreshError: "تعذّر تحديث جلستك. حدّثها قبل المتابعة.",
+    responseConflict:
+      "تغيّر ردك المحفوظ في مكان آخر أو أصبحت هذه النسخة قديمة. تجاهل التغييرات المحلية لتحميل الرد الحالي.",
+    withdraw: "سحب الرد المحفوظ",
+    withdrawTitle: "هل تسحب ردك المحفوظ؟",
+    withdrawMessage:
+      "لن يُحتسب ردك وستُمسح التغييرات المحلية. يمكنك حفظ رد جديد ما دام التصويت مفتوحًا.",
+    savingUnavailable: "معاينة فقط. لن يُحفظ هذا التوزيع أو يُحتسب.",
+    discard: "تجاهل التغييرات",
+    discardTitle: "هل تريد تجاهل تغييراتك؟",
+    discardMessage:
+      "ستفقد التغييرات غير المحفوظة. لن يتغير ردك المحفوظ إن وُجد.",
+    keepEditing: "متابعة التحرير",
+    pendingLeaveMessage:
+      "هناك طلب معلّق وربما حُفظ الرد بالفعل. المغادرة تتجاهل التغييرات المحلية ولا تلغي الطلب.",
+    closed: "التصويت مغلق. لا يمكنك تعديل الرد أو إرسال رد جديد.",
+    locked: "لا يتاح التصويت أثناء قفل النشاط.",
+    changed:
+      "تغيّرت المقترحات. تجاهل التغييرات المحلية لتحميل المقترحات الحالية.",
+    loadError: "تعذّر تحميل المقترحات.",
+    retry: "إعادة المحاولة",
+    empty: "لا توجد مقترحات لترتيبها بعد.",
+    itemUnavailable: "نص المقترح غير متاح. لا يمكن التصويت عليه.",
+    analysisTitle: "نتائج التصويت التربيعي",
+    analysisOpen: "ستتاح النتائج الجماعية بعد إغلاق النشاط.",
+    analysisUnavailable: "النتائج غير متاحة بعد.",
+    analysisCalculating: "جارٍ حساب النتائج…",
+    analysisFailed: "تعذّر حساب النتائج.",
+    analysisEmpty: "لا توجد ردود محفوظة مؤهلة أُدرجت في الحساب.",
+    basedOnParticipants: "عدد المشاركين المشمولين: {count}",
+    netVotes: "صافي الأصوات: {count}",
+    supportVotes: "أصوات التأييد: {count}",
+    oppositionVotes: "أصوات الاعتراض: {count}",
+    backToItems: "عرض المقترحات",
+  },
+  fa: {
+    title: "رأی‌گیری درجه دوم",
+    instruction: "به گزاره‌هایی که برایتان مهم‌ترند رأی بیشتری بدهید.",
+    explanation:
+      "هزینهٔ هر گزاره برابر مربع تعداد رأی‌های آن است: سه رأی نُه اعتبار هزینه دارد. در مجموع {budget} اعتبار دارید.",
+    signedHelp:
+      "با رأی مثبت حمایت خود را نشان دهید و با رأی منفی نشان دهید که از گزاره حمایت نمی‌کنید.",
+    supportOnlyHelp:
+      "در این فعالیت فقط رأی موافق پذیرفته می‌شود. برای پس گرفتن حمایت، تعداد رأی‌ها را به صفر برسانید.",
+    support: "موافق",
+    opposition: "عدم حمایت",
+    item: "گزاره",
+    votes: "رأی‌ها",
+    credits: "اعتبار",
+    creditCost: "{credits} اعتبار",
+    oneCredit: "یک اعتبار",
+    increase: "افزایش حمایت از: {title}",
+    decrease: "کاهش حمایت از: {title}",
+    voteValue: "تعداد رأی برای «{title}»: {votes}",
+    squareLabel: "تعداد رأی: {votes}؛ اعتبار مصرف‌شده: {credits} از {budget}",
+    remaining: "اعتبار باقی‌مانده: {remaining} از {budget}",
+    unused: "لازم نیست همهٔ اعتبارتان را خرج کنید.",
+    unsaved: "تغییرات ذخیره‌نشده دارید.",
+    localOnly: "این تغییرات فقط در همین صفحه‌اند و شمرده نمی‌شوند.",
+    save: "ذخیرهٔ پاسخ",
+    retryCommand: "تلاش دوباره برای درخواست در انتظار",
+    savedBaseline:
+      "پاسختان ذخیره شده است. تغییرات محلی فقط با ذخیرهٔ دوباره جای آن را می‌گیرند.",
+    notSaved:
+      "هنوز پاسخی ذخیره نشده است. فقط پاسخ‌های ذخیره‌شده شمرده می‌شوند.",
+    saved: "پاسخ ذخیره شد.",
+    withdrawn: "پاسخ ذخیره‌شده پس گرفته شد.",
+    saveError: "درخواست پذیرفته نشد. تغییرات محلی شما حفظ شده است.",
+    commandUncertain:
+      "نتیجه تأیید نشد. پیش از ذخیره یا کنار گذاشتن تغییرات، درخواست در انتظار را دوباره بفرستید.",
+    sessionRefreshError: "نشست شما به‌روز نشد. پیش از ادامه آن را تازه کنید.",
+    responseConflict:
+      "پاسخ شما جای دیگری تغییر کرده یا این نسخه قدیمی است. برای بارگیری پاسخ فعلی، تغییرات محلی را کنار بگذارید.",
+    withdraw: "پس گرفتن پاسخ ذخیره‌شده",
+    withdrawTitle: "پاسخ ذخیره‌شده را پس می‌گیرید؟",
+    withdrawMessage:
+      "پاسختان دیگر شمرده نمی‌شود و تغییرات محلی پاک می‌شوند. تا وقتی رأی‌گیری باز است می‌توانید پاسخ تازه‌ای ذخیره کنید.",
+    savingUnavailable:
+      "فقط پیش‌نمایش است. این تخصیص‌ها ذخیره یا شمرده نمی‌شوند.",
+    discard: "کنار گذاشتن تغییرات",
+    discardTitle: "تغییرات را کنار می‌گذارید؟",
+    discardMessage:
+      "تغییرات ذخیره‌نشده از دست می‌روند. پاسخ ذخیره‌شده، اگر وجود داشته باشد، تغییر نمی‌کند.",
+    keepEditing: "ادامهٔ ویرایش",
+    pendingLeaveMessage:
+      "درخواستی در انتظار است و شاید پاسخ ذخیره شده باشد. خروج تغییرات محلی را کنار می‌گذارد اما درخواست را لغو نمی‌کند.",
+    closed:
+      "رأی‌گیری بسته است. نمی‌توانید پاسخ را ویرایش کنید یا پاسخ تازه‌ای بفرستید.",
+    locked: "تا وقتی فعالیت قفل است نمی‌توانید رأی بدهید.",
+    changed:
+      "گزاره‌ها تغییر کرده‌اند. برای بارگیری گزاره‌های فعلی تغییرات محلی را کنار بگذارید.",
+    loadError: "بارگیری گزاره‌ها ممکن نشد.",
+    retry: "تلاش دوباره",
+    empty: "هنوز گزاره‌ای برای اولویت‌بندی نیست.",
+    itemUnavailable: "متن گزاره در دسترس نیست. نمی‌توان به آن رأی داد.",
+    analysisTitle: "نتایج رأی‌گیری درجه دوم",
+    analysisOpen: "نتایج جمعی پس از بسته‌شدن فعالیت در دسترس قرار می‌گیرند.",
+    analysisUnavailable: "نتایج هنوز در دسترس نیستند.",
+    analysisCalculating: "در حال محاسبهٔ نتایج…",
+    analysisFailed: "محاسبهٔ نتایج ممکن نشد.",
+    analysisEmpty: "هیچ پاسخ ذخیره‌شدهٔ واجد شرایطی در محاسبه وارد نشد.",
+    basedOnParticipants: "تعداد شرکت‌کنندگان در محاسبه: {count}",
+    netVotes: "خالص رأی‌ها: {count}",
+    supportVotes: "رأی‌های موافق: {count}",
+    oppositionVotes: "رأی‌های مخالف: {count}",
+    backToItems: "مشاهدهٔ گزاره‌ها",
+  },
+  he: {
+    title: "הצבעה ריבועית",
+    instruction: "אפשר לתת יותר קולות להצהרות שחשובות לך יותר.",
+    explanation:
+      "העלות לכל הצהרה היא ריבוע מספר הקולות: שלושה קולות עולים תשע נקודות. התקציב הכולל שלך הוא {budget} נקודות.",
+    signedHelp:
+      "קולות חיוביים מביעים תמיכה בהצהרה, וקולות שליליים מציינים שאין לך תמיכה בה.",
+    supportOnlyHelp:
+      "בפעילות זו אפשר להצביע רק בעד. כדי להסיר תמיכה יש להפחית את מספר הקולות לאפס.",
+    support: "בעד",
+    opposition: "ללא תמיכה",
+    item: "הצהרה",
+    votes: "קולות",
+    credits: "נקודות",
+    creditCost: "נקודות: {credits}",
+    oneCredit: "נקודה אחת",
+    increase: "הגברת התמיכה בהצהרה: {title}",
+    decrease: "הפחתת התמיכה בהצהרה: {title}",
+    voteValue: "מספר הקולות להצהרה ״{title}״: {votes}",
+    squareLabel: "מספר קולות: {votes}. נקודות בשימוש: {credits} מתוך {budget}.",
+    remaining: "נקודות שנותרו: {remaining} מתוך {budget}",
+    unused: "אין חובה לנצל את כל הנקודות.",
+    unsaved: "יש שינויים שלא נשמרו.",
+    localOnly: "השינויים קיימים רק בדף הזה ואינם נספרים.",
+    save: "שמירת התשובה",
+    retryCommand: "ניסיון חוזר לשליחת הבקשה הממתינה",
+    savedBaseline:
+      "תשובתך שמורה. השינויים המקומיים יחליפו אותה רק לאחר שמירה נוספת.",
+    notSaved: "עדיין לא נשמרה תשובה. רק תשובות שנשמרו נספרות.",
+    saved: "התשובה נשמרה.",
+    withdrawn: "התשובה השמורה נמשכה.",
+    saveError: "הבקשה לא התקבלה. השינויים המקומיים נשמרו בדף.",
+    commandUncertain:
+      "לא ניתן היה לאשר את התוצאה. יש לנסות שוב את הבקשה הממתינה לפני שמירה או ביטול של שינויים נוספים.",
+    sessionRefreshError:
+      "לא ניתן היה לרענן את ההפעלה. יש לרענן אותה לפני ההמשך.",
+    responseConflict:
+      "התשובה השמורה השתנתה במקום אחר או שגרסה זו מיושנת. כדי לטעון את התשובה העדכנית יש לבטל את השינויים המקומיים.",
+    withdraw: "משיכת התשובה השמורה",
+    withdrawTitle: "למשוך את התשובה השמורה?",
+    withdrawMessage:
+      "התשובה לא תיספר עוד והשינויים המקומיים יימחקו. כל עוד ההצבעה פתוחה אפשר לשמור תשובה חדשה.",
+    savingUnavailable: "תצוגה מקדימה בלבד. ההקצאה אינה נשמרת ואינה נספרת.",
+    discard: "ביטול השינויים",
+    discardTitle: "לבטל את השינויים?",
+    discardMessage:
+      "השינויים שלא נשמרו יאבדו. התשובה השמורה, אם יש כזו, לא תשתנה.",
+    keepEditing: "המשך עריכה",
+    pendingLeaveMessage:
+      "בקשה עדיין ממתינה וייתכן שהתשובה כבר נשמרה. יציאה מבטלת את העריכות המקומיות אך אינה מבטלת את הבקשה.",
+    closed: "ההצבעה סגורה. אי אפשר לערוך תשובה או לשלוח תשובה חדשה.",
+    locked: "אי אפשר להצביע כל עוד הפעילות נעולה.",
+    changed:
+      "ההצהרות השתנו. כדי לטעון את ההצהרות העדכניות יש לבטל את השינויים המקומיים.",
+    loadError: "טעינת ההצהרות נכשלה.",
+    retry: "ניסיון חוזר",
+    empty: "עדיין אין הצהרות לתעדוף.",
+    itemUnavailable: "טקסט ההצהרה אינו זמין. אי אפשר להצביע עליה.",
+    analysisTitle: "תוצאות ההצבעה הריבועית",
+    analysisOpen: "התוצאות הקבוצתיות יהיו זמינות לאחר סגירת הפעילות.",
+    analysisUnavailable: "התוצאות עדיין אינן זמינות.",
+    analysisCalculating: "התוצאות מחושבות…",
+    analysisFailed: "לא ניתן היה לחשב את התוצאות.",
+    analysisEmpty: "לא נכללו תשובות שמורות שעמדו בתנאים.",
+    basedOnParticipants: "מספר המשתתפים שנכללו: {count}",
+    netVotes: "קולות נטו: {count}",
+    supportVotes: "קולות בעד: {count}",
+    oppositionVotes: "קולות נגד: {count}",
+    backToItems: "הצגת ההצהרות",
+  },
+  ja: {
+    title: "二次投票",
+    instruction: "重視する意見に多くの票を配分してください。",
+    explanation:
+      "意見ごとに、票数の二乗にあたるポイントを使います。3票には9ポイント必要です。持ち点は合計{budget}ポイントです。",
+    signedHelp:
+      "意見を支持するなら正の票を、支持しないなら負の票を配分してください。",
+    supportOnlyHelp:
+      "この活動では賛成票のみ使えます。支持を取り消すには票数をゼロにしてください。",
+    support: "賛成",
+    opposition: "支持しない",
+    item: "意見",
+    votes: "票数",
+    credits: "ポイント",
+    creditCost: "{credits}ポイント",
+    oneCredit: "1ポイント",
+    increase: "「{title}」の支持を増やす",
+    decrease: "「{title}」の支持を減らす",
+    voteValue: "「{title}」への票数：{votes}",
+    squareLabel: "{votes}票で{budget}ポイント中{credits}ポイントを使います",
+    remaining: "残り：{budget}ポイント中{remaining}ポイント",
+    unused: "すべてのポイントを使う必要はありません。",
+    unsaved: "未保存の変更があります。",
+    localOnly: "この変更はこのページ内だけのもので、集計されません。",
+    save: "回答を保存",
+    retryCommand: "保留中のリクエストを再試行",
+    savedBaseline:
+      "回答は保存済みです。もう一度保存するまで、編集中の内容に置き換わることはありません。",
+    notSaved: "回答はまだ保存されていません。保存した回答だけが集計対象です。",
+    saved: "回答を保存しました。",
+    withdrawn: "保存済みの回答を取り下げました。",
+    saveError:
+      "リクエストは受理されませんでした。編集内容はページ内に残っています。",
+    commandUncertain:
+      "結果を確認できませんでした。変更を保存または破棄する前に、保留中のリクエストを再試行してください。",
+    sessionRefreshError:
+      "セッションを更新できませんでした。続ける前に更新してください。",
+    responseConflict:
+      "保存済みの回答が他の場所で変更されたか、この表示が古くなっています。編集内容を破棄して最新の回答を読み込んでください。",
+    withdraw: "保存済みの回答を取り下げる",
+    withdrawTitle: "保存済みの回答を取り下げますか？",
+    withdrawMessage:
+      "回答は集計対象から外れ、未保存の変更は消去されます。投票期間中は新しい回答を保存できます。",
+    savingUnavailable: "プレビューです。この配分は保存も集計もされません。",
+    discard: "変更を破棄",
+    discardTitle: "変更を破棄しますか？",
+    discardMessage:
+      "未保存の変更は失われます。すでに保存した回答には影響しません。",
+    keepEditing: "編集を続ける",
+    pendingLeaveMessage:
+      "処理中のリクエストがあり、回答はすでに保存されている可能性があります。ページを離れると編集中の内容は失われますが、リクエストは取り消されません。",
+    closed: "投票は終了しました。回答の編集や新しい回答の送信はできません。",
+    locked: "活動がロックされている間は投票できません。",
+    changed:
+      "意見が変更されました。未保存の変更を破棄して最新の意見を読み込んでください。",
+    loadError: "意見を読み込めませんでした。",
+    retry: "再試行",
+    empty: "優先順位を付ける意見はまだありません。",
+    itemUnavailable: "本文を表示できないため、この意見には投票できません。",
+    analysisTitle: "二次投票の結果",
+    analysisOpen: "活動が終了すると全体の結果を確認できます。",
+    analysisUnavailable: "結果はまだありません。",
+    analysisCalculating: "集計中…",
+    analysisFailed: "集計できませんでした。",
+    analysisEmpty: "集計対象となる保存済みの回答はありませんでした。",
+    basedOnParticipants: "集計対象の参加者数：{count}",
+    netVotes: "差し引き票数：{count}",
+    supportVotes: "賛成票：{count}",
+    oppositionVotes: "反対票：{count}",
+    backToItems: "意見を表示",
+  },
+  ky: {
+    title: "Квадраттык добуш берүү",
+    instruction: "Сиз үчүн маанилүүрөөк билдирүүлөргө көбүрөөк добуш бериңиз.",
+    explanation:
+      "Ар бир билдирүүгө кеткен упай добуштарынын санынын квадратына барабар: 3 добуш 9 упай турат. Жалпы бюджетиңиз — {budget} упай.",
+    signedHelp: "Билдирүүнү колдосоңуз оң, колдобосоңуз терс добуш бериңиз.",
+    supportOnlyHelp:
+      "Бул иш-чарада колдоо добуштары гана кабыл алынат. Колдоону алып салуу үчүн добуш санын нөлгө түшүрүңүз.",
+    support: "Колдоо",
+    opposition: "Колдобойм",
+    item: "Билдирүү",
+    votes: "Добуштар",
+    credits: "Упайлар",
+    creditCost: "{credits} упай",
+    oneCredit: "1 упай",
+    increase: "Бул билдирүүгө колдоону көбөйтүү: {title}",
+    decrease: "Бул билдирүүгө колдоону азайтуу: {title}",
+    voteValue: "«{title}» үчүн добуштар: {votes}",
+    squareLabel:
+      "{votes} добушка жалпы {budget} упайдын {credits} упайы сарпталат",
+    remaining: "Калган упай: {remaining} / {budget}",
+    unused: "Бардык упайларды сарптоо милдеттүү эмес.",
+    unsaved: "Сакталбаган өзгөртүүлөр бар.",
+    localOnly: "Бул өзгөртүүлөр ушул баракта гана бар жана эсепке алынбайт.",
+    save: "Жоопту сактоо",
+    retryCommand: "Күтүп жаткан сурамды кайталоо",
+    savedBaseline:
+      "Жообуңуз сакталган. Жергиликтүү өзгөртүүлөр кайра сактаганда гана аны алмаштырат.",
+    notSaved: "Жооп азырынча сакталган жок. Сакталган жооптор гана эсептелет.",
+    saved: "Жооп сакталды.",
+    withdrawn: "Сакталган жооп кайтарылып алынды.",
+    saveError: "Сурам кабыл алынган жок. Өзгөртүүлөрүңүз баракта калды.",
+    commandUncertain:
+      "Натыйжаны ырастоо мүмкүн болгон жок. Өзгөртүүлөрдү сактоодон же жокко чыгаруудан мурун күтүп жаткан сурамды кайталаңыз.",
+    sessionRefreshError: "Сеанс жаңырган жок. Улантуудан мурун аны жаңыртыңыз.",
+    responseConflict:
+      "Сакталган жооп башка жерде өзгөргөн же бул нуска эскирген. Учурдагы жоопту жүктөө үчүн жергиликтүү өзгөртүүлөрдү жокко чыгарыңыз.",
+    withdraw: "Сакталган жоопту кайтарып алуу",
+    withdrawTitle: "Сакталган жообуңузду кайтарып аласызбы?",
+    withdrawMessage:
+      "Жообуңуз эсептелбей калат жана жергиликтүү өзгөртүүлөр тазаланат. Добуш берүү ачык кезде жаңы жооп сактай аласыз.",
+    savingUnavailable:
+      "Алдын ала көрүү гана. Бул бөлүштүрүү сакталбайт жана эсептелбейт.",
+    discard: "Өзгөртүүлөрдү жокко чыгаруу",
+    discardTitle: "Өзгөртүүлөрдү жокко чыгарасызбы?",
+    discardMessage:
+      "Сакталбаган өзгөртүүлөр жоголот. Мурда сакталган жооп болсо, ал өзгөрбөйт.",
+    keepEditing: "Түзөтүүнү улантуу",
+    pendingLeaveMessage:
+      "Сурам күтүп жатат жана жооп сакталган болушу мүмкүн. Чыгуу жергиликтүү өзгөртүүлөрдү жокко чыгарат, бирок сурамды токтотпойт.",
+    closed:
+      "Добуш берүү жабык. Жоопту түзөтүүгө же жаңы жооп жөнөтүүгө болбойт.",
+    locked: "Иш-чара кулпуланып турганда добуш берүүгө болбойт.",
+    changed:
+      "Билдирүүлөр өзгөрдү. Учурдагы билдирүүлөрдү жүктөө үчүн жергиликтүү өзгөртүүлөрдү жокко чыгарыңыз.",
+    loadError: "Билдирүүлөр жүктөлгөн жок.",
+    retry: "Кайра аракет кылуу",
+    empty: "Азырынча артыкчылык бериле турган билдирүүлөр жок.",
+    itemUnavailable:
+      "Билдирүүнүн тексти жеткиликсиз. Ага добуш берүүгө болбойт.",
+    analysisTitle: "Квадраттык добуш берүүнүн жыйынтыктары",
+    analysisOpen:
+      "Жалпы жыйынтыктар иш-чара жабылгандан кийин жеткиликтүү болот.",
+    analysisUnavailable: "Жыйынтыктар азырынча жеткиликсиз.",
+    analysisCalculating: "Жыйынтыктар эсептелүүдө…",
+    analysisFailed: "Жыйынтыктарды эсептөө мүмкүн болгон жок.",
+    analysisEmpty:
+      "Талаптарга жооп берген сакталган жооптор эсепке кирген жок.",
+    basedOnParticipants: "Эсепке кирген катышуучулардын саны: {count}",
+    netVotes: "Добуштардын айырмасы: {count}",
+    supportVotes: "Колдогон добуштар: {count}",
+    oppositionVotes: "Каршы добуштар: {count}",
+    backToItems: "Билдирүүлөрдү көрүү",
+  },
+  ru: {
+    title: "Квадратичное голосование",
+    instruction:
+      "Отдайте больше голосов тем высказываниям, которые для вас важнее.",
+    explanation:
+      "Стоимость голосов за каждое высказывание равна квадрату их числа: 3 голоса стоят 9 баллов. Всего у вас {budget} баллов.",
+    signedHelp:
+      "Положительные голоса означают, что вы поддерживаете высказывание, отрицательные — что не поддерживаете.",
+    supportOnlyHelp:
+      "В этом обсуждении можно голосовать только за. Чтобы снять поддержку, уменьшите число голосов до нуля.",
+    support: "За",
+    opposition: "Не поддерживаю",
+    item: "Высказывание",
+    votes: "Голоса",
+    credits: "Баллы",
+    creditCost: "Баллы: {credits}",
+    oneCredit: "1 балл",
+    increase: "Увеличить поддержку: {title}",
+    decrease: "Уменьшить поддержку: {title}",
+    voteValue: "Голоса за «{title}»: {votes}",
+    squareLabel: "Голоса: {votes}. Использовано баллов: {credits} из {budget}.",
+    remaining: "Остаток баллов: {remaining} из {budget}",
+    unused: "Необязательно тратить все баллы.",
+    unsaved: "Есть несохранённые изменения.",
+    localOnly:
+      "Эти изменения существуют только на этой странице и не учитываются.",
+    save: "Сохранить ответ",
+    retryCommand: "Повторить незавершённый запрос",
+    savedBaseline:
+      "Ваш ответ сохранён. Изменения на этой странице заменят его только после нового сохранения.",
+    notSaved: "Ответ ещё не сохранён. Учитываются только сохранённые ответы.",
+    saved: "Ответ сохранён.",
+    withdrawn: "Сохранённый ответ отозван.",
+    saveError: "Запрос не принят. Ваши изменения остались на странице.",
+    commandUncertain:
+      "Не удалось подтвердить результат. Повторите незавершённый запрос, прежде чем сохранять или отменять изменения.",
+    sessionRefreshError:
+      "Не удалось обновить сеанс. Обновите его, прежде чем продолжить.",
+    responseConflict:
+      "Ответ был изменён в другом месте или эта версия устарела. Отмените местные изменения, чтобы загрузить текущий ответ.",
+    withdraw: "Отозвать сохранённый ответ",
+    withdrawTitle: "Отозвать ваш сохранённый ответ?",
+    withdrawMessage:
+      "Ответ больше не будет учитываться. Несохранённые изменения будут удалены. Пока голосование открыто, можно сохранить новый ответ.",
+    savingUnavailable:
+      "Предпросмотр. Это распределение не сохраняется и не учитывается.",
+    discard: "Отменить изменения",
+    discardTitle: "Отменить изменения?",
+    discardMessage:
+      "Несохранённые изменения будут потеряны. Ранее сохранённый ответ не изменится.",
+    keepEditing: "Продолжить редактирование",
+    pendingLeaveMessage:
+      "Запрос ещё выполняется, и ответ уже мог сохраниться. При выходе изменения на странице будут потеряны, но запрос не отменится.",
+    closed: "Голосование закрыто. Изменить ответ или отправить новый нельзя.",
+    locked: "Пока обсуждение заблокировано, голосовать нельзя.",
+    changed:
+      "Высказывания изменились. Отмените изменения на странице, чтобы загрузить актуальный список.",
+    loadError: "Не удалось загрузить высказывания.",
+    retry: "Повторить",
+    empty: "Пока нет высказываний для расстановки приоритетов.",
+    itemUnavailable:
+      "Текст высказывания недоступен. Голосовать за него нельзя.",
+    analysisTitle: "Результаты квадратичного голосования",
+    analysisOpen: "Общие результаты будут доступны после закрытия обсуждения.",
+    analysisUnavailable: "Результаты пока недоступны.",
+    analysisCalculating: "Идёт подсчёт…",
+    analysisFailed: "Не удалось рассчитать результаты.",
+    analysisEmpty: "Ни один сохранённый ответ не отвечал условиям подсчёта.",
+    basedOnParticipants: "Учтено участников: {count}",
+    netVotes: "Баланс голосов: {count}",
+    supportVotes: "Голоса за: {count}",
+    oppositionVotes: "Голоса против: {count}",
+    backToItems: "Посмотреть высказывания",
+  },
+  "zh-Hans": {
+    title: "二次方投票",
+    instruction: "给你更看重的意见分配更多票数。",
+    explanation:
+      "每条意见消耗的点数等于票数的平方：3 票消耗 9 点。你共有 {budget} 点。",
+    signedHelp: "用正票表示支持某条意见，用负票表示不支持。",
+    supportOnlyHelp: "本活动只接受支持票。将票数减至零即可撤回支持。",
+    support: "支持",
+    opposition: "不支持",
+    item: "意见",
+    votes: "票数",
+    credits: "点数",
+    creditCost: "{credits} 点",
+    oneCredit: "1 点",
+    increase: "增加对这条意见的支持：{title}",
+    decrease: "减少对这条意见的支持：{title}",
+    voteValue: "「{title}」的票数：{votes}",
+    squareLabel: "{votes} 票消耗 {credits} 点，总额为 {budget} 点",
+    remaining: "剩余 {remaining} 点，共 {budget} 点",
+    unused: "不必用完所有点数。",
+    unsaved: "有未保存的更改。",
+    localOnly: "这些更改仅存在于本页，不计入结果。",
+    save: "保存回答",
+    retryCommand: "重试待处理的请求",
+    savedBaseline: "您的回答已保存。只有再次保存后，本页的更改才会替换它。",
+    notSaved: "尚未保存回答。只有已保存的回答才会计入结果。",
+    saved: "回答已保存。",
+    withdrawn: "已撤回保存的回答。",
+    saveError: "请求未被接受。本页的更改仍然保留。",
+    commandUncertain:
+      "无法确认结果。请先重试待处理的请求，再保存或放弃其他更改。",
+    sessionRefreshError: "未能刷新会话。请先刷新会话再继续。",
+    responseConflict:
+      "已保存的回答在别处被更改，或当前版本已过时。请放弃本页的更改以加载最新回答。",
+    withdraw: "撤回已保存的回答",
+    withdrawTitle: "要撤回已保存的回答吗？",
+    withdrawMessage:
+      "该回答将不再计入结果，本页的更改也将清除。投票开放期间，你仍可保存新回答。",
+    savingUnavailable: "仅供预览。这些分配不会保存或计入结果。",
+    discard: "放弃更改",
+    discardTitle: "要放弃更改吗？",
+    discardMessage: "未保存的更改将会丢失，之前保存的回答不受影响。",
+    keepEditing: "继续编辑",
+    pendingLeaveMessage:
+      "有请求仍在处理中，回答可能已经保存。离开会放弃本页的编辑，但不会取消请求。",
+    closed: "投票已结束。无法编辑回答或提交新回答。",
+    locked: "活动锁定期间无法投票。",
+    changed: "意见已变更。请放弃本页的更改以加载最新意见。",
+    loadError: "无法加载意见。",
+    retry: "重试",
+    empty: "尚无可排序的意见。",
+    itemUnavailable: "意见文字不可用，无法对这条意见投票。",
+    analysisTitle: "二次方投票结果",
+    analysisOpen: "活动结束后即可查看集体结果。",
+    analysisUnavailable: "暂时没有结果。",
+    analysisCalculating: "正在计算结果…",
+    analysisFailed: "结果计算失败。",
+    analysisEmpty: "没有符合条件的已保存回答被计入结果。",
+    basedOnParticipants: "计入的参与人数：{count}",
+    netVotes: "净票数：{count}",
+    supportVotes: "支持票：{count}",
+    oppositionVotes: "反对票：{count}",
+    backToItems: "查看意见",
+  },
+  "zh-Hant": {
+    title: "二次方投票",
+    instruction: "把更多票分配給你更重視的意見。",
+    explanation:
+      "每則意見消耗的點數等於票數的平方：3 票消耗 9 點。你共有 {budget} 點。",
+    signedHelp: "以正票表示支持某則意見，以負票表示不支持。",
+    supportOnlyHelp: "本活動只接受支持票。將票數減至零即可撤回支持。",
+    support: "支持",
+    opposition: "不支持",
+    item: "意見",
+    votes: "票數",
+    credits: "點數",
+    creditCost: "{credits} 點",
+    oneCredit: "1 點",
+    increase: "增加對這則意見的支持：{title}",
+    decrease: "減少對這則意見的支持：{title}",
+    voteValue: "「{title}」的票數：{votes}",
+    squareLabel: "{votes} 票消耗 {credits} 點，總額為 {budget} 點",
+    remaining: "剩餘 {remaining} 點，共 {budget} 點",
+    unused: "不必用完所有點數。",
+    unsaved: "有尚未儲存的變更。",
+    localOnly: "這些變更只存在於本頁，不會計入結果。",
+    save: "儲存回答",
+    retryCommand: "重試待處理的請求",
+    savedBaseline: "您的回答已儲存。只有再次儲存後，本頁的變更才會取代它。",
+    notSaved: "尚未儲存回答。只有已儲存的回答才會計入結果。",
+    saved: "回答已儲存。",
+    withdrawn: "已撤回儲存的回答。",
+    saveError: "請求未獲接受。本頁的變更仍然保留。",
+    commandUncertain:
+      "無法確認結果。請先重試待處理的請求，再儲存或捨棄其他變更。",
+    sessionRefreshError: "未能更新工作階段。請先更新工作階段再繼續。",
+    responseConflict:
+      "已儲存的回答在別處被修改，或目前版本已過時。請捨棄本頁的變更以載入最新回答。",
+    withdraw: "撤回已儲存的回答",
+    withdrawTitle: "要撤回已儲存的回答嗎？",
+    withdrawMessage:
+      "該回答將不再計入結果，本頁的變更也會清除。投票開放期間，你仍可儲存新回答。",
+    savingUnavailable: "僅供預覽。這些分配不會儲存或計入結果。",
+    discard: "捨棄變更",
+    discardTitle: "要捨棄變更嗎？",
+    discardMessage: "未儲存的變更將會遺失，先前儲存的回答不受影響。",
+    keepEditing: "繼續編輯",
+    pendingLeaveMessage:
+      "仍有請求在處理中，回答可能已經儲存。離開會捨棄本頁的編輯，但不會取消請求。",
+    closed: "投票已結束。無法編輯回答或提交新回答。",
+    locked: "活動鎖定期間無法投票。",
+    changed: "意見已變更。請捨棄本頁的變更以載入最新意見。",
+    loadError: "無法載入意見。",
+    retry: "重試",
+    empty: "尚無可排序的意見。",
+    itemUnavailable: "意見文字無法顯示，無法對這則意見投票。",
+    analysisTitle: "二次方投票結果",
+    analysisOpen: "活動結束後即可查看集體結果。",
+    analysisUnavailable: "目前沒有結果。",
+    analysisCalculating: "正在計算結果…",
+    analysisFailed: "結果計算失敗。",
+    analysisEmpty: "沒有符合條件的已儲存回答被計入結果。",
+    basedOnParticipants: "計入的參與人數：{count}",
+    netVotes: "淨票數：{count}",
+    supportVotes: "支持票：{count}",
+    oppositionVotes: "反對票：{count}",
+    backToItems: "查看意見",
+  },
+} satisfies Record<SupportedDisplayLanguageCodes, typeof english>;

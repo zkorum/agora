@@ -34,13 +34,12 @@ describe("project contact contract", () => {
                 method: "POST",
                 url: "/contact",
                 payload: {
-                    organizationSlug: "agrotoulouse",
                     email: "contact@example.com",
                 },
             });
             expect(accepted.statusCode).toBe(200);
             for (const payload of [
-                { email: "contact@example.com" },
+                { websiteUrl: "https://example.com/contact" },
                 { organizationSlug: "agrotoulouse" },
                 {
                     organizationSlug: "agrotoulouse",
@@ -65,15 +64,17 @@ describe("project contact contract", () => {
     });
 
     it.each([
+        { email: "contact@example.com" },
         { organizationSlug: "agrotoulouse", email: "contact@example.com" },
         {
             organizationSlug: "agrotoulouse",
+            email: "contact@example.com",
             websiteUrl: "https://example.com/contact",
         },
         { firstName: "Alex", email: "alex@example.com" },
         { lastName: "Martin", email: "martin@example.com" },
     ])(
-        "accepts an identified contact without requiring a first name: %j",
+        "accepts an email-only contact or a named or affiliated contact: %j",
         (contact) => {
             expect(
                 Dto.createProjectContactRequest.safeParse(contact).success,
@@ -82,17 +83,19 @@ describe("project contact contract", () => {
     );
 
     it.each([
-        { email: "contact@example.com" },
+        {},
+        { websiteUrl: "https://example.com/contact" },
         { roleLabel: "Support", websiteUrl: "https://example.com/contact" },
         { firstName: "   ", email: "contact@example.com" },
         { lastName: "\t\n", email: "contact@example.com" },
         { organizationSlug: "", email: "contact@example.com" },
         { organizationSlug: "agrotoulouse" },
+        { organizationSlug: "agrotoulouse", websiteUrl: "https://example.com" },
         { organizationSlug: "agrotoulouse", email: "" },
-        { organizationSlug: "agrotoulouse", websiteUrl: "http://example.com" },
-        { organizationSlug: "agrotoulouse", websiteUrl: "javascript:alert(1)" },
+        { email: "contact@example.com", websiteUrl: "http://example.com" },
+        { email: "contact@example.com", websiteUrl: "javascript:alert(1)" },
         {
-            organizationSlug: "agrotoulouse",
+            email: "contact@example.com",
             websiteUrl: "https://user:password@example.com",
         },
         {
@@ -113,28 +116,43 @@ describe("project contact contract", () => {
         },
     );
 
-    it("includes both identity and contact-channel requirements in the API schema", () => {
+    it("marks only email required in the write schema", () => {
         const schema = z.toJSONSchema(Dto.createProjectContactRequest, {
             io: "input",
         });
-        expect(schema.allOf).toEqual([
-            expect.objectContaining({
-                anyOf: [
-                    expect.objectContaining({ required: ["firstName"] }),
-                    expect.objectContaining({ required: ["lastName"] }),
-                    expect.objectContaining({ required: ["organizationSlug"] }),
-                ],
-            }),
-            expect.objectContaining({
-                anyOf: [
-                    expect.objectContaining({ required: ["email"] }),
-                    expect.objectContaining({ required: ["websiteUrl"] }),
-                ],
-            }),
-        ]);
+        expect(schema.required).toEqual(["email"]);
+        expect(schema.additionalProperties).toBe(false);
     });
 
-    it("allows an organization-only public contact and rejects anonymous public contacts", () => {
+    it("allows an absent contact but requires email on both project write requests", () => {
+        const project = {
+            projectSlug: "community-project",
+            projectTitle: "Community project",
+            ownerOrganizationSlugs: ["agrotoulouse"],
+        };
+        const legacyContact = {
+            firstName: "Alex",
+            websiteUrl: "https://example.com/contact",
+        };
+        const emailOnlyContact = { email: "contact@example.com" };
+
+        for (const contact of [undefined, emailOnlyContact, legacyContact]) {
+            const expected = contact !== legacyContact;
+            expect(
+                Dto.createProjectRequest.safeParse({ ...project, contact })
+                    .success,
+            ).toBe(expected);
+            expect(
+                Dto.updateProjectRequest.safeParse({
+                    ...project,
+                    currentProjectSlug: project.projectSlug,
+                    contact,
+                }).success,
+            ).toBe(expected);
+        }
+    });
+
+    it("allows email-only public and administrator contacts without inventing an organization", () => {
         expect(
             Dto.projectPageContact.parse({
                 affiliationName: "AgroToulouse",
@@ -145,13 +163,19 @@ describe("project contact contract", () => {
             email: "contact@example.com",
         });
         expect(
-            Dto.projectPageContact.safeParse({ email: "contact@example.com" })
-                .success,
-        ).toBe(false);
+            Dto.projectPageContact.parse({ email: "contact@example.com" }),
+        ).toEqual({ email: "contact@example.com" });
+        expect(
+            Dto.adminProjectContact.parse({ email: "contact@example.com" }),
+        ).toEqual({ email: "contact@example.com", isFullImagePath: false });
+        expect(Dto.projectPageContact.safeParse({}).success).toBe(false);
     });
 
     it("keeps existing contacts editable even when no usable contact channel remains", () => {
-        const contact = { organizationSlug: "agrotoulouse" };
+        const contact = {
+            organizationSlug: "agrotoulouse",
+            websiteUrl: "https://example.com/contact",
+        };
         expect(Dto.adminProjectContact.safeParse(contact).success).toBe(true);
         expect(Dto.createProjectContactRequest.safeParse(contact).success).toBe(
             false,

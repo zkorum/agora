@@ -21,7 +21,11 @@ BEGIN
            OR EXISTS (
                SELECT FROM ranking_conversation_stats_snapshot snapshot
                WHERE snapshot.conversation_id = OLD.conversation_id AND snapshot.deleted_at IS NULL
-                 AND NOT EXISTS (SELECT FROM ranking_input_snapshot input WHERE input.stats_snapshot_id = snapshot.id)
+                  AND NOT EXISTS (
+                      SELECT FROM ranking_input_snapshot input
+                      WHERE input.conversation_id = snapshot.conversation_id AND input.sealed_at IS NOT NULL
+                        AND (input.stats_snapshot_id = snapshot.id OR input.id = snapshot.reused_input_snapshot_id)
+                  )
            )
            OR EXISTS (
                SELECT FROM conversation scope
@@ -29,7 +33,9 @@ BEGIN
                WHERE scope.id = OLD.conversation_id AND config.current_ranking_score_id IS NOT NULL
                  AND NOT EXISTS (
                      SELECT FROM ranking_conversation_stats_snapshot snapshot
-                     JOIN ranking_input_snapshot input ON input.stats_snapshot_id = snapshot.id
+                      JOIN ranking_input_snapshot input ON input.conversation_id = snapshot.conversation_id
+                        AND input.sealed_at IS NOT NULL
+                        AND (input.stats_snapshot_id = snapshot.id OR input.id = snapshot.reused_input_snapshot_id)
                      WHERE snapshot.conversation_id = scope.id AND snapshot.deleted_at IS NULL
                        AND snapshot.ranking_score_id = config.current_ranking_score_id
                  )
@@ -93,7 +99,8 @@ BEGIN
     IF NEW.stats_snapshot_id IS NOT NULL AND NOT EXISTS (
         SELECT FROM ranking_conversation_stats_snapshot snapshot
         WHERE snapshot.id = NEW.stats_snapshot_id AND snapshot.conversation_id = NEW.conversation_id
-          AND snapshot.scoring_input_revision = NEW.scoring_input_revision
+           AND snapshot.scoring_input_revision = NEW.scoring_input_revision
+           AND snapshot.reused_input_snapshot_id IS NULL
           AND NEW.sealed_at IS NOT NULL
           AND snapshot.participant_count = NEW.participant_count
           AND snapshot.vote_count = NEW.answer_count AND snapshot.item_count = NEW.item_count
@@ -107,6 +114,41 @@ $$;
 CREATE TRIGGER ranking_input_binding
 BEFORE INSERT OR UPDATE ON ranking_input_snapshot
 FOR EACH ROW EXECUTE FUNCTION enforce_ranking_input_binding();
+
+-- Reuse is a new immutable publication reference, never a move of the sealed
+-- capture or a reconstruction from today's private comparison responses.
+CREATE OR REPLACE FUNCTION enforce_ranking_reused_input_binding()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public, pg_temp AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND NEW.reused_input_snapshot_id IS DISTINCT FROM OLD.reused_input_snapshot_id THEN
+        RAISE EXCEPTION USING ERRCODE = '23514', CONSTRAINT = 'ranking_reused_input_immutable';
+    END IF;
+    IF NEW.reused_input_snapshot_id IS NOT NULL AND NOT EXISTS (
+        SELECT FROM ranking_input_snapshot input
+        JOIN ranking_conversation_stats_snapshot source ON source.id = input.stats_snapshot_id
+          AND source.conversation_id = input.conversation_id
+        WHERE input.id = NEW.reused_input_snapshot_id
+          AND input.conversation_id = NEW.conversation_id AND input.sealed_at IS NOT NULL
+          AND source.id <> NEW.id AND source.reused_input_snapshot_id IS NULL
+          AND NEW.is_closed AND input.scoring_input_revision < NEW.scoring_input_revision
+          AND source.scoring_input_revision = input.scoring_input_revision
+          AND NEW.ranking_score_id IS NOT DISTINCT FROM source.ranking_score_id
+          AND NEW.item_count = input.item_count AND NEW.item_count = source.item_count
+          AND NEW.vote_count = input.answer_count AND NEW.vote_count = source.vote_count
+          AND NEW.participant_count = input.participant_count AND NEW.participant_count = source.participant_count
+          AND NEW.total_item_count = source.total_item_count
+          AND NEW.total_vote_count = source.total_vote_count
+          AND NEW.total_participant_count = source.total_participant_count
+    ) THEN
+        RAISE EXCEPTION USING ERRCODE = '23514', CONSTRAINT = 'ranking_reused_input_publication_mismatch';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ranking_stats_reused_input_binding
+BEFORE INSERT OR UPDATE ON ranking_conversation_stats_snapshot
+FOR EACH ROW EXECUTE FUNCTION enforce_ranking_reused_input_binding();
 
 CREATE OR REPLACE FUNCTION reject_ranking_input_update()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -173,8 +215,15 @@ BEGIN
     PERFORM id FROM ranking_input_snapshot WHERE id = capture_id FOR NO KEY UPDATE;
     IF EXISTS (
         SELECT FROM ranking_input_snapshot input
-        JOIN ranking_conversation_stats_snapshot snapshot ON snapshot.id = input.stats_snapshot_id
-        WHERE input.id = capture_id AND snapshot.deleted_at IS NULL
+         JOIN ranking_conversation_stats_snapshot snapshot ON snapshot.conversation_id = input.conversation_id
+           AND (snapshot.id = input.stats_snapshot_id OR snapshot.reused_input_snapshot_id = input.id)
+         WHERE input.id = capture_id AND snapshot.deleted_at IS NULL
+    ) OR EXISTS (
+        SELECT FROM comparison_input_baseline baseline
+        JOIN ranking_input_snapshot input ON input.id = baseline.input_snapshot_id
+        JOIN ranking_conversation_stats_snapshot snapshot ON snapshot.conversation_id = input.conversation_id
+          AND (snapshot.id = input.stats_snapshot_id OR snapshot.reused_input_snapshot_id = input.id)
+        WHERE baseline.baseline_input_snapshot_id = capture_id AND snapshot.deleted_at IS NULL
     ) THEN
         RAISE EXCEPTION USING ERRCODE = '23514', CONSTRAINT = 'ranking_input_retained';
     END IF;

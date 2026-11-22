@@ -91,6 +91,9 @@ function buildCreateConversationRequest({
   surveyConfig: SurveyConfig | null;
   postAsOrganizationSlug: string | undefined;
 }): BuildCreateConversationRequestResult {
+  // Gathering has a backend contract, but no frontend creation flow yet.
+  if (conversationDraft.conversationType === "gathering")
+    return { success: false };
   const baseCreateRequest = buildBaseCreateConversationRequest({
     conversationDraft,
     postAsOrganizationSlug,

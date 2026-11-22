@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    CREDIT_VOTING_BUDGET,
+    QV_CREDIT_BUDGET,
     DEFAULT_QV_CONFIG,
     parseQvBallot,
     qvCreditsToChangeVote,
@@ -85,7 +85,7 @@ test("limits derive from the fixed budget and reject non-integer votes", () => {
 });
 
 test("support-only QV rejects opposition while allowing positive votes", () => {
-    const config = { allowNegativeVotes: false };
+    const config = { allowOpposition: false };
     assert.deepEqual(
         parseQvBallot({
             config,
@@ -107,11 +107,11 @@ test("support-only QV rejects opposition while allowing positive votes", () => {
 });
 
 test("the fixed budget cannot be exceeded across multiple statements", () => {
-    assert.equal(CREDIT_VOTING_BUDGET, 100);
+    assert.equal(QV_CREDIT_BUDGET, 100);
     assert.deepEqual(
         parseQvBallot({
             config: {
-                allowNegativeVotes: false,
+                allowOpposition: false,
             },
             allocations: [
                 { itemId: "a", votes: 6 },
@@ -130,7 +130,7 @@ test("the fixed budget cannot be exceeded across multiple statements", () => {
     assert.deepEqual(
         parseQvBallot({
             config: {
-                allowNegativeVotes: true,
+                allowOpposition: true,
             },
             allocations: [
                 { itemId: "a", votes: 10 },

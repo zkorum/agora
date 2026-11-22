@@ -1,5 +1,5 @@
 import { QueryClient, QueryObserver } from "@tanstack/vue-query";
-import type { FetchProjectPageResponse } from "src/shared/types/dto";
+import { Dto, type FetchProjectPageResponse } from "src/shared/types/dto";
 import { zodSSEConversationQvStatsUpdatedData } from "src/shared/types/sse";
 import type { ExtendedConversation } from "src/shared/types/zod";
 import type { ConversationMetadata } from "src/shared/types/zod";
@@ -224,6 +224,37 @@ describe("QV participant-only live reconciliation", () => {
         result: { status: "open", generation: 2 },
       })
     ).toBeDefined();
+  });
+  it("does not mark an accepted fallback as initial finalization", () => {
+    const queryClient = new QueryClient();
+    const before = conversation({ isClosed: true, count: 5 });
+    acceptQvResultRead({
+      queryClient,
+      slug: "qvtest01",
+      epoch: 0,
+      result: Dto.qvResultsResponse.parse({
+        status: "ready",
+        generation: 2,
+        calculationId: "00000000-0000-4000-8000-000000000001",
+        capturedAt: new Date(),
+        participantCount: 3,
+        items: [],
+        refreshStatus: "calculating",
+      }),
+    });
+    const after = reconcileQvCalculationLifecycle({
+      queryClient,
+      conversation: {
+        ...before,
+        metadata: { ...before.metadata, qvGeneration: 1, isFinalizing: true },
+      },
+    });
+    expect(after.metadata).toMatchObject({
+      qvGeneration: 2,
+      isClosed: true,
+      isFinalizing: false,
+      participantCount: 5,
+    });
   });
   it.each([false, true])("changes counts only, while closed=%s", (isClosed) => {
     const before = conversation({ isClosed });

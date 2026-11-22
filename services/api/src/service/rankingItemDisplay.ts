@@ -5,10 +5,7 @@ import {
     rankingItemContentTranslationTable,
 } from "@/shared-backend/schema.js";
 import type { RankingItemDisplayedContent } from "@/shared/types/zod.js";
-import type {
-    SupportedDisplayLanguageCodes,
-    SupportedSpokenLanguageCodes,
-} from "@/shared/languages.js";
+import type { ContentDisplayPreferences } from "./displayContent.js";
 import { translationSourceMatchesCurrentSource } from "@/shared-backend/translate.js";
 import {
     buildLocalizedRankingItemContent,
@@ -17,11 +14,10 @@ import {
 } from "./contentTranslationContent.js";
 import { toRankingItemDisplayContent } from "./conversationContent.js";
 
-export interface RankingItemDisplayPreferences {
-    displayLanguage: SupportedDisplayLanguageCodes;
-    targetLanguage: SupportedDisplayLanguageCodes;
-    spokenLanguages: SupportedSpokenLanguageCodes[];
-    translationAllowed: boolean;
+export type RankingItemDisplayPreferences = ContentDisplayPreferences;
+
+export interface RankingItemDisplaySource extends RankingItemLocalizedContentSource {
+    permitsNewTranslation: boolean;
 }
 
 export async function buildRankingItemDisplayContentByContentId({
@@ -30,7 +26,7 @@ export async function buildRankingItemDisplayContentByContentId({
     preferences,
 }: {
     db: PostgresDatabase;
-    sources: RankingItemLocalizedContentSource[];
+    sources: RankingItemDisplaySource[];
     preferences: RankingItemDisplayPreferences;
 }): Promise<Map<number, RankingItemDisplayedContent>> {
     if (sources.length === 0) {
@@ -40,35 +36,38 @@ export async function buildRankingItemDisplayContentByContentId({
     const sourcesByContentId = new Map(
         sources.map((source) => [source.contentId, source]),
     );
-    const translationRows = await db
-        .select({
-            rankingItemContentId:
-                rankingItemContentTranslationTable.rankingItemContentId,
-            translatedTitle: rankingItemContentTranslationTable.translatedTitle,
-            translatedBodyHtml:
-                rankingItemContentTranslationTable.translatedBodyHtml,
-            sourceLanguageCode:
-                rankingItemContentTranslationTable.sourceLanguageCode,
-            sourceRawLanguageCode:
-                rankingItemContentTranslationTable.sourceRawLanguageCode,
-            sourceLanguageProvider:
-                rankingItemContentTranslationTable.sourceLanguageProvider,
-            sourceLanguageConfidence:
-                rankingItemContentTranslationTable.sourceLanguageConfidence,
-        })
-        .from(rankingItemContentTranslationTable)
-        .where(
-            and(
-                inArray(
-                    rankingItemContentTranslationTable.rankingItemContentId,
-                    sources.map((source) => source.contentId),
-                ),
-                eq(
-                    rankingItemContentTranslationTable.displayLanguageCode,
-                    preferences.targetLanguage,
-                ),
-            ),
-        );
+    const translationRows = preferences.translationAllowed
+        ? await db
+              .select({
+                  rankingItemContentId:
+                      rankingItemContentTranslationTable.rankingItemContentId,
+                  translatedTitle:
+                      rankingItemContentTranslationTable.translatedTitle,
+                  translatedBodyHtml:
+                      rankingItemContentTranslationTable.translatedBodyHtml,
+                  sourceLanguageCode:
+                      rankingItemContentTranslationTable.sourceLanguageCode,
+                  sourceRawLanguageCode:
+                      rankingItemContentTranslationTable.sourceRawLanguageCode,
+                  sourceLanguageProvider:
+                      rankingItemContentTranslationTable.sourceLanguageProvider,
+                  sourceLanguageConfidence:
+                      rankingItemContentTranslationTable.sourceLanguageConfidence,
+              })
+              .from(rankingItemContentTranslationTable)
+              .where(
+                  and(
+                      inArray(
+                          rankingItemContentTranslationTable.rankingItemContentId,
+                          sources.map((source) => source.contentId),
+                      ),
+                      eq(
+                          rankingItemContentTranslationTable.displayLanguageCode,
+                          preferences.targetLanguage,
+                      ),
+                  ),
+              )
+        : [];
 
     const translationsByContentId = new Map<
         number,
@@ -83,32 +82,46 @@ export async function buildRankingItemDisplayContentByContentId({
                 currentSourceLanguageCode: source.sourceLanguageCode,
             })
         ) {
-            translationsByContentId.set(translation.rankingItemContentId, translation);
+            translationsByContentId.set(
+                translation.rankingItemContentId,
+                translation,
+            );
         }
     }
 
-    const workRows = preferences.translationAllowed
-        ? await db
-              .select({
-                  rankingItemContentId:
-                      contentTranslationWorkTable.rankingItemContentId,
-                  status: contentTranslationWorkTable.status,
-              })
-              .from(contentTranslationWorkTable)
-              .where(
-                  and(
-                      eq(contentTranslationWorkTable.sourceKind, "ranking_item"),
-                      inArray(
+    const pendingContentIds = sources
+        .filter(
+            (source) =>
+                source.permitsNewTranslation &&
+                !translationsByContentId.has(source.contentId),
+        )
+        .map((source) => source.contentId);
+    const workRows =
+        preferences.translationAllowed && pendingContentIds.length > 0
+            ? await db
+                  .select({
+                      rankingItemContentId:
                           contentTranslationWorkTable.rankingItemContentId,
-                          sources.map((source) => source.contentId),
+                      status: contentTranslationWorkTable.status,
+                  })
+                  .from(contentTranslationWorkTable)
+                  .where(
+                      and(
+                          eq(
+                              contentTranslationWorkTable.sourceKind,
+                              "ranking_item",
+                          ),
+                          inArray(
+                              contentTranslationWorkTable.rankingItemContentId,
+                              pendingContentIds,
+                          ),
+                          eq(
+                              contentTranslationWorkTable.displayLanguageCode,
+                              preferences.targetLanguage,
+                          ),
                       ),
-                      eq(
-                          contentTranslationWorkTable.displayLanguageCode,
-                          preferences.targetLanguage,
-                      ),
-                  ),
-              )
-        : [];
+                  )
+            : [];
     const missingTranslationStatusByContentId = new Map(
         workRows.flatMap((row) =>
             row.rankingItemContentId === null
@@ -122,27 +135,37 @@ export async function buildRankingItemDisplayContentByContentId({
         ),
     );
 
-    const displayContentByContentId = new Map<number, RankingItemDisplayedContent>();
+    const displayContentByContentId = new Map<
+        number,
+        RankingItemDisplayedContent
+    >();
     for (const source of sources) {
         const translation = translationsByContentId.get(source.contentId);
+        const { permitsNewTranslation } = source;
         const { content } = buildLocalizedRankingItemContent({
             source,
             translation,
             targetLanguageCode: preferences.targetLanguage,
             missingTranslationStatus:
                 translation === undefined
-                    ? (missingTranslationStatusByContentId.get(source.contentId) ??
-                      "not_requested")
+                    ? (missingTranslationStatusByContentId.get(
+                          source.contentId,
+                      ) ?? "not_requested")
                     : "not_requested",
+        });
+        const displayContent = toRankingItemDisplayContent({
+            content,
+            translationAllowed:
+                preferences.translationAllowed &&
+                (permitsNewTranslation || translation !== undefined),
+            displayLanguage: preferences.displayLanguage,
+            spokenLanguages: preferences.spokenLanguages,
         });
         displayContentByContentId.set(
             source.contentId,
-            toRankingItemDisplayContent({
-                content,
-                translationAllowed: preferences.translationAllowed,
-                displayLanguage: preferences.displayLanguage,
-                spokenLanguages: preferences.spokenLanguages,
-            }),
+            permitsNewTranslation
+                ? displayContent
+                : { ...displayContent, translationControl: null },
         );
     }
 

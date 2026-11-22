@@ -47,6 +47,7 @@ from agora_analysis_worker_shared.db import (
     AnalysisWorkStatePersistenceError,
     CheckpointActivationContext,
     LineageAssignmentInvariantError,
+    capture_closing_analysis_input,
     claim_work_items_and_fetch_inputs_batch,
     complete_computed_analysis_work_items_batch,
     complete_non_processable_work_items_batch,
@@ -54,11 +55,11 @@ from agora_analysis_worker_shared.db import (
     fetch_claimable_work_conversation_ids,
     fetch_opinion_group_configs,
     mark_non_retryable_work_items_batch,
+    persist_analysis_baselines_batch,
     persist_computed_analysis_results_batch,
     persist_empty_vote_matrix_results_batch,
     recover_expired_running_work,
     release_retryable_work_items_batch,
-    upsert_input_snapshots_batch,
 )
 from agora_analysis_worker_shared.description_generation import description_failure_error
 from agora_analysis_worker_shared.description_input import DescriptionInputError
@@ -68,10 +69,12 @@ from agora_analysis_worker_shared.description_services import (
     build_description_translator,
 )
 from agora_analysis_worker_shared.description_translation import translation_failure_error
-from agora_analysis_worker_shared.generated_models import AnalysisResultOutcomeEnum
+from agora_analysis_worker_shared.generated_models import (
+    AnalysisResultOutcomeEnum,
+)
 from agora_analysis_worker_shared.input_snapshot import (
-    PreparedInputSnapshot,
-    prepare_input_snapshots_batch,
+    NumericalAnalysisInput,
+    prepare_input_snapshot,
 )
 from agora_analysis_worker_shared.logging_utils import (
     LOG_FORMAT,
@@ -83,6 +86,11 @@ from agora_analysis_worker_shared.logging_utils import (
 )
 from agora_analysis_worker_shared.postgres_engine import create_ready_postgres_engine
 from agora_analysis_worker_shared.provider_errors import is_provider_output_error
+from agora_analysis_worker_shared.retained_inputs import (
+    AnalysisResultInput,
+    LiveAnalysisResultInput,
+    prepare_analysis_baseline,
+)
 from agora_analysis_worker_shared.simulation_providers import (
     SimulatedRetryableError,
     build_simulation_runtime,
@@ -104,6 +112,7 @@ from google.api_core.exceptions import RetryError as GoogleRetryError
 from psycopg.errors import NotNullViolation
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -114,11 +123,13 @@ if TYPE_CHECKING:
         ClaimedWorkItem,
         OpinionGroupConfigRecord,
         PersistComputedAnalysisResult,
+        StoredInputSnapshot,
     )
     from agora_analysis_worker_shared.description_generation import DescriptionGenerator
     from agora_analysis_worker_shared.description_translation import (
         DescriptionTranslator,
     )
+    from agora_analysis_worker_shared.retained_inputs import PreparedAnalysisBaseline
     from agora_analysis_worker_shared.simulation_providers import SimulationRuntime
     from sqlalchemy import Engine
 
@@ -212,11 +223,11 @@ def _format_ids(conversation_ids: Sequence[int]) -> str:
     return ", ".join(str(conversation_id) for conversation_id in head) + suffix
 
 
-def _snapshot_summary(snapshot: PreparedInputSnapshot) -> str:
+def _snapshot_summary(snapshot: NumericalAnalysisInput) -> str:
     return (
         f"conversation_id={snapshot.conversation_id} "
         f"opinions={len(snapshot.opinions)} "
-        f"participants={len(snapshot.participants)} "
+        f"participants={snapshot.participant_count} "
         f"votes={len(snapshot.votes)}"
     )
 
@@ -347,8 +358,7 @@ def _release_unpersisted_claims_after_db_error(
         log_database_error(
             logger=log,
             message=(
-                f"{failure_message}; failed to release analysis work, "
-                "lease recovery will retry"
+                f"{failure_message}; failed to release analysis work, lease recovery will retry"
             ),
             error=release_error,
             context={"claims": _format_claims(claims)},
@@ -614,8 +624,7 @@ def _process_ai_description_conversation_ids(
         return 0
     work_log = log.debug if is_first_pass_scope else log.info
     work_log(
-        "[MathUpdater] Claimed %d AI description locale work item(s) claim_ms=%.1f "
-        "claimScope=%s",
+        "[MathUpdater] Claimed %d AI description locale work item(s) claim_ms=%.1f claimScope=%s",
         len(ai_claims),
         (time.perf_counter() - claim_started_at) * 1000,
         "first-pass-unactivated" if is_first_pass_scope else "latest-or-checkpoint",
@@ -628,8 +637,7 @@ def _process_ai_description_conversation_ids(
     ) -> AiDescriptionWorkResult:
         if _is_non_retryable_ai_description_error(error):
             log.exception(
-                "[MathUpdater] Non-retryable %s failure for "
-                "conversationSlugId=%s locale=%s %s",
+                "[MathUpdater] Non-retryable %s failure for conversationSlugId=%s locale=%s %s",
                 _ai_description_claim_kind(claim),
                 claim.conversation_slug_id,
                 claim.locale,
@@ -712,9 +720,7 @@ def _process_ai_description_conversation_ids(
                 )
                 processable_claims.append(claim)
             except Exception as error:
-                retry_schedules.append(
-                    (claim, process_claim_error(claim=claim, error=error))
-                )
+                retry_schedules.append((claim, process_claim_error(claim=claim, error=error)))
 
         if not processable_claims:
             return retry_schedules
@@ -757,9 +763,7 @@ def _process_ai_description_conversation_ids(
                 )
                 processable_claims.append(claim)
             except Exception as error:
-                retry_schedules.append(
-                    (claim, process_claim_error(claim=claim, error=error))
-                )
+                retry_schedules.append((claim, process_claim_error(claim=claim, error=error)))
 
         if not processable_claims:
             return retry_schedules
@@ -855,9 +859,7 @@ def _process_ai_description_conversation_ids(
                         },
                     )
 
-        translation_claim_batches = description_translation_work_claim_batches(
-            translation_claims
-        )
+        translation_claim_batches = description_translation_work_claim_batches(translation_claims)
         if translation_claim_batches:
             with ThreadPoolExecutor(
                 max_workers=min(max_workers, len(translation_claim_batches))
@@ -1033,7 +1035,7 @@ def _process_ai_description_first_pass(
             claim_limit=claim_limit,
             max_workers=max_workers,
             ai_description_epoch=ai_description_epoch,
-        description_generator=description_generator,
+            description_generator=description_generator,
             description_translator=description_translator,
             simulation_runtime=simulation_runtime,
         )
@@ -1170,7 +1172,7 @@ def process_or_finalize_ai_description_first_pass_after_persist(
 
 def _compute_claim_bundle(
     *,
-    snapshot: PreparedInputSnapshot,
+    snapshot: NumericalAnalysisInput,
     config: OpinionGroupConfigRecord,
 ) -> ComputedAnalysisBundle:
     return compute_analysis_bundle(
@@ -1443,9 +1445,7 @@ def _run_worker_once() -> None:
 
         non_processable_id_set = set(completed_non_processable_ids)
         processable_items = [
-            item
-            for item in queued_items
-            if item.conversation_id not in non_processable_id_set
+            item for item in queued_items if item.conversation_id not in non_processable_id_set
         ]
         if not processable_items:
             continue
@@ -1612,30 +1612,51 @@ def _run_worker_once() -> None:
             continue
 
         input_prep_started_at = time.perf_counter()
-        rows_by_conversation_id = claimed_input_batch.rows_by_conversation_id
-        snapshots_by_conversation_id = prepare_input_snapshots_batch(
-            data_generation_by_conversation_id={
-                claim.conversation_id: claim.data_generation for claim in active_analysis_claims
-            },
-            rows_by_conversation_id=rows_by_conversation_id,
-        )
+        live_claims = [
+            claim
+            for claim in active_analysis_claims
+            if not claim.uses_closing_inputs
+        ]
+        result_inputs_by_conversation_id: dict[int, AnalysisResultInput] = {}
+        stored_snapshots: dict[int, StoredInputSnapshot] = {}
         try:
-            stored_snapshots = upsert_input_snapshots_batch(
+            baselines: dict[int, PreparedAnalysisBaseline] = {}
+            for claim in live_claims:
+                source = claimed_input_batch.inputs_by_conversation_id[claim.conversation_id]
+                baselines[claim.conversation_id] = prepare_analysis_baseline(
+                    effective=prepare_input_snapshot(
+                        conversation_id=claim.conversation_id,
+                        data_generation=claim.data_generation,
+                        rows=source.effective.votes,
+                        opinion_rows=source.effective.opinions,
+                    ),
+                    complete=prepare_input_snapshot(
+                        conversation_id=claim.conversation_id,
+                        data_generation=claim.data_generation,
+                        rows=source.complete.votes,
+                        opinion_rows=source.complete.opinions,
+                    ),
+                    source_counts=source.source_counts,
+                )
+            stored_snapshots = persist_analysis_baselines_batch(
                 primary_engine,
-                snapshots=list(snapshots_by_conversation_id.values()),
+                baselines=list(baselines.values()),
             )
-        except SQLAlchemyError as error:
+            result_inputs_by_conversation_id = {
+                conversation_id: LiveAnalysisResultInput(numerical=baseline.effective)
+                for conversation_id, baseline in baselines.items()
+            }
+        except (SQLAlchemyError, AnalysisWorkStatePersistenceError, ValueError) as error:
             log_database_error(
                 logger=log,
                 message="[MathUpdater] Failed to persist analysis input snapshots",
                 error=error,
-                context={"claims": _format_claims(active_analysis_claims)},
+                context={"claims": _format_claims(live_claims)},
             )
-            set_active_analysis_claims([])
             _release_unpersisted_claims_after_db_error(
                 primary_engine=primary_engine,
                 vk=vk,
-                claims=active_analysis_claims,
+                claims=live_claims,
                 error_code="analysis_input_snapshot_persist_failed",
                 error_message="analysis input snapshot persistence failed; see worker logs",
                 failure_message=(
@@ -1643,7 +1664,44 @@ def _run_worker_once() -> None:
                     "snapshot persist failure"
                 ),
             )
+        for claim in active_analysis_claims:
+            if not claim.uses_closing_inputs:
+                continue
+            try:
+                with Session(primary_engine) as session, session.begin():
+                    closing_input, stored = capture_closing_analysis_input(
+                        session=session, claim=claim
+                    )
+            except (SQLAlchemyError, AnalysisWorkStatePersistenceError, ValueError) as error:
+                log_database_error(
+                    logger=log,
+                    message="[MathUpdater] Failed to capture retained Closing input",
+                    error=error,
+                    context={"claim": _format_claim(claim)},
+                )
+                _release_unpersisted_claims_after_db_error(
+                    primary_engine=primary_engine,
+                    vk=vk,
+                    claims=[claim],
+                    error_code="analysis_input_snapshot_persist_failed",
+                    error_message="Closing input capture failed; see worker logs",
+                    failure_message="[MathUpdater] Failed to release work after Closing capture",
+                )
+                continue
+            result_inputs_by_conversation_id[claim.conversation_id] = closing_input
+            stored_snapshots[claim.conversation_id] = stored
+        active_analysis_claims = [
+            claim
+            for claim in active_analysis_claims
+            if claim.conversation_id in result_inputs_by_conversation_id
+        ]
+        set_active_analysis_claims(active_analysis_claims)
+        if not active_analysis_claims:
             continue
+        snapshots_by_conversation_id = {
+            conversation_id: source.numerical
+            for conversation_id, source in result_inputs_by_conversation_id.items()
+        }
         log.info(
             "[MathUpdater] Prepared %d input snapshot(s) input_prep_ms=%.1f: %s",
             len(stored_snapshots),
@@ -1665,9 +1723,9 @@ def _run_worker_once() -> None:
                     primary_engine,
                     claims=empty_claims,
                     stored_input_snapshots_by_conversation_id=stored_snapshots,
-                    prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
+                    inputs_by_conversation_id=result_inputs_by_conversation_id,
                 )
-            except SQLAlchemyError as error:
+            except (SQLAlchemyError, AnalysisWorkStatePersistenceError, ValueError) as error:
                 log_database_error(
                     logger=log,
                     message="[MathUpdater] Failed to persist empty-matrix results",
@@ -1685,12 +1743,14 @@ def _run_worker_once() -> None:
                                 primary_engine,
                                 claims=[claim],
                                 stored_input_snapshots_by_conversation_id=stored_snapshots,
-                                prepared_input_snapshots_by_conversation_id=(
-                                    snapshots_by_conversation_id
-                                ),
+                                inputs_by_conversation_id=result_inputs_by_conversation_id,
                             )
                         )
-                    except SQLAlchemyError as isolated_error:
+                    except (
+                        SQLAlchemyError,
+                        AnalysisWorkStatePersistenceError,
+                        ValueError,
+                    ) as isolated_error:
                         log_database_error(
                             logger=log,
                             message="[MathUpdater] Failed isolated empty-matrix persist",
@@ -1764,8 +1824,7 @@ def _run_worker_once() -> None:
                     error_code="analysis_config_fetch_failed",
                     error_message="analysis config fetch failed; see worker logs",
                     failure_message=(
-                        "[MathUpdater] Failed to release analysis work after config "
-                        "fetch failure"
+                        "[MathUpdater] Failed to release analysis work after config fetch failure"
                     ),
                 )
                 continue
@@ -1838,9 +1897,12 @@ def _run_worker_once() -> None:
                         primary_engine,
                         claims=completed_claims,
                         stored_input_snapshots_by_conversation_id=stored_snapshots,
-                        prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
+                        inputs_by_conversation_id=result_inputs_by_conversation_id,
                         bundles_by_conversation_id=bundles_by_conversation_id,
                         ai_generation_expected=True,
+                    )
+                    _enqueue_conversations_for_math_work(
+                        vk, conversation_ids=list(completed_result.pending_close_conversation_ids)
                     )
                     did_persist_computed_results = True
                     log.info(
@@ -1870,12 +1932,10 @@ def _run_worker_once() -> None:
                     )
                     computed_newer_generation_ids: list[int] = []
                     if ready_to_complete_computed_claims:
-                        computed_newer_generation_ids = (
-                            complete_computed_analysis_work_items_batch(
-                                primary_engine,
-                                claims=completed_claims,
-                                require_display_safe_activation=True,
-                            )
+                        computed_newer_generation_ids = complete_computed_analysis_work_items_batch(
+                            primary_engine,
+                            claims=completed_claims,
+                            require_display_safe_activation=True,
                         )
                         _enqueue_conversations_for_math_work(
                             vk,
@@ -1900,7 +1960,7 @@ def _run_worker_once() -> None:
                         len(non_retryable_failed_claims),
                         (time.perf_counter() - batch_started_at) * 1000,
                     )
-                except (SQLAlchemyError, AnalysisWorkStatePersistenceError) as error:
+                except (SQLAlchemyError, AnalysisWorkStatePersistenceError, ValueError) as error:
                     log_database_error(
                         logger=log,
                         message="[MathUpdater] Failed computed-result persistence flow",
@@ -1946,9 +2006,8 @@ def _run_worker_once() -> None:
                         lineage_invariant_failed_claims: list[ClaimedWorkItem] = []
                         not_null_failed_claims: list[ClaimedWorkItem] = []
                         claims_to_isolate = completed_claims
-                        if (
-                            len(completed_claims) == 1
-                            and is_non_retryable_not_null_violation(error)
+                        if len(completed_claims) == 1 and is_non_retryable_not_null_violation(
+                            error
                         ):
                             not_null_failed_claims.append(completed_claims[0])
                             claims_to_isolate = []
@@ -1958,13 +2017,20 @@ def _run_worker_once() -> None:
                                     primary_engine,
                                     claims=[claim],
                                     stored_input_snapshots_by_conversation_id=stored_snapshots,
-                                    prepared_input_snapshots_by_conversation_id=snapshots_by_conversation_id,
+                                    inputs_by_conversation_id=result_inputs_by_conversation_id,
                                     bundles_by_conversation_id=bundles_by_conversation_id,
                                     ai_generation_expected=True,
+                                )
+                                _enqueue_conversations_for_math_work(
+                                    vk,
+                                    conversation_ids=list(
+                                        isolated_result.pending_close_conversation_ids
+                                    ),
                                 )
                             except (
                                 SQLAlchemyError,
                                 AnalysisWorkStatePersistenceError,
+                                ValueError,
                             ) as isolated_error:
                                 log_database_error(
                                     logger=log,
@@ -2085,8 +2151,7 @@ def _run_worker_once() -> None:
                     error_code="red_dwarf_compute_failed",
                     error_message="red-dwarf compute failed; see worker logs",
                     failure_message=(
-                        "[MathUpdater] Failed to release analysis work after retryable "
-                        "math failure"
+                        "[MathUpdater] Failed to release analysis work after retryable math failure"
                     ),
                     enqueue_released=False,
                 )

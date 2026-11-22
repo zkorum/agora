@@ -14,7 +14,7 @@ import {
 import {
     conversationParticipantTable,
     conversationTable,
-    creditVotingConfigTable,
+    qvConfigTable,
     deviceTable,
     qvAllocationTable,
     qvResponseCommandTable,
@@ -31,13 +31,13 @@ import {
     checkConversationParticipation,
     checkConversationParticipationWithDeviceStatus,
 } from "./participationGate.js";
-import { withQvStatementSetForResponseSave } from "./qvParticipation.js";
+import { withQvItemSetForResponseSave } from "./qvParticipation.js";
 import {
     buildQvAllocationItemsQuery,
     buildQvCommandReceiptQuery,
     buildQvOwnerResponseQuery,
     buildQvSavedAllocationsQuery,
-    buildQvStatementSourcesQuery,
+    buildQvItemSourcesQuery,
 } from "./qvQueries.js";
 import {
     buildRankingItemDisplayContentByContentId,
@@ -217,8 +217,8 @@ export async function loadQvSession({
         const conversation = await lockConversation({ tx, conversationSlugId });
         const configs = await tx
             .select()
-            .from(creditVotingConfigTable)
-            .where(eq(creditVotingConfigTable.id, conversation.configId));
+            .from(qvConfigTable)
+            .where(eq(qvConfigTable.id, conversation.configId));
         const config = configs.at(0);
         if (config === undefined)
             throw httpErrors.notFound("Conversation not found");
@@ -232,8 +232,8 @@ export async function loadQvSession({
                           conversationId: conversation.id,
                       })
                   ).at(0);
-        // The lifecycle lock makes revision, exact statement versions and private baseline one coherent snapshot.
-        const sources = await buildQvStatementSourcesQuery({
+        // The lifecycle lock makes revision, exact item versions and private baseline one coherent snapshot.
+        const sources = await buildQvItemSourcesQuery({
             db: tx,
             conversationId: conversation.id,
         });
@@ -243,6 +243,7 @@ export async function loadQvSession({
                 sources: sources.map((source) => ({
                     ...source,
                     conversationSlugId,
+                    permitsNewTranslation: true,
                 })),
                 preferences: displayPreferences,
             });
@@ -408,7 +409,7 @@ async function persistCommand({
         const { request } = command;
         const ballot = parseQvBallot({
             allocations: request.allocations,
-            config: { allowNegativeVotes: command.allowOpposition },
+            config: { allowOpposition: command.allowOpposition },
         });
         if (!ballot.valid || ballot.allocations.length === 0)
             reject("invalid_allocations");
@@ -474,10 +475,12 @@ async function persistCommand({
         };
     }
     const revision = response.revision + 1;
-    await tx
-        .update(qvResponseTable)
-        .set({ revision, currentVersionId: versionId })
-        .where(eq(qvResponseTable.id, response.id));
+    await setQvResponseVersion({
+        tx,
+        responseId: response.id,
+        revision,
+        versionId,
+    });
     await tx.insert(qvResponseCommandTable).values({
         responseId: response.id,
         commandId: command.request.commandId,
@@ -490,6 +493,50 @@ async function persistCommand({
     // All values come from server validation and INSERT RETURNING, not a
     // replica-sensitive reread or an optimistic reconstruction in the browser.
     return { revision, saved };
+}
+
+async function setQvResponseVersion({
+    tx,
+    responseId,
+    revision,
+    versionId,
+}: {
+    tx: PostgresTransaction;
+    responseId: string;
+    revision: number;
+    versionId: string | null;
+}): Promise<void> {
+    await tx
+        .update(qvResponseTable)
+        .set({ revision, currentVersionId: versionId })
+        .where(eq(qvResponseTable.id, responseId));
+}
+
+/** The caller holds the finalized close lock, so this cannot race an open command. */
+export async function clearClosedQvBallot({
+    tx,
+    userId,
+    conversationId,
+}: {
+    tx: PostgresTransaction;
+    userId: string;
+    conversationId: number;
+}): Promise<boolean> {
+    const responses = await buildQvOwnerResponseQuery({
+        db: tx,
+        userId,
+        conversationId,
+    }).for("update", { of: qvResponseTable });
+    const response = responses.at(0);
+    if (response?.versionId == null) return false;
+    await setQvResponseVersion({
+        tx,
+        responseId: response.id,
+        revision: response.revision + 1,
+        versionId: null,
+    });
+    await scheduleQvStatsRefresh({ db: tx, conversationIds: [conversationId] });
+    return true;
 }
 
 interface MutationContext {
@@ -529,6 +576,8 @@ async function mutateQvResponse({
                     : await checkConversationParticipation(admissionContext);
                 if (initial !== undefined && !initial.success)
                     throw new RejectedCommand(initial);
+                // The shared admission contract's legacy participantId is a global user ID.
+                const initialUserId = initial?.participantId;
                 const identity = await lockIdentity({
                     tx,
                     didWrite,
@@ -539,8 +588,8 @@ async function mutateQvResponse({
                 });
                 if (
                     identity === undefined ||
-                    (initial !== undefined &&
-                        identity.userId !== initial.participantId)
+                    (initialUserId !== undefined &&
+                        identity.userId !== initialUserId)
                 )
                     reject("identity_conflict");
                 const userId = identity.userId;
@@ -550,7 +599,7 @@ async function mutateQvResponse({
                     expectedViewerId !== userId
                 )
                     reject("identity_conflict");
-                // An anonymous command may create a guest once, or replay its receipt.
+                // A command without an expected viewer may create a guest once, or replay its receipt.
                 // It must never become a new write after that signing key changes identity.
                 const requireReceipt =
                     expectedViewerId === undefined &&
@@ -565,8 +614,8 @@ async function mutateQvResponse({
                         deviceStatus: identity,
                     });
                 if (!allowed.success) throw new RejectedCommand(allowed);
-                if (allowed.participantId !== userId)
-                    reject("identity_conflict");
+                const { participantId: admittedUserId } = allowed;
+                if (admittedUserId !== userId) reject("identity_conflict");
                 const persist = (preparedCommand: PreparedCommand) =>
                     persistCommand({
                         tx,
@@ -582,7 +631,7 @@ async function mutateQvResponse({
                         response: await persist(command),
                         loginStatus: projectKnownDeviceLoginStatus(identity),
                     };
-                const result = await withQvStatementSetForResponseSave({
+                const result = await withQvItemSetForResponseSave({
                     tx,
                     conversationId: conversation.id,
                     expectedRevision:

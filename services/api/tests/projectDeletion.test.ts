@@ -335,6 +335,7 @@ describe("project and organization deletion", () => {
         await expect(
             accessProjectDocument({
                 db,
+                authorization: { type: "public" },
                 request: {
                     projectSlug: "test-project",
                     documentId: document.publicId,

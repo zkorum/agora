@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         OpinionGroupSpecRecord,
         OpinionGroupVariantRecord,
     )
-    from agora_analysis_worker_shared.input_snapshot import PreparedInputSnapshot, SnapshotVote
+    from agora_analysis_worker_shared.input_snapshot import NumericalAnalysisInput, SnapshotVote
 
 JsonValue = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 JsonObject = dict[str, JsonValue]
@@ -149,7 +149,7 @@ class RedDwarfRunner(Protocol):
 
 def compute_analysis_bundle(
     *,
-    snapshot: PreparedInputSnapshot,
+    snapshot: NumericalAnalysisInput,
     config: OpinionGroupConfigRecord,
     run_red_dwarf_pipeline: RedDwarfRunner | None = None,
 ) -> ComputedAnalysisBundle:
@@ -210,7 +210,7 @@ def compute_analysis_bundle(
 
 def _compute_candidates(
     *,
-    snapshot: PreparedInputSnapshot,
+    snapshot: NumericalAnalysisInput,
     spec: OpinionGroupSpecRecord,
     variants: list[OpinionGroupVariantRecord],
     run_red_dwarf_pipeline: RedDwarfRunner,
@@ -253,7 +253,7 @@ def _compute_candidates(
 
 def _run_red_dwarf_for_variants(
     *,
-    snapshot: PreparedInputSnapshot,
+    snapshot: NumericalAnalysisInput,
     spec: OpinionGroupSpecRecord,
     variants: list[OpinionGroupVariantRecord],
     run_red_dwarf_pipeline: RedDwarfRunner,
@@ -572,7 +572,7 @@ def _get_red_dwarf_insufficient_reason(
         return AnalysisInsufficientDataReasonEnum.other, reason_value
 
 
-def _to_red_dwarf_votes(votes: list[SnapshotVote]) -> list[dict[str, int]]:
+def _to_red_dwarf_votes(votes: Sequence[SnapshotVote]) -> list[dict[str, int]]:
     return [
         {
             "participant_id": vote.local_participant_index,
@@ -585,7 +585,7 @@ def _to_red_dwarf_votes(votes: list[SnapshotVote]) -> list[dict[str, int]]:
 
 def _get_insufficient_data_reason(
     *,
-    snapshot: PreparedInputSnapshot,
+    snapshot: NumericalAnalysisInput,
     min_clusterable_participants: int,
     min_votes_per_participant: int,
     group_count: int,
@@ -1007,8 +1007,7 @@ def _all_candidates_hidden_contract_error_message(
         f"{reason}={count}" for reason, count in sorted(reason_counts.items())
     )
     return (
-        "red-dwarf produced no displayable candidates; "
-        f"hidden_contract_reasons={formatted_counts}"
+        f"red-dwarf produced no displayable candidates; hidden_contract_reasons={formatted_counts}"
     )
 
 
@@ -1146,7 +1145,7 @@ def _consensus_by_local_opinion_index(
 
 def _compute_snapshot_opinion_metrics(
     *,
-    snapshot: PreparedInputSnapshot,
+    snapshot: NumericalAnalysisInput,
     routing_priority_candidate: ComputedOpinionGroupCandidate | None,
 ) -> list[SnapshotOpinionMetrics]:
     vote_counts_by_opinion = {

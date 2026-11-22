@@ -62,7 +62,7 @@ JOIN refreshed ON refreshed.id = c.polis_config_id
 CROSS JOIN (
     SELECT DISTINCT ON (key) id FROM opinion_group_spec ORDER BY key, version DESC
 ) spec
-ON CONFLICT (conversation_id, opinion_group_spec_id) DO UPDATE
+ON CONFLICT (conversation_id, opinion_group_spec_id, uses_closing_inputs) DO UPDATE
 SET dirty_since = COALESCE(analysis_work_state.dirty_since, EXCLUDED.dirty_since);
 
 WITH refreshed AS (

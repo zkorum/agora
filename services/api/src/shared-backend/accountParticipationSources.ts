@@ -7,13 +7,15 @@ import {
     qvResponseTable,
     surveyResponseTable,
     voteTable,
+    gatheringResponseTable,
 } from "./schema.js";
 
 type AccountParticipationSource =
     | "polis_vote"
     | "survey_response"
     | "comparison_response"
-    | "qv_response";
+    | "qv_response"
+    | "gathering_response";
 
 /** Caller holds the account lock. These are identity-linked working sources,
  * not retained result-owned evidence. Logical account deletion is not permission
@@ -26,6 +28,12 @@ export async function findAccountParticipationSource({
     db: PostgresTransaction;
     userId: string;
 }): Promise<AccountParticipationSource | undefined> {
+    const gathering = await db
+        .select({ id: gatheringResponseTable.id })
+        .from(gatheringResponseTable)
+        .where(eq(gatheringResponseTable.authorId, userId))
+        .limit(1);
+    if (gathering.length > 0) return "gathering_response";
     const votes = await db
         .select({ id: voteTable.id })
         .from(voteTable)

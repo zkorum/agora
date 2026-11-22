@@ -1,6 +1,23 @@
 import type { QueryClient } from "@tanstack/vue-query";
 import type { SSEConversationRankingStatsUpdatedData } from "src/shared/types/dto";
 
+type ComparisonCloseSelectionVersion = NonNullable<
+  SSEConversationRankingStatsUpdatedData["comparisonCloseSelectionVersion"]
+>;
+
+export function compareComparisonCloseSelectionVersions({
+  left,
+  right,
+}: {
+  left: ComparisonCloseSelectionVersion;
+  right: ComparisonCloseSelectionVersion;
+}): number {
+  return (
+    left.closeId - right.closeId ||
+    left.selectionRevision - right.selectionRevision
+  );
+}
+
 const updatesByQueryClient = new WeakMap<
   QueryClient,
   Map<string, SSEConversationRankingStatsUpdatedData>

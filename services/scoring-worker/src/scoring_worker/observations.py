@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -18,6 +19,14 @@ class ComparisonObservation:
     best_slug_id: str
     worst_slug_id: str
     candidate_set: tuple[str, ...]
+
+
+def build_participant_counts(observations: Sequence[ComparisonObservation]) -> dict[str, int]:
+    voters: defaultdict[str, set[int]] = defaultdict(set)
+    for observation in observations:
+        for slug in observation.candidate_set:
+            voters[slug].add(observation.user_id)
+    return {slug: len(users) for slug, users in voters.items()}
 
 
 @dataclass(frozen=True)

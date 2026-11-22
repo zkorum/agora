@@ -23,7 +23,10 @@ import {
     getOrCreatePersonalOrganization,
 } from "./projectAccess.js";
 import type { AllProjectCapability } from "./projectAccessLogic.js";
-import { organizationRoleCapabilities, projectCapabilityValues } from "@/shared/organizationAccess.js";
+import {
+    organizationRoleCapabilities,
+    projectCapabilityValues,
+} from "@/shared/organizationAccess.js";
 import { getImplicitDefaultDisplayLanguage } from "./projectLanguage.js";
 import { sourceLanguageToDisplayLanguage } from "./translationLanguageSetting.js";
 
@@ -94,7 +97,11 @@ async function getDestinationOrganizations({
     for (const row of rows) {
         const organization = {
             ...row,
-            capabilities: new Set<AllProjectCapability>(projectCapabilityValues.filter((capability) => organizationRoleCapabilities[row.role].includes(capability))),
+            capabilities: new Set<AllProjectCapability>(
+                projectCapabilityValues.filter((capability) =>
+                    organizationRoleCapabilities[row.role].includes(capability),
+                ),
+            ),
         };
         organizations.set(row.id, organization);
     }
@@ -127,7 +134,10 @@ export async function getConversationProjectOptions({
                         organizationIds,
                     ),
                     isNull(premiumFeatureEntitlementTable.revokedAt),
-                    inArray(premiumFeatureEntitlementTable.feature, zodPremiumFeature.options),
+                    inArray(
+                        premiumFeatureEntitlementTable.feature,
+                        zodPremiumFeature.options,
+                    ),
                     lte(premiumFeatureEntitlementTable.startsAt, now),
                     or(
                         isNull(premiumFeatureEntitlementTable.expiresAt),
@@ -143,11 +153,20 @@ export async function getConversationProjectOptions({
                 email: projectContactTable.email,
             })
             .from(projectTable)
-            .innerJoin(projectOrganizationOwnershipTable, and(
-                eq(projectOrganizationOwnershipTable.projectId, projectTable.id),
-                eq(projectOrganizationOwnershipTable.organizationId, projectTable.autoProvisionedForOrganizationId),
-                isNull(projectOrganizationOwnershipTable.deletedAt),
-            ))
+            .innerJoin(
+                projectOrganizationOwnershipTable,
+                and(
+                    eq(
+                        projectOrganizationOwnershipTable.projectId,
+                        projectTable.id,
+                    ),
+                    eq(
+                        projectOrganizationOwnershipTable.organizationId,
+                        projectTable.autoProvisionedForOrganizationId,
+                    ),
+                    isNull(projectOrganizationOwnershipTable.deletedAt),
+                ),
+            )
             .leftJoin(
                 projectContactTable,
                 and(
@@ -169,6 +188,7 @@ export async function getConversationProjectOptions({
                 id: projectTable.id,
                 slug: projectTable.slug,
                 title: projectTable.title,
+                participationMode: projectTable.participationMode,
                 defaultOrganizationId:
                     projectTable.autoProvisionedForOrganizationId,
                 organizationId:
@@ -350,6 +370,7 @@ export async function getConversationProjectOptions({
         options.push({
             target: { kind: "project", projectSlug: project.slug },
             title: project.title,
+            participationMode: project.participationMode,
             organizationSlugs: [...organizationSlugs],
             premiumFeatures: [...premiumFeatures],
             defaultLanguageCode:
@@ -393,7 +414,6 @@ export async function resolveConversationProjectTarget({
                 .where(
                     and(
                         eq(projectTable.slug, target.projectSlug),
-                        eq(projectTable.directoryVisibility, "listed"),
                         isNull(projectTable.autoProvisionedForOrganizationId),
                         isNull(projectTable.deletedAt),
                     ),
@@ -455,8 +475,17 @@ export async function resolveConversationProjectTarget({
             });
         });
     }
-    const organization = (await db.select({ id: organizationTable.id }).from(organizationTable)
-        .where(and(eq(organizationTable.slug, target.organizationSlug), isNull(organizationTable.deletedAt)))).at(0);
+    const organization = (
+        await db
+            .select({ id: organizationTable.id })
+            .from(organizationTable)
+            .where(
+                and(
+                    eq(organizationTable.slug, target.organizationSlug),
+                    isNull(organizationTable.deletedAt),
+                ),
+            )
+    ).at(0);
     if (organization === undefined) return undefined;
     // Existing scopes need no provisioning locks; moves lock projects before owners.
     const existing = (

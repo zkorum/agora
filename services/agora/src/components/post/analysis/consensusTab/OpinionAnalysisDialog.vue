@@ -175,7 +175,10 @@
           <!-- TODO: ACCESSIBILITY - Change <div> to <button> element for keyboard accessibility -->
           <!-- View original comment link should be keyboard accessible for users with motor disabilities -->
           <div
-            v-if="opinionItem.content.status === 'visible'"
+            v-if="
+              opinionItem.content.status === 'visible' &&
+              (opinionItem.isSeed || opinionItem.username !== undefined)
+            "
             class="view-original"
             @click="viewOriginalComment"
           >

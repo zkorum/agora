@@ -40,6 +40,8 @@ class ContentTranslationSourceKind(StrEnum):
     survey_question = "survey_question"
     project = "project"
     ranking_item = "ranking_item"
+    gathering_field = "gathering_field"
+    gathering_response = "gathering_response"
 
 
 class DisplayLanguageCode(StrEnum):
@@ -220,6 +222,7 @@ class ParticipationMode(StrEnum):
 
 
 class ConversationType(StrEnum):
+    gathering = "gathering"
     polis = "polis"
     prioritizing = "prioritizing"
 
@@ -259,6 +262,12 @@ class ProjectContentTranslationSourceKind(StrEnum):
 class DirectoryVisibility(StrEnum):
     listed = "listed"
     unlisted = "unlisted"
+
+
+class RankingStatsCheckpointReasonEnum(StrEnum):
+    major_participation_milestone = "major_participation_milestone"
+    major_vote_milestone = "major_vote_milestone"
+    conversation_closed = "conversation_closed"
 
 
 class RankingItemLifecycleStatus(StrEnum):
@@ -312,10 +321,12 @@ class ContentTranslationWork(Base):
     opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_question_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_question_option_content_ids: Mapped[list[int] | None] = mapped_column(
-        ARRAY(Integer),
+        ARRAY(Integer).with_variant(JSON(), "sqlite"),
         nullable=True,
     )
     ranking_item_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gathering_field_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    gathering_response_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -429,6 +440,7 @@ class Conversation(Base):
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     credit_voting_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gathering_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     prioritization_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
@@ -461,6 +473,10 @@ class Conversation(Base):
             values_callable=_enum_values,
             native_enum=True,
         ),
+    )
+    participation_mode_settings_source: Mapped[str] = mapped_column(
+        Text,
+        server_default="conversation_override",
     )
     conversation_type: Mapped[ConversationType] = mapped_column(
         SaEnum(
@@ -510,6 +526,7 @@ class ConversationViewSnapshot(Base):
     conversation_id: Mapped[int] = mapped_column(Integer)
     opinion_group_spec_id: Mapped[int] = mapped_column(Integer)
     analysis_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    close_replacement_generation: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_aggregate_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     view_reason: Mapped[ConversationViewSnapshotReasonEnum] = mapped_column(
@@ -534,15 +551,114 @@ class ConversationViewSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
-class CreditVotingConfig(Base):
-    __tablename__ = "credit_voting_config"
+class GatheringAnswer(Base):
+    __tablename__ = "gathering_answer"
+
+    config_id: Mapped[int] = mapped_column(Integer)
+    content_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    field_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+
+
+class GatheringAnswerTranslation(Base):
+    __tablename__ = "gathering_answer_translation"
+
+    content_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    field_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        primary_key=True,
+    )
+    translated_value: Mapped[str] = mapped_column(Text)
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+
+
+class GatheringConfig(Base):
+    __tablename__ = "gathering_config"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    credit_budget: Mapped[int] = mapped_column(Integer, server_default="100")
-    allow_opposition: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
-    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    statement_set_revision: Mapped[int] = mapped_column(Integer, server_default="0")
-    statements_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    gathering_mode: Mapped[str] = mapped_column(Text)
+    allow_new_responses: Mapped[bool] = mapped_column(Boolean)
+    response_visibility: Mapped[str] = mapped_column(Text)
+
+
+class GatheringField(Base):
+    __tablename__ = "gathering_field"
+
+    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_pkg.uuid4)
+    config_id: Mapped[int] = mapped_column(Integer)
+    position: Mapped[int] = mapped_column(Integer)
+    label: Mapped[str] = mapped_column(String(200))
+    required: Mapped[bool] = mapped_column(Boolean)
+    character_limit: Mapped[int] = mapped_column(Integer)
+
+
+class GatheringFieldTranslation(Base):
+    __tablename__ = "gathering_field_translation"
+
+    field_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
+        SaEnum(
+            DisplayLanguageCode,
+            name="display_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        primary_key=True,
+    )
+    translated_label: Mapped[str] = mapped_column(Text)
+    source_language_code: Mapped[SpokenLanguageCode | None] = mapped_column(
+        SaEnum(
+            SpokenLanguageCode,
+            name="spoken_language_code",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+        nullable=True,
+    )
+
+
+class GatheringResponseContent(Base):
+    __tablename__ = "gathering_response_content"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, default=uuid_pkg.uuid4)
+    response_id: Mapped[int] = mapped_column(Integer)
+    config_id: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class GatheringResponse(Base):
+    __tablename__ = "gathering_response"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug_id: Mapped[str] = mapped_column(String(8))
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    config_id: Mapped[int] = mapped_column(Integer)
+    author_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    baseline_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_conversation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_response_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_conversation_slug_id: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    source_conversation_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    moderation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -657,6 +773,10 @@ class Opinion(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    account_hidden_content_retained: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+    )
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     num_agrees: Mapped[int] = mapped_column(Integer, server_default="0")
     num_disagrees: Mapped[int] = mapped_column(Integer, server_default="0")
@@ -773,6 +893,14 @@ class Project(Base):
         Boolean,
         server_default=text("false"),
     )
+    participation_mode: Mapped[ParticipationMode] = mapped_column(
+        SaEnum(
+            ParticipationMode,
+            name="participation_mode",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
     conversation_email_update_default_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
@@ -805,6 +933,132 @@ class ProjectTranslationTargetLanguage(Base):
             native_enum=True,
         ),
     )
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class QvCalculationState(Base):
+    __tablename__ = "qv_calculation_state"
+
+    conversation_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    generation: Mapped[int] = mapped_column(Integer, server_default="0")
+    current_calculation_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+
+
+class QvCalculation(Base):
+    __tablename__ = "qv_calculation"
+
+    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_pkg.uuid4)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    generation: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(Text, server_default="queued")
+    input_snapshot_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    lease_token: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime)
+    error_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    ready_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class CreditVotingConfig(Base):
+    __tablename__ = "credit_voting_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    credit_budget: Mapped[int] = mapped_column(Integer, server_default="100")
+    allow_opposition: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    statement_set_revision: Mapped[int] = mapped_column(Integer, server_default="0")
+    statements_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class QvInputItem(Base):
+    __tablename__ = "qv_input_item"
+
+    snapshot_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
+    item_slug_id: Mapped[str] = mapped_column(String(8), primary_key=True)
+    source_version: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    position: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(Text)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class QvInputSnapshot(Base):
+    __tablename__ = "qv_input_snapshot"
+
+    id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_pkg.uuid4)
+    calculation_id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid)
+    credit_budget: Mapped[int] = mapped_column(Integer)
+    credit_pricing: Mapped[str] = mapped_column(Text)
+    allow_opposition: Mapped[bool] = mapped_column(Boolean)
+    statement_set_revision: Mapped[int] = mapped_column(Integer)
+    rule_version: Mapped[int] = mapped_column(Integer)
+    algorithm_version: Mapped[int] = mapped_column(Integer)
+    participant_count: Mapped[int] = mapped_column(Integer)
+    captured_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingConversationStatsCheckpoint(Base):
+    __tablename__ = "ranking_conversation_stats_checkpoint"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    stats_snapshot_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[RankingStatsCheckpointReasonEnum] = mapped_column(
+        SaEnum(
+            RankingStatsCheckpointReasonEnum,
+            name="ranking_stats_checkpoint_reason_enum",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    participant_milestone: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    vote_milestone: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class RankingConversationStatsItem(Base):
+    __tablename__ = "ranking_conversation_stats_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    stats_snapshot_id: Mapped[int] = mapped_column(Integer)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    ranking_item_id: Mapped[int] = mapped_column(Integer)
+    ranking_item_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
+        SaEnum(
+            RankingItemLifecycleStatus,
+            name="ranking_item_lifecycle_status",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
+    excluded_by_moderation: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    participant_count: Mapped[int] = mapped_column(Integer)
+    external_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class RankingConversationStatsSnapshot(Base):
+    __tablename__ = "ranking_conversation_stats_snapshot"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(Integer)
+    ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reused_input_snapshot_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    derived_from_close_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    item_count: Mapped[int] = mapped_column(Integer)
+    total_item_count: Mapped[int] = mapped_column(Integer)
+    vote_count: Mapped[int] = mapped_column(Integer)
+    total_vote_count: Mapped[int] = mapped_column(Integer)
+    participant_count: Mapped[int] = mapped_column(Integer)
+    total_participant_count: Mapped[int] = mapped_column(Integer)
+    scoring_input_revision: Mapped[int] = mapped_column(BigInteger)
+    is_closed: Mapped[bool] = mapped_column(Boolean)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -892,6 +1146,10 @@ class RankingItem(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    account_hidden_content_retained: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+    )
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     lifecycle_status: Mapped[RankingItemLifecycleStatus] = mapped_column(
         SaEnum(
@@ -901,6 +1159,7 @@ class RankingItem(Base):
             native_enum=True,
         ),
     )
+    moderation: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[int] = mapped_column(Integer, server_default="0")
     snapshot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     snapshot_ranking_score_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -1118,7 +1377,7 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
-    polis_participant_id: Mapped[int] = mapped_column(Integer)
+    polis_participant_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     username: Mapped[str] = mapped_column(String(20))
     is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))

@@ -87,6 +87,7 @@ import {
     type ConversationDisplayCounts,
 } from "./conversationDisplayCounts.js";
 import { fetchProjectPageDocuments } from "./projectDocument.js";
+import { effectiveConversationIndexing } from "./conversationDiscovery.js";
 
 interface ProjectPageServiceParams {
     db: PostgresJsDatabase;
@@ -169,7 +170,7 @@ interface ProjectActivityRow {
     isClosed: boolean;
     createdAt: Date;
     isEdited: boolean;
-    conversationType: "polis" | "prioritizing";
+    conversationType: "polis" | "prioritizing" | "gathering";
     prioritizationType?: "comparisons" | "qv" | null;
     title: string;
     bodyPlainText: string | null;
@@ -315,7 +316,6 @@ async function fetchProjectBaseBySlug({
         .where(
             and(
                 eq(projectTable.slug, projectSlug),
-                eq(projectTable.directoryVisibility, "listed"),
                 isNull(projectTable.deletedAt),
                 isNull(projectContentTable.deletedAt),
             ),
@@ -372,7 +372,6 @@ async function fetchProjectBasesByConversationSlug({
         .where(
             and(
                 inArray(conversationTable.slugId, uniqueConversationSlugIds),
-                eq(projectTable.directoryVisibility, "listed"),
                 isNull(projectTable.autoProvisionedForOrganizationId),
                 isNull(projectTable.deletedAt),
                 isNull(projectContentTable.deletedAt),
@@ -1192,26 +1191,23 @@ function getActivityCursorWhereClause({
 
     if (activityCursor.isIndexed) {
         return or(
-            and(eq(conversationTable.isIndexed, true), createdBeforeCursor),
-            eq(conversationTable.isIndexed, false),
+            and(effectiveConversationIndexing(), createdBeforeCursor),
+            eq(effectiveConversationIndexing(), false),
         );
     }
 
-    return and(eq(conversationTable.isIndexed, false), createdBeforeCursor);
+    return and(eq(effectiveConversationIndexing(), false), createdBeforeCursor);
 }
 
 function getProjectPageConversationWhereClause({
     projectId,
-    activityCursor,
 }: {
     projectId: number;
-    activityCursor?: ProjectPageActivityCursor;
 }): SQL | undefined {
     return and(
         eq(conversationTable.projectId, projectId),
         eq(conversationTable.isImporting, false),
         isNotNull(conversationTable.currentContentId),
-        getActivityCursorWhereClause({ activityCursor }),
     );
 }
 
@@ -1235,7 +1231,7 @@ async function fetchProjectActivityRows({
             conversationContentId: conversationContentTable.id,
             conversationContentPublicId: conversationContentTable.publicId,
             slugId: conversationTable.slugId,
-            isIndexed: conversationTable.isIndexed,
+            isIndexed: effectiveConversationIndexing(),
             isClosed: conversationTable.isClosed,
             createdAt: conversationTable.createdAt,
             isEdited: conversationTable.isEdited,
@@ -1251,18 +1247,19 @@ async function fetchProjectActivityRows({
             languageSettingsSource: conversationTable.languageSettingsSource,
         })
         .from(conversationTable)
+        .innerJoin(projectTable, eq(projectTable.id, conversationTable.projectId))
         .innerJoin(
             conversationContentTable,
             eq(conversationContentTable.id, conversationTable.currentContentId),
         )
         .where(
-            getProjectPageConversationWhereClause({
-                projectId,
-                activityCursor,
-            }),
+            and(
+                getProjectPageConversationWhereClause({ projectId }),
+                getActivityCursorWhereClause({ activityCursor }),
+            ),
         )
         .orderBy(
-            desc(conversationTable.isIndexed),
+            desc(effectiveConversationIndexing()),
             desc(conversationTable.createdAt),
             desc(conversationTable.id),
         )

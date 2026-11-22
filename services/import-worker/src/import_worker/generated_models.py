@@ -49,6 +49,8 @@ class ContentTranslationSourceKind(StrEnum):
     survey_question = "survey_question"
     project = "project"
     ranking_item = "ranking_item"
+    gathering_field = "gathering_field"
+    gathering_response = "gathering_response"
 
 
 class DisplayLanguageCode(StrEnum):
@@ -247,6 +249,7 @@ class ParticipationMode(StrEnum):
 
 
 class ConversationType(StrEnum):
+    gathering = "gathering"
     polis = "polis"
     prioritizing = "prioritizing"
 
@@ -345,6 +348,7 @@ class AnalysisWorkState(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(Integer)
     opinion_group_spec_id: Mapped[int] = mapped_column(Integer)
+    uses_closing_inputs: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     last_completed_data_generation: Mapped[int] = mapped_column(Integer, server_default="0")
     running_data_generation: Mapped[int | None] = mapped_column(Integer, nullable=True)
     persisted_analysis_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -390,10 +394,12 @@ class ContentTranslationWork(Base):
     opinion_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_question_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_question_option_content_ids: Mapped[list[int] | None] = mapped_column(
-        ARRAY(Integer),
+        ARRAY(Integer).with_variant(JSON(), "sqlite"),
         nullable=True,
     )
     ranking_item_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gathering_field_id: Mapped[uuid_pkg.UUID | None] = mapped_column(Uuid, nullable=True)
+    gathering_response_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     display_language_code: Mapped[DisplayLanguageCode] = mapped_column(
         SaEnum(
             DisplayLanguageCode,
@@ -524,6 +530,7 @@ class Conversation(Base):
     polis_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ranking_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     credit_voting_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gathering_config_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     prioritization_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     dynamic_translation_enabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     conversation_email_update_enabled_override: Mapped[bool | None] = mapped_column(
@@ -556,6 +563,10 @@ class Conversation(Base):
             values_callable=_enum_values,
             native_enum=True,
         ),
+    )
+    participation_mode_settings_source: Mapped[str] = mapped_column(
+        Text,
+        server_default="conversation_override",
     )
     conversation_type: Mapped[ConversationType] = mapped_column(
         SaEnum(
@@ -605,6 +616,7 @@ class ConversationViewSnapshot(Base):
     conversation_id: Mapped[int] = mapped_column(Integer)
     opinion_group_spec_id: Mapped[int] = mapped_column(Integer)
     analysis_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    close_replacement_generation: Mapped[int | None] = mapped_column(Integer, nullable=True)
     survey_aggregate_snapshot_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conversation_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     view_reason: Mapped[ConversationViewSnapshotReasonEnum] = mapped_column(
@@ -626,18 +638,6 @@ class ConversationViewSnapshot(Base):
     moderated_opinion_count: Mapped[int] = mapped_column(Integer)
     hidden_opinion_count: Mapped[int] = mapped_column(Integer)
     activated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-
-
-class CreditVotingConfig(Base):
-    __tablename__ = "credit_voting_config"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    credit_budget: Mapped[int] = mapped_column(Integer, server_default="100")
-    allow_opposition: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
-    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
-    statement_set_revision: Mapped[int] = mapped_column(Integer, server_default="0")
-    statements_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -779,6 +779,10 @@ class Opinion(Base):
     current_content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     account_hidden_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    account_hidden_content_retained: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+    )
     is_seed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     num_agrees: Mapped[int] = mapped_column(Integer, server_default="0")
     num_disagrees: Mapped[int] = mapped_column(Integer, server_default="0")
@@ -914,6 +918,14 @@ class Project(Base):
         Boolean,
         server_default=text("false"),
     )
+    participation_mode: Mapped[ParticipationMode] = mapped_column(
+        SaEnum(
+            ParticipationMode,
+            name="participation_mode",
+            values_callable=_enum_values,
+            native_enum=True,
+        ),
+    )
     conversation_email_update_default_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
@@ -933,11 +945,23 @@ class Project(Base):
     )
 
 
+class CreditVotingConfig(Base):
+    __tablename__ = "credit_voting_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    credit_budget: Mapped[int] = mapped_column(Integer, server_default="100")
+    allow_opposition: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    item_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    statement_set_revision: Mapped[int] = mapped_column(Integer, server_default="0")
+    statements_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class User(Base):
     __tablename__ = "user"
 
     id: Mapped[uuid_pkg.UUID] = mapped_column(Uuid, primary_key=True)
-    polis_participant_id: Mapped[int] = mapped_column(Integer)
+    polis_participant_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     username: Mapped[str] = mapped_column(String(20))
     is_site_moderator: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     is_site_org_admin: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))

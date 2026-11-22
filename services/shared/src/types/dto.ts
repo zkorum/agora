@@ -1,10 +1,20 @@
 import { z } from "zod";
+import { zodParticipationModeSettingsSource } from "../participationMode.js";
+import {
+    gatheringCreation,
+    gatheringAnswers,
+    gatheringFieldInput,
+    gatheringResponseFormat,
+    gatheringVisibility,
+    gatheringText,
+} from "../gathering.js";
+import { MAX_GATHERING_FIELDS } from "../gatheringLimits.js";
 import {
     zodOrganizationRole,
     zodOrganizationManagementPermissions,
     zodProjectManagementPermissions,
 } from "../organizationAccess.js";
-import { CREDIT_VOTING_BUDGET } from "../utils/qv.js";
+import { QV_CREDIT_BUDGET } from "../utils/qv.js";
 import { MAX_SEED_OPINIONS_PER_SUBMISSION } from "../seedOpinions.js";
 import { zodEmailBranding } from "../branding/emailBranding.js";
 import {
@@ -109,6 +119,12 @@ import {
     zodConversationProjectAssignment,
     zodHttpsUrl,
     createZodDisplayedContent,
+    zodLocalizedGatheringFieldContent,
+    zodLocalizedGatheringResponseContent,
+    zodGatheringFieldDisplayedContent,
+    zodGatheringResponseDisplayedContent,
+    zodGatheringFieldTranslationSubject,
+    zodGatheringResponseTranslationSubject,
 } from "./zod.js";
 import { zodEmail } from "./zod-email.js";
 import { zodPolisVoteRecord } from "./polis.js";
@@ -124,6 +140,7 @@ import {
     MAX_BYTES_RICH_TEXT_HTML,
     MAX_BYTES_CONVERSATION_EMAIL_UPDATE_HTML,
     MAX_LENGTH_CONVERSATION_EMAIL_UPDATE,
+    MAX_LENGTH_CONVERSATION_TITLE,
     MAX_LENGTH_DESCRIPTION_CREATOR,
     MAX_LENGTH_NAME_CREATOR,
     MAX_LENGTH_OPINION,
@@ -271,6 +288,20 @@ const zodContentTranslationRankingItemResponse = z
     .strict();
 
 const zodContentTranslationResponse = z.union([
+    z
+        .object({
+            success: z.literal(true),
+            subject: zodGatheringFieldTranslationSubject,
+            content: zodLocalizedGatheringFieldContent,
+        })
+        .strict(),
+    z
+        .object({
+            success: z.literal(true),
+            subject: zodGatheringResponseTranslationSubject,
+            content: zodLocalizedGatheringResponseContent,
+        })
+        .strict(),
     zodContentTranslationConversationResponse,
     zodContentTranslationOpinionResponse,
     zodContentTranslationSurveyQuestionResponse,
@@ -340,35 +371,32 @@ const zodProjectContactBase = z
         isFullImagePath: z.boolean().default(false),
     })
     .strict();
-function projectContactIdentitySchema(base: typeof zodProjectContactBase) {
-    const personName = base.shape.firstName.unwrap();
-    return z.union([
-        base.extend({ firstName: personName }),
-        base.extend({
-            firstName: z.never().optional(),
-            lastName: personName,
-        }),
-        base.extend({
-            firstName: z.never().optional(),
-            lastName: z.never().optional(),
-            organizationSlug: zodOrganizationSlug,
-        }),
-    ]);
-}
-const zodProjectContact = projectContactIdentitySchema(zodProjectContactBase);
-const zodCreateProjectContact = projectContactIdentitySchema(
+// Existing contacts without email still need to round-trip through read APIs.
+const zodProjectContact = z.union([
+    zodProjectContactBase.extend({ firstName: zodProjectContactPersonName }),
     zodProjectContactBase.extend({
-        firstName: zodProjectContactPersonNameInput.optional(),
-        lastName: zodProjectContactPersonNameInput.optional(),
-        roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
-        imagePath: zodOptionalNonEmptyText,
+        firstName: z.never().optional(),
+        lastName: zodProjectContactPersonName,
     }),
-).and(
-    z.union([
-        z.object({ email: zodEmail }),
-        z.object({ websiteUrl: zodHttpsUrl }),
-    ]),
-);
+    zodProjectContactBase.extend({
+        firstName: z.never().optional(),
+        lastName: z.never().optional(),
+        organizationSlug: zodOrganizationSlug,
+    }),
+    zodProjectContactBase.extend({
+        firstName: z.never().optional(),
+        lastName: z.never().optional(),
+        organizationSlug: z.never().optional(),
+        email: zodEmail,
+    }),
+]);
+const zodCreateProjectContact = zodProjectContactBase.extend({
+    firstName: zodProjectContactPersonNameInput.optional(),
+    lastName: zodProjectContactPersonNameInput.optional(),
+    roleLabel: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
+    imagePath: zodOptionalNonEmptyText,
+    email: zodEmail,
+});
 const zodAdminOrganization = zodOrganization
     .extend({
         defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
@@ -469,6 +497,7 @@ const zodConversationCreateProjectOption = z
     .object({
         projectSlug: zodProjectSlug,
         projectTitle: zodProjectTitle,
+        participationMode: zodParticipationMode,
         defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
         languageSettings: zodProjectLanguageSettings,
     })
@@ -486,6 +515,7 @@ const zodConversationProjectOption = z.union([
         .object({
             target: zodConversationProjectTarget.options[0],
             title: zodProjectTitle,
+            participationMode: zodParticipationMode,
             organizationSlugs: z.array(zodOrganizationSlug).min(1),
             premiumFeatures: z.array(zodPremiumFeature),
             defaultLanguageCode: ZodSupportedDisplayLanguageCodes,
@@ -535,10 +565,13 @@ const zodProjectContentLocalizationOutputs = z
             ).size === localizations.length,
         "Project content localizations must use unique languages",
     );
+const zodProjectDirectoryVisibility = z.enum(["listed", "unlisted"]);
 const zodAdminProject = z
     .object({
         projectSlug: zodProjectSlug,
         projectTitle: zodProjectTitle,
+        directoryVisibility: zodProjectDirectoryVisibility,
+        participationMode: zodParticipationMode,
         ownerOrganizationSlugs: z.array(zodOrganizationSlug).min(1),
         subtitle: z.string().trim().min(1).max(MAX_LENGTH_TITLE).optional(),
         body: zodConversationBodyOutput,
@@ -664,6 +697,12 @@ const zodProjectPageContact = z.union([
         firstName: z.never().optional(),
         lastName: z.never().optional(),
         affiliationName: zodProjectContactPersonName,
+    }),
+    zodProjectPageContactBase.extend({
+        firstName: z.never().optional(),
+        lastName: z.never().optional(),
+        affiliationName: z.never().optional(),
+        email: zodEmail,
     }),
 ]);
 const zodProjectDocumentLocalization = z
@@ -1528,8 +1567,38 @@ export class Dto {
             isClosed: z.boolean(),
         })
         .strict();
+    static closedAnalysisInputMode = z.enum(["closing", "live"]);
+    private static closedAnalysisSelectionBase = z
+        .object({
+            closeId: z.number().int().positive(),
+            selectionRevision: z.number().int().nonnegative(),
+            isSwitchable: z.boolean(),
+            servedInputMode: Dto.closedAnalysisInputMode,
+        })
+        .strict();
+    static closedAnalysisSelection = z.discriminatedUnion("status", [
+        Dto.closedAnalysisSelectionBase.extend({ status: z.literal("ready") }),
+        Dto.closedAnalysisSelectionBase.extend({
+            status: z.enum(["pending", "failed"]),
+            requestedInputMode: Dto.closedAnalysisInputMode,
+        }),
+    ]);
+    static setClosedAnalysisInputModeRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            closeId: z.number().int().positive(),
+            selectionRevision: z.number().int().nonnegative(),
+            inputMode: Dto.closedAnalysisInputMode,
+        })
+        .strict();
+    static setClosedAnalysisInputModeResponse =
+        Dto.closedAnalysisSelectionBase.pick({
+            closeId: true,
+            selectionRevision: true,
+        });
     static analysisFrameManifest = z
         .object({
+            closedAnalysisSelection: Dto.closedAnalysisSelection.optional(),
             frameKey: Dto.analysisFrameKey.optional(),
             conversationViewSnapshot:
                 Dto.analysisConversationViewSnapshot.optional(),
@@ -1581,6 +1650,22 @@ export class Dto {
             conversationSlugId: zodSlugId,
         })
         .strict();
+    static analysisFrameContent = z
+        .object({
+            groups: Dto.analysisFrameGroups,
+            agreements: Dto.analysisFrameOpinionList.extend({
+                kind: z.literal("agreements"),
+            }),
+            disagreements: Dto.analysisFrameOpinionList.extend({
+                kind: z.literal("disagreements"),
+            }),
+            divisive: Dto.analysisFrameOpinionList.extend({
+                kind: z.literal("divisive"),
+            }),
+        })
+        .strict();
+    static fetchAnalysisFrameContentRequest =
+        Dto.fetchAnalysisFrameSectionRequest.omit({ freshness: true });
     static analysisCheckpointReason = z
         .object({
             reason: zodConversationViewSnapshotCheckpointReason,
@@ -1625,6 +1710,8 @@ export class Dto {
             ),
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            participationModeSettingsSource:
+                zodParticipationModeSettingsSource.optional(),
             multilingualSetting: zodConversationMultilingualSetting,
             seedOpinionList: z
                 .array(zodOpinionContentInput)
@@ -1632,22 +1719,22 @@ export class Dto {
             conversationEmailUpdateEnabledOverride: z.boolean().optional(),
         })
         .strict();
-    static qvStatementInput = z
+    static qvItemInput = z
         .object({
             title: z.string().trim().min(1).max(MAX_BYTES_RICH_TEXT_HTML),
             description: z.string().max(MAX_BYTES_RICH_TEXT_HTML).optional(),
         })
         .strict();
-    static qvStatementChange = z.discriminatedUnion("action", [
+    static qvItemChange = z.discriminatedUnion("action", [
         z
-            .object({ action: z.literal("add"), content: Dto.qvStatementInput })
+            .object({ action: z.literal("add"), content: Dto.qvItemInput })
             .strict(),
         z
             .object({
                 action: z.literal("edit"),
                 slugId: zodSlugId,
                 sourceVersion: z.uuid(),
-                content: Dto.qvStatementInput,
+                content: Dto.qvItemInput,
             })
             .strict(),
         z
@@ -1658,7 +1745,7 @@ export class Dto {
             })
             .strict(),
     ]);
-    static qvStatementList = z
+    static qvItemList = z
         .object({
             revision: z.number().int().nonnegative(),
             editing: z.discriminatedUnion("allowed", [
@@ -1675,54 +1762,309 @@ export class Dto {
                     .strict(),
             ]),
             items: z.array(
-                Dto.qvStatementInput
+                Dto.qvItemInput
                     .extend({ slugId: zodSlugId, sourceVersion: z.uuid() })
                     .strict(),
             ),
         })
         .strict();
+    private static createPolisConversation =
+        Dto.createNewConversationBaseRequest.extend({
+            conversationType: z.literal("polis"),
+            votingPresentation: zodPolisVotingPresentation.default("list"),
+            allowParticipantStatements: z.boolean().default(true),
+            aiLabelingEnabled: z.boolean().default(true),
+            preferredOpinionGroupCount:
+                zodPreferredOpinionGroupCount.default(null),
+            surveyConfig: zodSurveyConfigInput.nullable().optional(),
+        });
+    private static createComparisonConversation =
+        Dto.createNewConversationBaseRequest
+            .extend(zodRankingConversationTypeConfig.shape)
+            .extend({
+                allowParticipantStatements: z.boolean().default(false),
+                externalSourceConfig: zodExternalSourceConfig
+                    .nullable()
+                    .optional(),
+            });
+    private static createQvConversation = Dto.createNewConversationBaseRequest
+        .extend(zodQvConversationTypeConfig.shape)
+        .extend({
+            allowOpposition: z.boolean().default(true),
+            seedOpinionList: z.array(z.string()).max(0).default([]),
+            seedStatements: z
+                .array(Dto.qvItemInput)
+                .min(1)
+                .max(MAX_SEED_OPINIONS_PER_SUBMISSION),
+            surveyConfig: zodSurveyConfigInput.nullable().optional(),
+        });
     static createNewConversationRequest = z.discriminatedUnion(
         "conversationType",
         [
-            Dto.createNewConversationBaseRequest
-                .extend({
-                    conversationType: z.literal("polis"),
-                    votingPresentation:
-                        zodPolisVotingPresentation.default("list"),
-                    allowParticipantStatements: z.boolean().default(true),
-                    aiLabelingEnabled: z.boolean().default(true),
-                    preferredOpinionGroupCount:
-                        zodPreferredOpinionGroupCount.default(null),
-                    surveyConfig: zodSurveyConfigInput.nullable().optional(),
-                })
-                .strict(),
+            Dto.createNewConversationBaseRequest.extend({
+                conversationType: z.literal("gathering"),
+                seedOpinionList: z.array(z.string()).max(0).default([]),
+                gathering: gatheringCreation,
+            }),
+            Dto.createPolisConversation,
             z.discriminatedUnion("prioritizationType", [
-                Dto.createNewConversationBaseRequest
-                    .extend(zodRankingConversationTypeConfig.shape)
-                    .extend({
-                        allowParticipantStatements: z.boolean().default(false),
-                        externalSourceConfig: zodExternalSourceConfig
-                            .nullable()
-                            .optional(),
-                    })
-                    .strict(),
-                Dto.createNewConversationBaseRequest
-                    .extend(zodQvConversationTypeConfig.shape)
-                    .extend({
-                        allowOpposition: z.boolean().default(true),
-                        seedOpinionList: z.array(z.string()).max(0).default([]),
-                        seedStatements: z
-                            .array(Dto.qvStatementInput)
-                            .min(1)
-                            .max(MAX_SEED_OPINIONS_PER_SUBMISSION),
-                        surveyConfig: zodSurveyConfigInput
-                            .nullable()
-                            .optional(),
-                    })
-                    .strict(),
+                Dto.createComparisonConversation,
+                Dto.createQvConversation,
             ]),
         ],
     );
+    // Shape/bounds for work in progress; the create schema still decides publishability.
+    private static draftBase = Dto.createNewConversationBaseRequest
+        .omit({ projectSlug: true, postAsOrganization: true })
+        .partial()
+        .extend({
+            conversationTitle: gatheringText
+                .max(MAX_LENGTH_CONVERSATION_TITLE)
+                .optional(),
+            conversationBody: gatheringText
+                .max(MAX_BYTES_RICH_TEXT_HTML)
+                .optional(),
+            seedOpinionList: z
+                .array(gatheringText.max(MAX_BYTES_RICH_TEXT_HTML))
+                .max(MAX_SEED_OPINIONS_PER_SUBMISSION)
+                .optional(),
+            languageSettingsSource:
+                zodConversationLanguageSettingsSource.optional(),
+        });
+    static conversationDraftContent = z.discriminatedUnion("conversationType", [
+        Dto.draftBase.omit({ seedOpinionList: true }).extend({
+            conversationType: z.literal("gathering"),
+            gathering: z
+                .discriminatedUnion("gatheringMode", [
+                    gatheringCreation.options[0].partial().extend({
+                        gatheringMode: z.literal("new"),
+                        responseFormat: z
+                            .array(
+                                gatheringFieldInput
+                                    .partial()
+                                    .required({ fieldId: true })
+                                    .extend({
+                                        label: gatheringText
+                                            .max(200)
+                                            .optional(),
+                                    }),
+                            )
+                            .max(MAX_GATHERING_FIELDS)
+                            .optional(),
+                    }),
+                    gatheringCreation.options[1].partial().extend({
+                        gatheringMode: z.literal("amend"),
+                    }),
+                ])
+                .optional(),
+        }),
+        Dto.createPolisConversation
+            .omit({ projectSlug: true, postAsOrganization: true })
+            .partial()
+            .extend(Dto.draftBase.shape)
+            .extend({ conversationType: z.literal("polis") }),
+        z.discriminatedUnion("prioritizationType", [
+            Dto.draftBase.omit({ seedOpinionList: true }).extend({
+                conversationType: z.literal("prioritizing"),
+                prioritizationType: z.null().optional(),
+            }),
+            Dto.createComparisonConversation
+                .omit({ projectSlug: true, postAsOrganization: true })
+                .partial()
+                .extend(Dto.draftBase.shape)
+                .extend({
+                    conversationType: z.literal("prioritizing"),
+                    prioritizationType: z.literal("comparisons"),
+                }),
+            Dto.createQvConversation
+                .omit({
+                    projectSlug: true,
+                    postAsOrganization: true,
+                    seedOpinionList: true,
+                })
+                .partial()
+                .extend(Dto.draftBase.omit({ seedOpinionList: true }).shape)
+                .extend({
+                    conversationType: z.literal("prioritizing"),
+                    prioritizationType: z.literal("qv"),
+                    seedStatements: z
+                        .array(
+                            Dto.qvItemInput.extend({
+                                title: gatheringText
+                                    .max(MAX_BYTES_RICH_TEXT_HTML)
+                                    .optional(),
+                                description: gatheringText
+                                    .max(MAX_BYTES_RICH_TEXT_HTML)
+                                    .optional(),
+                            }),
+                        )
+                        .max(MAX_SEED_OPINIONS_PER_SUBMISSION)
+                        .optional(),
+                }),
+        ]),
+    ]);
+    static createConversationDraftRequest = z.strictObject({
+        projectSlug: zodProjectSlug,
+        conversationType: zodConversationType,
+    });
+    private static conversationDraftCursor = z.strictObject({
+        id: z.uuid(),
+        createdAt: z.iso.datetime(),
+    });
+    static listConversationDraftsRequest = z.strictObject({
+        projectSlug: zodProjectSlug,
+        before: Dto.conversationDraftCursor.optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+    });
+    static conversationDraftRequest = z.strictObject({ draftId: z.uuid() });
+    static mutateConversationDraftRequest = Dto.conversationDraftRequest.extend(
+        {
+            expectedRevision: z.number().int().nonnegative(),
+        },
+    );
+    static saveConversationDraftRequest =
+        Dto.mutateConversationDraftRequest.extend({
+            content: Dto.conversationDraftContent,
+        });
+    static publishConversationDraftRequest =
+        Dto.mutateConversationDraftRequest.extend({
+            postAsOrganization: zodOrganizationSlug.optional(),
+        });
+    static conversationDraftSummary = Dto.createConversationDraftRequest.extend(
+        {
+            id: z.uuid(),
+            revision: z.number().int().nonnegative(),
+            conversationTitle: z.string().optional(),
+            createdAt: z.iso.datetime(),
+            updatedAt: z.iso.datetime(),
+        },
+    );
+    static conversationDraft = Dto.conversationDraftSummary.extend({
+        content: Dto.conversationDraftContent,
+    });
+    static listConversationDraftsResponse = z.strictObject({
+        drafts: z.array(Dto.conversationDraftSummary),
+        nextCursor: Dto.conversationDraftCursor.optional(),
+    });
+    static discardConversationDraftResponse = z.strictObject({
+        success: z.literal(true),
+    });
+    static gatheringLoadRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+        })
+        .strict();
+    static gatheringSuccessResponse = z
+        .object({ success: z.literal(true) })
+        .strict();
+    static gatheringResponse = z
+        .object({
+            responseSlugId: zodSlugId,
+            sourceVersion: z.uuid(),
+            isSeed: z.boolean(),
+            isOwn: z.boolean(),
+            authorUsername: z.string().optional(),
+            moderation: z.enum(["hide", "move"]).optional(),
+            answers: gatheringAnswers,
+            displayContent: zodGatheringResponseDisplayedContent,
+            savedAt: zodDateTimeFlexible,
+            baseline: z
+                .object({
+                    sourceVersion: z.uuid(),
+                    answers: gatheringAnswers,
+                    displayContent: zodGatheringResponseDisplayedContent,
+                })
+                .strict()
+                .optional(),
+        })
+        .strict();
+    static gatheringLoadResponse = z
+        .object({
+            gatheringMode: z.enum(["new", "amend"]),
+            allowNewResponses: z.boolean(),
+            responseVisibility: gatheringVisibility,
+            responseFormat: gatheringResponseFormat,
+            fieldDisplayContent: z.array(
+                z
+                    .object({
+                        fieldId: z.uuid(),
+                        displayContent: zodGatheringFieldDisplayedContent,
+                    })
+                    .strict(),
+            ),
+            isClosed: z.boolean(),
+        })
+        .strict();
+    static gatheringListRequest = Dto.gatheringLoadRequest
+        .extend({
+            view: z.enum(["active", "moderation", "own"]).default("active"),
+            beforeResponseId: z.number().int().positive().optional(),
+            limit: z.number().int().min(1).max(100).default(30),
+        })
+        .strict();
+    static gatheringListResponse = z
+        .object({
+            responses: z.array(Dto.gatheringResponse),
+            nextCursor: z.number().int().positive().optional(),
+            // Scoped to this viewer and view, never a global private-response count.
+            accessibleCount: z.number().int().nonnegative(),
+            participantResponseCount: z.number().int().nonnegative(),
+        })
+        .strict();
+    static gatheringReadRequest = Dto.gatheringLoadRequest
+        .extend({
+            responseSlugId: zodSlugId,
+        })
+        .strict();
+    static gatheringHistoryRequest = Dto.gatheringReadRequest
+        .extend({
+            beforeSourceVersion: z.uuid().optional(),
+            limit: z.number().int().min(1).max(100).default(50),
+        })
+        .strict();
+    static gatheringHistoryResponse = z.array(Dto.gatheringResponse);
+    static gatheringSaveRequest = Dto.gatheringLoadRequest
+        .extend({
+            change: z.discriminatedUnion("action", [
+                z
+                    .object({
+                        action: z.literal("submit"),
+                        answers: gatheringAnswers,
+                    })
+                    .strict(),
+                z
+                    .object({
+                        action: z.literal("seed"),
+                        answers: gatheringAnswers,
+                    })
+                    .strict(),
+                z
+                    .object({
+                        action: z.literal("edit"),
+                        responseSlugId: zodSlugId,
+                        sourceVersion: z.uuid(),
+                        answers: gatheringAnswers,
+                    })
+                    .strict(),
+            ]),
+        })
+        .strict();
+    static gatheringDeleteRequest = Dto.gatheringReadRequest
+        .extend({
+            sourceVersion: z.uuid(),
+        })
+        .strict();
+    static gatheringModerateRequest = Dto.gatheringReadRequest
+        .extend({
+            action: z.enum(["hide", "move", "restore"]),
+            reason: gatheringText.trim().min(1).max(1000),
+        })
+        .strict();
+    static gatheringSettingsRequest = Dto.gatheringLoadRequest
+        .extend({
+            allowNewResponses: z.boolean(),
+        })
+        .strict();
     static generateSeedSuggestionsRequest = z
         .object({
             // Random identifier of the conversation draft, renewed for each new draft.
@@ -1730,7 +2072,7 @@ export class Dto {
             draftId: z.uuid(),
             conversationTitle: zodConversationTitle,
             conversationBody: zodConversationBodyInput,
-            conversationType: zodConversationType,
+            conversationType: z.enum(["polis", "prioritizing"]),
             postAsOrganization: zodOrganizationSlug.optional(),
             // Plain text of every statement already on the page, the author's and
             // earlier suggestions alike, so that new suggestions do not repeat them.
@@ -1807,6 +2149,17 @@ export class Dto {
                 failure: zodConversationCreateFailure,
             })
             .strict(),
+    ]);
+    static publishConversationDraftResponse = z.union([
+        Dto.createNewConversationResponse,
+        z.strictObject({
+            success: z.literal(false),
+            failure: z.strictObject({
+                target: z.literal("draft"),
+                reason: z.literal("invalid_configuration"),
+                fields: z.array(z.string()),
+            }),
+        }),
     ]);
     static importConversationRequest = z
         .object({
@@ -2093,6 +2446,9 @@ export class Dto {
                 projectOptions: z.array(zodConversationProjectOption),
                 isIndexed: z.boolean(),
                 participationMode: zodParticipationMode,
+                participationModeSettingsSource:
+                    zodParticipationModeSettingsSource,
+                projectParticipationMode: zodParticipationMode,
                 aiLabelingEnabled: z.boolean(),
                 preferredOpinionGroupCount: zodPreferredOpinionGroupCount,
                 postAsOrganizationSlug: zodOrganizationSlug.optional(),
@@ -2102,7 +2458,7 @@ export class Dto {
                 isLocked: z.boolean(),
                 editPermissions: zodConversationEditPermissions,
                 seedOpinions: z.array(Dto.editableConversationSeedOpinion),
-                qvStatements: Dto.qvStatementList.optional(),
+                qvStatements: Dto.qvItemList.optional(),
                 canAddSeedOpinions: z.boolean(),
                 externalSourceConfig: zodExternalSourceConfig.nullable(),
             })
@@ -2117,6 +2473,7 @@ export class Dto {
     static updateConversationTypeConfig = z.discriminatedUnion(
         "conversationType",
         [
+            z.object({ conversationType: z.literal("gathering") }).strict(),
             zodPolisConversationTypeConfig
                 .extend({
                     aiLabelingEnabled: z.boolean().optional(),
@@ -2144,6 +2501,8 @@ export class Dto {
             conversationBody: zodConversationBodyInput,
             isIndexed: z.boolean(),
             participationMode: zodParticipationMode,
+            participationModeSettingsSource:
+                zodParticipationModeSettingsSource.optional(),
             multilingualSetting: zodConversationMultilingualSetting,
             languageSettingsSource:
                 zodConversationLanguageSettingsSource.default(
@@ -2190,7 +2549,7 @@ export class Dto {
                 .object({
                     expectedRevision: z.number().int().nonnegative(),
                     changes: z
-                        .array(Dto.qvStatementChange)
+                        .array(Dto.qvItemChange)
                         .max(MAX_SEED_OPINIONS_PER_SUBMISSION),
                     order: z
                         .array(zodSlugId)
@@ -2231,7 +2590,7 @@ export class Dto {
                     .optional(),
                 addedOpinions: z.array(zodDisplayedOpinionItem).optional(),
                 updatedOpinions: z.array(zodDisplayedOpinionItem).optional(),
-                qvStatements: Dto.qvStatementList.optional(),
+                qvStatements: Dto.qvItemList.optional(),
                 conversationTypeConfig: zodConversationTypeConfig.optional(),
                 participantStatements: zodParticipantStatements,
             })
@@ -2528,6 +2887,10 @@ export class Dto {
     static surveyResponseWithdrawRequest = z
         .object({
             conversationSlugId: zodSlugId,
+            expectedForm: Dto.surveyFormSnapshot.pick({
+                surveyConfigId: true,
+                currentRevision: true,
+            }).optional(),
             skipEmailUpdateConsent: z.boolean().optional().default(false),
         })
         .strict();
@@ -2556,6 +2919,20 @@ export class Dto {
             suppressionThreshold: z.number().int().positive(),
             suppressedRows: z.array(zodSurveyAggregateRow),
             fullRows: z.array(zodSurveyAggregateRow).optional(),
+            source: z
+                .discriminatedUnion("kind", [
+                    z.strictObject({
+                        kind: z.literal("polis_frame"),
+                        viewSnapshotId: z.number().int().positive(),
+                        candidateId: z.number().int().positive().optional(),
+                    }),
+                    z.strictObject({
+                        kind: z.literal("original_close"),
+                        viewSnapshotId: z.number().int().positive(),
+                        originalViewSnapshotId: z.number().int().positive(),
+                    }),
+                ])
+                .optional(),
             questionDisplayContents: z.array(
                 zodSurveyQuestionResultDisplayContent,
             ),
@@ -2607,6 +2984,33 @@ export class Dto {
             statementBody: zodOpinionContentInput,
         })
         .strict();
+    static moderateComparisonItemRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            itemSlugId: zodSlugId,
+            action: z.enum(["move", "hide", "restore"]),
+            reason: z.string().trim().min(1).max(1000),
+        })
+        .strict();
+    static comparisonModerationHistoryRequest = z
+        .object({
+            conversationSlugId: zodSlugId,
+            beforeId: z.number().int().positive().optional(),
+        })
+        .strict();
+    static comparisonModerationHistoryResponse = z.object({
+        items: z.array(
+            z.object({
+                id: z.number().int(),
+                itemSlugId: zodSlugId,
+                action: z.enum(["move", "hide"]),
+                title: z.string(),
+                body: z.string().optional(),
+                reason: z.string(),
+            }),
+        ),
+        nextBeforeId: z.number().int().optional(),
+    });
     static createComparisonStatementResponse = z.discriminatedUnion("success", [
         z
             .object({
@@ -2736,6 +3140,26 @@ export class Dto {
                 .strict(),
         ]),
     ]);
+    static closedVoteWithdrawalStatusRequest = z
+        .object({ conversationSlugId: zodSlugId })
+        .strict();
+    static closedVoteWithdrawalStatusResponse = z.discriminatedUnion(
+        "available",
+        [
+            z.object({ available: z.literal(false) }).strict(),
+            z
+                .object({ available: z.literal(true), closeEpoch: z.uuid() })
+                .strict(),
+        ],
+    );
+    static closedVoteWithdrawalRequest =
+        Dto.closedVoteWithdrawalStatusRequest.extend({
+            closeEpoch: z.uuid(),
+            expectedViewerId: z.uuid(),
+        });
+    static closedVoteWithdrawalResponse = z
+        .object({ success: z.literal(true) })
+        .strict();
     static getUserProfileResponse = z
         .object({
             activePostCount: z.number().gte(0),
@@ -3169,10 +3593,11 @@ export class Dto {
     static createProjectContactRequest = zodCreateProjectContact;
     static adminProjectContact = zodProjectContact;
     static projectPageContact = zodProjectPageContact;
-    static createProjectRequest = z
+    private static projectContentSettingsRequest = z
         .object({
             projectSlug: zodProjectSlug,
             projectTitle: zodProjectTitle,
+            participationMode: zodParticipationMode.optional(),
             ownerOrganizationSlugs: z
                 .array(zodOrganizationSlug)
                 .min(1)
@@ -3233,6 +3658,16 @@ export class Dto {
                 }
             }
         });
+    static createProjectRequest = Dto.projectContentSettingsRequest.safeExtend({
+        directoryVisibility: zodProjectDirectoryVisibility.optional(),
+    });
+    static setProjectDirectoryVisibilityRequest = z.strictObject({
+        projectSlug: zodProjectSlug,
+        directoryVisibility: zodProjectDirectoryVisibility,
+    });
+    static setProjectDirectoryVisibilityResponse = z.strictObject({
+        directoryVisibility: zodProjectDirectoryVisibility,
+    });
     static updateProjectLanguageSettingsRequest = z
         .object({
             projectSlug: zodProjectSlug,
@@ -3271,7 +3706,7 @@ export class Dto {
             projectSlug: zodProjectSlug,
         })
         .strict();
-    static updateProjectRequest = Dto.createProjectRequest
+    static updateProjectRequest = Dto.projectContentSettingsRequest
         .extend({
             currentProjectSlug: zodProjectSlug,
         })
@@ -3887,6 +4322,7 @@ export class Dto {
     static comparisonResultItem = z.discriminatedUnion("isDeleted", [
         comparisonResultMetadata.extend({
             isDeleted: z.literal(false),
+            participantSubmitted: z.boolean().optional(),
             displayContent: zodRankingItemDisplayedContent,
             externalUrl: z.string().nullable(),
         }),
@@ -3898,6 +4334,8 @@ export class Dto {
     ]);
     static comparisonResultsResponse = z.object({
         rankings: z.array(Dto.comparisonResultItem),
+        closedAnalysisSelection: Dto.closedAnalysisSelection.optional(),
+        counters: Dto.analysisFrameCounters.optional(),
     });
     static rankingStatsCheckpointsRequest = z
         .object({
@@ -3956,8 +4394,8 @@ export class Dto {
             votes: z
                 .number()
                 .int()
-                .min(-Math.floor(Math.sqrt(CREDIT_VOTING_BUDGET)))
-                .max(Math.floor(Math.sqrt(CREDIT_VOTING_BUDGET)))
+                .min(-Math.floor(Math.sqrt(QV_CREDIT_BUDGET)))
+                .max(Math.floor(Math.sqrt(QV_CREDIT_BUDGET)))
                 .refine((v) => v !== 0),
         })
         .strict();
@@ -3967,15 +4405,11 @@ export class Dto {
             saved: z
                 .object({
                     savedAt: zodDateTimeFlexible,
-                    creditsSpent: z
-                        .number()
-                        .int()
-                        .min(1)
-                        .max(CREDIT_VOTING_BUDGET),
+                    creditsSpent: z.number().int().min(1).max(QV_CREDIT_BUDGET),
                     allocations: z
                         .array(Dto.qvAllocation)
                         .min(1)
-                        .max(CREDIT_VOTING_BUDGET),
+                        .max(QV_CREDIT_BUDGET),
                 })
                 .strict()
                 .optional(),
@@ -4007,8 +4441,12 @@ export class Dto {
         z
             .object({
                 status: z.literal("ready"),
+                // Lifecycle generation of this read; calculationId remains the
+                // immutable accepted result while a later correction is pending.
                 generation: z.number().int().positive(),
                 calculationId: z.uuid(),
+                refreshStatus: z.enum(["calculating", "failed"]).optional(),
+                closedAnalysisSelection: Dto.closedAnalysisSelection.optional(),
                 capturedAt: zodDateTimeFlexible,
                 participantCount: z.number().int().nonnegative(),
                 items: z.array(
@@ -4016,8 +4454,7 @@ export class Dto {
                         .object({
                             itemSlugId: zodSlugId,
                             sourceVersion: z.uuid(),
-                            title: z.string(),
-                            body: z.string().optional(),
+                            displayContent: zodRankingItemDisplayedContent,
                             supportUnits: z.number().int().nonnegative(),
                             oppositionUnits: z.number().int().nonnegative(),
                             netUnits: z.number().int(),
@@ -4064,10 +4501,7 @@ export class Dto {
     static qvSaveRequest = Dto.qvWithdrawRequest
         .extend({
             expectedStatementSetRevision: z.number().int().nonnegative(),
-            allocations: z
-                .array(Dto.qvAllocation)
-                .min(1)
-                .max(CREDIT_VOTING_BUDGET),
+            allocations: z.array(Dto.qvAllocation).min(1).max(QV_CREDIT_BUDGET),
         })
         .strict();
     static qvMutationResponse = z.union([
@@ -5362,6 +5796,12 @@ export type CreateProjectContactRequest = z.infer<
     typeof Dto.createProjectContactRequest
 >;
 export type CreateProjectRequest = z.infer<typeof Dto.createProjectRequest>;
+export type SetProjectDirectoryVisibilityRequest = z.infer<
+    typeof Dto.setProjectDirectoryVisibilityRequest
+>;
+export type SetProjectDirectoryVisibilityResponse = z.infer<
+    typeof Dto.setProjectDirectoryVisibilityResponse
+>;
 export type CreateProjectResponse = z.infer<typeof Dto.createProjectResponse>;
 export type AdminProject = z.infer<typeof zodAdminProject>;
 export type AdminProjectOption = z.infer<typeof zodAdminProjectOption>;
@@ -5511,7 +5951,20 @@ export type UpdateLanguagePreferencesRequest = z.infer<
 >;
 export type AnalysisFrameKey = z.infer<typeof Dto.analysisFrameKey>;
 export type AnalysisFrameManifest = z.infer<typeof Dto.analysisFrameManifest>;
+export type SetClosedAnalysisInputModeRequest = z.infer<
+    typeof Dto.setClosedAnalysisInputModeRequest
+>;
+export type SetClosedAnalysisInputModeResponse = z.infer<
+    typeof Dto.setClosedAnalysisInputModeResponse
+>;
+export type ClosedAnalysisInputMode = z.infer<
+    typeof Dto.closedAnalysisInputMode
+>;
+export type ClosedAnalysisSelection = z.infer<
+    typeof Dto.closedAnalysisSelection
+>;
 export type AnalysisFrameGroups = z.infer<typeof Dto.analysisFrameGroups>;
+export type AnalysisFrameContent = z.infer<typeof Dto.analysisFrameContent>;
 export type AnalysisFrameGroupLabels = z.infer<
     typeof Dto.analysisFrameGroupLabels
 >;

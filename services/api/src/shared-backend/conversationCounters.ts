@@ -243,12 +243,14 @@ export async function scheduleConversationAnalysisRefresh({
     log,
     doUpdateLastReactedAt = false,
     queueStrategy = "db_reconciliation_only",
+    moderationChanged,
 }: {
     db: PostgresJsDatabase;
     conversationId: number;
     log: Pick<BaseLogger, "info" | "error">;
     doUpdateLastReactedAt?: boolean;
     queueStrategy?: AnalysisQueueStrategy;
+    moderationChanged?: boolean;
 }): Promise<void> {
     // Ranking counters are owned by ranking/scoring workers, not the Pol.is math updater.
     const convType = await db
@@ -267,7 +269,12 @@ export async function scheduleConversationAnalysisRefresh({
             .where(eq(conversationTable.id, conversationId));
     }
 
-    const schedule = await scheduleAnalysisUpdate({ db, conversationId, log });
+    const schedule = await scheduleAnalysisUpdate({
+        db,
+        conversationId,
+        log,
+        moderationChanged,
+    });
     log.info(
         {
             event: "analysis_schedule",

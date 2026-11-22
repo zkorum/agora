@@ -8,6 +8,8 @@
     map-options
     :options="displayOptions"
     :label="label"
+    :label-slot="required"
+    v-bind="{ 'aria-required': required || undefined }"
     :multiple="multiple"
     :use-chips="resolvedUseChips"
     :counter="counter"
@@ -30,6 +32,9 @@
     @popup-show="handlePopupShow"
     @popup-hide="handlePopupHide"
   >
+    <template v-if="required" #label>
+      <ZKFieldLabel :label="label" required :required-text="undefined" />
+    </template>
     <template #no-option>
       <div class="zk-select__empty">{{ t("noResults") }}</div>
     </template>
@@ -42,6 +47,7 @@ import type { QSelect } from "quasar";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { computed, ref, useTemplateRef, watch } from "vue";
 
+import ZKFieldLabel from "./ZKFieldLabel.vue";
 import {
   type ZKSelectTranslations,
   zkSelectTranslations,
@@ -59,6 +65,7 @@ const props = withDefaults(
     options: readonly ZKSelectOption[];
     label: string;
     multiple?: boolean;
+    required?: boolean;
     useChips?: boolean;
     counter?: boolean;
     maxValues?: number;
@@ -73,6 +80,7 @@ const props = withDefaults(
   }>(),
   {
     multiple: false,
+    required: false,
     useChips: undefined,
     counter: false,
     maxValues: undefined,

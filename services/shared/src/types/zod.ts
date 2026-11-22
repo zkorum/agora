@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { zodHttpsUrl } from "./zod-url.js";
+import { zodSlugId } from "./zod-slug-id.js";
+import { participationModeValues } from "../participationMode.js";
 import { validateDidKey, validateDidWeb } from "../did/util.js";
 import {
     MAX_LENGTH_TITLE,
@@ -37,7 +40,7 @@ export const zodDateTimeFlexible = z
         z.number().int().min(-8_640_000_000_000_000).max(8_640_000_000_000_000),
     ])
     .pipe(z.coerce.date());
-export const zodSlugId = z.string().max(10);
+export { zodSlugId };
 export const zodOrganizationSlug = z
     .string()
     .max(MAX_LENGTH_NAME_CREATOR)
@@ -92,13 +95,17 @@ export const zodModerationReason = z.enum([
     "other",
 ]);
 export const zodFeedSortAlgorithm = z.enum(["following", "new"]);
-export const zodParticipationMode = z.enum([
-    "account_required",
-    "strong_verification",
-    "email_verification",
-    "guest",
+export const zodParticipationMode = z.enum(participationModeValues);
+export const zodConversationType = z.enum([
+    "polis",
+    "prioritizing",
+    "gathering",
 ]);
-export const zodConversationType = z.enum(["polis", "prioritizing"]);
+export const zodGatheringConversationTypeConfig = z
+    .object({
+        conversationType: z.literal("gathering"),
+    })
+    .strict();
 export const zodPolisVotingPresentation = z.enum(["list", "one_at_a_time"]);
 export const zodRankingMode = z.enum(["bws", "pairwise"]);
 export const zodSupportedParticipantStatements = z
@@ -144,11 +151,18 @@ export const zodPrioritizingConversationTypeConfig = z.discriminatedUnion(
 );
 export const zodConversationTypeConfig = z.discriminatedUnion(
     "conversationType",
-    [zodPolisConversationTypeConfig, zodPrioritizingConversationTypeConfig],
+    [
+        zodPolisConversationTypeConfig,
+        zodPrioritizingConversationTypeConfig,
+        zodGatheringConversationTypeConfig,
+    ],
 );
 export const zodConversationStatementSettings = z.discriminatedUnion(
     "conversationType",
     [
+        zodGatheringConversationTypeConfig.extend({
+            participantStatements: zodUnsupportedParticipantStatements,
+        }),
         zodPolisConversationTypeConfig.extend({
             participantStatements: zodSupportedParticipantStatements,
         }),
@@ -308,18 +322,7 @@ export const zodExportFileType = z.enum([
     "survey_full_aggregates",
 ]);
 export const zodExportFileAudience = z.enum(["redacted", "owner", "requester"]);
-export const zodHttpsUrl = z.url().refine((value) => {
-    try {
-        const url = new URL(value);
-        return (
-            url.protocol === "https:" &&
-            url.username === "" &&
-            url.password === ""
-        );
-    } catch {
-        return false;
-    }
-}, "URL must use HTTPS without embedded credentials");
+export { zodHttpsUrl } from "./zod-url.js";
 export const zodExportFileInfo = z
     .object({
         fileType: zodExportFileType,
@@ -406,7 +409,24 @@ export const zodLocalizedContentTranslationStatus = z.enum([
     "failed",
     "completed",
 ]);
+export const zodGatheringFieldTranslationSubject = z
+    .object({
+        kind: z.literal("gathering_field"),
+        conversationSlugId: zodSlugId,
+        fieldId: z.uuid(),
+    })
+    .strict();
+export const zodGatheringResponseTranslationSubject = z
+    .object({
+        kind: z.literal("gathering_response"),
+        conversationSlugId: zodSlugId,
+        responseSlugId: zodSlugId,
+        sourceVersion: z.uuid(),
+    })
+    .strict();
 export const zodContentTranslationSubject = z.discriminatedUnion("kind", [
+    zodGatheringFieldTranslationSubject,
+    zodGatheringResponseTranslationSubject,
     z
         .object({
             kind: z.literal("conversation"),
@@ -620,6 +640,38 @@ export const zodLocalizedRankingItemContent = createZodLocalizedContent(
 export const zodRankingItemDisplayedContent = createZodDisplayedContent(
     zodTitleBodyContentVariant,
     zodTranslatedTitleBodyContentVariant,
+);
+export const zodGatheringFieldContentVariant = z
+    .object({ text: z.string() })
+    .strict();
+// Translated display text is not constrained by the original response-input limits.
+export const zodGatheringResponseContentVariant = z
+    .object({
+        answers: z.array(
+            z
+                .object({
+                    fieldId: z.uuid(),
+                    value: z.string(),
+                })
+                .strict(),
+        ),
+    })
+    .strict();
+export const zodLocalizedGatheringFieldContent = createZodLocalizedContent(
+    zodGatheringFieldContentVariant,
+    zodGatheringFieldContentVariant,
+);
+export const zodLocalizedGatheringResponseContent = createZodLocalizedContent(
+    zodGatheringResponseContentVariant,
+    zodGatheringResponseContentVariant,
+);
+export const zodGatheringFieldDisplayedContent = createZodDisplayedContent(
+    zodGatheringFieldContentVariant,
+    zodGatheringFieldContentVariant,
+);
+export const zodGatheringResponseDisplayedContent = createZodDisplayedContent(
+    zodGatheringResponseContentVariant,
+    zodGatheringResponseContentVariant,
 );
 export const zodConversationDisplayedContent = createZodDisplayedContent(
     zodConversationContentVariant,
@@ -1449,9 +1501,23 @@ const zodConversationMetadataBase = z
         projectContext: zodConversationProjectContext.optional(),
     })
     .strict();
+export const zodComparisonCloseSelectionVersion = z
+    .object({
+        closeId: z.number().int().positive(),
+        selectionRevision: z.number().int().nonnegative(),
+    })
+    .strict();
+
 export const zodConversationMetadata = z.discriminatedUnion(
     "conversationType",
     [
+        zodConversationMetadataBase
+            .extend(zodGatheringConversationTypeConfig.shape)
+            .extend({
+                participantStatements: zodUnsupportedParticipantStatements,
+                responseCount: zodCount,
+            })
+            .strict(),
         zodConversationMetadataBase
             .extend({
                 conversationType: z.literal("polis"),
@@ -1469,6 +1535,8 @@ export const zodConversationMetadata = z.discriminatedUnion(
                         .int()
                         .positive()
                         .optional(),
+                    comparisonCloseSelectionVersion:
+                        zodComparisonCloseSelectionVersion.optional(),
                 })
                 .strict(),
             zodConversationMetadataBase
@@ -1530,6 +1598,13 @@ export const zodConversationMetadataWithId = z.discriminatedUnion(
     "conversationType",
     [
         zodConversationMetadataWithIdBase
+            .extend(zodGatheringConversationTypeConfig.shape)
+            .extend({
+                participantStatements: zodUnsupportedParticipantStatements,
+                responseCount: zodCount,
+            })
+            .strict(),
+        zodConversationMetadataWithIdBase
             .extend({
                 conversationType: z.literal("polis"),
                 votingPresentation: zodPolisVotingPresentation,
@@ -1546,6 +1621,8 @@ export const zodConversationMetadataWithId = z.discriminatedUnion(
                         .int()
                         .positive()
                         .optional(),
+                    comparisonCloseSelectionVersion:
+                        zodComparisonCloseSelectionVersion.optional(),
                 })
                 .strict(),
             zodConversationMetadataWithIdBase

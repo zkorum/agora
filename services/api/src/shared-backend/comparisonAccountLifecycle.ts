@@ -11,7 +11,10 @@ import {
     rankingInputSnapshotTable,
     userTable,
 } from "./schema.js";
-import { hasUnclassifiedComparisonAccountContext } from "./comparisonRetention.js";
+import {
+    hasUnclassifiedComparisonAccountContext,
+    retainedComparisonInputCondition,
+} from "./comparisonRetention.js";
 
 /** Bounded purge-phase handoff, not an executor or user-facing deletion action.
  * Result-owned ranking_input_* rows have no dependency on this private graph.
@@ -108,13 +111,7 @@ export async function retireComparisonAccountInputs({
     const legacySnapshots = await db
         .select({ id: rankingConversationStatsSnapshotTable.id })
         .from(rankingConversationStatsSnapshotTable)
-        .leftJoin(
-            rankingInputSnapshotTable,
-            eq(
-                rankingInputSnapshotTable.statsSnapshotId,
-                rankingConversationStatsSnapshotTable.id,
-            ),
-        )
+        .leftJoin(rankingInputSnapshotTable, retainedComparisonInputCondition())
         .where(
             and(
                 inArray(
@@ -122,7 +119,7 @@ export async function retireComparisonAccountInputs({
                     conversationIds,
                 ),
                 isNull(rankingConversationStatsSnapshotTable.deletedAt),
-                isNull(rankingInputSnapshotTable.statsSnapshotId),
+                isNull(rankingInputSnapshotTable.id),
             ),
         )
         .limit(1);
@@ -148,10 +145,7 @@ export async function retireComparisonAccountInputs({
                         .from(rankingInputSnapshotTable)
                         .innerJoin(
                             rankingConversationStatsSnapshotTable,
-                            eq(
-                                rankingConversationStatsSnapshotTable.id,
-                                rankingInputSnapshotTable.statsSnapshotId,
-                            ),
+                            retainedComparisonInputCondition(),
                         )
                         .where(
                             and(

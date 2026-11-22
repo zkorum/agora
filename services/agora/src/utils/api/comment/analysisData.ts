@@ -52,7 +52,6 @@ export interface AnalysisData {
   conversationViewSnapshotId?: number;
   analysisSnapshotId?: number;
   conversationViewSnapshot?: AnalysisFrameManifest["conversationViewSnapshot"];
-  emptyReason?: string;
   analysisViewState?: AnalysisFrameManifest["analysisViewResolution"];
   displayableGroupCounts?: number[];
   hasVotedOnAllAvailableOpinions?: boolean;
@@ -130,7 +129,6 @@ export function buildEmptyAnalysisDataFromManifest({
     conversationViewSnapshotId: manifest.frameKey?.conversationViewSnapshotId,
     analysisSnapshotId: manifest.frameKey?.analysisSnapshotId,
     conversationViewSnapshot: manifest.conversationViewSnapshot,
-    emptyReason: manifest.emptyReason,
     analysisViewState: manifest.analysisViewResolution,
     displayableGroupCounts: manifest.analysisViewResolution.options
       .map((option) =>
@@ -221,7 +219,6 @@ export function buildAnalysisDataFromFrame({
     conversationViewSnapshotId: frameKey.conversationViewSnapshotId,
     analysisSnapshotId: frameKey.analysisSnapshotId,
     conversationViewSnapshot: manifest.conversationViewSnapshot,
-    emptyReason: manifest.emptyReason,
     analysisViewState: manifest.analysisViewResolution,
     displayableGroupCounts: manifest.analysisViewResolution.options
       .map((option) =>

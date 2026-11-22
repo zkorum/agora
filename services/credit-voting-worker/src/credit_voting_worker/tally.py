@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from credit_voting_worker.generated_models import (
     Conversation,
+    ConversationAnalysisClose,
     QvCalculation,
     QvCalculationState,
     QvInputAllocation,
@@ -19,8 +20,8 @@ from credit_voting_worker.generated_models import (
     RealtimeEventOutboxTopic,
 )
 from credit_voting_worker.generated_rules import (
-    CREDIT_VOTING_ALGORITHM_VERSION,
-    CREDIT_VOTING_RULE_VERSION,
+    QV_ALGORITHM_VERSION,
+    QV_RULE_VERSION,
 )
 from credit_voting_worker.work import Claim, InvalidInputError, lock_claim, renew_claim
 
@@ -75,8 +76,8 @@ def compute_results(
             select(QvInputSnapshot).where(QvInputSnapshot.id == snapshot_id)
         ).one()
         if (
-            snapshot.algorithm_version != CREDIT_VOTING_ALGORITHM_VERSION
-            or snapshot.rule_version != CREDIT_VOTING_RULE_VERSION
+            snapshot.algorithm_version != QV_ALGORITHM_VERSION
+            or snapshot.rule_version != QV_RULE_VERSION
             or snapshot.credit_pricing != "quadratic"
         ):
             raise InvalidInputError("Unsupported QV calculation provenance")
@@ -195,21 +196,82 @@ def publish_results(
             .where(QvCalculationState.conversation_id == claim.conversation_id)
             .values(current_calculation_id=claim.calculation_id)
         )
-        session.execute(
-            update(Conversation)
-            .where(Conversation.id == claim.conversation_id)
-            .values(
-                closing_target_revision=claim.generation, closed_finalized_at=func.clock_timestamp()
+        close_id = None
+        active_generation = claim.generation
+        if conversation.closed_finalized_at is None:
+            finalized_at = session.execute(
+                update(Conversation)
+                .where(Conversation.id == claim.conversation_id)
+                .values(
+                    closing_target_revision=claim.generation,
+                    closed_finalized_at=func.clock_timestamp(),
+                )
+                .returning(Conversation.closed_finalized_at)
+            ).scalar_one()
+            close_id = session.scalar(
+                insert(ConversationAnalysisClose)
+                .values(
+                    conversation_id=claim.conversation_id,
+                    close_epoch=conversation.vote_buffer_epoch,
+                    source_revision=claim.generation,
+                    finalized_at=finalized_at,
+                )
+                .returning(ConversationAnalysisClose.id)
             )
-        )
+            # An eligibility mutation may have staged Live work while this
+            # original capture was in flight. Activate it only after binding Closing.
+            follow_up_generation = session.scalar(
+                select(QvCalculation.generation).where(
+                    QvCalculation.conversation_id == claim.conversation_id,
+                    QvCalculation.generation == claim.generation + 1,
+                )
+            )
+            if follow_up_generation is not None:
+                active_generation = follow_up_generation
+                session.execute(
+                    update(QvCalculationState)
+                    .where(QvCalculationState.conversation_id == claim.conversation_id)
+                    .values(generation=active_generation)
+                )
+        else:
+            close_id = session.scalar(
+                select(ConversationAnalysisClose.id).where(
+                    ConversationAnalysisClose.conversation_id == conversation.id,
+                    ConversationAnalysisClose.close_epoch == conversation.vote_buffer_epoch,
+                    ConversationAnalysisClose.source_revision
+                    == conversation.closing_target_revision,
+                    ConversationAnalysisClose.finalized_at == conversation.closed_finalized_at,
+                )
+            )
+            if close_id is not None:
+                session.execute(
+                    update(ConversationAnalysisClose)
+                    .where(
+                        ConversationAnalysisClose.id == close_id,
+                        ConversationAnalysisClose.selected_input_mode == "live",
+                        ConversationAnalysisClose.requested_result_revision == claim.generation,
+                    )
+                    .values(served_input_mode="live", served_result_revision=claim.generation)
+                )
+            else:
+                # Unbound legacy closes keep their existing correction behavior.
+                session.execute(
+                    update(Conversation)
+                    .where(Conversation.id == conversation.id)
+                    .values(
+                        closing_target_revision=claim.generation,
+                        closed_finalized_at=func.clock_timestamp(),
+                    )
+                )
         event_id = session.scalars(
             insert(RealtimeEventOutbox)
             .values(
                 event_type="conversation_qv_calculation_updated",
                 payload={
                     "conversationSlugId": conversation.slug_id,
-                    "generation": claim.generation,
-                    "status": "ready",
+                    "generation": active_generation,
+                    "status": "ready" if active_generation == claim.generation else "calculating",
+                    **({"closeId": close_id} if close_id is not None else {}),
                 },
             )
             .returning(RealtimeEventOutbox.id)

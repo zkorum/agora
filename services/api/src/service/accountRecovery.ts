@@ -1,5 +1,9 @@
 import { and, eq, gt, isNull, notExists, sql } from "drizzle-orm";
-import type { PostgresTransaction } from "@/shared-backend/db.js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import {
+    getPrimaryDatabase,
+    type PostgresTransaction,
+} from "@/shared-backend/db.js";
 import { getAccountLifecycle } from "@/shared-backend/accountLifecycle.js";
 import { lockAccountConversations } from "@/shared-backend/accountContributions.js";
 import {
@@ -21,6 +25,10 @@ export type VerifiedRecoveryProof =
     | { method: "phone"; phoneHash: string }
     | { method: "passport"; nullifier: string }
     | { method: "guest_device"; didWrite: string };
+
+type AccountRecoveryResult =
+    | { success: true; accountMerged: false; userId: string }
+    | { success: false; reason: "recovery_unavailable" };
 
 async function ownsRecoveryProof({
     db,
@@ -126,6 +134,42 @@ async function ownsRecoveryProof({
     }
 }
 
+export async function recoverGuestAccount({
+    db,
+    originalDidWrite,
+    freshDidWrite,
+    userAgent,
+    sessionLifetimeDays,
+}: {
+    db: PostgresJsDatabase;
+    originalDidWrite: string;
+    freshDidWrite: string;
+    userAgent: string;
+    sessionLifetimeDays: number;
+}): Promise<AccountRecoveryResult> {
+    const primary = getPrimaryDatabase(db);
+    const devices = await primary
+        .select({ userId: deviceTable.userId })
+        .from(deviceTable)
+        .where(eq(deviceTable.didWrite, originalDidWrite));
+    const device = devices.at(0);
+    if (device === undefined) {
+        return { success: false, reason: "recovery_unavailable" };
+    }
+
+    return await primary.transaction(
+        async (tx) =>
+            await restoreAccountAfterVerification({
+                db: tx,
+                userId: device.userId,
+                didWrite: freshDidWrite,
+                proof: { method: "guest_device", didWrite: originalDidWrite },
+                userAgent,
+                sessionLifetimeDays,
+            }),
+    );
+}
+
 export async function restoreAccountAfterVerification({
     db,
     userId,
@@ -140,10 +184,7 @@ export async function restoreAccountAfterVerification({
     userAgent: string;
     sessionLifetimeDays: number;
     proof: VerifiedRecoveryProof;
-}): Promise<
-    | { success: true; accountMerged: false; userId: string }
-    | { success: false; reason: "recovery_unavailable" }
-> {
+}): Promise<AccountRecoveryResult> {
     const unavailable = {
         success: false,
         reason: "recovery_unavailable",

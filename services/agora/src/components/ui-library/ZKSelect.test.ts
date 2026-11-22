@@ -18,10 +18,12 @@ function mountSelect({
   multiple = true,
   mobile = false,
   searchable = true,
+  required = false,
 }: {
   multiple?: boolean;
   mobile?: boolean;
   searchable?: boolean;
+  required?: boolean;
 } = {}) {
   Platform.is = { ...originalPlatform, mobile, desktop: !mobile };
   const selected = ref<string | string[] | null>(multiple ? [] : null);
@@ -38,6 +40,7 @@ function mountSelect({
           label: "Transport",
           multiple,
           searchable,
+          required,
           "onUpdate:modelValue": (value: string | string[] | null) => {
             selected.value = value;
           },
@@ -80,6 +83,18 @@ async function dismissPopup(): Promise<void> {
     expect(document.querySelector(".q-menu")).toBeNull();
   });
 }
+
+describe("required select", () => {
+  it("marks a required searchable select without adding a star to its accessible name", () => {
+    const { target } = mountSelect({ required: true });
+    const combobox = target.querySelector('[role="combobox"]');
+    expect(combobox?.getAttribute("aria-label")).toBe("Transport");
+    expect(combobox?.getAttribute("aria-required")).toBe("true");
+    expect(target.querySelector(".zk-field-label__required")?.textContent).toBe(
+      "*"
+    );
+  });
+});
 
 describe("select popup dismissal", () => {
   it.each([false, true])(

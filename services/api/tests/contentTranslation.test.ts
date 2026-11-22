@@ -219,6 +219,9 @@ describe("opinion content translation boundary", () => {
             targetLanguageCode: "en",
             requestMode,
         });
+        if (request.subject.kind !== "opinion") {
+            throw new Error("Expected an opinion translation request");
+        }
 
         return await requestContentTranslation({
             db,

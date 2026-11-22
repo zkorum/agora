@@ -1,7 +1,7 @@
 from scoring_worker.db import ComparisonRow, checkpoint_milestones_at_or_below
-from scoring_worker.observations import comparison_rows_to_observations
+from scoring_worker.observations import build_participant_counts, comparison_rows_to_observations
 from scoring_worker.valkey_client import DirtyConversation
-from scoring_worker.worker import build_participant_counts, deduplicate_batch
+from scoring_worker.worker import deduplicate_batch
 
 
 def test_deduplicate_batch_prefers_highest_weight_per_conversation() -> None:

@@ -24,7 +24,7 @@ function expectNumericalReferences({
   source: string;
   translation: string;
 }): void {
-  const translatedNumbers = translation.match(/\d+/g) ?? [];
+  const translatedNumbers: string[] = translation.match(/\d+/g) ?? [];
   let nextIndex = 0;
   // Translations may render spelled-out quantities, such as "one month", as digits.
   for (const number of source.match(/\d+/g) ?? []) {
@@ -259,6 +259,32 @@ describe("concise multilingual privacy/retention documents", () => {
     );
   });
 
+  it("distinguishes account-hidden live content from retained historical text and explicit erasure", () => {
+    expect(englishPrivacy).toContain(
+      "Personal statements are hidden from live views"
+    );
+    expect(englishPrivacy).toContain(
+      "Retained checkpoints and snapshots may keep permitted statement text"
+    );
+    expect(englishPrivacy).not.toContain("including in historical displays");
+    const afterRecovery = englishPrivacy.split("At the 15-day deadline:")[1];
+    expect(afterRecovery).toContain("without your username or profile link");
+    expect(afterRecovery).toContain(
+      "If you deleted the statement itself, its text and translations stay hidden in saved results too"
+    );
+    for (const text of [englishPrivacy, englishTerms]) {
+      expect(text).toContain("without public account attribution");
+      expect(text).toContain("versions");
+      expect(text).toContain("translations");
+      expect(text).toContain(
+        "do not require manually deleting every contribution"
+      );
+    }
+    expect(englishTerms).not.toContain(
+      "You need not separately delete personal statements"
+    );
+  });
+
   it("states indefinite numerical retention and distinguishes recalculation from ordinary deletion", () => {
     for (const text of [englishPrivacy, englishTerms]) {
       expect(text).toContain(
@@ -384,7 +410,6 @@ describe("concise multilingual privacy/retention documents", () => {
       "deletion instructions are reapplied before restored data is exposed",
       "verified ownership and explicit cancellation before the deadline",
       "not revoked sessions, independent deletions, withdrawals, guest merges or moderation decisions",
-      "original personal statement text and translations",
       "California Consumer Privacy Act",
       "proof that an agent is authorized",
       "Exercising rights will not affect prices or service quality except where law permits",

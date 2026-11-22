@@ -220,7 +220,7 @@ function mountWithdrawal({
   const activeViewerScope = ref<ViewerQueryScope>(viewerScope);
   viewerScopeMock.mockReturnValue(computed(() => activeViewerScope.value));
   let withdraw:
-    | ReturnType<typeof useSurveyWithdrawMutation>["mutateAsync"]
+    | (() => Promise<SurveyResponseWithdrawResponse | undefined>)
     | undefined;
   let save:
     | ReturnType<typeof useSurveyAnswerSaveMutation>["mutateAsync"]
@@ -231,7 +231,11 @@ function mountWithdrawal({
         const mutation = useSurveyWithdrawMutation({
           conversationSlugId: activeConversationSlugId,
         });
-        withdraw = mutation.mutateAsync;
+        withdraw = () =>
+          mutation.mutateAsync({
+            surveyConfigId: completedForm.surveyConfigId,
+            currentRevision: completedForm.currentRevision,
+          });
         save = useSurveyAnswerSaveMutation({
           conversationSlugId: activeConversationSlugId,
         }).mutateAsync;
@@ -1006,6 +1010,10 @@ describe("survey withdrawal cache", () => {
 
     expect(api.withdrawSurveyResponse).toHaveBeenCalledWith({
       conversationSlugId,
+      expectedForm: {
+        surveyConfigId: completedForm.surveyConfigId,
+        currentRevision: completedForm.currentRevision,
+      },
       skipEmailUpdateConsent: false,
       isCurrent: expect.any(Function),
     });

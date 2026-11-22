@@ -78,7 +78,7 @@ def test_publication_does_not_deadlock_a_closing_revision_update() -> None:
                     ranking_items=(),
                     entity_ids=(),
                     tasks=(),
-                    response_ids={},
+                    participants={},
                     total_vote_count=0,
                     total_participant_count=0,
                 )

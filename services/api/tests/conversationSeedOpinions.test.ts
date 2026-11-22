@@ -21,7 +21,7 @@ import {
     projectOrganizationOwnershipTable,
     projectTable,
     rankingConversationConfigTable,
-    creditVotingConfigTable,
+    qvConfigTable,
     rankingItemTable,
     rankingItemContentTable,
     comparisonResponseTable,
@@ -39,16 +39,14 @@ import {
 } from "../src/service/postEdit.js";
 import { postNewOpinion } from "../src/service/comment.js";
 import { requireConversationCapabilityBySlug } from "../src/service/organizationAuthorization.js";
+import { createConversationWriteService } from "../src/service/conversationWrite.js";
+import { RealtimeSSEManager } from "../src/service/realtimeSSE.js";
+import { withQvItemSetForResponseSave } from "../src/service/qvParticipation.js";
 import {
-    createNewPost,
-    normalizeCreateConversationRichText,
-} from "../src/service/post.js";
-import { withQvStatementSetForResponseSave } from "../src/service/qvParticipation.js";
-import {
-    prepareQvStatementUpdate,
-    applyQvStatementUpdate,
-    normalizeQvStatementUpdate,
-} from "../src/service/qvStatements.js";
+    prepareQvItemUpdate,
+    applyQvItemUpdate,
+    normalizeQvItemUpdate,
+} from "../src/service/qvItems.js";
 import * as translations from "../src/service/contentTranslation.js";
 import * as contentLanguages from "../src/service/contentLanguageMetadata.js";
 import {
@@ -283,12 +281,7 @@ describe("conversation seed statements", () => {
         qv?: boolean;
     } = {}) {
         const config = qv
-            ? firstRow(
-                  await db
-                      .insert(creditVotingConfigTable)
-                      .values({})
-                      .returning(),
-              )
+            ? firstRow(await db.insert(qvConfigTable).values({}).returning())
             : ranking
               ? firstRow(
                     await db
@@ -506,9 +499,11 @@ describe("conversation seed statements", () => {
         },
     );
 
-    it("creates a QV activity with structured statements and fixed settings", async () => {
+    it("creates and announces a QV activity without scheduling disabled translations", async () => {
         const request = Dto.createNewConversationRequest.parse({
             conversationTitle: "A QV priority list",
+            projectSlug: "seed-project",
+            postAsOrganization: "seed-organization",
             isIndexed: true,
             participationMode: "guest",
             multilingualSetting: {
@@ -524,20 +519,35 @@ describe("conversation seed statements", () => {
                 { title: "Second" },
             ],
         });
-        const normalized = normalizeCreateConversationRichText(request);
-        if (!normalized.success) throw new Error("Invalid creation fixture");
-        const result = await createNewPost({
+        const realtimeSSEManager = new RealtimeSSEManager();
+        const broadcast = vi.spyOn(realtimeSSEManager, "broadcastToAllExcept");
+        const enqueueTranslationWork = vi
+            .fn<(workIds: number[]) => Promise<void>>()
+            .mockResolvedValue(undefined);
+        const service = createConversationWriteService({
             db,
+            googleCloudCredentials: undefined,
+            valkeyRef: { current: undefined },
+            realtimeSSEManager,
+            voteBuffer: undefined,
+            assertComparisonGitHubAllowed: () => {},
+            enqueueTranslationWork,
+        });
+        const result = await service.create({
             request,
-            normalizedRichText: normalized.content,
-            authorId: OWNER,
-            createTarget: { projectId, organizationId },
-            autoProvisionedDefaultLanguage: "en",
-            isImporting: false,
-            valkey: undefined,
+            userId: OWNER,
+            displayLanguage: "en",
         });
         expect(result.success).toBe(true);
         if (!result.success) return;
+        expect(result).not.toHaveProperty("eagerContentTranslationWorkIds");
+        expect(enqueueTranslationWork).not.toHaveBeenCalled();
+        expect(broadcast).toHaveBeenCalledWith(
+            expect.objectContaining({
+                event: "new_conversation",
+                excludeUserId: OWNER,
+            }),
+        );
         const editable = await getConversationForEdit({
             db,
             userId: OWNER,
@@ -561,14 +571,11 @@ describe("conversation seed statements", () => {
             },
         });
         const [stored] = await db
-            .select({ creditBudget: creditVotingConfigTable.creditBudget })
-            .from(creditVotingConfigTable)
+            .select({ creditBudget: qvConfigTable.creditBudget })
+            .from(qvConfigTable)
             .innerJoin(
                 conversationTable,
-                eq(
-                    conversationTable.creditVotingConfigId,
-                    creditVotingConfigTable.id,
-                ),
+                eq(conversationTable.creditVotingConfigId, qvConfigTable.id),
             )
             .where(eq(conversationTable.slugId, result.conversationSlugId));
         expect(stored?.creditBudget).toBe(100);
@@ -663,7 +670,7 @@ describe("conversation seed statements", () => {
         const fixture = await qvFixture();
         await db.transaction(
             async (tx) =>
-                await withQvStatementSetForResponseSave({
+                await withQvItemSetForResponseSave({
                     tx,
                     conversationId: fixture.conversation.id,
                     expectedRevision: fixture.statements.revision,
@@ -785,8 +792,8 @@ describe("conversation seed statements", () => {
             firstRow(
                 await db
                     .select()
-                    .from(creditVotingConfigTable)
-                    .where(eq(creditVotingConfigTable.id, fixture.config.id)),
+                    .from(qvConfigTable)
+                    .where(eq(qvConfigTable.id, fixture.config.id)),
             ).itemCount,
         ).toBe(2);
         const positions = await db
@@ -955,7 +962,7 @@ describe("conversation seed statements", () => {
         expect(
             await db.transaction(
                 async (tx) =>
-                    await withQvStatementSetForResponseSave({
+                    await withQvItemSetForResponseSave({
                         tx,
                         conversationId: fixture.conversation.id,
                         expectedRevision: fixture.statements.revision,
@@ -1128,7 +1135,7 @@ describe("conversation seed statements", () => {
         const persist = vi.fn(async () => "accepted");
         const stale = await db.transaction(
             async (tx) =>
-                await withQvStatementSetForResponseSave({
+                await withQvItemSetForResponseSave({
                     tx,
                     conversationId: fixture.conversation.id,
                     expectedRevision: 0,
@@ -1142,7 +1149,7 @@ describe("conversation seed statements", () => {
         expect(persist).not.toHaveBeenCalled();
         await expect(
             db.transaction(async (tx) => {
-                await withQvStatementSetForResponseSave({
+                await withQvItemSetForResponseSave({
                     tx,
                     conversationId: fixture.conversation.id,
                     expectedRevision: fixture.statements.revision,
@@ -1155,8 +1162,8 @@ describe("conversation seed statements", () => {
             firstRow(
                 await db
                     .select()
-                    .from(creditVotingConfigTable)
-                    .where(eq(creditVotingConfigTable.id, fixture.config.id)),
+                    .from(qvConfigTable)
+                    .where(eq(qvConfigTable.id, fixture.config.id)),
             ).statementsLockedAt,
         ).toBeNull();
     });
@@ -1167,7 +1174,7 @@ describe("conversation seed statements", () => {
         const release = createBarrier();
         const participantWrite = db.transaction(
             async (tx) =>
-                await withQvStatementSetForResponseSave({
+                await withQvItemSetForResponseSave({
                     tx,
                     conversationId: fixture.conversation.id,
                     expectedRevision: fixture.statements.revision,
@@ -1213,13 +1220,13 @@ describe("conversation seed statements", () => {
                 .from(conversationTable)
                 .where(eq(conversationTable.id, fixture.conversation.id))
                 .for("update");
-            const prepared = await prepareQvStatementUpdate({
+            const prepared = await prepareQvItemUpdate({
                 db: tx,
                 conversationId: fixture.conversation.id,
                 configId: fixture.config.id,
                 isClosed: false,
                 lockConfig: true,
-                update: await normalizeQvStatementUpdate({
+                update: await normalizeQvItemUpdate({
                     expectedRevision: fixture.statements.revision,
                     changes: [
                         {
@@ -1237,7 +1244,7 @@ describe("conversation seed statements", () => {
             if (!prepared.success) throw new Error("Failed to prepare edit");
             held.resolve();
             await release.promise;
-            await applyQvStatementUpdate({
+            await applyQvItemUpdate({
                 db: tx,
                 prepared,
                 conversation: {
@@ -1257,7 +1264,7 @@ describe("conversation seed statements", () => {
         const persist = vi.fn(async () => "accepted response");
         const participantWrite = db.transaction(
             async (tx) =>
-                await withQvStatementSetForResponseSave({
+                await withQvItemSetForResponseSave({
                     tx,
                     conversationId: fixture.conversation.id,
                     expectedRevision: fixture.statements.revision,
@@ -1275,8 +1282,8 @@ describe("conversation seed statements", () => {
             firstRow(
                 await db
                     .select()
-                    .from(creditVotingConfigTable)
-                    .where(eq(creditVotingConfigTable.id, fixture.config.id)),
+                    .from(qvConfigTable)
+                    .where(eq(qvConfigTable.id, fixture.config.id)),
             ).statementsLockedAt,
         ).toBeNull();
     });

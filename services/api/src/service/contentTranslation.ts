@@ -39,6 +39,10 @@ import {
     rankingConversationStatsCheckpointTable,
     rankingConversationStatsItemTable,
     rankingConversationStatsSnapshotTable,
+    qvCalculationTable,
+    qvCalculationStateTable,
+    qvInputItemTable,
+    qvInputSnapshotTable,
     surveyQuestionContentTable,
     surveyQuestionContentTranslationTable,
     surveyQuestionOptionContentTable,
@@ -93,7 +97,10 @@ interface RequestContentTranslationParams {
     db: PostgresDatabase;
     valkey: Valkey | undefined;
     queueScript: Script;
-    subject: ContentTranslationSubject;
+    subject: Exclude<
+        ContentTranslationSubject,
+        { kind: "gathering_field" | "gathering_response" }
+    >;
     targetLanguageCode: SupportedDisplayLanguageCodes;
     requestMode: ContentTranslationRequestMode;
     requesterIsSiteModerator: boolean;
@@ -252,7 +259,19 @@ export interface ProjectContentSource {
     sourceLanguageConfidence: number | null;
 }
 
-type TranslationWorkInput =
+export type TranslationWorkInput =
+    | {
+          conversationId: number;
+          sourceKind: "gathering_field";
+          gatheringFieldId: string;
+          targetLanguageCode: SupportedDisplayLanguageCodes;
+      }
+    | {
+          conversationId: number;
+          sourceKind: "gathering_response";
+          gatheringResponseContentId: number;
+          targetLanguageCode: SupportedDisplayLanguageCodes;
+      }
     | {
           conversationId: null;
           sourceKind: "project";
@@ -299,6 +318,16 @@ function getContentTranslationQueueMode(
 }
 
 function getTranslationWorkLogFields(input: TranslationWorkInput) {
+    if (
+        input.sourceKind === "gathering_field" ||
+        input.sourceKind === "gathering_response"
+    ) {
+        return {
+            conversationId: input.conversationId,
+            sourceKind: input.sourceKind,
+            targetLanguageCode: input.targetLanguageCode,
+        };
+    }
     if (input.sourceKind === "project") {
         return {
             conversationId: input.conversationId,
@@ -334,6 +363,18 @@ function getTranslationWorkLogFields(input: TranslationWorkInput) {
 }
 
 function getTranslationWorkSourceWhere(input: TranslationWorkInput) {
+    if (input.sourceKind === "gathering_field") {
+        return eq(
+            contentTranslationWorkTable.gatheringFieldId,
+            input.gatheringFieldId,
+        );
+    }
+    if (input.sourceKind === "gathering_response") {
+        return eq(
+            contentTranslationWorkTable.gatheringResponseContentId,
+            input.gatheringResponseContentId,
+        );
+    }
     if (input.sourceKind === "project") {
         return eq(
             contentTranslationWorkTable.projectContentId,
@@ -428,7 +469,87 @@ function getSurveyQuestionOptionContentIds(
         .sort((a, b) => a - b);
 }
 
-async function ensureTranslationWork({
+function translationWorkInsertValues({
+    input,
+    now,
+    priority,
+}: {
+    input: TranslationWorkInput;
+    now: Date;
+    priority: ContentTranslationQueuePriority;
+}) {
+    return {
+        conversationId: input.conversationId,
+        sourceKind: input.sourceKind,
+        conversationContentId:
+            input.sourceKind === "conversation" ? input.sourceContentId : null,
+        projectContentId:
+            input.sourceKind === "project" ? input.projectContentId : null,
+        opinionContentId:
+            input.sourceKind === "opinion" ? input.sourceContentId : null,
+        surveyQuestionContentId:
+            input.sourceKind === "survey_question"
+                ? input.surveyQuestionContentId
+                : null,
+        surveyQuestionOptionContentIds:
+            input.sourceKind === "survey_question"
+                ? input.surveyQuestionOptionContentIds
+                : null,
+        rankingItemContentId:
+            input.sourceKind === "ranking_item"
+                ? input.rankingItemContentId
+                : null,
+        gatheringFieldId:
+            input.sourceKind === "gathering_field"
+                ? input.gatheringFieldId
+                : null,
+        gatheringResponseContentId:
+            input.sourceKind === "gathering_response"
+                ? input.gatheringResponseContentId
+                : null,
+        displayLanguageCode: input.targetLanguageCode,
+        status: "pending" as const,
+        priorityRank: priority,
+        requestedAt: now,
+        createdAt: now,
+        updatedAt: now,
+    };
+}
+
+/** Existing leases and retry state remain untouched; eager failures use the worker's persisted retry policy. */
+export async function createEagerTranslationWorkBatch({
+    db,
+    inputs,
+    now,
+}: {
+    db: PostgresDatabase;
+    inputs: TranslationWorkInput[];
+    now: Date;
+}): Promise<number[]> {
+    const workIds: number[] = [];
+    // Bound PostgreSQL bind parameters independently of conversation size.
+    const batchSize = 500;
+    for (let offset = 0; offset < inputs.length; offset += batchSize) {
+        const inserted = await db
+            .insert(contentTranslationWorkTable)
+            .values(
+                inputs.slice(offset, offset + batchSize).map((input) =>
+                    translationWorkInsertValues({
+                        input,
+                        now,
+                        priority:
+                            CONTENT_TRANSLATION_QUEUE_PRIORITIES.eagerVisible,
+                    }),
+                ),
+            )
+            .onConflictDoNothing()
+            .returning({ id: contentTranslationWorkTable.id });
+        workIds.push(...inserted.map(({ id }) => id));
+    }
+    return workIds;
+}
+
+export async function prepareContentTranslationWork({
     db,
     input,
     translationExists,
@@ -444,36 +565,11 @@ async function ensureTranslationWork({
     log: Pick<BaseLogger, "info">;
 }): Promise<{ workId: number; shouldQueue: boolean }> {
     return await db.transaction(async (tx) => {
-        const insertValues = {
-            conversationId: input.conversationId,
-            sourceKind: input.sourceKind,
-            conversationContentId:
-                input.sourceKind === "conversation"
-                    ? input.sourceContentId
-                    : null,
-            projectContentId:
-                input.sourceKind === "project" ? input.projectContentId : null,
-            opinionContentId:
-                input.sourceKind === "opinion" ? input.sourceContentId : null,
-            surveyQuestionContentId:
-                input.sourceKind === "survey_question"
-                    ? input.surveyQuestionContentId
-                    : null,
-            surveyQuestionOptionContentIds:
-                input.sourceKind === "survey_question"
-                    ? input.surveyQuestionOptionContentIds
-                    : null,
-            rankingItemContentId:
-                input.sourceKind === "ranking_item"
-                    ? input.rankingItemContentId
-                    : null,
-            displayLanguageCode: input.targetLanguageCode,
-            status: "pending" as const,
-            priorityRank: priority,
-            requestedAt: now,
-            createdAt: now,
-            updatedAt: now,
-        };
+        const insertValues = translationWorkInsertValues({
+            input,
+            now,
+            priority,
+        });
         const insertedRows = await tx
             .insert(contentTranslationWorkTable)
             .values(insertValues)
@@ -677,7 +773,7 @@ async function queueMissingTranslationWork({
     log: Pick<BaseLogger, "info" | "error">;
     priority: ContentTranslationQueuePriority;
 }): Promise<void> {
-    const ensuredWork = await ensureTranslationWork({
+    const ensuredWork = await prepareContentTranslationWork({
         db,
         input,
         translationExists,
@@ -1000,6 +1096,73 @@ async function fetchRankingItemSource({
                     eq(
                         rankingItemTable.currentContentId,
                         rankingItemContentTable.id,
+                    ),
+                    exists(
+                        db
+                            .select({ id: qvCalculationTable.id })
+                            .from(qvCalculationStateTable)
+                            .innerJoin(
+                                qvCalculationTable,
+                                eq(
+                                    qvCalculationTable.id,
+                                    qvCalculationStateTable.currentCalculationId,
+                                ),
+                            )
+                            .innerJoin(
+                                qvInputSnapshotTable,
+                                eq(
+                                    qvInputSnapshotTable.id,
+                                    qvCalculationTable.inputSnapshotId,
+                                ),
+                            )
+                            .innerJoin(
+                                qvInputItemTable,
+                                eq(
+                                    qvInputItemTable.snapshotId,
+                                    qvInputSnapshotTable.id,
+                                ),
+                            )
+                            .where(
+                                and(
+                                    eq(
+                                        qvCalculationStateTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                    eq(
+                                        qvCalculationTable.conversationId,
+                                        conversationTable.id,
+                                    ),
+                                    eq(qvCalculationTable.status, "ready"),
+                                    eq(conversationTable.isClosed, true),
+                                    isNotNull(
+                                        conversationTable.closedFinalizedAt,
+                                    ),
+                                    eq(
+                                        qvInputItemTable.itemSlugId,
+                                        rankingItemTable.slugId,
+                                    ),
+                                    eq(
+                                        qvInputItemTable.sourceVersion,
+                                        rankingItemContentTable.publicId,
+                                    ),
+                                    eq(
+                                        qvInputItemTable.title,
+                                        rankingItemContentTable.title,
+                                    ),
+                                    or(
+                                        eq(
+                                            qvInputItemTable.body,
+                                            rankingItemContentTable.body,
+                                        ),
+                                        and(
+                                            isNull(qvInputItemTable.body),
+                                            isNull(
+                                                rankingItemContentTable.body,
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
                     ),
                     exists(
                         db
@@ -1330,12 +1493,19 @@ async function fetchMaterializedConversationTargetLanguageCodes({
     return rows.map((row) => row.languageCode);
 }
 
-async function resolveConversationTranslationTargetLanguagePolicy({
+export async function resolveConversationTranslationTargetLanguagePolicy({
     db,
     source,
 }: {
     db: PostgresDatabase;
-    source: ConversationContentSource;
+    source: Pick<
+        ConversationContentSource,
+        | "conversationSlugId"
+        | "projectId"
+        | "languageSettingsSource"
+        | "dynamicTranslationEnabled"
+        | "sourceLanguageCode"
+    >;
 }): Promise<TranslationTargetLanguagePolicy> {
     if (source.languageSettingsSource === "project_inherited") {
         return getProjectTranslationTargetLanguagePolicy({
@@ -1463,7 +1633,6 @@ async function fetchProjectContentSourceBySlug({
         .where(
             and(
                 eq(projectTable.slug, projectSlug),
-                eq(projectTable.directoryVisibility, "listed"),
                 isNull(projectTable.deletedAt),
                 isNull(projectContentTable.deletedAt),
             ),
@@ -1693,7 +1862,7 @@ async function ensureEagerTranslationWork({
     now: Date;
     log: Pick<BaseLogger, "info">;
 }): Promise<number | undefined> {
-    const ensuredWork = await ensureTranslationWork({
+    const ensuredWork = await prepareContentTranslationWork({
         db,
         input,
         translationExists,
@@ -2223,7 +2392,7 @@ export async function createEagerContentTranslationWorkForKnownProject({
             continue;
         }
 
-        const work = await ensureTranslationWork({
+        const work = await prepareContentTranslationWork({
             db,
             input,
             translationExists: false,

@@ -4,7 +4,10 @@ import {
     conversationViewSnapshotTable,
     conversationViewSnapshotCheckpointReasonTable,
     analysisSpecTable,
+    conversationAnalysisCloseTable,
     conversationTable,
+    polisAnalysisCloseGenerationTable,
+    polisAnalysisCloseTable,
     polisConversationConfigTable,
     opinionGroupCandidateAssessmentTable,
     opinionGroupCandidateTable,
@@ -16,12 +19,27 @@ import {
     opinionGroupUserTable,
     opinionGroupVariantTable,
 } from "@/shared-backend/schema.js";
-import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import {
+    and,
+    asc,
+    desc,
+    eq,
+    exists,
+    inArray,
+    isNotNull,
+    isNull,
+    notExists,
+    sql,
+    type SQLWrapper,
+} from "drizzle-orm";
+import { hasSwitchablePolisCloseEvidence } from "@/shared-backend/analysisScheduler.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { alias } from "drizzle-orm/pg-core";
 import type {
     AnalysisViewOption,
     AnalysisViewOptionCandidate,
     AnalysisViewState,
+    ClosedAnalysisSelection,
 } from "@/shared/types/dto.js";
 import type { AnalysisView } from "@/shared/types/zod.js";
 import {
@@ -33,16 +51,79 @@ import {
     buildAnalysisDescriptionReadiness,
     shouldUseSystemDescriptions,
 } from "./analysisDescriptionReadiness.js";
+import {
+    currentAnalysisCloseCondition,
+    hasFailedPolisWork,
+    readableAnalysisConversationCondition,
+} from "./closedAnalysisQueries.js";
+import { describeClosedAnalysisSelection } from "./closedAnalysisSelectionState.js";
 import { isPremiumFeatureEnabledForProject } from "./projectAccess.js";
 
 export type { AnalysisViewState };
+
+function activatedPolisLiveViewCondition() {
+    return and(
+        isNull(conversationViewSnapshotTable.closeReplacementGeneration),
+        isNotNull(conversationViewSnapshotTable.activatedAt),
+    );
+}
+
+export function publishedPolisLiveView({
+    db,
+    conversationId,
+    revision,
+}: {
+    db: PostgresJsDatabase;
+    conversationId: number | SQLWrapper;
+    revision: number | SQLWrapper;
+}) {
+    const snapshot = analysisSnapshotTable;
+    const view = conversationViewSnapshotTable;
+    return db
+        .select({ id: view.id })
+        .from(snapshot)
+        .innerJoin(
+            view,
+            and(
+                eq(view.analysisSnapshotId, snapshot.id),
+                eq(view.conversationId, snapshot.conversationId),
+            ),
+        )
+        .innerJoin(
+            analysisSnapshotResultTable,
+            and(
+                eq(analysisSnapshotResultTable.analysisSnapshotId, snapshot.id),
+                eq(
+                    analysisSnapshotResultTable.opinionGroupSpecId,
+                    view.opinionGroupSpecId,
+                ),
+            ),
+        )
+        .innerJoin(
+            opinionGroupSpecTable,
+            eq(opinionGroupSpecTable.id, view.opinionGroupSpecId),
+        )
+        .innerJoin(
+            analysisSpecTable,
+            eq(analysisSpecTable.id, opinionGroupSpecTable.analysisSpecId),
+        )
+        .where(
+            and(
+                eq(snapshot.conversationId, conversationId),
+                eq(snapshot.dataGeneration, revision),
+                eq(analysisSpecTable.analysisFamily, "opinion_groups"),
+                activatedPolisLiveViewCondition(),
+            ),
+        )
+        .orderBy(desc(view.createdAt), desc(view.id))
+        .limit(1);
+}
 
 type AiDescriptionLocaleStatus = "pending" | "ready" | "fallback";
 
 export interface SelectedOpinionGroupCandidate {
     conversationId: number;
     viewSnapshotId: number;
-    surveyAggregateSnapshotId: number | null;
     participantCount: number;
     snapshotId: number;
     resultId: number;
@@ -83,8 +164,14 @@ export interface OpinionGroupAnalysisSelection {
     viewState: AnalysisViewState;
     displayableGroupCounts: number[];
     conversationViewSnapshot?: AnalysisConversationViewSnapshot;
+    closedAnalysisSelection?: ClosedAnalysisSelection;
+    surveySource?: PolisSurveySource;
     emptyReason?: string;
 }
+
+type PolisSurveySource =
+    | { kind: "frame"; aggregateSnapshotId: number }
+    | { kind: "closing_replacement" };
 
 export interface LatestOpinionGroupResultRow {
     conversationId: number;
@@ -219,10 +306,12 @@ async function getEmptyAnalysisSelectionContext({
     db: PostgresJsDatabase;
     checkpointViewSnapshotId?: number;
 } & ConversationSelector): Promise<EmptyAnalysisSelectionContext> {
-    const conversationFilter =
+    const conversationFilter = and(
+        readableAnalysisConversationCondition(db),
         selector.conversationId !== undefined
             ? eq(conversationTable.id, selector.conversationId)
-            : eq(conversationTable.slugId, selector.conversationSlugId);
+            : eq(conversationTable.slugId, selector.conversationSlugId),
+    );
 
     const rows =
         checkpointViewSnapshotId === undefined
@@ -663,22 +752,64 @@ export async function getOpinionGroupAnalysisSelection({
     checkpointViewSnapshotId,
     ...selector
 }: GetSelectedOpinionGroupCandidateParams): Promise<OpinionGroupAnalysisSelection> {
-    const conversationFilter =
+    const conversationFilter = and(
+        readableAnalysisConversationCondition(db),
         selector.conversationId !== undefined
             ? eq(conversationTable.id, selector.conversationId)
-            : eq(conversationTable.slugId, selector.conversationSlugId);
+            : eq(conversationTable.slugId, selector.conversationSlugId),
+    );
 
+    const close = conversationAnalysisCloseTable;
+    const nativeClose = polisAnalysisCloseTable;
+    const generation = polisAnalysisCloseGenerationTable;
+    const view = conversationViewSnapshotTable;
+    let checkpointReplacementViewId: number | undefined;
     if (checkpointViewSnapshotId !== undefined) {
-        const checkpointRows = await db
-            .select({ id: conversationViewSnapshotCheckpointReasonTable.id })
-            .from(conversationViewSnapshotCheckpointReasonTable)
+        const reason = conversationViewSnapshotCheckpointReasonTable;
+        // A close's anchored link follows only completely published Closing
+        // generations. Reopening fences publication, so no freeze write is needed.
+        const latestClosingView = db
+            .select({ viewId: view.id })
+            .from(generation)
             .innerJoin(
-                conversationTable,
-                eq(
-                    conversationTable.id,
-                    conversationViewSnapshotCheckpointReasonTable.conversationId,
+                view,
+                and(
+                    eq(view.conversationId, generation.conversationId),
+                    eq(view.opinionGroupSpecId, nativeClose.opinionGroupSpecId),
+                    eq(
+                        view.closeReplacementGeneration,
+                        generation.dataGeneration,
+                    ),
                 ),
             )
+            .where(
+                and(
+                    eq(generation.closeId, nativeClose.closeId),
+                    isNotNull(generation.publishedAt),
+                ),
+            )
+            .orderBy(desc(generation.dataGeneration))
+            .limit(1)
+            .as("latest_checkpoint_closing_view");
+        const checkpointRows = await db
+            .select({ replacementViewId: latestClosingView.viewId })
+            .from(reason)
+            .innerJoin(
+                conversationTable,
+                eq(conversationTable.id, reason.conversationId),
+            )
+            .leftJoin(
+                nativeClose,
+                and(
+                    eq(
+                        nativeClose.originalViewSnapshotId,
+                        reason.conversationViewSnapshotId,
+                    ),
+                    eq(nativeClose.conversationId, reason.conversationId),
+                    eq(reason.reason, "conversation_closed"),
+                ),
+            )
+            .leftJoinLateral(latestClosingView, sql`true`)
             .where(
                 and(
                     conversationFilter,
@@ -688,9 +819,11 @@ export async function getOpinionGroupAnalysisSelection({
                     ),
                 ),
             )
+            .orderBy(isNull(nativeClose.closeId))
             .limit(1);
 
-        if (checkpointRows.length === 0) {
+        const checkpoint = checkpointRows.at(0);
+        if (checkpoint === undefined) {
             const variantsEnabled = false;
             const requestedView = getRequestedAnalysisView({
                 analysisView,
@@ -706,106 +839,262 @@ export async function getOpinionGroupAnalysisSelection({
                 emptyReason: "Checkpoint is not available.",
             });
         }
+        checkpointReplacementViewId = checkpoint.replacementViewId ?? undefined;
     }
 
-    const viewSnapshotFilter =
-        checkpointViewSnapshotId === undefined
-            ? isNotNull(conversationViewSnapshotTable.activatedAt)
-            : and(
-                  eq(
-                      conversationViewSnapshotTable.id,
-                      checkpointViewSnapshotId,
-                  ),
-                  isNotNull(conversationViewSnapshotTable.activatedAt),
-              );
-
-    const latestResultRows = await db
+    const currentCloseQuery = db
         .select({
-            conversationId: conversationTable.id,
-            projectId: conversationTable.projectId,
-            preferredOpinionGroupCount:
-                checkpointViewSnapshotId === undefined
-                    ? polisConversationConfigTable.preferredOpinionGroupCount
-                    : conversationViewSnapshotTable.preferredOpinionGroupCount,
-            aiLabelingEnabled: polisConversationConfigTable.aiLabelingEnabled,
-            viewSnapshotId: conversationViewSnapshotTable.id,
-            surveyAggregateSnapshotId:
-                conversationViewSnapshotTable.surveyAggregateSnapshotId,
-            participantCount: conversationViewSnapshotTable.participantCount,
-            opinionCount: conversationViewSnapshotTable.opinionCount,
-            voteCount: conversationViewSnapshotTable.voteCount,
-            totalOpinionCount: conversationViewSnapshotTable.totalOpinionCount,
-            totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
-            totalParticipantCount:
-                conversationViewSnapshotTable.totalParticipantCount,
-            moderatedOpinionCount:
-                conversationViewSnapshotTable.moderatedOpinionCount,
-            hiddenOpinionCount:
-                conversationViewSnapshotTable.hiddenOpinionCount,
-            isClosed: conversationViewSnapshotTable.isClosed,
-            snapshotId: analysisSnapshotTable.id,
-            resultId: analysisSnapshotResultTable.id,
-            outcome: analysisSnapshotResultTable.outcome,
-            variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
+            id: close.id,
+            conversationId: close.conversationId,
+            servedInputMode: close.servedInputMode,
+            servedResultRevision: close.servedResultRevision,
+            selectedInputMode: close.selectedInputMode,
+            requestedResultRevision: close.requestedResultRevision,
+            selectionRevision: close.selectionRevision,
         })
         .from(conversationTable)
-        .innerJoin(
-            conversationViewSnapshotTable,
-            eq(
-                conversationViewSnapshotTable.conversationId,
-                conversationTable.id,
-            ),
-        )
-        .innerJoin(
-            polisConversationConfigTable,
-            eq(
-                polisConversationConfigTable.id,
-                conversationTable.polisConfigId,
-            ),
-        )
-        .innerJoin(
-            analysisSnapshotTable,
-            eq(
-                analysisSnapshotTable.id,
-                conversationViewSnapshotTable.analysisSnapshotId,
-            ),
-        )
-        .innerJoin(
-            analysisSnapshotResultTable,
-            and(
-                eq(
-                    analysisSnapshotResultTable.analysisSnapshotId,
-                    conversationViewSnapshotTable.analysisSnapshotId,
-                ),
-                eq(
-                    analysisSnapshotResultTable.opinionGroupSpecId,
-                    conversationViewSnapshotTable.opinionGroupSpecId,
-                ),
-            ),
-        )
-        .innerJoin(
-            opinionGroupSpecTable,
-            eq(
-                opinionGroupSpecTable.id,
-                analysisSnapshotResultTable.opinionGroupSpecId,
-            ),
-        )
-        .innerJoin(
-            analysisSpecTable,
-            eq(analysisSpecTable.id, opinionGroupSpecTable.analysisSpecId),
-        )
+        .innerJoin(close, currentAnalysisCloseCondition())
         .where(
             and(
                 conversationFilter,
-                eq(analysisSpecTable.analysisFamily, "opinion_groups"),
-                viewSnapshotFilter,
+                exists(
+                    db
+                        .select({ closeId: nativeClose.closeId })
+                        .from(nativeClose)
+                        .where(eq(nativeClose.closeId, close.id)),
+                ),
             ),
-        )
-        .orderBy(
-            desc(conversationViewSnapshotTable.createdAt),
-            desc(conversationViewSnapshotTable.id),
-        )
-        .limit(1);
+        );
+    const currentClose = currentCloseQuery.as("current_polis_close");
+    // Failure belongs to an unfinished requested generation, not the result
+    // readers are still seeing. Don't expose error details or lease state.
+    const failedRequest = hasFailedPolisWork({
+        db,
+        conversationId: currentClose.conversationId,
+        revision: currentClose.requestedResultRevision,
+        usesClosingInputs: sql`(${eq(currentClose.selectedInputMode, "closing")})`,
+    });
+
+    const resultQuery = (includeCloseSelection: boolean) =>
+        db
+            .select({
+                conversationId: sql<number>`${conversationTable.id}`.as(
+                    "conversation_id",
+                ),
+                projectId: conversationTable.projectId,
+                preferredOpinionGroupCount:
+                    checkpointViewSnapshotId === undefined
+                        ? polisConversationConfigTable.preferredOpinionGroupCount
+                        : conversationViewSnapshotTable.preferredOpinionGroupCount,
+                aiLabelingEnabled:
+                    polisConversationConfigTable.aiLabelingEnabled,
+                viewSnapshotId: sql<number>`${view.id}`.as("view_snapshot_id"),
+                surveyAggregateSnapshotId:
+                    conversationViewSnapshotTable.surveyAggregateSnapshotId,
+                participantCount:
+                    conversationViewSnapshotTable.participantCount,
+                opinionCount: conversationViewSnapshotTable.opinionCount,
+                voteCount: conversationViewSnapshotTable.voteCount,
+                totalOpinionCount:
+                    conversationViewSnapshotTable.totalOpinionCount,
+                totalVoteCount: conversationViewSnapshotTable.totalVoteCount,
+                totalParticipantCount:
+                    conversationViewSnapshotTable.totalParticipantCount,
+                moderatedOpinionCount:
+                    conversationViewSnapshotTable.moderatedOpinionCount,
+                hiddenOpinionCount:
+                    conversationViewSnapshotTable.hiddenOpinionCount,
+                isClosed: conversationViewSnapshotTable.isClosed,
+                snapshotId: sql<number>`${analysisSnapshotTable.id}`.as(
+                    "analysis_snapshot_id",
+                ),
+                resultId: sql<number>`${analysisSnapshotResultTable.id}`.as(
+                    "result_id",
+                ),
+                outcome: analysisSnapshotResultTable.outcome,
+                variantsEnabled: analysisSnapshotResultTable.variantsEnabled,
+                closeId: sql<number | null>`${currentClose.id}`.as("close_id"),
+                selectedInputMode: currentClose.selectedInputMode,
+                servedInputMode: currentClose.servedInputMode,
+                requestedResultRevision: currentClose.requestedResultRevision,
+                servedResultRevision: currentClose.servedResultRevision,
+                selectionRevision: currentClose.selectionRevision,
+                failedRequest: sql<boolean>`${failedRequest}`.as(
+                    "failed_request",
+                ),
+                isSwitchable:
+                    sql<boolean>`${hasSwitchablePolisCloseEvidence({ db, closeId: currentClose.id })}`.as(
+                        "is_switchable",
+                    ),
+            })
+            .from(conversationTable)
+            .innerJoin(
+                conversationViewSnapshotTable,
+                eq(
+                    conversationViewSnapshotTable.conversationId,
+                    conversationTable.id,
+                ),
+            )
+            .innerJoin(
+                polisConversationConfigTable,
+                eq(
+                    polisConversationConfigTable.id,
+                    conversationTable.polisConfigId,
+                ),
+            )
+            .innerJoin(
+                analysisSnapshotTable,
+                eq(
+                    analysisSnapshotTable.id,
+                    conversationViewSnapshotTable.analysisSnapshotId,
+                ),
+            )
+            .innerJoin(
+                analysisSnapshotResultTable,
+                and(
+                    eq(
+                        analysisSnapshotResultTable.analysisSnapshotId,
+                        conversationViewSnapshotTable.analysisSnapshotId,
+                    ),
+                    eq(
+                        analysisSnapshotResultTable.opinionGroupSpecId,
+                        conversationViewSnapshotTable.opinionGroupSpecId,
+                    ),
+                ),
+            )
+            .innerJoin(
+                opinionGroupSpecTable,
+                eq(
+                    opinionGroupSpecTable.id,
+                    analysisSnapshotResultTable.opinionGroupSpecId,
+                ),
+            )
+            .innerJoin(
+                analysisSpecTable,
+                eq(analysisSpecTable.id, opinionGroupSpecTable.analysisSpecId),
+            )
+            .leftJoin(
+                currentClose,
+                includeCloseSelection
+                    ? eq(currentClose.conversationId, conversationTable.id)
+                    : sql`false`,
+            )
+            .$dynamic();
+
+    const takeResult = ({
+        query,
+        filter,
+    }: {
+        query: ReturnType<typeof resultQuery>;
+        filter: ReturnType<typeof and>;
+    }) =>
+        query
+            .where(
+                and(
+                    conversationFilter,
+                    eq(analysisSpecTable.analysisFamily, "opinion_groups"),
+                    filter,
+                ),
+            )
+            .orderBy(desc(view.createdAt), desc(view.id))
+            .limit(1);
+
+    const activated = activatedPolisLiveViewCondition();
+    const latestResultRows = await (() => {
+        if (checkpointViewSnapshotId !== undefined) {
+            return takeResult({
+                query: resultQuery(false),
+                filter:
+                    checkpointReplacementViewId === undefined
+                        ? and(eq(view.id, checkpointViewSnapshotId), activated)
+                        : eq(view.id, checkpointReplacementViewId),
+            });
+        }
+        // The two branches are mutually exclusive. Keep the ordinary active
+        // index usable and resolve a close by its bound specs, not view history.
+        const ordinary = takeResult({
+            query: resultQuery(false),
+            filter: and(notExists(currentCloseQuery), activated),
+        });
+        const replacement = alias(view, "published_close_view");
+        // A point lookup per bound spec prevents PostgreSQL from walking the
+        // conversation's view history and testing the chosen id on every row.
+        const boundView = db
+            .select({ id: view.id, createdAt: view.createdAt })
+            .from(view)
+            .where(
+                eq(
+                    view.id,
+                    sql<number>`case when ${currentClose.servedResultRevision} is null
+                then ${nativeClose.originalViewSnapshotId} else ${replacement.id} end`,
+                ),
+            )
+            .limit(1)
+            .as("bound_polis_view");
+        const finalizedViewId = db
+            .select({ id: boundView.id })
+            .from(currentClose)
+            .innerJoin(nativeClose, eq(nativeClose.closeId, currentClose.id))
+            .innerJoin(
+                opinionGroupSpecTable,
+                eq(opinionGroupSpecTable.id, nativeClose.opinionGroupSpecId),
+            )
+            .innerJoin(
+                analysisSpecTable,
+                eq(analysisSpecTable.id, opinionGroupSpecTable.analysisSpecId),
+            )
+            .leftJoin(
+                generation,
+                and(
+                    eq(generation.conversationId, currentClose.conversationId),
+                    eq(
+                        generation.dataGeneration,
+                        currentClose.servedResultRevision,
+                    ),
+                    eq(generation.closeId, currentClose.id),
+                    isNotNull(generation.publishedAt),
+                ),
+            )
+            .leftJoin(
+                replacement,
+                and(
+                    eq(replacement.conversationId, nativeClose.conversationId),
+                    eq(
+                        replacement.opinionGroupSpecId,
+                        nativeClose.opinionGroupSpecId,
+                    ),
+                    eq(
+                        replacement.closeReplacementGeneration,
+                        generation.dataGeneration,
+                    ),
+                ),
+            )
+            .innerJoinLateral(boundView, sql`true`)
+            .where(
+                and(
+                    eq(analysisSpecTable.analysisFamily, "opinion_groups"),
+                    eq(currentClose.servedInputMode, "closing"),
+                ),
+            )
+            .orderBy(desc(boundView.createdAt), desc(boundView.id))
+            .limit(1);
+        const liveView = publishedPolisLiveView({
+            db,
+            conversationId: currentClose.conversationId,
+            revision: currentClose.servedResultRevision,
+        }).as("served_polis_live_view");
+        const liveViewId = db
+            .select({ id: liveView.id })
+            .from(currentClose)
+            .innerJoinLateral(liveView, sql`true`)
+            .where(eq(currentClose.servedInputMode, "live"));
+        return ordinary.unionAll(
+            takeResult({
+                query: resultQuery(true),
+                filter: eq(view.id, finalizedViewId.unionAll(liveViewId)),
+            }),
+        );
+    })();
 
     if (latestResultRows.length === 0) {
         const emptyContext = await getEmptyAnalysisSelectionContext({
@@ -839,6 +1128,42 @@ export async function getOpinionGroupAnalysisSelection({
 
     const requestedLocale = getSupportedDisplayLanguage(displayLanguage);
     const latestResult = latestResultRows[0];
+    const {
+        closeId,
+        selectionRevision,
+        selectedInputMode,
+        servedInputMode,
+        requestedResultRevision,
+        servedResultRevision,
+    } = latestResult;
+    let closedAnalysisSelection: ClosedAnalysisSelection | undefined;
+    if (
+        closeId !== null &&
+        selectionRevision !== null &&
+        selectedInputMode !== null &&
+        servedInputMode !== null
+    ) {
+        closedAnalysisSelection = describeClosedAnalysisSelection({
+            closeId,
+            selectionRevision,
+            isSwitchable: latestResult.isSwitchable,
+            selectedInputMode,
+            servedInputMode,
+            requestedResultRevision,
+            servedResultRevision,
+            failed: latestResult.failedRequest,
+        });
+    }
+    const surveySource: PolisSurveySource | undefined =
+        latestResult.surveyAggregateSnapshotId !== null
+            ? {
+                  kind: "frame",
+                  aggregateSnapshotId: latestResult.surveyAggregateSnapshotId,
+              }
+            : checkpointReplacementViewId !== undefined ||
+                (servedInputMode === "closing" && servedResultRevision !== null)
+              ? { kind: "closing_replacement" }
+              : undefined;
     if (latestResult.outcome !== "success") {
         const variantsEnabled = latestResult.variantsEnabled;
         const requestedView = getRequestedAnalysisView({
@@ -854,6 +1179,8 @@ export async function getOpinionGroupAnalysisSelection({
             resolvedBy: "no_analysis",
             conversationViewSnapshot:
                 createAnalysisConversationViewSnapshot(latestResult),
+            closedAnalysisSelection,
+            surveySource,
             emptyReason: "No displayable analysis is available yet.",
         });
     }
@@ -984,6 +1311,8 @@ export async function getOpinionGroupAnalysisSelection({
             viewState,
             displayableGroupCounts,
             conversationViewSnapshot,
+            closedAnalysisSelection,
+            surveySource,
             emptyReason: `Agora could not form ${groupCount} meaningful groups for this checkpoint.`,
         };
     }
@@ -992,7 +1321,6 @@ export async function getOpinionGroupAnalysisSelection({
         candidate: {
             conversationId: latestResult.conversationId,
             viewSnapshotId: latestResult.viewSnapshotId,
-            surveyAggregateSnapshotId: latestResult.surveyAggregateSnapshotId,
             participantCount: latestResult.participantCount,
             snapshotId: latestResult.snapshotId,
             resultId: latestResult.resultId,
@@ -1002,6 +1330,8 @@ export async function getOpinionGroupAnalysisSelection({
             useSystemDescriptions,
         },
         conversationViewSnapshot,
+        closedAnalysisSelection,
+        surveySource,
         viewState,
         displayableGroupCounts,
     };
@@ -1013,6 +1343,8 @@ function createEmptyAnalysisViewSelection({
     variantsEnabled,
     resolvedBy,
     conversationViewSnapshot,
+    closedAnalysisSelection,
+    surveySource,
     emptyReason,
     options = [],
 }: {
@@ -1021,12 +1353,16 @@ function createEmptyAnalysisViewSelection({
     variantsEnabled: boolean;
     resolvedBy: AnalysisViewState["resolvedBy"];
     conversationViewSnapshot?: AnalysisConversationViewSnapshot;
+    closedAnalysisSelection?: ClosedAnalysisSelection;
+    surveySource?: PolisSurveySource;
     emptyReason: string;
     options?: AnalysisViewOption[];
 }): OpinionGroupAnalysisSelection {
     return {
         candidate: undefined,
         conversationViewSnapshot,
+        closedAnalysisSelection,
+        surveySource,
         emptyReason,
         displayableGroupCounts: [],
         viewState: {

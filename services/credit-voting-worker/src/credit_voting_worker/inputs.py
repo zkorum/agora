@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agora_analysis_worker_shared.generated_models import SurveyQuestionType
@@ -15,6 +16,7 @@ from sqlalchemy import func, select
 
 from credit_voting_worker.generated_models import (
     ConversationParticipant,
+    CreditVotingConfig,
     QvAllocation,
     QvResponse,
     QvResponseVersion,
@@ -28,17 +30,68 @@ from credit_voting_worker.generated_models import (
     SurveyResponse,
     User,
 )
+from credit_voting_worker.generated_rules import QV_RULE_VERSION
+from credit_voting_worker.work import InvalidInputError
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
     from uuid import UUID
 
     from sqlalchemy import Select
     from sqlalchemy.orm import Session
+    from sqlalchemy.sql.elements import ColumnElement
 
 
-def eligible_response_query(*, conversation_id: int) -> Select[tuple[UUID, UUID, UUID]]:
-    """Reusable live/capture source, never detached or deleted-account evidence."""
-    available_allocation = (
+@dataclass(frozen=True)
+class QvItemInput:
+    slug_id: str
+    content_id: int
+
+
+@dataclass(frozen=True)
+class QvAllocationInput:
+    item_slug_id: str
+    votes: int
+
+
+def project_live_ballot(
+    *,
+    version: QvResponseVersion,
+    allocations: Sequence[QvAllocation],
+    config: CreditVotingConfig,
+    items: Mapping[int, QvItemInput],
+) -> tuple[QvAllocationInput, ...]:
+    """Validate the saved ballot before projecting current item availability."""
+    if (
+        not allocations
+        or version.credit_budget != config.credit_budget
+        or version.credit_pricing != "quadratic"
+        or version.allow_opposition != config.allow_opposition
+        or version.rule_version != QV_RULE_VERSION
+        or version.statement_set_revision != config.statement_set_revision
+        or sum(row.votes**2 for row in allocations) != version.credits_spent
+        or not 1 <= version.credits_spent <= config.credit_budget
+    ):
+        raise InvalidInputError("Unsupported QV ballot provenance")
+    if any(
+        row.votes == 0
+        or row.votes**2 > config.credit_budget
+        or (row.votes < 0 and not config.allow_opposition)
+        for row in allocations
+    ):
+        raise InvalidInputError("Invalid QV ballot allocations")
+
+    projected: list[QvAllocationInput] = []
+    for row in allocations:
+        item = items.get(row.item_id)
+        if item is not None and item.content_id == row.content_id and row.deleted_at is None:
+            # Exclusion never transfers credits or changes surviving signed votes.
+            projected.append(QvAllocationInput(item_slug_id=item.slug_id, votes=row.votes))
+    return tuple(projected)
+
+
+def _available_allocation_condition() -> ColumnElement[bool]:
+    return (
         select(QvAllocation.item_id)
         .join(RankingItem, RankingItem.id == QvAllocation.item_id)
         .where(
@@ -51,6 +104,10 @@ def eligible_response_query(*, conversation_id: int) -> Select[tuple[UUID, UUID,
         )
         .exists()
     )
+
+
+def eligible_response_query(*, conversation_id: int) -> Select[tuple[UUID, UUID, UUID]]:
+    """Account-eligible saved ballots; capture validates before projecting choices."""
     return (
         select(QvResponse.id, QvResponseVersion.id, User.id)
         .select_from(QvResponse)
@@ -63,7 +120,6 @@ def eligible_response_query(*, conversation_id: int) -> Select[tuple[UUID, UUID,
             QvResponse.account_hidden_at.is_(None),
             QvResponseVersion.deleted_at.is_(None),
             User.is_deleted.is_(False),
-            available_allocation,
         )
     )
 
@@ -197,7 +253,9 @@ def survey_eligible_accounts(
 
 
 def count_live_participants(*, session: Session, conversation_id: int) -> int:
-    candidates = eligible_response_query(conversation_id=conversation_id)
+    candidates = eligible_response_query(conversation_id=conversation_id).where(
+        _available_allocation_condition()
+    )
     config = load_required_survey(session=session, conversation_id=conversation_id)
     if config is None or not config.questions:
         return session.scalars(select(func.count()).select_from(candidates.subquery())).one()

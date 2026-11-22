@@ -194,6 +194,38 @@ CREATE TABLE "unwanted" ("id" integer NOT NULL);`;
         expect(cols).toHaveLength(1);
         expect(cols[0].name).toBe("id");
     });
+
+    it("keeps UUID types when a named unique constraint is inline", () => {
+        const sql = `CREATE TABLE "qv_response" (
+    "participant_id" uuid NOT NULL CONSTRAINT "qv_response_participant_unique" UNIQUE
+);`;
+        const columns = getParsedColumns(
+            parseSqlTables(sql, new Set(["qv_response"])),
+            "qv_response",
+        );
+        expect(columns[0]).toMatchObject({
+            name: "participant_id",
+            sqlType: "uuid",
+            nullable: false,
+        });
+    });
+
+    it("does not include named constraints in column defaults", () => {
+        const columns = getParsedColumns(
+            parseSqlTables(
+                `CREATE TABLE "items" (
+    "id" uuid DEFAULT gen_random_uuid() CONSTRAINT "items_id_unique" UNIQUE
+);`,
+                new Set(["items"]),
+            ),
+            "items",
+        );
+        expect(columns[0]).toMatchObject({
+            sqlType: "uuid",
+            hasDefault: true,
+            defaultValue: "gen_random_uuid()",
+        });
+    });
 });
 
 describe("assertParsedTablesForService", () => {
@@ -273,7 +305,7 @@ describe("mapSqlType", () => {
     it("maps text[] to ARRAY(Text)", () => {
         expect(mapSqlType("text[]", noEnums)).toEqual({
             pyType: "list[str]",
-            saType: "ARRAY(Text)",
+            saType: 'ARRAY(Text).with_variant(JSON(), "sqlite")',
         });
     });
 
@@ -323,7 +355,7 @@ describe("mapSqlType", () => {
     it("maps integer[] to ARRAY(Integer)", () => {
         expect(mapSqlType("integer[]", noEnums)).toEqual({
             pyType: "list[int]",
-            saType: "ARRAY(Integer)",
+            saType: 'ARRAY(Integer).with_variant(JSON(), "sqlite")',
         });
     });
 
@@ -622,6 +654,62 @@ describe("generateSqlAlchemyModels", () => {
             service: "test",
         });
         expect(output).toContain("default=uuid_pkg.uuid4");
+    });
+
+    it.each([
+        { defaultValue: "'closing'", expected: "closing" },
+        { defaultValue: "'live'::text", expected: "live" },
+        { defaultValue: "'it''s frozen'", expected: "it's frozen" },
+        { defaultValue: "''", expected: "" },
+    ])(
+        "preserves literal text default $defaultValue",
+        ({ defaultValue, expected }) => {
+            const output = generateSqlAlchemyModels({
+                tables: new Map([
+                    [
+                        "checkpoint",
+                        [
+                            {
+                                name: "input_mode",
+                                sqlType: "text",
+                                nullable: false,
+                                hasDefault: true,
+                                defaultValue,
+                                isPrimaryKey: false,
+                            },
+                        ],
+                    ],
+                ]),
+                enums: new Map(),
+                service: "test",
+            });
+            expect(output).toContain(
+                `server_default=${JSON.stringify(expected)}`,
+            );
+        },
+    );
+
+    it("does not turn a SQL text expression into a string default", () => {
+        const output = generateSqlAlchemyModels({
+            tables: new Map([
+                [
+                    "checkpoint",
+                    [
+                        {
+                            name: "input_mode",
+                            sqlType: "text",
+                            nullable: false,
+                            hasDefault: true,
+                            defaultValue: "lower('CLOSING')",
+                            isPrimaryKey: false,
+                        },
+                    ],
+                ],
+            ]),
+            enums: new Map(),
+            service: "test",
+        });
+        expect(output).not.toContain("server_default");
     });
 
     it("includes header comment", () => {

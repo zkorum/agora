@@ -122,7 +122,7 @@ describe("vote ownership, live eligibility and closing publication", () => {
             'ALTER TABLE vote ADD CONSTRAINT vote_author_user_fk FOREIGN KEY (author_id) REFERENCES "user" (id)',
         );
         // Install the historical ownership triggers against the current schema.
-        // Only its empty-fixture backfill needs the renamed comparison-family predicate.
+        // Adapt its empty-fixture backfill to the current family and work keys.
         await client.unsafe(
             readFileSync(
                 new URL(
@@ -135,8 +135,25 @@ describe("vote ownership, live eligibility and closing publication", () => {
                 .replaceAll(
                     "c.conversation_type = 'ranking'",
                     "c.prioritization_type = 'comparisons'",
+                )
+                .replace(
+                    "ON CONFLICT (conversation_id, opinion_group_spec_id)",
+                    "ON CONFLICT (conversation_id, opinion_group_spec_id, uses_closing_inputs)",
                 ),
         );
+        await db.transaction(async (tx) => {
+            await tx.execute(
+                sql.raw(
+                    readFileSync(
+                        new URL(
+                            "../database/flyway/V0116.4__bind_polis_analysis_closes.sql",
+                            import.meta.url,
+                        ),
+                        "utf8",
+                    ),
+                ),
+            );
+        });
     }, 120_000);
 
     afterAll(async () => {
@@ -149,7 +166,7 @@ describe("vote ownership, live eligibility and closing publication", () => {
     beforeEach(async () => {
         await valkey.flushall();
         await client.unsafe(
-            'TRUNCATE conversation, "user", opinion, opinion_content, opinion_moderation, conversation_content, polis_conversation_config, conversation_participant, vote, vote_content, analysis_spec, opinion_group_spec, analysis_input_snapshot, analysis_snapshot, analysis_snapshot_result, conversation_view_snapshot, conversation_view_snapshot_checkpoint_reason, realtime_event_outbox, realtime_event_outbox_topic, notification, followed_topic, user_spoken_languages, user_display_language, organization_membership, survey_response, comparison_response, phone, email, zk_passport, event_ticket, device RESTART IDENTITY CASCADE',
+            'TRUNCATE conversation_analysis_close, polis_analysis_close, conversation, "user", opinion, opinion_content, opinion_moderation, conversation_content, polis_conversation_config, conversation_participant, vote, vote_content, analysis_spec, opinion_group_spec, analysis_input_baseline, analysis_input_snapshot, analysis_snapshot, analysis_snapshot_result, conversation_view_snapshot, conversation_view_snapshot_checkpoint_reason, realtime_event_outbox, realtime_event_outbox_topic, notification, followed_topic, user_spoken_languages, user_display_language, organization_membership, survey_response, comparison_response, phone, email, zk_passport, event_ticket, device RESTART IDENTITY CASCADE',
         );
         const userId = randomUUID();
         await db
@@ -2093,116 +2110,218 @@ describe("vote ownership, live eligibility and closing publication", () => {
         },
     );
 
-    it("reuses complete empty output and atomically publishes a closing checkpoint", async () => {
-        const analysisSpecId = first(
-            await db
-                .insert(schema.analysisSpecTable)
-                .values({ analysisFamily: "opinion_groups" })
-                .returning(),
-        ).id;
-        const specId = first(
-            await db
-                .insert(schema.opinionGroupSpecTable)
-                .values({
-                    analysisSpecId,
-                    key: "test",
-                    version: 1,
-                    reducer: "pca",
-                    clusterer: "kmeans",
-                    selectionPolicy: "silhouette_size_balance",
-                    minClusterableParticipants: 2,
-                    minVotesPerParticipant: 1,
-                    maxGroupCount: 6,
-                })
-                .returning(),
-        ).id;
-        const inputId = first(
-            await db
-                .insert(schema.analysisInputSnapshotTable)
-                .values({
-                    conversationId: vote.conversationId,
-                    dataGeneration: 1,
-                    inputHash: "a".repeat(64),
-                    opinionCount: 0,
-                    participantCount: 0,
-                    voteCount: 0,
-                    compression: "zstd",
-                    payload: "",
-                })
-                .returning(),
-        ).id;
-        const snapshotId = first(
-            await db
-                .insert(schema.analysisSnapshotTable)
-                .values({
-                    conversationId: vote.conversationId,
-                    inputSnapshotId: inputId,
-                    dataGeneration: 1,
-                    computedAt: new Date(),
-                })
-                .returning(),
-        ).id;
-        await db.insert(schema.analysisSnapshotResultTable).values({
-            conversationId: vote.conversationId,
-            analysisSnapshotId: snapshotId,
-            opinionGroupSpecId: specId,
-            outcome: "insufficient_data",
-            outcomeReason: "empty_vote_matrix",
-            variantsEnabled: false,
-        });
-        await db.insert(schema.conversationViewSnapshotTable).values({
-            conversationId: vote.conversationId,
-            analysisSnapshotId: snapshotId,
-            opinionGroupSpecId: specId,
-            viewReason: "analysis_completed",
-            isClosed: false,
-            activatedAt: new Date(),
-            opinionCount: 1,
-            totalOpinionCount: 1,
-            voteCount: 0,
-            totalVoteCount: 0,
-            participantCount: 0,
-            totalParticipantCount: 0,
-            moderatedOpinionCount: 0,
-            hiddenOpinionCount: 0,
-        });
-        const finalized = await db.transaction(async (tx) => {
-            await tx
-                .update(schema.conversationTable)
-                .set({ isClosed: true })
-                .where(eq(schema.conversationTable.id, vote.conversationId));
-            return await finalizeCurrentPolisConversation({
-                db: tx,
-                conversationId: vote.conversationId,
-            });
-        });
-        expect(finalized).toBe(true);
-        expect(
-            (await db.select().from(schema.analysisSnapshotTable)).length,
-        ).toBe(1);
-        expect(
-            first(await db.select().from(schema.conversationTable))
-                .closedFinalizedAt,
-        ).not.toBeNull();
-        expect(
-            first(
+    it.each([
+        { withBaseline: true, withCompleteCatalogue: true, specCount: 1 },
+        { withBaseline: false, withCompleteCatalogue: true, specCount: 1 },
+        { withBaseline: true, withCompleteCatalogue: false, specCount: 1 },
+        { withBaseline: true, withCompleteCatalogue: true, specCount: 2 },
+    ])(
+        "only reuses empty-vote output with certified complete catalogues ($withBaseline, $withCompleteCatalogue)",
+        async ({ withBaseline, withCompleteCatalogue, specCount }) => {
+            const analysisSpecId = first(
                 await db
-                    .select()
-                    .from(schema.conversationViewSnapshotCheckpointReasonTable),
-            ).reason,
-        ).toBe("conversation_closed");
-        await db
-            .update(schema.polisConversationConfigTable)
-            .set({ analysisDataGeneration: 2 })
-            .where(eq(schema.polisConversationConfigTable.id, configId));
-        expect(
-            await db.transaction(
-                async (tx) =>
-                    await finalizeCurrentPolisConversation({
-                        db: tx,
+                    .insert(schema.analysisSpecTable)
+                    .values({ analysisFamily: "opinion_groups" })
+                    .returning(),
+            ).id;
+            const specs = await db
+                .insert(schema.opinionGroupSpecTable)
+                .values(
+                    Array.from({ length: specCount }, (_, index) => ({
+                        analysisSpecId,
+                        key: `test-${String(index)}`,
+                        version: 1,
+                        reducer: "pca" as const,
+                        clusterer: "kmeans" as const,
+                        selectionPolicy: "silhouette_size_balance" as const,
+                        minClusterableParticipants: 2,
+                        minVotesPerParticipant: 1,
+                        maxGroupCount: 6,
+                    })),
+                )
+                .returning();
+            const inputId = first(
+                await db
+                    .insert(schema.analysisInputSnapshotTable)
+                    .values({
                         conversationId: vote.conversationId,
-                    }),
-            ),
-        ).toBe(false);
-    });
+                        dataGeneration: 1,
+                        inputHash: "a".repeat(64),
+                        payloadVersion: withBaseline ? 2 : 1,
+                        opinionCount: withCompleteCatalogue ? 1 : 0,
+                        participantCount: 0,
+                        voteCount: 0,
+                        compression: "zstd",
+                        payload: "",
+                    })
+                    .returning(),
+            ).id;
+            if (withBaseline)
+                await db.insert(schema.analysisInputBaselineTable).values({
+                    inputSnapshotId: inputId,
+                    baselineInputSnapshotId: inputId,
+                    conversationId: vote.conversationId,
+                    participantIndices: [],
+                    opinionIndices: withCompleteCatalogue ? [0] : [],
+                    sourceVoteCount: 0,
+                    sourceParticipantCount: 0,
+                });
+            const snapshotId = first(
+                await db
+                    .insert(schema.analysisSnapshotTable)
+                    .values({
+                        conversationId: vote.conversationId,
+                        inputSnapshotId: inputId,
+                        dataGeneration: 1,
+                        computedAt: new Date(),
+                    })
+                    .returning(),
+            ).id;
+            await db.insert(schema.analysisSnapshotResultTable).values(
+                specs.map((spec) => ({
+                    conversationId: vote.conversationId,
+                    analysisSnapshotId: snapshotId,
+                    opinionGroupSpecId: spec.id,
+                    outcome: "insufficient_data" as const,
+                    outcomeReason: "empty_vote_matrix" as const,
+                    variantsEnabled: false,
+                })),
+            );
+            await db.insert(schema.conversationViewSnapshotTable).values(
+                specs.map((spec) => ({
+                    conversationId: vote.conversationId,
+                    analysisSnapshotId: snapshotId,
+                    opinionGroupSpecId: spec.id,
+                    viewReason: "analysis_completed" as const,
+                    isClosed: false,
+                    activatedAt: new Date(),
+                    opinionCount: 1,
+                    totalOpinionCount: 1,
+                    voteCount: 0,
+                    totalVoteCount: 0,
+                    participantCount: 0,
+                    totalParticipantCount: 0,
+                    moderatedOpinionCount: 0,
+                    hiddenOpinionCount: 0,
+                })),
+            );
+            const finalized = await db.transaction(async (tx) => {
+                await tx
+                    .update(schema.conversationTable)
+                    .set({ isClosed: true })
+                    .where(
+                        eq(schema.conversationTable.id, vote.conversationId),
+                    );
+                return await finalizeCurrentPolisConversation({
+                    db: tx,
+                    conversationId: vote.conversationId,
+                });
+            });
+            const reusable = withBaseline && withCompleteCatalogue;
+            expect(finalized).toBe(reusable);
+            if (!reusable) {
+                expect(
+                    await db
+                        .select()
+                        .from(schema.conversationAnalysisCloseTable),
+                ).toEqual([]);
+                expect(
+                    await db.select().from(schema.polisAnalysisCloseTable),
+                ).toEqual([]);
+                expect(
+                    first(
+                        await db
+                            .select()
+                            .from(schema.polisConversationConfigTable),
+                    ).analysisDataGeneration,
+                ).toBe(2);
+                await db.transaction(async (tx) => {
+                    expect(
+                        await finalizeCurrentPolisConversation({
+                            db: tx,
+                            conversationId: vote.conversationId,
+                        }),
+                    ).toBe(false);
+                });
+                expect(
+                    first(
+                        await db
+                            .select()
+                            .from(schema.polisConversationConfigTable),
+                    ).analysisDataGeneration,
+                ).toBe(2);
+                expect(
+                    first(await db.select().from(schema.conversationTable))
+                        .closedFinalizedAt,
+                ).toBeNull();
+                expect(
+                    await db
+                        .select()
+                        .from(
+                            schema.conversationViewSnapshotCheckpointReasonTable,
+                        ),
+                ).toEqual([]);
+                return;
+            }
+            expect(
+                (await db.select().from(schema.analysisSnapshotTable)).length,
+            ).toBe(1);
+            expect(
+                first(await db.select().from(schema.conversationTable))
+                    .closedFinalizedAt,
+            ).not.toBeNull();
+            expect(
+                first(
+                    await db
+                        .select()
+                        .from(
+                            schema.conversationViewSnapshotCheckpointReasonTable,
+                        ),
+                ).reason,
+            ).toBe("conversation_closed");
+            const close = first(
+                await db.select().from(schema.conversationAnalysisCloseTable),
+            );
+            const refs = await db.select().from(schema.polisAnalysisCloseTable);
+            const checkpoints = await db
+                .select()
+                .from(schema.conversationViewSnapshotCheckpointReasonTable);
+            expect(close.selectedInputMode).toBe("closing");
+            expect(close.sourceRevision).toBe(1);
+            expect(close.closeEpoch).toBe(
+                first(await db.select().from(schema.conversationTable))
+                    .voteBufferEpoch,
+            );
+            expect(refs).toHaveLength(specCount);
+            expect(checkpoints).toHaveLength(specCount);
+            for (const checkpoint of checkpoints) {
+                expect(refs).toContainEqual({
+                    closeId: close.id,
+                    conversationId: vote.conversationId,
+                    opinionGroupSpecId: checkpoint.opinionGroupSpecId,
+                    originalViewSnapshotId:
+                        checkpoint.conversationViewSnapshotId,
+                });
+            }
+            await db
+                .update(schema.polisConversationConfigTable)
+                .set({ analysisDataGeneration: 2 })
+                .where(eq(schema.polisConversationConfigTable.id, configId));
+            expect(
+                await db.transaction(
+                    async (tx) =>
+                        await finalizeCurrentPolisConversation({
+                            db: tx,
+                            conversationId: vote.conversationId,
+                        }),
+                ),
+            ).toBe(false);
+            expect(
+                await db.select().from(schema.conversationAnalysisCloseTable),
+            ).toHaveLength(1);
+            expect(
+                await db.select().from(schema.polisAnalysisCloseTable),
+            ).toHaveLength(specCount);
+        },
+    );
 });

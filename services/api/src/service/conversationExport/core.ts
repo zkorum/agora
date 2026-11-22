@@ -208,7 +208,7 @@ function isConversationExportSupported({
 }: {
     conversation: ConversationExportConversationRecord;
 }): boolean {
-    return conversation.conversationType !== "prioritizing";
+    return conversation.conversationType === "polis";
 }
 
 function assertConversationExportSupported({
@@ -218,7 +218,7 @@ function assertConversationExportSupported({
 }): void {
     if (!isConversationExportSupported({ conversation })) {
         throw httpErrors.badRequest(
-            "Conversation export is not supported for prioritization conversations",
+            "Conversation export is only supported for Polis conversations",
         );
     }
 }

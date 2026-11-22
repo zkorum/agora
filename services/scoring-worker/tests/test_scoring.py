@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from scoring_worker.db import ComparisonRow
 from scoring_worker.entity_mapping import SolidagoEntityScore
 from scoring_worker.observations import PairwiseObservation
@@ -95,17 +97,6 @@ class TestEdgeCases:
         assert len(output.user_scores) == 1
         assert 0 in output.user_scores
 
-    def test_single_user(self) -> None:
-        comps = [_row(0, "A", "B", ["A", "B"])]
-        output = score_comparisons(
-            entity_ids=["A", "B"],
-            comparisons=comps,
-        )
-        assert output is not None
-        results = output.global_scores
-        assert len(results) == 2
-        assert results[0].score > results[1].score
-
 
 # --- Default pipeline ---
 
@@ -144,8 +135,10 @@ class TestTrustScores:
         assert weighted["C"] - weighted["B"] > uniform["C"] - uniform["B"]
 
     def test_missing_users_default_to_one(self) -> None:
-        scores = _score(trust_scores={0: 1.0})
-        assert len(scores) == 4
+        implicit = _score(trust_scores={1: 10.0})
+        explicit = _score(trust_scores={0: 1.0, 1: 10.0, 2: 1.0})
+
+        assert implicit == pytest.approx(explicit)
 
 
 class TestPairwiseIntegration:

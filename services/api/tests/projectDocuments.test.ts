@@ -32,6 +32,7 @@ import {
 import type { generatePresignedUrl } from "../src/service/s3.js";
 import type { AccessProjectDocumentRequest } from "../src/shared/types/dto.js";
 import { readDbFixtureSql } from "./dbFixture.js";
+import { setProjectDirectoryVisibility } from "../src/service/projectDirectoryVisibility.js";
 
 const signUrl = vi.hoisted(() => vi.fn<typeof generatePresignedUrl>());
 vi.mock("../src/service/s3.js", () => ({
@@ -587,10 +588,14 @@ describe("project document version authorization", () => {
         {
             state: "an unlisted project",
             hide: async () =>
-                await db
-                    .update(projectTable)
-                    .set({ directoryVisibility: "unlisted" })
-                    .where(eq(projectTable.id, projectId)),
+                await setProjectDirectoryVisibility({
+                    db,
+                    userId: OWNER,
+                    request: {
+                        projectSlug: "test-project",
+                        directoryVisibility: "unlisted",
+                    },
+                }),
         },
         {
             state: "an unpublished project",
@@ -656,6 +661,27 @@ describe("project document version authorization", () => {
             }),
         ).rejects.toMatchObject({ statusCode: 404 });
         expect(signUrl).not.toHaveBeenCalled();
+    });
+
+    it("cannot unlist a project without its update capability", async () => {
+        await expect(
+            setProjectDirectoryVisibility({
+                db,
+                userId: STRANGER,
+                request: {
+                    projectSlug: "test-project",
+                    directoryVisibility: "unlisted",
+                },
+            }),
+        ).rejects.toMatchObject({ statusCode: 403 });
+        await expect(
+            fetchProjectPageDocuments({
+                db,
+                projectId,
+                displayLanguageCode: "en",
+                requesterUserId: undefined,
+            }),
+        ).resolves.toHaveLength(2);
     });
 
     it("never substitutes a participant file when the requested facilitator version is missing", async () => {

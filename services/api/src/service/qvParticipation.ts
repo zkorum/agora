@@ -1,12 +1,9 @@
 import { and, eq, isNotNull } from "drizzle-orm";
 import type { PostgresTransaction } from "@/shared-backend/db.js";
-import {
-    conversationTable,
-    creditVotingConfigTable,
-} from "@/shared-backend/schema.js";
+import { conversationTable, qvConfigTable } from "@/shared-backend/schema.js";
 
 /** Explicit response saves run admission and this boundary in one writer transaction. Unsaved edits stay in the frontend. */
-export async function withQvStatementSetForResponseSave<T>({
+export async function withQvItemSetForResponseSave<T>({
     tx,
     conversationId,
     expectedRevision,
@@ -17,10 +14,7 @@ export async function withQvStatementSetForResponseSave<T>({
     expectedRevision: number;
     // Rejected writes throw so the surrounding transaction rolls back any changes.
     persist: (
-        config: Pick<
-            typeof creditVotingConfigTable.$inferSelect,
-            "allowOpposition"
-        >,
+        config: Pick<typeof qvConfigTable.$inferSelect, "allowOpposition">,
     ) => Promise<T>;
 }): Promise<
     | { success: true; value: T }
@@ -46,13 +40,10 @@ export async function withQvStatementSetForResponseSave<T>({
     if (conversation.isClosed) return { success: false, reason: "closed" };
     const configId = conversation.configId;
     const query = () =>
-        tx
-            .select()
-            .from(creditVotingConfigTable)
-            .where(eq(creditVotingConfigTable.id, configId));
+        tx.select().from(qvConfigTable).where(eq(qvConfigTable.id, configId));
     const observed = (await query()).at(0);
     if (observed === undefined) return { success: false, reason: "not_found" };
-    // Statement mutations take conversation UPDATE before configuration UPDATE.
+    // Item mutations take conversation UPDATE before configuration UPDATE.
     // Already-started activities never need this exclusive configuration path.
     const config =
         observed.statementsLockedAt === null
@@ -64,9 +55,9 @@ export async function withQvStatementSetForResponseSave<T>({
     const value = await persist(config);
     if (config.statementsLockedAt === null) {
         await tx
-            .update(creditVotingConfigTable)
+            .update(qvConfigTable)
             .set({ statementsLockedAt: new Date() })
-            .where(eq(creditVotingConfigTable.id, config.id));
+            .where(eq(qvConfigTable.id, config.id));
     }
     return { success: true, value };
 }

@@ -4,14 +4,14 @@
       class="credit-square"
       :class="{ 'is-negative': votes < 0 }"
       :style="{
-        '--square-side': `${(Math.abs(votes) / Math.sqrt(CREDIT_VOTING_BUDGET)) * 100}%`,
+        '--square-side': `${(Math.abs(votes) / Math.sqrt(QV_CREDIT_BUDGET)) * 100}%`,
       }"
       role="img"
       :aria-label="
         t('squareLabel', {
-          votes,
-          credits: votes ** 2,
-          budget: CREDIT_VOTING_BUDGET,
+          votes: numbers.integer(votes),
+          credits: numbers.integer(votes ** 2),
+          budget: numbers.integer(QV_CREDIT_BUDGET),
         })
       "
     >
@@ -19,7 +19,7 @@
     </div>
     <span>{{
       t(Math.abs(votes) === 1 ? "oneCredit" : "creditCost", {
-        credits: votes ** 2,
+        credits: numbers.integer(votes ** 2),
       })
     }}</span>
   </div>
@@ -27,11 +27,13 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import { CREDIT_VOTING_BUDGET } from "src/shared/utils/qv";
+import { useDisplayNumbers } from "src/i18n/numberFormats";
+import { QV_CREDIT_BUDGET } from "src/shared/utils/qv";
 
 import { qvVotingTranslations } from "./QvVoting.i18n";
 
 defineProps<{ votes: number }>();
+const numbers = useDisplayNumbers();
 const { t } = useComponentI18n(qvVotingTranslations);
 </script>
 

@@ -42,10 +42,10 @@ import type { NormalizedUserRichText } from "./richText.js";
 import { getSurveyConfigForConversation } from "./survey.js";
 import type { VoteBuffer } from "./voteBuffer.js";
 import {
-    getQvStatementLanguageInput,
-    prepareQvStatementUpdate,
-    type NormalizedQvStatementUpdate,
-} from "./qvStatements.js";
+    getQvItemLanguageInput,
+    prepareQvItemUpdate,
+    type NormalizedQvItemUpdate,
+} from "./qvItems.js";
 
 export function buildConversationEditLanguageInput({
     title,
@@ -84,7 +84,7 @@ export async function prepareConversationEditLanguages({
     bodyPlainText,
     googleCloudCredentials,
     voteBuffer,
-    qvStatementUpdate,
+    qvItemUpdate,
 }: {
     db: PostgresJsDatabase;
     userId: string;
@@ -95,7 +95,7 @@ export async function prepareConversationEditLanguages({
     bodyPlainText: string;
     googleCloudCredentials: GoogleCloudCredentials | undefined;
     voteBuffer: VoteBuffer | undefined;
-    qvStatementUpdate: NormalizedQvStatementUpdate | undefined;
+    qvItemUpdate: NormalizedQvItemUpdate | undefined;
 }): Promise<
     | {
           success: true;
@@ -230,15 +230,15 @@ export async function prepareConversationEditLanguages({
         lockTargets: false,
     });
     if (!seedChanges.success) return seedChanges;
-    if (qvStatementUpdate !== undefined) {
+    if (qvItemUpdate !== undefined) {
         if (source.creditVotingConfigId === null)
             return { success: false, reason: "seed_opinions_not_allowed" };
-        const qvChanges = await prepareQvStatementUpdate({
+        const qvChanges = await prepareQvItemUpdate({
             db,
             conversationId: source.id,
             configId: source.creditVotingConfigId,
             isClosed: source.isClosed,
-            update: qvStatementUpdate,
+            update: qvItemUpdate,
             lockConfig: false,
         });
         if (!qvChanges.success) return qvChanges;
@@ -251,7 +251,7 @@ export async function prepareConversationEditLanguages({
         (contentChanged ||
             normalizedSeeds.length > 0 ||
             seedChanges.changes.length > 0 ||
-            qvStatementUpdate !== undefined)
+            qvItemUpdate !== undefined)
     ) {
         const features = await getPremiumFeaturesInConversation({
             db,
@@ -273,10 +273,10 @@ export async function prepareConversationEditLanguages({
     const inputs: { text: string; googleText?: string }[] = [
         ...normalizedSeeds.map((opinion) => ({ text: opinion.plainText })),
         ...getSeedOpinionChangeLanguageInputs(seedChanges.changes),
-        ...(qvStatementUpdate?.changes.flatMap((change) =>
+        ...(qvItemUpdate?.changes.flatMap((change) =>
             change.action === "delete"
                 ? []
-                : [getQvStatementLanguageInput(change.content)],
+                : [getQvItemLanguageInput(change.content)],
         ) ?? []),
     ];
     if (contentChanged || data.surveyConfig !== undefined) {

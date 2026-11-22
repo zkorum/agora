@@ -9,9 +9,9 @@ if (values.source === undefined || values.output === undefined)
     throw new Error("Expected --source and --output");
 const source = await readFile(values.source, "utf8");
 const constants = [
-    "CREDIT_VOTING_BUDGET",
-    "CREDIT_VOTING_RULE_VERSION",
-    "CREDIT_VOTING_ALGORITHM_VERSION",
+    "QV_CREDIT_BUDGET",
+    "QV_RULE_VERSION",
+    "QV_ALGORITHM_VERSION",
 ];
 await writeFile(
     values.output,

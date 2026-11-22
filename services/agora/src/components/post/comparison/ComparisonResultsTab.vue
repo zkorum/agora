@@ -45,6 +45,14 @@
           @click="toggleAnalysisPlayback()"
         />
       </div>
+      <ClosedAnalysisInputControl
+        v-if="closedSelection !== undefined"
+        :selection="closedSelection"
+        :can-switch="canSwitch"
+        :saving="saving"
+        :save-failed="saveFailed"
+        @select-mode="selectMode"
+      />
     </div>
 
     <ShortcutBar
@@ -58,6 +66,7 @@
 
     <div v-if="currentTab === 'Survey'" class="tabComponent">
       <SurveyTab
+        :polis-frame="undefined"
         :conversation-slug-id="conversationSlugId"
         :survey-gate="props.conversationData.interaction.surveyGate"
         :survey-query="surveyResultsQuery"
@@ -86,6 +95,7 @@
         class="tabComponent"
       >
         <ComparisonMeSection
+          :is-closed="props.conversationData.metadata.isClosed"
           :conversation-slug-id="conversationSlugId"
           :load-data="activeLoadData"
           :all-items="activeResultItems"
@@ -113,11 +123,36 @@
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Results')"
           :on-learn-more="() => (learnMoreContext = 'community')"
+        >
+          <template #item-action="{ item }">
+            <q-btn
+              v-if="
+                canModerateItems &&
+                item.participantSubmitted &&
+                selectedCheckpointId === undefined &&
+                !isLivePaused
+              "
+              flat
+              dense
+              round
+              icon="mdi-dots-vertical"
+              :aria-label="moderationLabels('moderate')"
+              @click.stop="moderationTarget = item.slugId"
+            />
+          </template>
+        </ComparisonItemListSection>
+        <ComparisonModeration
+          v-model:target="moderationTarget"
+          :conversation-slug-id="conversationSlugId"
+          :can-moderate="canModerateItems"
+          :site-moderator="profileData.isSiteModerator"
+          @changed="refreshClose"
         />
       </div>
 
       <div v-if="hasSurvey && currentTab === 'Summary'" class="tabComponent">
         <SurveyTab
+          :polis-frame="undefined"
           :conversation-slug-id="conversationSlugId"
           :survey-gate="props.conversationData.interaction.surveyGate"
           :survey-query="surveyResultsQuery"
@@ -148,7 +183,7 @@
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Completed')"
-          :on-learn-more="() => openLifecycleLearnMore('completed')"
+          :on-learn-more="() => (lifecycleHelp = 'completed')"
         />
       </div>
 
@@ -170,7 +205,7 @@
           :compact-mode="currentTab === 'Summary'"
           :on-click-item="openStatementDialog"
           :on-switch-tab="() => onTabChange('Canceled')"
-          :on-learn-more="() => openLifecycleLearnMore('canceled')"
+          :on-learn-more="() => (lifecycleHelp = 'canceled')"
         />
       </div>
     </template>
@@ -214,17 +249,30 @@
           <template v-else>
             <p>{{ t("meLearnMorePersonal") }}</p>
             <p>{{ t("scoreScaleExplanation") }}</p>
-            <p>{{ t("meLearnMoreCounts") }}</p>
+            <p v-if="!props.conversationData.metadata.isClosed">
+              {{ t("meLearnMoreCounts") }}
+            </p>
           </template>
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
 
     <!-- Lifecycle learn-more dialog -->
-    <q-dialog v-model="showLifecycleInfoDialog" position="bottom">
-      <ZKBottomDialogContainer :title="lifecycleInfoTitle">
+    <q-dialog
+      :model-value="lifecycleHelp !== undefined"
+      position="bottom"
+      @update:model-value="lifecycleHelp = undefined"
+    >
+      <ZKBottomDialogContainer
+        v-if="lifecycleInfo"
+        :title="t(lifecycleInfo.title)"
+      >
         <div class="learn-more-content">
-          <p>{{ lifecycleInfoContent }}</p>
+          <p>
+            {{
+              t(hasLifecycleTabs ? lifecycleInfo.github : lifecycleInfo.manual)
+            }}
+          </p>
         </div>
       </ZKBottomDialogContainer>
     </q-dialog>
@@ -248,6 +296,7 @@ import {
 import type { CheckpointTimelineItem } from "src/components/post/analysis/CheckpointTimeline.types";
 import CheckpointTimeline from "src/components/post/analysis/CheckpointTimeline.vue";
 import AnalysisPlaybackButton from "src/components/post/analysis/common/AnalysisPlaybackButton.vue";
+import ClosedAnalysisInputControl from "src/components/post/analysis/common/ClosedAnalysisInputControl.vue";
 import ShortcutBar from "src/components/post/analysis/shortcutBar/ShortcutBar.vue";
 import {
   type SurveyTabTranslations,
@@ -257,6 +306,7 @@ import SurveyTab from "src/components/post/analysis/surveyTab/SurveyTab.vue";
 import ErrorRetryBlock from "src/components/ui/ErrorRetryBlock.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import ZKBottomDialogContainer from "src/components/ui-library/ZKBottomDialogContainer.vue";
+import { useClosedAnalysisSelection } from "src/composables/conversation/useClosedAnalysisSelection";
 import type { ConversationActionBarStats } from "src/composables/conversation/useConversationActionBarStats";
 import type {
   ConversationScrollContext,
@@ -265,6 +315,7 @@ import type {
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import { useTabNavigation } from "src/composables/ui/useTabNavigation";
 import type {
+  ClosedAnalysisSelection,
   ComparisonLoadResponse,
   ComparisonResultItem,
   PrioritizationItem,
@@ -278,11 +329,13 @@ import type {
 } from "src/shared/types/zod";
 import { useLanguageStore } from "src/stores/language";
 import { useOpinionRedactionStore } from "src/stores/opinionRedaction";
+import { useUserStore } from "src/stores/user";
 import {
   getUpdatedAnalysisRouteQuery,
   parseCheckpointQuery,
 } from "src/utils/analysis/analysisRoute";
 import { useComparisonApi } from "src/utils/api/comparison/comparison";
+import { useComparisonCloseRefresh } from "src/utils/api/comparison/comparisonCloseRefresh";
 import {
   useComparisonLoadQuery,
   useRankingStatsCheckpointsQuery,
@@ -311,6 +364,8 @@ import { useRoute, useRouter } from "vue-router";
 import type { ComparisonListItem } from "./ComparisonItemListSection.vue";
 import ComparisonItemListSection from "./ComparisonItemListSection.vue";
 import ComparisonMeSection from "./ComparisonMeSection.vue";
+import { comparisonModerationTranslations } from "./ComparisonModeration.i18n";
+import ComparisonModeration from "./ComparisonModeration.vue";
 import {
   type ComparisonResultsTabTranslations,
   comparisonResultsTabTranslations,
@@ -325,6 +380,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   analysisLivePauseStats: [stats: ConversationActionBarStats | undefined];
 }>();
+const { profileData } = storeToRefs(useUserStore());
+const canModerateItems = computed(
+  () =>
+    profileData.value.isSiteModerator ||
+    props.conversationData.interaction.conversationCapabilities.canModerate
+);
+const moderationTarget = ref<string>();
+const { t: moderationLabels } = useComponentI18n(
+  comparisonModerationTranslations
+);
 
 const { t } = useComponentI18n<ComparisonResultsTabTranslations>(
   comparisonResultsTabTranslations
@@ -668,19 +733,45 @@ async function normalizeCheckpointForCurrentTab(): Promise<boolean> {
 const isInitialLoading = ref(true);
 const hasError = ref(false);
 const resultItems = ref<ComparisonListItem[]>([]);
+const receivedSelection = ref<ClosedAnalysisSelection>();
+const closedSelection = computed(() =>
+  selectedCheckpointId.value === undefined &&
+  props.conversationData.metadata.isClosed &&
+  props.conversationData.metadata.isFinalizing !== true
+    ? receivedSelection.value
+    : undefined
+);
+const closeRefresh = useComparisonCloseRefresh(conversationSlugId);
+const { canSwitch, saving, saveFailed, selectMode } =
+  useClosedAnalysisSelection({
+    slug: conversationSlugId,
+    selection: closedSelection,
+    canEdit: () =>
+      props.conversationData.interaction.conversationCapabilities.canEdit,
+    refresh: refreshClose,
+  });
 const activeResultItems = computed(
   () => pausedLiveFrame.value?.resultItems ?? resultItems.value
 );
 const activeParticipantCount = computed(
   () =>
     pausedLiveFrame.value?.actionBarStats.participantCount ??
+    (closedSelection.value === undefined
+      ? undefined
+      : loadedLiveRankingFrame.value?.actionBarStats.participantCount) ??
     props.conversationData.metadata.participantCount
 );
 let latestResultsRequestId = 0;
 let latestCheckpointValidationId = 0;
-let isResultsFetchInFlight = false;
+let resultsFetchInFlight: Promise<void> | undefined;
 let hasQueuedResultsFetch = false;
 let queuedResultsFetchShowsLoading = false;
+watch(closeRefresh, refreshClose);
+
+async function refreshClose(): Promise<void> {
+  latestResultsRequestId += 1;
+  await fetchResults({ showLoading: false });
+}
 
 // Me tab: user's personal ranking (data passed to ComparisonMeSection)
 const loadQuery = useComparisonLoadQuery({
@@ -753,9 +844,24 @@ const showInfoDialog = computed({
     if (!val) learnMoreContext.value = null;
   },
 });
-const showLifecycleInfoDialog = ref(false);
-const lifecycleInfoTitle = ref("");
-const lifecycleInfoContent = ref("");
+const lifecycleHelpKeys = {
+  completed: {
+    title: "tabCompleted",
+    manual: "completedLearnMoreManual",
+    github: "completedLearnMoreGitHub",
+  },
+  canceled: {
+    title: "tabCanceled",
+    manual: "canceledLearnMoreManual",
+    github: "canceledLearnMoreGitHub",
+  },
+} as const;
+const lifecycleHelp = ref<keyof typeof lifecycleHelpKeys>();
+const lifecycleInfo = computed(() =>
+  lifecycleHelp.value === undefined
+    ? undefined
+    : lifecycleHelpKeys[lifecycleHelp.value]
+);
 const showStatementDialog = ref(false);
 const expandedItemSlugId = ref<string | undefined>(undefined);
 const expandedDisplayContent = ref<RankingItemDisplayedContent | undefined>(
@@ -776,35 +882,6 @@ function openStatementDialog({
   expandedDisplayContent.value = displayContent;
   expandedExternalUrl.value = externalUrl;
   showStatementDialog.value = true;
-}
-
-function openLifecycleLearnMore(lifecycle: "completed" | "canceled"): void {
-  const keyMap: Record<
-    "completed" | "canceled",
-    {
-      title: keyof ComparisonResultsTabTranslations;
-      manual: keyof ComparisonResultsTabTranslations;
-      github: keyof ComparisonResultsTabTranslations;
-    }
-  > = {
-    completed: {
-      title: "tabCompleted",
-      manual: "completedLearnMoreManual",
-      github: "completedLearnMoreGitHub",
-    },
-    canceled: {
-      title: "tabCanceled",
-      manual: "canceledLearnMoreManual",
-      github: "canceledLearnMoreGitHub",
-    },
-  };
-
-  const keys = keyMap[lifecycle];
-  lifecycleInfoTitle.value = t(keys.title);
-  lifecycleInfoContent.value = t(
-    hasLifecycleTabs.value ? keys.github : keys.manual
-  );
-  showLifecycleInfoDialog.value = true;
 }
 
 function mapApiItemsToListItems({
@@ -841,6 +918,7 @@ function mapApiResultItemsToListItems({
       : {
           slugId: item.itemSlugId,
           ...getRankingItemDisplayText({ displayContent: item.displayContent }),
+          participantSubmitted: item.participantSubmitted,
           displayContent: item.displayContent,
           score: item.score,
           externalUrl: item.externalUrl,
@@ -912,30 +990,32 @@ async function fetchResults({
   if (!isActive.value || !isRankingContentVisible.value || isLivePaused.value) {
     return;
   }
-  if (isResultsFetchInFlight) {
+  if (resultsFetchInFlight !== undefined) {
     hasQueuedResultsFetch = true;
     queuedResultsFetchShowsLoading ||= showLoading;
-    return;
+    return await resultsFetchInFlight;
   }
 
-  isResultsFetchInFlight = true;
-  let nextFetchShowsLoading = showLoading;
+  resultsFetchInFlight = drainResultsFetches(showLoading);
   try {
-    while (
-      isActive.value &&
-      isRankingContentVisible.value &&
-      !isLivePaused.value
-    ) {
-      hasQueuedResultsFetch = false;
-      queuedResultsFetchShowsLoading = false;
-      await performResultsFetch({ showLoading: nextFetchShowsLoading });
-      if (!hasQueuedResultsFetch) {
-        break;
-      }
-      nextFetchShowsLoading = queuedResultsFetchShowsLoading;
-    }
+    await resultsFetchInFlight;
   } finally {
-    isResultsFetchInFlight = false;
+    resultsFetchInFlight = undefined;
+  }
+}
+
+async function drainResultsFetches(showLoading: boolean): Promise<void> {
+  let nextFetchShowsLoading = showLoading;
+  while (
+    isActive.value &&
+    isRankingContentVisible.value &&
+    !isLivePaused.value
+  ) {
+    hasQueuedResultsFetch = false;
+    queuedResultsFetchShowsLoading = false;
+    await performResultsFetch({ showLoading: nextFetchShowsLoading });
+    if (!hasQueuedResultsFetch) return;
+    nextFetchShowsLoading = queuedResultsFetchShowsLoading;
   }
 }
 
@@ -945,6 +1025,7 @@ async function performResultsFetch({
   showLoading: boolean;
 }): Promise<void> {
   const requestedCheckpointId = selectedCheckpointId.value;
+  const requestedClosed = props.conversationData.metadata.isClosed;
   const requestedLiveSnapshotId =
     requestedCheckpointId === undefined
       ? liveRankingStatsSnapshotId.value
@@ -968,6 +1049,7 @@ async function performResultsFetch({
 
   if (
     requestId !== latestResultsRequestId ||
+    requestedClosed !== props.conversationData.metadata.isClosed ||
     requestedCheckpointId !== selectedCheckpointId.value ||
     (requestedCheckpointId === undefined &&
       requestedLiveSnapshotId !== liveRankingStatsSnapshotId.value) ||
@@ -984,14 +1066,24 @@ async function performResultsFetch({
     });
     resultItems.value = loadedResultItems;
     if (requestedCheckpointId === undefined) {
+      receivedSelection.value = response.data.closedAnalysisSelection;
       loadedLiveRankingFrame.value = {
         rankingStatsSnapshotId: requestedLiveSnapshotId,
         resultItems: loadedResultItems,
-        actionBarStats: getActionBarStatsFromMetadata(),
+        actionBarStats:
+          response.data.counters ?? getActionBarStatsFromMetadata(),
       };
+      if (receivedSelection.value !== undefined)
+        emit(
+          "analysisLivePauseStats",
+          loadedLiveRankingFrame.value.actionBarStats
+        );
     }
     hasError.value = false;
-  } else if (showLoading || resultItems.value.length === 0) {
+  } else if (
+    showLoading ||
+    (resultItems.value.length === 0 && receivedSelection.value === undefined)
+  ) {
     hasError.value = true;
   }
 
@@ -1080,6 +1172,7 @@ async function retryFetchCheckpoints(): Promise<void> {
 watch(
   () => route.query.checkpoint,
   async () => {
+    emit("analysisLivePauseStats", undefined);
     clearLivePause();
     if (await normalizeCheckpointForCurrentTab()) {
       return;
@@ -1111,8 +1204,12 @@ watch(liveRankingStatsSnapshotId, async (snapshotId, previousSnapshotId) => {
 watch(
   () => props.conversationData.metadata.isClosed,
   (isClosed) => {
+    receivedSelection.value = undefined;
+    emit("analysisLivePauseStats", undefined);
     if (isClosed && isLivePaused.value) {
       void selectLive();
+    } else if (selectedCheckpointId.value === undefined) {
+      void refreshClose();
     }
   }
 );

@@ -197,8 +197,8 @@ describe("conversation family state", () => {
       creditPricing: "quadratic",
       allowOpposition: false,
     };
-    expect(draft.qvStatements.value.at(0)?.title).toBe("Existing BWS title");
-    draft.qvStatements.value = [
+    expect(draft.qvItems.value.at(0)?.title).toBe("Existing BWS title");
+    draft.qvItems.value = [
       {
         localKey: "qv-1",
         title: "Structured title",
@@ -216,7 +216,7 @@ describe("conversation family state", () => {
       creditPricing: "quadratic",
       allowOpposition: false,
     };
-    expect(draft.qvStatements.value).toEqual([
+    expect(draft.qvItems.value).toEqual([
       {
         localKey: "qv-1",
         title: "Structured title",
@@ -225,7 +225,7 @@ describe("conversation family state", () => {
     ]);
     expect(draft.isDraftModified()).toBe(true);
     draft.resetDraft();
-    expect(draft.qvStatements.value).toEqual([]);
+    expect(draft.qvItems.value).toEqual([]);
     expect(draft.isDraftModified()).toBe(false);
   });
 

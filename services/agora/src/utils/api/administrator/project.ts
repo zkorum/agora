@@ -96,8 +96,7 @@ export function useBackendAdministratorProjectApi() {
 
       showNotifyMessage(t("failedToCreateProject"));
       return false;
-    } catch (error) {
-      console.error(error);
+    } catch {
       showNotifyMessage(t("failedToCreateProject"));
       return false;
     }
@@ -275,8 +274,7 @@ export function useBackendAdministratorProjectApi() {
         )
       );
       return undefined;
-    } catch (error) {
-      console.error(error);
+    } catch {
       showNotifyMessage(t("failedToUpdateProject"));
       return undefined;
     }

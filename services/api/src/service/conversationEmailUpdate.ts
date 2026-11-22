@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { httpErrors } from "@fastify/sensible";
+import { getEffectiveConversationParticipationMode } from "./conversationParticipationMode.js";
+import { effectiveConversationIndexing } from "./conversationDiscovery.js";
 import {
     organizationRoleHasCapability,
     organizationRolesWithCapability,
@@ -777,7 +779,9 @@ export async function listAuthorizedConversations({
             conversation_id: conversationTable.id,
             conversation_slug_id: conversationTable.slugId,
             conversation_title: conversationContentTable.title,
-            participation_mode: conversationTable.participationMode,
+            participation_mode: getEffectiveConversationParticipationMode(
+                projectTable.participationMode,
+            ),
             conversation_override:
                 conversationTable.conversationEmailUpdateEnabledOverride,
             contact_first_name: projectContactTable.firstName,
@@ -2533,7 +2537,7 @@ function buildPreferenceConversationDiscoveryCondition({
 }) {
     // Participation makes private conversations discoverable only to that user.
     return focusConversationSlugId === undefined
-        ? or(eq(conversationTable.isIndexed, true), participationCondition)
+        ? or(effectiveConversationIndexing(), participationCondition)
         : eq(conversationTable.slugId, focusConversationSlugId);
 }
 

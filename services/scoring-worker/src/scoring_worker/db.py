@@ -13,20 +13,23 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, Protocol, TypedDict, cast
 from uuid import uuid4
 
 import regex
-from sqlalchemy import and_, or_, select, text, update
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import and_, case, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from scoring_worker.generated_models import (
+    AnalysisInputMode,
+    ComparisonAnalysisClose,
     ComparisonAnswer,
+    ComparisonInputBaseline,
     ComparisonResponse,
     ComparisonUserEntityScore,
     Conversation,
+    ConversationAnalysisClose,
     RankingConversationConfig,
     RankingConversationStatsCheckpoint,
     RankingConversationStatsItem,
@@ -49,13 +52,17 @@ from scoring_worker.generated_models import (
     SurveyResponse,
     User,
 )
-from scoring_worker.pipeline_config import (
-    COMPARISON_RECIPE,
-    SCORING_ALGORITHM_VERSION,
-    SOLIDAGO_VERSION,
+from scoring_worker.pipeline_config import COMPARISON_RECIPE
+from scoring_worker.prepared_inputs import (
+    ComparisonParticipant,
+    PreparedConversationInputs,
+    prepare_tasks,
 )
-from scoring_worker.prepared_inputs import PreparedConversationInputs, prepare_tasks
-from scoring_worker.retained_inputs import write_retained_inputs
+from scoring_worker.retained_inputs import (
+    certify_retained_baseline,
+    find_reusable_retained_input,
+    write_retained_inputs,
+)
 
 log = logging.getLogger(__name__)
 PARTICIPANT_MILESTONE_SEEDS = (2,)
@@ -69,6 +76,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from sqlalchemy import Connection, Engine
+    from sqlalchemy.sql.elements import ColumnElement
 
 
 @dataclass(frozen=True)
@@ -96,6 +104,7 @@ class RankingItemSnapshotInput:
     content_id: int
     lifecycle_status: RankingItemLifecycleStatus
     external_url: str | None
+    moderated: bool = False
 
 
 class RankingCheckpointInsert(TypedDict):
@@ -106,10 +115,17 @@ class RankingCheckpointInsert(TypedDict):
     vote_milestone: int | None
 
 
+class ComparisonCloseSelectionVersion(TypedDict):
+    closeId: int
+    selectionRevision: int
+
+
 class RankingStatsEventPayload(TypedDict):
     conversationSlugId: str
     rankingStatsSnapshotId: int
     checkpointChanged: bool
+    closedSelectionChanged: NotRequired[Literal[True]]
+    comparisonCloseSelectionVersion: NotRequired[ComparisonCloseSelectionVersion]
     opinionCount: int
     totalOpinionCount: int
     voteCount: int
@@ -566,6 +582,7 @@ def fetch_ranking_items_batch(
             RankingItem.slug_id,
             RankingItemContent.id.label("content_id"),
             RankingItem.lifecycle_status,
+            RankingItem.moderation,
             RankingItemExternalSource.external_url,
         )
         .join(RankingItemContent, RankingItemContent.id == RankingItem.current_content_id)
@@ -597,6 +614,7 @@ def fetch_ranking_items_batch(
                     content_id=row.content_id,
                     lifecycle_status=row.lifecycle_status,
                     external_url=row.external_url,
+                    moderated=row.moderation is not None,
                 )
             )
     return result
@@ -627,8 +645,8 @@ def fetch_scoring_input_revisions(
 @dataclass(frozen=True)
 class ComparisonsBatchResult:
     comparisons: dict[int, list[ComparisonRow]]
-    # Reverse map: conv_id → {user_idx → comparison_response_id}
-    user_idx_to_response_id: dict[int, dict[int, int]]
+    # Keep private source identity tied to the same read snapshot as the choices.
+    participants_by_conversation: dict[int, dict[int, ComparisonParticipant]]
     total_vote_count_by_conversation: dict[int, int]
     total_participant_count_by_conversation: dict[int, int]
 
@@ -643,13 +661,12 @@ def fetch_comparisons_batch(
     Assigns a 0-based user_idx per distinct comparison_response_id within
     each conversation (each response = one participant's saved history).
 
-    Also returns a reverse mapping from user_idx to comparison_response.id
-    for writing per-user scores back.
+    Also returns the private response/account source of each local participant.
     """
     if not conversation_ids:
         return ComparisonsBatchResult(
             comparisons={},
-            user_idx_to_response_id={},
+            participants_by_conversation={},
             total_vote_count_by_conversation={},
             total_participant_count_by_conversation={},
         )
@@ -690,8 +707,8 @@ def fetch_comparisons_batch(
     comparisons: dict[int, list[ComparisonRow]] = {cid: [] for cid in conversation_ids}
     # Forward: conv_id → {result_id → user_idx}
     user_idx_maps: dict[int, dict[int, int]] = {}
-    # Reverse: conv_id → {user_idx → result_id}
-    reverse_maps: dict[int, dict[int, int]] = {}
+    # Reverse: conv_id → {user_idx → private source}
+    reverse_maps: dict[int, dict[int, ComparisonParticipant]] = {}
 
     with Session(engine) as session:
         raw_rows = list(session.execute(stmt))
@@ -727,7 +744,10 @@ def fetch_comparisons_batch(
             if rid not in idx_map:
                 idx = len(idx_map)
                 idx_map[rid] = idx
-                reverse_maps[cid][idx] = rid
+                reverse_maps[cid][idx] = ComparisonParticipant(
+                    response_id=rid,
+                    user_id=row.participant_id,
+                )
 
             comparisons[cid].append(
                 ComparisonRow(
@@ -740,7 +760,7 @@ def fetch_comparisons_batch(
 
     return ComparisonsBatchResult(
         comparisons=comparisons,
-        user_idx_to_response_id=reverse_maps,
+        participants_by_conversation=reverse_maps,
         total_vote_count_by_conversation=total_vote_count_by_conversation,
         total_participant_count_by_conversation={
             conversation_id: len(participant_ids)
@@ -775,7 +795,9 @@ def prepare_scoring_inputs(
                     .where(
                         Conversation.id.in_(conversation_ids),
                         Conversation.current_content_id.is_not(None),
-                        Conversation.closed_finalized_at.is_(None),
+                        Conversation.deleted_at.is_(None),
+                        _ordinary_comparison_work_allowed(),
+                        ~_failed_live_revision_exists(),
                         RankingConversationConfig.processed_scoring_input_revision
                         < RankingConversationConfig.scoring_input_revision,
                     )
@@ -792,16 +814,17 @@ def prepare_scoring_inputs(
     # computation and publication. Bulk evidence writes never take config/lifecycle
     # write locks. Each graph commits completely, not as independently visible batches.
     for conversation_id, method in methods.items():
+        visible_items = tuple(item for item in ranking_items[conversation_id] if not item.moderated)
         entity_ids = tuple(
             item.slug_id
-            for item in ranking_items[conversation_id]
+            for item in visible_items
             if item.lifecycle_status
             in {RankingItemLifecycleStatus.active, RankingItemLifecycleStatus.in_progress}
         )
-        tasks, response_ids = prepare_tasks(
+        tasks, participants = prepare_tasks(
             entity_ids=entity_ids,
             comparisons=comparisons.comparisons[conversation_id],
-            response_ids=comparisons.user_idx_to_response_id.get(conversation_id, {}),
+            participants=comparisons.participants_by_conversation.get(conversation_id, {}),
         )
         inputs = PreparedConversationInputs(
             revision=revisions[conversation_id],
@@ -811,44 +834,105 @@ def prepare_scoring_inputs(
             ranking_items=tuple(ranking_items[conversation_id]),
             entity_ids=entity_ids,
             tasks=tasks,
-            response_ids=response_ids,
+            participants=participants,
             total_vote_count=comparisons.total_vote_count_by_conversation[conversation_id],
             total_participant_count=comparisons.total_participant_count_by_conversation[
                 conversation_id
             ],
+        )
+        baseline_entities = tuple(item.slug_id for item in ranking_items[conversation_id])
+        baseline_tasks, baseline_participants = prepare_tasks(
+            entity_ids=baseline_entities,
+            comparisons=comparisons.comparisons[conversation_id],
+            participants=comparisons.participants_by_conversation.get(conversation_id, {}),
+        )
+        identical_baseline = (
+            entity_ids == baseline_entities
+            and tasks == baseline_tasks
+            and participants == baseline_participants
+        )
+        baseline = replace(
+            inputs,
+            input_snapshot_id=inputs.input_snapshot_id if identical_baseline else uuid4(),
+            entity_ids=baseline_entities,
+            tasks=baseline_tasks,
+            participants=baseline_participants,
         )
         with (
             connection.begin(),
             Session(connection, join_transaction_mode="create_savepoint") as session,
         ):
             # Session advisory ownership spans preparation through publication.
-            # An exact-revision/recipe sealed capture can survive a failed publish
-            # or process restart without another bulk copy. It has no source IDs.
-            existing_id = session.scalar(
-                select(RankingInputSnapshot.id)
-                .where(
-                    RankingInputSnapshot.conversation_id == conversation_id,
-                    RankingInputSnapshot.scoring_input_revision == inputs.revision,
-                    RankingInputSnapshot.comparison_method == method,
-                    RankingInputSnapshot.algorithm_version == SCORING_ALGORITHM_VERSION,
-                    RankingInputSnapshot.solidago_version == SOLIDAGO_VERSION,
-                    RankingInputSnapshot.pipeline_config.cast(JSONB)
-                    == inputs.recipe.model_dump(mode="json"),
-                    RankingInputSnapshot.stats_snapshot_id.is_(None),
-                    RankingInputSnapshot.sealed_at.is_not(None),
-                )
-                .order_by(RankingInputSnapshot.created_at.desc(), RankingInputSnapshot.id.desc())
-                .limit(1)
+            # Reuse across failure/restart only after checking the actual evidence,
+            # not just its revision/recipe. Numerical rows have no source IDs.
+            baseline_id = find_reusable_retained_input(
+                session=session,
+                conversation_id=conversation_id,
+                inputs=baseline,
+                baseline="complete" if identical_baseline else "retained_complete",
             )
-            if existing_id is None:
+            if baseline_id is None:
                 write_retained_inputs(
-                    session=session, conversation_id=conversation_id, inputs=inputs
+                    session=session, conversation_id=conversation_id, inputs=baseline
                 )
             else:
-                inputs = replace(inputs, input_snapshot_id=existing_id)
+                baseline = replace(baseline, input_snapshot_id=baseline_id)
+            # The complete capture takes account locks for the superset first,
+            # preserving global account-lock order when the effective set is smaller.
+            certify_retained_baseline(
+                session=session,
+                conversation_id=conversation_id,
+                input_snapshot_id=baseline.input_snapshot_id,
+                baseline_input_snapshot_id=baseline.input_snapshot_id,
+            )
+            if identical_baseline:
+                inputs = replace(inputs, input_snapshot_id=baseline.input_snapshot_id)
+            else:
+                existing_id = find_reusable_retained_input(
+                    session=session,
+                    conversation_id=conversation_id,
+                    inputs=inputs,
+                    baseline=baseline.input_snapshot_id,
+                )
+                if existing_id is None:
+                    write_retained_inputs(
+                        session=session, conversation_id=conversation_id, inputs=inputs
+                    )
+                else:
+                    inputs = replace(inputs, input_snapshot_id=existing_id)
+                certify_retained_baseline(
+                    session=session,
+                    conversation_id=conversation_id,
+                    input_snapshot_id=inputs.input_snapshot_id,
+                    baseline_input_snapshot_id=baseline.input_snapshot_id,
+                )
             session.commit()
         prepared[conversation_id] = inputs
     return MappingProxyType(prepared)
+
+
+def _current_comparison_close_exists() -> ColumnElement[bool]:
+    return (
+        select(ComparisonAnalysisClose.close_id)
+        .join(
+            ConversationAnalysisClose,
+            ConversationAnalysisClose.id == ComparisonAnalysisClose.close_id,
+        )
+        .where(
+            ComparisonAnalysisClose.conversation_id == Conversation.id,
+            ConversationAnalysisClose.close_epoch == Conversation.vote_buffer_epoch,
+            ConversationAnalysisClose.finalized_at == Conversation.closed_finalized_at,
+            ConversationAnalysisClose.source_revision == Conversation.closing_target_revision,
+        )
+        .correlate(Conversation)
+        .exists()
+    )
+
+
+def _ordinary_comparison_work_allowed() -> ColumnElement[bool]:
+    # Legacy finalized conversations have no anchored result to display
+    # independently of the native Live pipeline.
+    return or_(Conversation.closed_finalized_at.is_(None), _current_comparison_close_exists())
 
 
 @dataclass(frozen=True)
@@ -1099,12 +1183,42 @@ def _prune_unpublished_ranking_snapshots(
         )
         .exists()
     )
+    is_bound_result = (
+        select(ComparisonAnalysisClose.close_id)
+        .join(
+            ConversationAnalysisClose,
+            ConversationAnalysisClose.id == ComparisonAnalysisClose.close_id,
+        )
+        .join(
+            Conversation,
+            Conversation.id == ConversationAnalysisClose.conversation_id,
+        )
+        .where(
+            ComparisonAnalysisClose.conversation_id == conversation_id,
+            or_(
+                ComparisonAnalysisClose.closing_stats_snapshot_id
+                == RankingConversationStatsSnapshot.id,
+                and_(
+                    Conversation.is_closed.is_(True),
+                    ConversationAnalysisClose.close_epoch == Conversation.vote_buffer_epoch,
+                    or_(
+                        ComparisonAnalysisClose.live_stats_snapshot_id
+                        == RankingConversationStatsSnapshot.id,
+                        ComparisonAnalysisClose.served_stats_snapshot_id
+                        == RankingConversationStatsSnapshot.id,
+                    ),
+                ),
+            ),
+        )
+        .exists()
+    )
     prunable_snapshot_ids = select(RankingConversationStatsSnapshot.id).where(
         RankingConversationStatsSnapshot.conversation_id == conversation_id,
         RankingConversationStatsSnapshot.deleted_at.is_(None),
         RankingConversationStatsSnapshot.id != current_snapshot_id,
         RankingConversationStatsSnapshot.id != earliest_snapshot_id,
         ~has_checkpoint,
+        ~is_bound_result,
     )
     now = datetime.now(tz=UTC).replace(microsecond=0)
     session.execute(
@@ -1145,7 +1259,11 @@ def _update_ranking_stats_batch(
                 select(
                     Conversation.slug_id,
                     Conversation.is_closed,
+                    Conversation.closed_finalized_at,
+                    Conversation.vote_buffer_epoch,
+                    Conversation.closing_target_revision,
                     Conversation.ranking_config_id,
+                    RankingConversationConfig.scoring_input_revision,
                 )
                 .join(
                     RankingConversationConfig,
@@ -1164,12 +1282,12 @@ def _update_ranking_stats_batch(
                     RankingItemLifecycleStatus.in_progress,
                 }
             ]
-            participant_count = len(prepared.response_ids)
+            participant_count = len(prepared.participants)
             vote_count = len(prepared.tasks)
             total_vote_count = prepared.total_vote_count
             total_participant_count = prepared.total_participant_count
             previous_snapshot = session.execute(
-                select(RankingConversationStatsSnapshot.is_closed)
+                select(RankingConversationStatsSnapshot.id)
                 .where(
                     RankingConversationStatsSnapshot.conversation_id == conversation_id,
                     RankingConversationStatsSnapshot.deleted_at.is_(None),
@@ -1184,7 +1302,7 @@ def _update_ranking_stats_batch(
                 update(RankingConversationConfig)
                 .where(RankingConversationConfig.id == conversation.ranking_config_id)
                 .values(
-                    item_count=len(active_items),
+                    item_count=len(prepared.entity_ids),
                     total_item_count=len(ranking_items),
                     vote_count=vote_count,
                     total_vote_count=total_vote_count,
@@ -1196,7 +1314,7 @@ def _update_ranking_stats_batch(
             snapshot = RankingConversationStatsSnapshot(
                 conversation_id=conversation_id,
                 ranking_score_id=ranking_score_ids.get(conversation_id),
-                item_count=len(active_items),
+                item_count=len(prepared.entity_ids),
                 total_item_count=len(ranking_items),
                 vote_count=vote_count,
                 total_vote_count=total_vote_count,
@@ -1218,17 +1336,16 @@ def _update_ranking_stats_batch(
                     RankingInputSnapshot.scoring_input_revision == prepared.revision,
                     RankingInputSnapshot.sealed_at.is_not(None),
                     RankingInputSnapshot.stats_snapshot_id.is_(None),
+                    select(ComparisonInputBaseline.input_snapshot_id)
+                    .where(
+                        ComparisonInputBaseline.input_snapshot_id == RankingInputSnapshot.id,
+                        ComparisonInputBaseline.conversation_id == conversation_id,
+                    )
+                    .exists(),
                 )
                 .values(stats_snapshot_id=snapshot.id)
                 .returning(RankingInputSnapshot.id)
             ).scalar_one()
-
-            if conversation.is_closed:
-                session.execute(
-                    update(Conversation)
-                    .where(Conversation.id == conversation_id)
-                    .values(closed_finalized_at=datetime.now(UTC))
-                )
 
             scored_entities = scored_entities_by_conv.get(conversation_id, [])
             display_scores_by_slug = {
@@ -1245,6 +1362,7 @@ def _update_ranking_stats_batch(
                         ranking_item_id=item.item_id,
                         ranking_item_content_id=item.content_id,
                         lifecycle_status=item.lifecycle_status,
+                        excluded_by_moderation=item.moderated,
                         score=None if score_data is None else score_data[0],
                         rank=None if score_data is None else score_data[1],
                         participant_count=0 if score_data is None else score_data[2],
@@ -1253,9 +1371,15 @@ def _update_ranking_stats_batch(
                 )
 
             checkpoint_values: list[RankingCheckpointInsert] = []
-            for milestone in checkpoint_milestones_at_or_below(
-                count=participant_count,
-                seeds=PARTICIPANT_MILESTONE_SEEDS,
+            is_finalized = conversation.closed_finalized_at is not None
+            is_initial_close = conversation.is_closed and not is_finalized
+            for milestone in (
+                ()
+                if is_finalized
+                else checkpoint_milestones_at_or_below(
+                    count=participant_count,
+                    seeds=PARTICIPANT_MILESTONE_SEEDS,
+                )
             ):
                 checkpoint_values.append(
                     {
@@ -1266,9 +1390,7 @@ def _update_ranking_stats_batch(
                         "vote_milestone": None,
                     }
                 )
-            if conversation.is_closed and (
-                previous_snapshot is None or not previous_snapshot.is_closed
-            ):
+            if is_initial_close:
                 checkpoint_values.append(
                     {
                         "stats_snapshot_id": snapshot.id,
@@ -1278,9 +1400,13 @@ def _update_ranking_stats_batch(
                         "vote_milestone": None,
                     }
                 )
-            for milestone in checkpoint_milestones_at_or_below(
-                count=vote_count,
-                seeds=VOTE_MILESTONE_SEEDS,
+            for milestone in (
+                ()
+                if is_finalized
+                else checkpoint_milestones_at_or_below(
+                    count=vote_count,
+                    seeds=VOTE_MILESTONE_SEEDS,
+                )
             ):
                 checkpoint_values.append(
                     {
@@ -1300,16 +1426,96 @@ def _update_ranking_stats_batch(
                     .returning(RankingConversationStatsCheckpoint.id)
                 ).all()
                 checkpoint_changed = checkpoint_changed or len(inserted_checkpoints) > 0
+            initial_close_id = None
+            if is_initial_close:
+                finalized_at = datetime.now(UTC)
+                session.execute(
+                    update(Conversation)
+                    .where(Conversation.id == conversation_id)
+                    .values(closed_finalized_at=finalized_at)
+                )
+                close = ConversationAnalysisClose(
+                    conversation_id=conversation_id,
+                    close_epoch=conversation.vote_buffer_epoch,
+                    source_revision=prepared.revision,
+                    finalized_at=finalized_at,
+                    selected_input_mode=AnalysisInputMode.closing,
+                    served_input_mode=AnalysisInputMode.closing,
+                )
+                session.add(close)
+                session.flush()
+                initial_close_id = close.id
+                session.add(
+                    ComparisonAnalysisClose(
+                        close_id=close.id,
+                        conversation_id=conversation_id,
+                        original_stats_snapshot_id=snapshot.id,
+                        closing_stats_snapshot_id=snapshot.id,
+                        live_stats_snapshot_id=snapshot.id,
+                        served_stats_snapshot_id=snapshot.id,
+                    )
+                )
+            published_live_selection = None
+            if is_finalized and conversation.scoring_input_revision == prepared.revision:
+                current_close = session.execute(
+                    update(ComparisonAnalysisClose)
+                    .where(
+                        ComparisonAnalysisClose.close_id == ConversationAnalysisClose.id,
+                        ConversationAnalysisClose.conversation_id == conversation_id,
+                        ConversationAnalysisClose.close_epoch == conversation.vote_buffer_epoch,
+                        ConversationAnalysisClose.source_revision
+                        == conversation.closing_target_revision,
+                        ConversationAnalysisClose.finalized_at == conversation.closed_finalized_at,
+                    )
+                    .values(
+                        live_stats_snapshot_id=snapshot.id,
+                        served_stats_snapshot_id=case(
+                            (
+                                ConversationAnalysisClose.selected_input_mode
+                                == AnalysisInputMode.live,
+                                snapshot.id,
+                            ),
+                            else_=ComparisonAnalysisClose.served_stats_snapshot_id,
+                        ),
+                    )
+                    .returning(
+                        ComparisonAnalysisClose.close_id,
+                        ConversationAnalysisClose.selected_input_mode,
+                    )
+                ).one()
+            else:
+                current_close = None
+            if (
+                current_close is not None
+                and current_close.selected_input_mode == AnalysisInputMode.live
+            ):
+                published_live_selection = session.execute(
+                    update(ConversationAnalysisClose)
+                    .where(
+                        ConversationAnalysisClose.id == current_close.close_id,
+                    )
+                    .values(
+                        requested_result_revision=prepared.revision,
+                        served_result_revision=prepared.revision,
+                        served_input_mode=AnalysisInputMode.live,
+                        selection_revision=ConversationAnalysisClose.selection_revision + 1,
+                    )
+                    .returning(
+                        ConversationAnalysisClose.id, ConversationAnalysisClose.selection_revision
+                    )
+                ).one_or_none()
             _prune_unpublished_ranking_snapshots(
                 session,
                 conversation_id=conversation_id,
                 current_snapshot_id=snapshot.id,
             )
+            if is_finalized and published_live_selection is None:
+                continue
             event_payload: RankingStatsEventPayload = {
                 "conversationSlugId": conversation.slug_id,
                 "rankingStatsSnapshotId": snapshot.id,
                 "checkpointChanged": checkpoint_changed,
-                "opinionCount": len(active_items),
+                "opinionCount": len(prepared.entity_ids),
                 "totalOpinionCount": len(ranking_items),
                 "voteCount": vote_count,
                 "totalVoteCount": total_vote_count,
@@ -1320,6 +1526,18 @@ def _update_ranking_stats_batch(
                 "isClosed": conversation.is_closed,
                 "timestamp": int(datetime.now(tz=UTC).timestamp() * 1000),
             }
+            if published_live_selection is not None:
+                close_id, selection_revision = published_live_selection
+                event_payload["closedSelectionChanged"] = True
+                event_payload["comparisonCloseSelectionVersion"] = {
+                    "closeId": close_id,
+                    "selectionRevision": selection_revision,
+                }
+            elif initial_close_id is not None:
+                event_payload["comparisonCloseSelectionVersion"] = {
+                    "closeId": initial_close_id,
+                    "selectionRevision": 0,
+                }
             session.add(
                 RealtimeEventOutbox(
                     event_type="conversation_ranking_stats_updated",
@@ -1354,9 +1572,9 @@ def persist_scoring_batch(
     """Publish each conversation atomically, independently of other batch inputs."""
     publications: dict[int, ScoringPublication] = {}
     result_to_conversation = {
-        result_id: conversation_id
+        participant.response_id: conversation_id
         for conversation_id, prepared in inputs.items()
-        for result_id in prepared.response_ids.values()
+        for participant in prepared.participants.values()
     }
     user_scores_by_conversation: dict[int, list[UserScoreEntry]] = {}
     for score in user_scores:
@@ -1405,6 +1623,7 @@ def _persist_scoring_conversation(
                 Conversation.closed_finalized_at,
                 Conversation.closing_target_revision,
                 Conversation.current_content_id,
+                Conversation.deleted_at,
             )
             .join(Conversation, Conversation.ranking_config_id == RankingConversationConfig.id)
             .where(Conversation.id == conversation_id)
@@ -1412,13 +1631,28 @@ def _persist_scoring_conversation(
         ).one_or_none()
         if revision is None:
             return ScoringPublication(status="missing", needs_requeue=False, observed_revision=None)
-        if revision.current_content_id is None or revision.closed_finalized_at is not None:
+        if (
+            revision.current_content_id is None
+            or revision.deleted_at is not None
+            or (
+                revision.closed_finalized_at is not None
+                and not session.scalar(
+                    select(_current_comparison_close_exists())
+                    .select_from(Conversation)
+                    .where(Conversation.id == conversation_id)
+                )
+            )
+        ):
             return ScoringPublication(
                 status="superseded",
                 needs_requeue=False,
                 observed_revision=revision.scoring_input_revision,
             )
-        if revision.is_closed and input_revision != revision.closing_target_revision:
+        if (
+            revision.is_closed
+            and revision.closed_finalized_at is None
+            and input_revision != revision.closing_target_revision
+        ):
             return ScoringPublication(
                 status="invalidated",
                 needs_requeue=True,
@@ -1466,6 +1700,48 @@ def _persist_scoring_conversation(
 # --- Reconciliation ---
 
 
+def pending_closing_work():
+    return (
+        select(ComparisonAnalysisClose.close_id)
+        .join(
+            ConversationAnalysisClose,
+            ConversationAnalysisClose.id == ComparisonAnalysisClose.close_id,
+        )
+        .where(
+            ComparisonAnalysisClose.conversation_id == Conversation.id,
+            Conversation.is_closed.is_(True),
+            ConversationAnalysisClose.close_epoch == Conversation.vote_buffer_epoch,
+            ConversationAnalysisClose.finalized_at == Conversation.closed_finalized_at,
+            ConversationAnalysisClose.source_revision == Conversation.closing_target_revision,
+            ComparisonAnalysisClose.processed_closing_revision
+            < ConversationAnalysisClose.minimum_closing_result_revision,
+            ComparisonAnalysisClose.failed_closing_revision.is_distinct_from(
+                ConversationAnalysisClose.minimum_closing_result_revision
+            ),
+        )
+        .correlate(Conversation)
+    )
+
+
+def _failed_live_revision_exists() -> ColumnElement[bool]:
+    return (
+        select(ComparisonAnalysisClose.close_id)
+        .join(
+            ConversationAnalysisClose,
+            ConversationAnalysisClose.id == ComparisonAnalysisClose.close_id,
+        )
+        .where(
+            ComparisonAnalysisClose.conversation_id == Conversation.id,
+            ConversationAnalysisClose.close_epoch == Conversation.vote_buffer_epoch,
+            Conversation.is_closed.is_(True),
+            ComparisonAnalysisClose.failed_live_revision
+            == RankingConversationConfig.scoring_input_revision,
+        )
+        .correlate(Conversation, RankingConversationConfig)
+        .exists()
+    )
+
+
 def reconcile_unscored_conversations(engine: Engine) -> list[tuple[int, str]]:
     """Find conversations needing scoring (safety net for missed ZADDs)."""
     latest_snapshot_is_closed = (
@@ -1491,7 +1767,9 @@ def reconcile_unscored_conversations(engine: Engine) -> list[tuple[int, str]]:
             and_(
                 Conversation.conversation_type == "prioritizing",
                 Conversation.prioritization_type == "comparisons",
-                Conversation.closed_finalized_at.is_(None),
+                Conversation.current_content_id.is_not(None),
+                Conversation.deleted_at.is_(None),
+                _ordinary_comparison_work_allowed(),
                 RankingConversationConfig.ranking_mode.in_(["bws", "pairwise"]),
                 or_(
                     ~select(RankingConversationStatsSnapshot.id)
@@ -1501,8 +1779,12 @@ def reconcile_unscored_conversations(engine: Engine) -> list[tuple[int, str]]:
                     )
                     .exists(),
                     latest_snapshot_is_closed != Conversation.is_closed,
-                    RankingConversationConfig.scoring_input_revision
-                    > RankingConversationConfig.processed_scoring_input_revision,
+                    pending_closing_work().exists(),
+                    and_(
+                        RankingConversationConfig.scoring_input_revision
+                        > RankingConversationConfig.processed_scoring_input_revision,
+                        ~_failed_live_revision_exists(),
+                    ),
                 ),
             ),
         )

@@ -8,7 +8,10 @@
       "
       :conversation-slug-id="props.conversationData.metadata.conversationSlugId"
       :is-closed="props.conversationData.metadata.isClosed"
-      :on-view-statements="props.navigateToDiscoverTab"
+      :can-edit-conversation="
+        props.conversationData.interaction.conversationCapabilities.canEdit
+      "
+      :on-view-items="props.navigateToDiscoverTab"
     />
     <ComparisonResultsTab
       v-else-if="

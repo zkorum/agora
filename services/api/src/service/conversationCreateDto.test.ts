@@ -109,6 +109,7 @@ describe("conversation creation DTO", () => {
                     projectSlug: "public-plan",
                     canUseDynamicTranslation: false,
                     projectTitle: "Public Plan",
+                    participationMode: "strong_verification",
                     defaultLanguageCode: "en",
                     languageSettings: {
                         dynamicTranslationEnabled: false,
@@ -132,6 +133,7 @@ describe("conversation creation DTO", () => {
             },
             projectList: [
                 {
+                    participationMode: "strong_verification",
                     emailUpdates: {
                         canConfigure: true,
                         hasParticipantContactEmail: true,

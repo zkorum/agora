@@ -837,6 +837,14 @@ export async function fetchProjectPageDocuments({
         })
         .from(projectDocumentTable)
         .innerJoin(
+            projectTable,
+            and(
+                eq(projectTable.id, projectDocumentTable.projectId),
+                eq(projectTable.directoryVisibility, "listed"),
+                isNull(projectTable.deletedAt),
+            ),
+        )
+        .innerJoin(
             projectDocumentFileTable,
             and(
                 eq(

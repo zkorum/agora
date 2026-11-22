@@ -43,7 +43,7 @@ export function useQvResponseState() {
       signature(allocations.value) !==
       signature(localAllocations(baseline.value))
   );
-  const statementsChanged = computed(
+  const itemsChanged = computed(
     () =>
       snapshot.value !== undefined &&
       latest.value !== undefined &&
@@ -55,12 +55,12 @@ export function useQvResponseState() {
       current === undefined ||
       current.isClosed ||
       conflict.value ||
-      statementsChanged.value
+      itemsChanged.value
     )
       return false;
     const ballot = parseQvBallot({
       allocations: allocations.value,
-      config: { allowNegativeVotes: current.allowOpposition },
+      config: { allowOpposition: current.allowOpposition },
     });
     const itemIds = new Set(current.items.map((item) => item.slugId));
     return (
@@ -112,7 +112,7 @@ export function useQvResponseState() {
     if (
       current === undefined ||
       conflict.value ||
-      statementsChanged.value ||
+      itemsChanged.value ||
       current.isClosed
     )
       return undefined;
@@ -221,7 +221,7 @@ export function useQvResponseState() {
     pending,
     conflict,
     hasUnsavedChanges,
-    statementsChanged,
+    itemsChanged,
     canSave,
     receive,
     begin,

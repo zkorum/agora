@@ -9,11 +9,11 @@
 
 import type {
   ConversationMultilingualSetting,
-  ConversationTypeConfig,
   ConversationStatementSettings,
+  ConversationTypeConfig,
   ExternalSourceConfig,
-  ParticipationMode,
   ParticipantStatements,
+  ParticipationMode,
   PreferredOpinionGroupCount,
   SurveyConfig,
 } from "src/shared/types/zod";
@@ -67,7 +67,8 @@ export interface ConversationDraftBase {
   conversationEmailUpdateEnabledOverride?: boolean;
   /** Initial opinion responses to seed the conversation */
   seedOpinions: string[];
-  qvStatements: QvStatementDraft[];
+  /** Retained storage key for structured QV items in existing serialized drafts. */
+  qvStatements: QvItemDraft[];
   /** Random identifier renewed for each new draft; only sent with AI suggestion requests, for usage counts. */
   aiSuggestionDraftId: string;
 
@@ -96,7 +97,7 @@ export interface ConversationDraftBase {
   importSettings: ConversationImportSettings;
 }
 
-export interface QvStatementDraft {
+export interface QvItemDraft {
   localKey: string;
   title: string;
   description: string;

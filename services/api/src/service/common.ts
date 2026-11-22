@@ -1,4 +1,12 @@
 import {
+    effectiveConversationIndexing,
+    effectiveConversationIndexingWithProjectLookup,
+} from "./conversationDiscovery.js";
+import {
+    getEffectiveConversationParticipationMode,
+    getEffectiveConversationParticipationModeWithProjectLookup,
+} from "./conversationParticipationMode.js";
+import {
     conversationContentTable,
     conversationTable,
     userTable,
@@ -7,7 +15,7 @@ import {
     organizationTable,
     polisConversationConfigTable,
     rankingConversationConfigTable,
-    creditVotingConfigTable,
+    qvConfigTable,
     conversationImportSourceTable,
     projectOrganizationOwnershipTable,
     projectTable,
@@ -238,18 +246,20 @@ export function useCommonPost() {
                 organizationWebsiteUrl: organizationTable.websiteUrl,
                 organizationIsFullImagePath: organizationTable.isFullImagePath,
                 organizationDescription: organizationTable.description,
-                isIndexed: conversationTable.isIndexed,
+                isIndexed: effectiveConversationIndexing(),
                 aiLabelingEnabled:
                     polisConversationConfigTable.aiLabelingEnabled,
                 votingPresentation:
                     polisConversationConfigTable.votingPresentation,
                 preferredOpinionGroupCount:
                     polisConversationConfigTable.preferredOpinionGroupCount,
-                participationMode: conversationTable.participationMode,
+                participationMode: getEffectiveConversationParticipationMode(
+                    projectTable.participationMode,
+                ),
                 conversationType: conversationTable.conversationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,
                 prioritizationType: conversationTable.prioritizationType,
-                allowOpposition: creditVotingConfigTable.allowOpposition,
+                allowOpposition: qvConfigTable.allowOpposition,
                 polisAllowParticipantStatements:
                     polisConversationConfigTable.allowParticipantStatements,
                 comparisonAllowParticipantStatements:
@@ -339,11 +349,8 @@ export function useCommonPost() {
                 ),
             )
             .leftJoin(
-                creditVotingConfigTable,
-                eq(
-                    creditVotingConfigTable.id,
-                    conversationTable.creditVotingConfigId,
-                ),
+                qvConfigTable,
+                eq(qvConfigTable.id, conversationTable.creditVotingConfigId),
             )
             .leftJoin(
                 conversationModerationTable,
@@ -392,6 +399,7 @@ export function useCommonPost() {
             fetchConversationDisplayCountsByConversationId({
                 db,
                 conversationIds,
+                userId: personalizedUserId,
             }),
             getConversationMultilingualSettingsByConversationId({
                 db,
@@ -480,18 +488,23 @@ export function useCommonPost() {
                     ) ?? DEFAULT_CONVERSATION_MULTILINGUAL_SETTING,
                 participationMode: postItem.participationMode,
                 isClosed:
-                    postItem.prioritizationType === "qv"
+                    postItem.prioritizationType === "qv" ||
+                    postItem.prioritizationType === "comparisons"
                         ? displayCounts.isClosed
                         : postItem.isClosed,
                 isFinalizing:
-                    postItem.prioritizationType === "qv"
+                    postItem.prioritizationType === "comparisons"
                         ? displayCounts.isClosed &&
-                          (displayCounts.qvLifecycle?.calculationStatus ===
-                              "queued" ||
-                              displayCounts.qvLifecycle?.calculationStatus ===
-                                  "running")
-                        : postItem.isClosed &&
-                          postItem.closedFinalizedAt === null,
+                          !displayCounts.isClosingFinalized
+                        : postItem.prioritizationType === "qv"
+                          ? displayCounts.isClosed &&
+                            !displayCounts.isClosingFinalized &&
+                            (displayCounts.qvLifecycle?.calculationStatus ===
+                                "queued" ||
+                                displayCounts.qvLifecycle?.calculationStatus ===
+                                    "running")
+                          : postItem.isClosed &&
+                            postItem.closedFinalizedAt === null,
                 isEdited: postItem.isEdited,
                 organization:
                     postItem.authorName === null
@@ -550,6 +563,16 @@ export function useCommonPost() {
                         : undefined,
             };
             const metadata: ConversationMetadata = (() => {
+                if (postItem.conversationType === "gathering") {
+                    return zodConversationMetadata.parse({
+                        ...metadataBase,
+                        conversationType: "gathering",
+                        responseCount:
+                            displayCounts.gatheringResponseCount ?? 0,
+                        aiLabelingEnabled: false,
+                        preferredOpinionGroupCount: null,
+                    });
+                }
                 if (postItem.conversationType === "prioritizing") {
                     const presentation =
                         parseStoredConversationTypeConfig(postItem);
@@ -561,6 +584,8 @@ export function useCommonPost() {
                             ? {
                                   rankingStatsSnapshotId:
                                       displayCounts.rankingStatsSnapshotId,
+                                  comparisonCloseSelectionVersion:
+                                      displayCounts.comparisonCloseSelectionVersion,
                               }
                             : {
                                   qvStatsRevision:
@@ -670,8 +695,11 @@ export function useCommonPost() {
             .select({
                 id: conversationTable.id,
                 currentContentId: conversationTable.currentContentId,
-                isIndexed: conversationTable.isIndexed,
-                participationMode: conversationTable.participationMode,
+                isIndexed: effectiveConversationIndexingWithProjectLookup(db),
+                participationMode:
+                    getEffectiveConversationParticipationModeWithProjectLookup(
+                        db,
+                    ),
                 conversationType: conversationTable.conversationType,
                 prioritizationType: conversationTable.prioritizationType,
                 rankingMode: rankingConversationConfigTable.rankingMode,

@@ -140,6 +140,13 @@ describe("account deletion feedback", () => {
   it("signs out and navigates away only after deletion is accepted", async () => {
     mocks.remove.mockResolvedValue({ success: true });
     confirmDeletion();
+    expect(mocks.dialog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining(
+          "Withdrawing votes does not erase saved voting data."
+        ),
+      })
+    );
     await vi.waitFor(() =>
       expect(mocks.navigate).toHaveBeenCalledWith({ name: "/welcome/" })
     );

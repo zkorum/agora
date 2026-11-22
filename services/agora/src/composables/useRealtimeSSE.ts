@@ -1,9 +1,6 @@
 import { type InfiniteData, useQueryClient } from "@tanstack/vue-query";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type {
-  AnalysisFrameGroups,
-  AnalysisFrameOpinionList,
-} from "src/shared/types/dto";
+import type { AnalysisFrameContent } from "src/shared/types/dto";
 import {
   type AnySSEEvent,
   type FetchCommentStatsResponse,
@@ -35,6 +32,7 @@ import { useLanguageStore } from "src/stores/language";
 import { useNotificationStore } from "src/stores/notification";
 import { useOpinionRedactionStore } from "src/stores/opinionRedaction";
 import { useOpinionUpdatesStore } from "src/stores/opinionUpdates";
+import { refreshClosedAnalysisSelection } from "src/utils/analysis/refreshClosedAnalysisSelection";
 import { useBackendAuthApi } from "src/utils/api/auth";
 import type { AnalysisData } from "src/utils/api/comment/analysisData";
 import { useBackendCommentApi } from "src/utils/api/comment/comment";
@@ -48,6 +46,7 @@ import { createOpinionManagementRefresher } from "src/utils/api/comment/opinionM
 import { applyOpinionVoteCountUpdate } from "src/utils/api/comment/opinionVoteCountUpdate";
 import { fetchAnalysisDataWithCache } from "src/utils/api/comment/useCommentQueries";
 import { useCommonApi } from "src/utils/api/common";
+import { signalComparisonCloseRefresh } from "src/utils/api/comparison/comparisonCloseRefresh";
 import {
   type ProjectContentFetchResponse,
   useBackendContentTranslationApi,
@@ -275,9 +274,8 @@ function isAnalysisFrameSectionQueryKey({
   conversationSlugId: string;
 }): boolean {
   return (
-    (queryKey[0] === "analysisFrameGroups" ||
-      queryKey[0] === "analysisFrameGroupLabels" ||
-      queryKey[0] === "analysisFrameOpinionList") &&
+    (queryKey[0] === "analysisFrameContent" ||
+      queryKey[0] === "analysisFrameGroupLabels") &&
     queryKey[1] === conversationSlugId
   );
 }
@@ -343,9 +341,8 @@ export function useRealtimeSSE({
   const { refreshConversationMetadata } = useBackendPostEditApi();
   const {
     fetchAnalysisFrameManifest,
-    fetchAnalysisFrameGroups,
+    fetchAnalysisFrameContent,
     fetchAnalysisFrameGroupLabels,
-    fetchAnalysisFrameOpinionList,
     fetchOpinionsBySlugIdList,
   } = useBackendCommentApi();
   const opinionManagementRefresher = createOpinionManagementRefresher({
@@ -358,18 +355,14 @@ export function useRealtimeSSE({
       );
     },
   });
-  watch(viewerScope, () => opinionManagementRefresher.clear(), {
-    flush: "sync",
-  });
   const liveAnalysisCatchUpController = createLiveAnalysisCatchUpController({
     queryClient,
     fetchLiveAnalysis: (params) =>
       fetchAnalysisDataWithCache({
         queryClient,
         fetchAnalysisFrameManifest,
-        fetchAnalysisFrameGroups,
+        fetchAnalysisFrameContent,
         fetchAnalysisFrameGroupLabels,
-        fetchAnalysisFrameOpinionList,
         conversationSlugId: params.conversationSlugId,
         analysisView: params.analysisView,
         checkpointViewSnapshotId: params.checkpointViewSnapshotId,
@@ -377,11 +370,19 @@ export function useRealtimeSSE({
         displayLanguage: params.displayLanguage,
         spokenLanguages: params.spokenLanguages,
         voteCount: undefined,
-        freshness: params.freshness,
+        refreshScope: params.refreshScope,
         analysisQueryKey: undefined,
-        viewerScope: viewerScope.value,
+        viewerScope: params.viewerScope,
       }),
   });
+  watch(
+    viewerScope,
+    () => {
+      opinionManagementRefresher.clear();
+      liveAnalysisCatchUpController.clearAll();
+    },
+    { flush: "sync" }
+  );
   const { refreshAuthState } = useBackendAuthApi();
   const { fetchProjectContent } = useBackendContentTranslationApi();
   const { showNotifyMessage } = useNotify();
@@ -1088,7 +1089,7 @@ export function useRealtimeSSE({
 
     const messages: string[] = [];
     const isClosedChanged =
-      (data.settings.presentation.conversationType === "polis" ||
+      (data.settings.presentation.conversationType !== "prioritizing" ||
         data.settings.presentation.prioritizationType !== "qv") &&
       previousMetadata.isClosed !== data.settings.isClosed;
 
@@ -1182,8 +1183,7 @@ export function useRealtimeSSE({
                 (queryKey[0] === "comments" ||
                   queryKey[0] === "nextUnansweredOpinion" ||
                   queryKey[0] === "analysis" ||
-                  queryKey[0] === "analysisFrameGroups" ||
-                  queryKey[0] === "analysisFrameOpinionList")),
+                  queryKey[0] === "analysisFrameContent")),
           });
           break;
         }
@@ -1260,23 +1260,18 @@ export function useRealtimeSSE({
             (value) =>
               value === undefined ? value : redactions.projectAnalysis(value)
           );
-          queryClient.setQueriesData<AnalysisFrameGroups>(
-            { queryKey: ["analysisFrameGroups", data.conversationSlugId] },
-            (value) =>
-              value === undefined ? value : redactions.projectGroups(value)
-          );
-          queryClient.setQueriesData<AnalysisFrameOpinionList>(
-            { queryKey: ["analysisFrameOpinionList", data.conversationSlugId] },
+          queryClient.setQueriesData<AnalysisFrameContent>(
+            { queryKey: ["analysisFrameContent", data.conversationSlugId] },
             (value) =>
               value === undefined
                 ? value
-                : {
-                    ...value,
-                    items: value.items.map(redactions.projectOpinion),
-                  }
+                : redactions.projectFrameContent(value)
           );
           for (const opinion of data.opinions) {
-            if (opinion.action === "redact") {
+            if (
+              opinion.action === "redact" ||
+              opinion.action === "hide_account"
+            ) {
               queryClient.setQueriesData<OpinionCache>(
                 { queryKey: ["comments", data.conversationSlugId] },
                 (cache) =>
@@ -1285,7 +1280,7 @@ export function useRealtimeSSE({
                     opinionSlugId: opinion.opinionSlugId,
                   })
               );
-            } else {
+            } else if (opinion.action === "unlink_author") {
               queryClient.setQueriesData<OpinionCache>(
                 { queryKey: ["comments", data.conversationSlugId] },
                 (cache) =>
@@ -1405,7 +1400,7 @@ export function useRealtimeSSE({
                     ),
                   }
           );
-          if (accepted)
+          if (accepted || data.closedSelectionChanged === true)
             void refreshQvCalculation({
               slug: data.conversationSlugId,
               refreshSession:
@@ -1470,7 +1465,29 @@ export function useRealtimeSSE({
           break;
         }
         case "conversation_ranking_stats_updated": {
-          updateRankingStatsFromEvent(sseEvent.data);
+          const data = sseEvent.data;
+          if (data.closedSelectionChanged === true) {
+            if (data.checkpointChanged) {
+              void queryClient.invalidateQueries({
+                queryKey: [
+                  "ranking-stats-checkpoints",
+                  data.conversationSlugId,
+                ],
+              });
+            }
+            updateConversationQueryCache({
+              queryClient,
+              conversationSlugId: data.conversationSlugId,
+              updateConversation: (conversation) =>
+                applyConversationRankingStatsUpdate({ conversation, data }),
+            });
+            signalComparisonCloseRefresh({
+              queryClient,
+              conversationSlugId: data.conversationSlugId,
+            });
+          } else {
+            updateRankingStatsFromEvent(data);
+          }
           break;
         }
         case "conversation_survey_updated": {
@@ -1493,6 +1510,33 @@ export function useRealtimeSSE({
         }
         case "conversation_analysis_updated": {
           const data = sseEvent.data;
+          if (
+            data.closedSelectionChanged === true ||
+            data.closingCheckpointIds !== undefined
+          ) {
+            liveAnalysisCatchUpController.clearConversation({
+              conversationSlugId: data.conversationSlugId,
+              matchesQueryKey: (key) =>
+                key[3] === undefined
+                  ? data.closedSelectionChanged === true
+                  : typeof key[3] === "number" &&
+                    data.closingCheckpointIds?.includes(key[3]) === true,
+            });
+            void refreshClosedAnalysisSelection({
+              queryClient,
+              conversationSlugId: data.conversationSlugId,
+              includeLatest: data.closedSelectionChanged === true,
+              closingCheckpointIds: data.closingCheckpointIds,
+            });
+            // Selection-only signals and Closing snapshots must not update the
+            // public counters. A normal Live publication still should.
+            if (
+              data.closingCheckpointIds !== undefined ||
+              data.isClosed !== true
+            ) {
+              break;
+            }
+          }
           if (!shouldHandleAnalysisUpdatedEventForDisplayLanguage(data)) {
             break;
           }
@@ -1572,6 +1616,20 @@ export function useRealtimeSSE({
             void queryClient.invalidateQueries({
               queryKey: ["analysisCheckpoints", data.conversationSlugId],
             });
+          }
+          if (data.changeKind === "snapshot" && data.isClosed === true) {
+            // A newer ordinary snapshot may not be the selected result.
+            if (data.closedSelectionChanged !== true) {
+              liveAnalysisCatchUpController.clearConversation({
+                conversationSlugId: data.conversationSlugId,
+                matchesQueryKey: (key) => key[3] === undefined,
+              });
+              void refreshClosedAnalysisSelection({
+                queryClient,
+                conversationSlugId: data.conversationSlugId,
+              });
+            }
+            break;
           }
           liveAnalysisCatchUpController.requestCatchUp(data);
           break;
@@ -1688,10 +1746,14 @@ export function useRealtimeSSE({
                         isIndexed: data.settings.isIndexed,
                         participationMode: data.settings.participationMode,
                         isClosed:
+                          data.settings.presentation.conversationType ===
+                            "prioritizing" &&
                           data.settings.presentation.prioritizationType === "qv"
                             ? conversation.metadata.isClosed
                             : data.settings.isClosed,
                         isFinalizing:
+                          data.settings.presentation.conversationType ===
+                            "prioritizing" &&
                           data.settings.presentation.prioritizationType === "qv"
                             ? conversation.metadata.isFinalizing
                             : (data.settings.isFinalizing ??
@@ -2289,6 +2351,7 @@ export function useRealtimeSSE({
     if (conversationSlugId === undefined) {
       return;
     }
+    signalComparisonCloseRefresh({ queryClient, conversationSlugId });
 
     await queryClient.refetchQueries({
       predicate: (query) =>

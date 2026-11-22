@@ -29,7 +29,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { ConversationTypeConfig } from "src/shared/types/zod";
 import { computed, ref, watch } from "vue";
 
-import { qvStatementsTranslations } from "../QvStatements.i18n";
+import { qvItemsTranslations } from "../QvItems.i18n";
 import {
   type PostTypeDialogTranslations,
   postTypeDialogTranslations,
@@ -55,7 +55,7 @@ const { t } = useComponentI18n<PostTypeDialogTranslations>(
 
 const showDialog = defineModel<boolean>({ required: true });
 const choosingPrioritization = ref(false);
-const { t: qvT } = useComponentI18n(qvStatementsTranslations);
+const { t: qvT } = useComponentI18n(qvItemsTranslations);
 watch(showDialog, (visible) => {
   if (visible)
     choosingPrioritization.value =

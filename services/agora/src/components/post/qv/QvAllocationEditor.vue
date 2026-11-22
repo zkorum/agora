@@ -3,23 +3,25 @@
     <header class="instructions">
       <p class="method-label">{{ t("title") }}</p>
       <h2>{{ t("instruction") }}</h2>
-      <p>{{ t("explanation", { budget: CREDIT_VOTING_BUDGET }) }}</p>
+      <p>
+        {{ t("explanation", { budget: numbers.integer(QV_CREDIT_BUDGET) }) }}
+      </p>
       <p>{{ t(allowOpposition ? "signedHelp" : "supportOnlyHelp") }}</p>
       <div class="legend" aria-hidden="true">
         <span class="support">+ {{ t("support") }}</span>
-        <span v-if="allowOpposition" class="not-support"
-          >− {{ t("notSupport") }}</span
+        <span v-if="allowOpposition" class="opposition"
+          >− {{ t("opposition") }}</span
         >
       </div>
     </header>
 
     <div class="column-headings" aria-hidden="true">
-      <span>{{ t("statement") }}</span>
+      <span>{{ t("item") }}</span>
       <span>{{ t("votes") }}</span>
       <span>{{ t("credits") }}</span>
     </div>
-    <ol class="statement-list">
-      <QvStatementVotingRow
+    <ol class="item-list">
+      <QvItemVotingRow
         v-for="row in rows"
         :key="row.item.slugId"
         :conversation-slug-id="conversationSlugId"
@@ -35,11 +37,14 @@
       <div class="budget-summary">
         <div class="balance-row">
           <span role="status" aria-live="polite" aria-atomic="true">{{
-            t("remaining", { remaining, budget: CREDIT_VOTING_BUDGET })
+            t("remaining", {
+              remaining: numbers.integer(remaining),
+              budget: numbers.integer(QV_CREDIT_BUDGET),
+            })
           }}</span>
           <progress
             :value="remaining"
-            :max="CREDIT_VOTING_BUDGET"
+            :max="QV_CREDIT_BUDGET"
             :aria-label="t('credits')"
           />
         </div>
@@ -94,27 +99,29 @@
 
 <script setup lang="ts">
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useDisplayNumbers } from "src/i18n/numberFormats";
 import {
-  CREDIT_VOTING_BUDGET,
   parseQvBallot,
+  QV_CREDIT_BUDGET,
   type QvAllocation,
   qvCreditsToChangeVote,
 } from "src/shared/utils/qv";
 import { computed, useId } from "vue";
 
-import QvStatementVotingRow from "./QvStatementVotingRow.vue";
+import QvItemVotingRow from "./QvItemVotingRow.vue";
 import { qvVotingTranslations } from "./QvVoting.i18n";
-import type { QvResponseActions, QvStatement } from "./QvVoting.types";
+import type { QvItem, QvResponseActions } from "./QvVoting.types";
 
 const props = defineProps<{
   conversationSlugId: string;
-  items: readonly QvStatement[];
+  items: readonly QvItem[];
   allowOpposition: boolean;
   disabled: boolean;
   responseActions: QvResponseActions | undefined;
 }>();
 const emit = defineEmits<{ discard: []; save: []; withdraw: [] }>();
 const allocations = defineModel<QvAllocation[]>({ required: true });
+const numbers = useDisplayNumbers();
 const { t } = useComponentI18n(qvVotingTranslations);
 const savingNoticeId = useId();
 const votesById = computed(
@@ -124,7 +131,7 @@ const itemIds = computed(() => new Set(props.items.map((item) => item.slugId)));
 const ballot = computed(() =>
   parseQvBallot({
     allocations: allocations.value,
-    config: { allowNegativeVotes: props.allowOpposition },
+    config: { allowOpposition: props.allowOpposition },
   })
 );
 const hasValidAllocations = computed(
@@ -134,7 +141,7 @@ const hasValidAllocations = computed(
 );
 const remaining = computed(
   () =>
-    CREDIT_VOTING_BUDGET -
+    QV_CREDIT_BUDGET -
     allocations.value.reduce(
       (total, allocation) => total + allocation.votes ** 2,
       0
@@ -217,7 +224,7 @@ h2 {
 .support {
   color: $green-darkest;
 }
-.not-support {
+.opposition {
   color: $negative;
 }
 .column-headings {
@@ -232,7 +239,7 @@ h2 {
 .column-headings span:not(:first-child) {
   text-align: center;
 }
-.statement-list {
+.item-list {
   list-style: none;
   margin: 0;
   padding: 0;

@@ -5,7 +5,7 @@ import {
     projectOrganizationOwnershipTable,
     projectTable,
     rankingConversationConfigTable,
-    creditVotingConfigTable,
+    qvConfigTable,
     qvLiveStatsTable,
     userMutePreferenceTable,
     userTable,
@@ -38,6 +38,7 @@ import {
     latestConversationDisplaySnapshot,
 } from "./conversationDisplayCounts.js";
 import { conversationEngagementScore } from "./recommendationSystem.js";
+import { projectListedForDiscovery } from "./conversationDiscovery.js";
 
 interface FeedCandidate {
     conversationId: number;
@@ -86,7 +87,7 @@ function feedVisibilityConditions({
                     conversationTable.projectId,
                 ),
                 isNull(projectOrganizationOwnershipTable.deletedAt),
-                isNull(projectTable.deletedAt),
+                projectListedForDiscovery(),
                 isNull(organizationTable.deletedAt),
                 or(
                     isNull(organizationTable.autoProvisionedForUserId),
@@ -174,8 +175,17 @@ export async function selectFeedCandidates({
                 createdAt: conversationTable.createdAt,
             })
             .from(conversationTable)
-            .innerJoinLateral(snapshot, sql`true`)
-            .where(and(visibility, afterCreatedCursor))
+            .leftJoinLateral(snapshot, sql`true`)
+            .where(
+                and(
+                    visibility,
+                    afterCreatedCursor,
+                    or(
+                        eq(conversationTable.conversationType, "gathering"),
+                        isNotNull(snapshot.conversationViewSnapshotId),
+                    ),
+                ),
+            )
             .orderBy(
                 desc(conversationTable.createdAt),
                 desc(conversationTable.id),
@@ -191,7 +201,7 @@ export async function selectFeedCandidates({
         opinionCount: conversationDisplayCount({
             rankingCount: rankingConversationConfigTable.itemCount,
             snapshotCount: snapshot.opinionCount,
-            qvCount: creditVotingConfigTable.itemCount,
+            qvCount: qvConfigTable.itemCount,
         }),
         voteCount: conversationDisplayCount({
             rankingCount: rankingConversationConfigTable.voteCount,
@@ -215,7 +225,7 @@ export async function selectFeedCandidates({
             score: score.as("engagement_score"),
         })
         .from(conversationTable)
-        .innerJoinLateral(snapshot, sql`true`)
+        .leftJoinLateral(snapshot, sql`true`)
         .leftJoin(
             rankingConversationConfigTable,
             eq(
@@ -228,13 +238,18 @@ export async function selectFeedCandidates({
             eq(qvLiveStatsTable.conversationId, conversationTable.id),
         )
         .leftJoin(
-            creditVotingConfigTable,
-            eq(
-                creditVotingConfigTable.id,
-                conversationTable.creditVotingConfigId,
+            qvConfigTable,
+            eq(qvConfigTable.id, conversationTable.creditVotingConfigId),
+        )
+        .where(
+            and(
+                visibility,
+                or(
+                    eq(conversationTable.conversationType, "gathering"),
+                    isNotNull(snapshot.conversationViewSnapshotId),
+                ),
             ),
         )
-        .where(visibility)
         .as("ranked_feed");
     const cursor = request.cursor;
     const rows = await reader

@@ -1,5 +1,6 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { AxiosError, AxiosHeaders } from "axios";
+import { numberFormats } from "src/i18n/numberFormats";
 import type { Dto, PrioritizationItem } from "src/shared/types/dto";
 import type { useRankingItemDisplayContent } from "src/utils/translation/useRankingItemDisplayContent";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +15,7 @@ import {
   ref,
   toValue,
 } from "vue";
+import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import type { z } from "zod";
 
@@ -87,7 +89,9 @@ vi.mock("src/composables/conversation/useParticipationGate", () => ({
   }),
 }));
 vi.mock("src/composables/ui/useComponentI18n", () => ({
-  useComponentI18n: () => ({ t: (key: string) => key }),
+  useComponentI18n: () => ({
+    t: (key: string) => key,
+  }),
 }));
 vi.mock("src/utils/translation/useRankingItemDisplayContent", () => ({
   useRankingItemDisplayContent: (
@@ -267,6 +271,7 @@ async function mountTab(
     )
   );
   app.use(router).use(VueQueryPlugin, { queryClient });
+  app.use(createI18n({ legacy: false, locale: "en", numberFormats }));
   app.component(
     "QBtn",
     defineComponent({

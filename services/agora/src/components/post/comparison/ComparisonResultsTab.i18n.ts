@@ -38,15 +38,15 @@ export const comparisonResultsTabTranslations: Record<
 > = {
   en: {
     title: "Community Ranking",
-    noResults: "No ranking data yet. Be the first to participate!",
+    noResults: "No ranking is available for this result.",
     noItems: "No items in this category.",
-    subtitle: "Aggregated from all participants' votes",
+    subtitle: "Based on the comparisons included in this result",
     scoreScaleExplanation:
       "Scores use a fixed scale from 0 to 100. Small differences stay small instead of stretching every ranking to fill the bars. These scores are not percentages of participants.",
     loadingError: "Failed to load results.",
     retryButton: "Try again",
     communityLearnMoreHow:
-      "Votes count immediately. Individual preferences are aggregated into a community ranking using Solidago, an open-source algorithm that weighs votes by user trust level.",
+      "Solidago combines the included comparisons into a community ranking. Updated rankings appear when calculation finishes.",
     communityLearnMoreDiversity:
       "Items are presented in randomized groups to prevent position bias. Indirect comparisons are inferred to minimize voting rounds.",
     communityLearnMoreSourceManual:
@@ -57,7 +57,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "Your ranking is based solely on the comparisons you've made. Once you compare enough statements, a complete personal ranking emerges.",
     meLearnMoreCounts:
-      "Your votes also feed into the community ranking immediately. You don't need to finish your personal ranking first.",
+      "Your saved comparisons can contribute to the community ranking even before your personal ranking is complete.",
     tabSummary: "Summary",
     tabMe: "Me",
     tabResults: "Results",
@@ -65,8 +65,8 @@ export const comparisonResultsTabTranslations: Record<
     tabCanceled: "Canceled",
     meTitle: "My Ranking",
     meSubtitle: "Your personal ranking based on your comparisons",
-    meVotesCounted: "Your votes are already counted in the community ranking",
-    meProgress: "{percent}% complete · {votes} votes cast",
+    meVotesCounted: "Your comparisons have been saved.",
+    meProgress: "{percent} complete · {votes} votes cast",
     meStartVoting: "Start voting to unlock your ranking",
     meKeepVoting: "Keep voting to unlock your full ranking",
     completedLearnMoreManual:
@@ -80,14 +80,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   ar: {
     title: "تصنيف المجتمع",
-    noResults: "لا توجد بيانات ترتيب بعد. كن أول من يشارك!",
-    subtitle: "مجمّع من أصوات جميع المشاركين",
+    noResults: "لا يوجد ترتيب متاح لهذه النتيجة.",
+    subtitle: "استنادًا إلى المقارنات المشمولة في هذه النتيجة",
     scoreScaleExplanation:
       "تستخدم الدرجات مقياسًا ثابتًا من 0 إلى 100. تبقى الفروق الصغيرة صغيرة بدلًا من تمديد كل ترتيب لملء الأشرطة. هذه الدرجات ليست نسبًا مئوية للمشاركين.",
     loadingError: "فشل تحميل النتائج.",
     retryButton: "حاول مرة أخرى",
     communityLearnMoreHow:
-      "الأصوات تُحتسب فوراً. يتم تجميع التفضيلات الفردية في ترتيب مجتمعي باستخدام Solidago، خوارزمية مفتوحة المصدر تُرجّح الأصوات حسب مستوى ثقة المستخدم.",
+      "يجمع Solidago المقارنات المشمولة لإعداد ترتيب جماعي. يظهر الترتيب المحدّث عند اكتمال الحساب.",
     communityLearnMoreDiversity:
       "تُعرض العناصر في مجموعات عشوائية لمنع التحيز الموضعي. تُستنتج المقارنات غير المباشرة لتقليل جولات التصويت.",
     communityLearnMoreSourceManual:
@@ -98,7 +98,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "ترتيبك مبني فقط على المقارنات التي أجريتها. بمجرد مقارنة عبارات كافية، يظهر ترتيب شخصي كامل.",
     meLearnMoreCounts:
-      "أصواتك تُدرج أيضاً في ترتيب المجتمع فوراً. لا تحتاج لإكمال ترتيبك الشخصي أولاً.",
+      "يمكن أن تسهم مقارناتك المحفوظة في الترتيب الجماعي حتى قبل اكتمال ترتيبك الشخصي.",
     tabSummary: "ملخص",
     tabMe: "أنا",
     tabResults: "النتائج",
@@ -107,8 +107,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "لا توجد عناصر في هذه الفئة.",
     meTitle: "ترتيبي",
     meSubtitle: "ترتيبك الشخصي بناءً على مقارناتك",
-    meVotesCounted: "أصواتك محسوبة بالفعل في ترتيب المجتمع",
-    meProgress: "{percent}% مكتمل · {votes} أصوات",
+    meVotesCounted: "حُفظت مقارناتك.",
+    meProgress: "{percent} مكتمل · {votes} أصوات",
     meStartVoting: "ابدأ التصويت لفتح ترتيبك",
     meKeepVoting: "واصل التصويت لفتح ترتيبك الكامل",
     completedLearnMoreManual:
@@ -122,15 +122,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   es: {
     title: "Clasificación de la comunidad",
-    noResults:
-      "Aún no hay datos de clasificación. ¡Sea el primero en participar!",
-    subtitle: "Agregado a partir de los votos de todos los participantes",
+    noResults: "No hay una clasificación disponible para este resultado.",
+    subtitle: "Basada en las comparaciones incluidas en este resultado",
     scoreScaleExplanation:
       "Las puntuaciones usan una escala fija de 0 a 100. Las diferencias pequeñas siguen siendo pequeñas, en lugar de ampliar cada clasificación para llenar las barras. No son porcentajes de participantes.",
     loadingError: "Error al cargar los resultados.",
     retryButton: "Intentar de nuevo",
     communityLearnMoreHow:
-      "Los votos cuentan inmediatamente. Las preferencias individuales se agregan en una clasificación comunitaria usando Solidago, un algoritmo de código abierto que pondera los votos según el nivel de confianza del usuario.",
+      "Solidago combina las comparaciones incluidas para obtener una clasificación colectiva. La clasificación se actualiza al terminar el cálculo.",
     communityLearnMoreDiversity:
       "Los elementos se presentan en grupos aleatorios para evitar sesgo de posicion. Se infieren comparaciones indirectas para minimizar rondas de votacion.",
     communityLearnMoreSourceManual:
@@ -141,7 +140,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "Su clasificación se basa únicamente en las comparaciones que ha hecho. Una vez que compare suficientes declaraciones, emerge una clasificación personal completa.",
     meLearnMoreCounts:
-      "Sus votos también alimentan la clasificación de la comunidad inmediatamente. No necesita terminar su clasificación personal primero.",
+      "Tus comparaciones guardadas pueden contribuir a la clasificación colectiva aunque aún no hayas completado la tuya.",
     tabSummary: "Resumen",
     tabMe: "Yo",
     tabResults: "Resultados",
@@ -150,9 +149,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "No hay elementos en esta categoría.",
     meTitle: "Mi clasificación",
     meSubtitle: "Su ordenamiento personal basado en sus comparaciones",
-    meVotesCounted:
-      "Sus votos ya están contados en la clasificación de la comunidad",
-    meProgress: "{percent}% completo · {votes} votos emitidos",
+    meVotesCounted: "Tus comparaciones se han guardado.",
+    meProgress: "{percent} completo · {votes} votos emitidos",
     meStartVoting: "Empiece a votar para desbloquear su clasificación",
     meKeepVoting: "Siga votando para desbloquear su clasificación completa",
     completedLearnMoreManual:
@@ -166,16 +164,15 @@ export const comparisonResultsTabTranslations: Record<
   },
   fa: {
     title: "رتبه‌بندی جامعه",
-    noResults:
-      "هنوز داده رتبه‌بندی وجود ندارد. اولین نفری باشید که شرکت می‌کند!",
+    noResults: "برای این نتیجه رتبه‌بندی در دسترس نیست.",
     noItems: "موردی در این دسته‌بندی وجود ندارد.",
-    subtitle: "تجمیع شده از آرای همه شرکت‌کنندگان",
+    subtitle: "بر اساس مقایسه‌های منظورشده در این نتیجه",
     scoreScaleExplanation:
       "امتیازها از مقیاس ثابت ۰ تا ۱۰۰ استفاده می‌کنند. تفاوت‌های کوچک کوچک می‌مانند و هر رتبه‌بندی برای پر کردن نوارها کشیده نمی‌شود. این امتیازها درصد شرکت‌کنندگان نیستند.",
     loadingError: "بارگذاری نتایج ناموفق بود.",
     retryButton: "دوباره تلاش کنید",
     communityLearnMoreHow:
-      "آرا فوراً محاسبه می‌شوند. ترجیحات فردی با الگوریتم Solidago، سیستم متن‌باز که آرا را بر اساس سطح اعتماد کاربر وزن‌دهی می‌کند، در رتبه‌بندی جمعی تجمیع می‌شوند.",
+      "Solidago مقایسه‌های منظورشده را ترکیب می‌کند تا رتبه‌بندی جمعی به دست آید. رتبه‌بندی جدید پس از پایان محاسبه نمایش داده می‌شود.",
     communityLearnMoreDiversity:
       "گزاره‌ها در گروه‌های تصادفی ارائه می‌شوند تا از تعصب موقعیتی جلوگیری شود. مقایسه‌های غیرمستقیم استنتاج می‌شوند تا دورهای رأی‌گیری کمینه شوند.",
     communityLearnMoreSourceManual:
@@ -186,7 +183,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "رتبه‌بندی شما صرفاً بر اساس مقایسه‌هایی است که انجام داده‌اید. وقتی گزاره‌های کافی را مقایسه کنید، یک رتبه‌بندی شخصی کامل ظاهر می‌شود.",
     meLearnMoreCounts:
-      "آرای شما نیز فوراً در رتبه‌بندی جامعه وارد می‌شوند. نیازی نیست ابتدا رتبه‌بندی شخصی خود را تکمیل کنید.",
+      "حتی پیش از کامل شدن رتبه‌بندی شخصی، مقایسه‌های ذخیره‌شدهٔ شما می‌توانند در رتبه‌بندی جمعی نقش داشته باشند.",
     tabSummary: "خلاصه",
     tabMe: "من",
     tabResults: "نتایج",
@@ -194,8 +191,8 @@ export const comparisonResultsTabTranslations: Record<
     tabCanceled: "لغو شده",
     meTitle: "رتبه‌بندی من",
     meSubtitle: "ترتیب شخصی شما بر اساس مقایسه‌هایتان",
-    meVotesCounted: "آرای شما از قبل در رتبه‌بندی جامعه محاسبه شده‌اند",
-    meProgress: "{percent}% کامل · {votes} رأی",
+    meVotesCounted: "مقایسه‌هایتان ذخیره شد.",
+    meProgress: "{percent} کامل · {votes} رأی",
     meStartVoting: "برای باز کردن رتبه‌بندی خود رأی‌گیری را شروع کنید",
     meKeepVoting: "برای باز کردن رتبه‌بندی کامل به رأی‌گیری ادامه دهید",
     completedLearnMoreManual:
@@ -209,15 +206,15 @@ export const comparisonResultsTabTranslations: Record<
   },
   he: {
     title: "דירוג הקהילה",
-    noResults: "אין עדיין נתוני דירוג. היו הראשונים להשתתף!",
+    noResults: "אין דירוג זמין לתוצאה זו.",
     noItems: "אין פריטים בקטגוריה זו.",
-    subtitle: "מצטבר מהצבעות כל המשתתפים",
+    subtitle: "על סמך ההשוואות שנכללו בתוצאה זו",
     scoreScaleExplanation:
       "הציונים משתמשים בסולם קבוע מ־0 עד 100. הבדלים קטנים נשארים קטנים, במקום למתוח כל דירוג כדי למלא את הפסים. הציונים אינם אחוזים מהמשתתפים.",
     loadingError: "טעינת התוצאות נכשלה.",
     retryButton: "נסו שוב",
     communityLearnMoreHow:
-      "ההצבעות נספרות מיידית. העדפות אישיות מצטברות לדירוג קהילתי באמצעות Solidago, אלגוריתם בקוד פתוח שמשקלל הצבעות לפי רמת האמון של המשתמש.",
+      "Solidago משלב את ההשוואות שנכללו בדירוג הקבוצתי. הדירוג המעודכן מוצג כשהחישוב מסתיים.",
     communityLearnMoreDiversity:
       "פריטים מוצגים בקבוצות אקראיות למניעת הטיית מיקום. השוואות עקיפות מוסקות כדי למזער סיבובי הצבעה.",
     communityLearnMoreSourceManual:
@@ -228,7 +225,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "הדירוג שלכם מבוסס אך ורק על ההשוואות שביצעתם. ברגע שתשוו מספיק הצהרות, יופיע דירוג אישי מלא.",
     meLearnMoreCounts:
-      "ההצבעות שלכם מוזנות גם לדירוג הקהילתי מיידית. אין צורך לסיים את הדירוג האישי קודם.",
+      "ההשוואות השמורות שלך יכולות להשפיע על הדירוג הקבוצתי עוד לפני השלמת הדירוג האישי.",
     tabSummary: "סיכום",
     tabMe: "אני",
     tabResults: "תוצאות",
@@ -236,8 +233,8 @@ export const comparisonResultsTabTranslations: Record<
     tabCanceled: "בוטל",
     meTitle: "הדירוג שלי",
     meSubtitle: "הדירוג האישי שלכם על בסיס ההשוואות שלכם",
-    meVotesCounted: "ההצבעות שלכם כבר נספרות בדירוג הקהילתי",
-    meProgress: "{percent}% הושלם · {votes} הצבעות",
+    meVotesCounted: "ההשוואות שלך נשמרו.",
+    meProgress: "{percent} הושלם · {votes} הצבעות",
     meStartVoting: "התחילו להצביע כדי לפתוח את הדירוג שלכם",
     meKeepVoting: "המשיכו להצביע כדי לפתוח את הדירוג המלא שלכם",
     completedLearnMoreManual:
@@ -251,15 +248,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   fr: {
     title: "Classement de la communauté",
-    noResults:
-      "Pas encore de données de classement. Soyez le premier à participer !",
-    subtitle: "Agrégé à partir des votes de tous les participants",
+    noResults: "Aucun classement disponible pour ce résultat.",
+    subtitle: "D’après les comparaisons prises en compte dans ce résultat",
     scoreScaleExplanation:
       "Les scores utilisent une échelle fixe de 0 à 100. Les petits écarts restent petits, au lieu d’étirer chaque classement pour remplir les barres. Ces scores ne sont pas des pourcentages de participants.",
     loadingError: "Échec du chargement des résultats.",
     retryButton: "Réessayer",
     communityLearnMoreHow:
-      "Les votes comptent immédiatement. Les préférences individuelles sont agrégées en un classement communautaire via Solidago, un algorithme open source qui pondère les votes selon le niveau de confiance de l'utilisateur.",
+      "Solidago combine les comparaisons prises en compte pour établir le classement collectif. Le classement est actualisé une fois le calcul terminé.",
     communityLearnMoreDiversity:
       "Les éléments sont présentés dans des groupes aléatoires pour éviter le biais de position. Les comparaisons indirectes sont déduites pour minimiser les tours de vote.",
     communityLearnMoreSourceManual:
@@ -270,7 +266,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "Votre classement est basé uniquement sur les comparaisons que vous avez effectuées. Une fois suffisamment de propositions comparées, un classement personnel complet émerge.",
     meLearnMoreCounts:
-      "Vos votes alimentent aussi le classement de la communauté immédiatement. Vous n'avez pas besoin de terminer votre classement personnel d'abord.",
+      "Vos comparaisons enregistrées peuvent contribuer au classement collectif avant même que votre classement personnel soit complet.",
     tabSummary: "Résumé",
     tabMe: "Moi",
     tabResults: "Résultats",
@@ -279,9 +275,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "Aucun élément dans cette catégorie.",
     meTitle: "Mon classement",
     meSubtitle: "Votre classement personnel basé sur vos comparaisons",
-    meVotesCounted:
-      "Vos votes sont déjà pris en compte dans le classement de la communauté",
-    meProgress: "{percent}% terminé · {votes} votes",
+    meVotesCounted: "Vos comparaisons ont été enregistrées.",
+    meProgress: "{percent} terminé · {votes} votes",
     meStartVoting: "Commencez à voter pour débloquer votre classement",
     meKeepVoting: "Continuez à voter pour débloquer votre classement complet",
     completedLearnMoreManual:
@@ -295,14 +290,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   "zh-Hans": {
     title: "社区排名",
-    noResults: "暂无排名数据。成为第一个参与者！",
-    subtitle: "汇总所有参与者的投票",
+    noResults: "此结果暂无排名。",
+    subtitle: "基于此结果所计入的比较",
     scoreScaleExplanation:
       "评分采用固定的 0–100 刻度。小差异仍然保持较小，不会为了填满条形图而拉伸每个排名。这些评分不是参与者的百分比。",
     loadingError: "加载结果失败。",
     retryButton: "重试",
     communityLearnMoreHow:
-      "投票立即生效。个人偏好通过 Solidago（一种按用户信任级别加权投票的开源算法）汇总为社区排名。",
+      "Solidago 汇总纳入计算的比较，生成集体排名。新排名会在计算完成后显示。",
     communityLearnMoreDiversity:
       "项目以随机分组呈现，防止位置偏差。间接比较会被推断以减少投票轮数。",
     communityLearnMoreSourceManual:
@@ -312,7 +307,7 @@ export const comparisonResultsTabTranslations: Record<
     communityLearnMoreReference: "了解更多：",
     meLearnMorePersonal:
       "您的排名仅基于您所做的比较。当您比较足够多的意见后，完整的个人排名将会出现。",
-    meLearnMoreCounts: "您的投票也会立即计入社区排名。您不需要先完成个人排名。",
+    meLearnMoreCounts: "即使个人排名尚未完成，已保存的比较也可计入集体排名。",
     tabSummary: "总结",
     tabMe: "我",
     tabResults: "结果",
@@ -321,8 +316,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "此分类中没有项目。",
     meTitle: "我的排名",
     meSubtitle: "基于您的比较的个人排名",
-    meVotesCounted: "您的投票已计入社区排名",
-    meProgress: "{percent}% 完成 · {votes} 票",
+    meVotesCounted: "您的比较已保存。",
+    meProgress: "{percent} 完成 · {votes} 票",
     meStartVoting: "开始投票以解锁您的排名",
     meKeepVoting: "继续投票以解锁完整排名",
     completedLearnMoreManual:
@@ -335,14 +330,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   "zh-Hant": {
     title: "社群排名",
-    noResults: "暫無排名資料。成為第一個參與者！",
-    subtitle: "匯總所有參與者的投票",
+    noResults: "此結果目前沒有排名。",
+    subtitle: "依據此結果所計入的比較",
     scoreScaleExplanation:
       "評分採用固定的 0–100 刻度。小差異仍然保持較小，不會為了填滿長條圖而拉伸每個排名。這些評分不是參與者的百分比。",
     loadingError: "載入結果失敗。",
     retryButton: "重試",
     communityLearnMoreHow:
-      "投票立即生效。個人偏好透過 Solidago（一種按使用者信任級別加權投票的開源演算法）匯總為社群排名。",
+      "Solidago 彙整納入計算的比較，產生集體排名。新排名會在計算完成後顯示。",
     communityLearnMoreDiversity:
       "項目以隨機分組呈現，防止位置偏差。間接比較會被推斷以減少投票輪數。",
     communityLearnMoreSourceManual:
@@ -352,7 +347,7 @@ export const comparisonResultsTabTranslations: Record<
     communityLearnMoreReference: "了解更多：",
     meLearnMorePersonal:
       "您的排名僅基於您所做的比較。當您比較足夠多的意見後，完整的個人排名將會出現。",
-    meLearnMoreCounts: "您的投票也會立即計入社群排名。您不需要先完成個人排名。",
+    meLearnMoreCounts: "即使個人排名尚未完成，已儲存的比較仍可計入集體排名。",
     tabSummary: "總結",
     tabMe: "我",
     tabResults: "結果",
@@ -361,8 +356,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "此分類中沒有項目。",
     meTitle: "我的排名",
     meSubtitle: "基於您的比較的個人排名",
-    meVotesCounted: "您的投票已計入社群排名",
-    meProgress: "{percent}% 完成 · {votes} 票",
+    meVotesCounted: "您的比較已儲存。",
+    meProgress: "{percent} 完成 · {votes} 票",
     meStartVoting: "開始投票以解鎖您的排名",
     meKeepVoting: "繼續投票以解鎖完整排名",
     completedLearnMoreManual:
@@ -375,14 +370,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   ja: {
     title: "コミュニティランキング",
-    noResults: "まだランキングデータがありません。最初の参加者になりましょう！",
-    subtitle: "全参加者の投票を集計",
+    noResults: "この結果には順位がありません。",
+    subtitle: "この結果の集計対象となった比較に基づきます",
     scoreScaleExplanation:
       "スコアは0から100の固定尺度です。順位ごとに棒を引き伸ばさないため、小さな差は小さなまま表示されます。参加者の割合を表すものではありません。",
     loadingError: "結果の読み込みに失敗しました。",
     retryButton: "再試行",
     communityLearnMoreHow:
-      "投票は即座に反映されます。個人の好みはSolidago（ユーザーの信頼レベルに基づいて投票を重み付けするオープンソースアルゴリズム）でコミュニティランキングに集約されます。",
+      "Solidago が集計対象の比較をまとめて全体の順位を算出します。新しい順位は計算が完了すると表示されます。",
     communityLearnMoreDiversity:
       "項目はランダムなグループで提示され、位置バイアスを防止します。間接比較も推論され、投票ラウンドを最小化します。",
     communityLearnMoreSourceManual:
@@ -393,7 +388,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "あなたのランキングは、あなたが行った比較のみに基づいています。十分な意見を比較すると、完全な個人ランキングが表示されます。",
     meLearnMoreCounts:
-      "あなたの投票はコミュニティランキングにも即座に反映されます。個人ランキングを先に完了する必要はありません。",
+      "個人の順位付けが完了する前でも、保存した比較は全体の順位に反映されることがあります。",
     tabSummary: "サマリー",
     tabMe: "私",
     tabResults: "結果",
@@ -402,9 +397,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "このカテゴリにはアイテムがありません。",
     meTitle: "マイランキング",
     meSubtitle: "あなたの比較に基づく個人ランキング",
-    meVotesCounted:
-      "あなたの投票はすでにコミュニティランキングに反映されています",
-    meProgress: "{percent}% 完了 · {votes} 票",
+    meVotesCounted: "比較を保存しました。",
+    meProgress: "{percent} 完了 · {votes} 票",
     meStartVoting: "投票を始めてランキングを解除",
     meKeepVoting: "投票を続けてフルランキングを解除",
     completedLearnMoreManual:
@@ -418,14 +412,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   ky: {
     title: "Коомдук рейтинг",
-    noResults: "Рейтинг маалыматы жок. Биринчи катышуучу болуңуз!",
-    subtitle: "Бардык катышуучулардын добуштарынан топтолгон",
+    noResults: "Бул жыйынтык үчүн рейтинг жок.",
+    subtitle: "Ушул жыйынтыкка кирген салыштыруулар боюнча",
     scoreScaleExplanation:
       "Упайлар 0дөн 100гө чейинки туруктуу шкаланы колдонот. Ар бир рейтинг тилкелерди толтуруу үчүн созулбайт, ошондуктан кичине айырмачылыктар кичине бойдон калат. Бул упайлар катышуучулардын пайызын билдирбейт.",
     loadingError: "Натыйжаларды жүктөө ишке ашкан жок.",
     retryButton: "Кайра аракет кылуу",
     communityLearnMoreHow:
-      "Добуштар дароо эсепке алынат. Жеке каалоолор Solidago (колдонуучунун ишеним деңгээлине жараша добуштарды салмактаган ачык булак алгоритми) менен коомдук рейтингге бириктирилет.",
+      "Solidago эсепке кирген салыштыруулардан жалпы рейтинг түзөт. Жаңыртылган рейтинг эсептөө аяктаганда көрүнөт.",
     communityLearnMoreDiversity:
       "Элементтер позициялык калыстыксыздыкты алдын алуу үчүн кокустук топтордо берилет. Кыйыр салыштыруулар добуш берүү раунддарын азайтуу үчүн чыгарылат.",
     communityLearnMoreSourceManual:
@@ -436,7 +430,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "Сиздин рейтингиңиз сиз жасаган салыштырууларга гана негизделген. Жетиштүү пикирлерди салыштырганда, толук жеке рейтинг пайда болот.",
     meLearnMoreCounts:
-      "Сиздин добуштарыңыз коомдук рейтингге да дароо кирет. Адегенде жеке рейтингиңизди аяктоонун кереги жок.",
+      "Жеке рейтингиңиз толуктала электе эле сакталган салыштырууларыңыз жалпы рейтингге кошулушу мүмкүн.",
     tabSummary: "Кыскача",
     tabMe: "Мен",
     tabResults: "Натыйжалар",
@@ -445,8 +439,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "Бул категорияда элементтер жок.",
     meTitle: "Менин рейтингим",
     meSubtitle: "Сиздин салыштырууларыңызга негизделген жеке рейтинг",
-    meVotesCounted: "Сиздин добуштарыңыз коомдук рейтингде эсепке алынган",
-    meProgress: "{percent}% аяктаган · {votes} добуш",
+    meVotesCounted: "Салыштырууларыңыз сакталды.",
+    meProgress: "{percent} аяктаган · {votes} добуш",
     meStartVoting: "Рейтингди ачуу үчүн добуш берүүнү баштаңыз",
     meKeepVoting: "Толук рейтингди ачуу үчүн добуш берүүнү улантыңыз",
     completedLearnMoreManual:
@@ -460,14 +454,14 @@ export const comparisonResultsTabTranslations: Record<
   },
   ru: {
     title: "Рейтинг сообщества",
-    noResults: "Данных рейтинга пока нет. Станьте первым участником!",
-    subtitle: "Агрегировано из голосов всех участников",
+    noResults: "Для этого результата рейтинг недоступен.",
+    subtitle: "По сравнениям, учтённым в этом результате",
     scoreScaleExplanation:
       "Оценки используют фиксированную шкалу от 0 до 100. Небольшие различия остаются небольшими: каждый рейтинг не растягивается до полной длины полос. Это не процент участников.",
     loadingError: "Не удалось загрузить результаты.",
     retryButton: "Попробовать ещё раз",
     communityLearnMoreHow:
-      "Голоса учитываются сразу. Индивидуальные предпочтения агрегируются в общий рейтинг с помощью Solidago, алгоритма с открытым кодом, взвешивающего голоса по уровню доверия пользователя.",
+      "Solidago объединяет учтённые сравнения в общий рейтинг. Обновлённый рейтинг появляется после завершения расчёта.",
     communityLearnMoreDiversity:
       "Элементы представляются в рандомизированных группах для предотвращения позиционного смещения. Косвенные сравнения выводятся автоматически для минимизации раундов голосования.",
     communityLearnMoreSourceManual:
@@ -478,7 +472,7 @@ export const comparisonResultsTabTranslations: Record<
     meLearnMorePersonal:
       "Ваш рейтинг основан исключительно на сделанных вами сравнениях. Когда вы сравните достаточно высказываний, появится полный личный рейтинг.",
     meLearnMoreCounts:
-      "Ваши голоса также сразу учитываются в рейтинге сообщества. Вам не нужно сначала завершить личный рейтинг.",
+      "Сохранённые сравнения могут учитываться в общем рейтинге, даже если ваш личный рейтинг ещё не готов.",
     tabSummary: "Обзор",
     tabMe: "Я",
     tabResults: "Результаты",
@@ -487,8 +481,8 @@ export const comparisonResultsTabTranslations: Record<
     noItems: "В этой категории нет элементов.",
     meTitle: "Мой рейтинг",
     meSubtitle: "Ваш личный рейтинг на основе ваших сравнений",
-    meVotesCounted: "Ваши голоса уже учтены в рейтинге сообщества",
-    meProgress: "Завершено: {percent}% · голосов: {votes}",
+    meVotesCounted: "Ваши сравнения сохранены.",
+    meProgress: "Завершено: {percent} · голосов: {votes}",
     meStartVoting: "Начните голосовать, чтобы разблокировать ваш рейтинг",
     meKeepVoting: "Продолжайте голосовать, чтобы разблокировать полный рейтинг",
     completedLearnMoreManual:

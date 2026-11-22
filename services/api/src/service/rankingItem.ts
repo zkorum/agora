@@ -35,6 +35,7 @@ import {
 } from "./richText.js";
 import {
     buildRankingItemDisplayContentByContentId,
+    type RankingItemDisplaySource,
     type RankingItemDisplayPreferences,
 } from "./rankingItemDisplay.js";
 import type { RankingItemContentSource } from "./contentTranslation.js";
@@ -482,18 +483,21 @@ export async function fetchRankingItems({
         )
         .orderBy(asc(rankingItemTable.position), asc(rankingItemTable.id));
 
-    const sources = rows.map((r) => ({
-        conversationSlugId,
-        itemSlugId: r.slugId,
-        contentId: r.contentId,
-        publicId: r.publicId,
-        title: r.title,
-        bodyHtml: r.body,
-        sourceLanguageCode: r.sourceLanguageCode,
-        sourceRawLanguageCode: r.sourceRawLanguageCode,
-        sourceLanguageProvider: r.sourceLanguageProvider,
-        sourceLanguageConfidence: r.sourceLanguageConfidence,
-    }));
+    const sources = rows.map(
+        (r): RankingItemDisplaySource => ({
+            conversationSlugId,
+            itemSlugId: r.slugId,
+            contentId: r.contentId,
+            publicId: r.publicId,
+            title: r.title,
+            bodyHtml: r.body,
+            sourceLanguageCode: r.sourceLanguageCode,
+            sourceRawLanguageCode: r.sourceRawLanguageCode,
+            sourceLanguageProvider: r.sourceLanguageProvider,
+            sourceLanguageConfidence: r.sourceLanguageConfidence,
+            permitsNewTranslation: true,
+        }),
+    );
     const displayContentByContentId =
         await buildRankingItemDisplayContentByContentId({
             db,
@@ -544,7 +548,6 @@ export async function updateRankingItemLifecycle({
             db,
             conversationSlugId,
         });
-
 
     const now = new Date();
     const transition = await db.transaction(async (tx) => {

@@ -32,6 +32,8 @@ import { reconcileOpinionVoteCounters } from "@/shared-backend/conversationCount
 import { scheduleAnalysisUpdate } from "@/shared-backend/analysisScheduler.js";
 import { lockAccountConversations } from "@/shared-backend/accountContributions.js";
 import { mergeQvResponses } from "@/shared-backend/qvAccountLifecycle.js";
+import { setRetainedParticipantAccountHidden } from "@/shared-backend/retainedParticipantEligibility.js";
+import { gatheringResponseTable } from "@/shared-backend/schema.js";
 import type { LogContext } from "@/shared-backend/logPrivacy.js";
 import { recordIdentityChangedUsers } from "./authSession.js";
 import { setOrganizationMembershipRole } from "./projectAccess.js";
@@ -260,7 +262,10 @@ export async function mergeGuestIntoVerifiedUser({
         );
 
     const guestOrgMappings = await db
-        .select({ organizationId: organizationMembershipTable.organizationId, role: organizationMembershipTable.role })
+        .select({
+            organizationId: organizationMembershipTable.organizationId,
+            role: organizationMembershipTable.role,
+        })
         .from(organizationMembershipTable)
         .where(
             and(
@@ -269,13 +274,29 @@ export async function mergeGuestIntoVerifiedUser({
             ),
         );
 
-    const destinationMemberships = await db.select({ organizationId: organizationMembershipTable.organizationId, role: organizationMembershipTable.role })
+    const destinationMemberships = await db
+        .select({
+            organizationId: organizationMembershipTable.organizationId,
+            role: organizationMembershipTable.role,
+        })
         .from(organizationMembershipTable)
-        .where(and(eq(organizationMembershipTable.userId, verifiedUserId), isNull(organizationMembershipTable.deletedAt)));
+        .where(
+            and(
+                eq(organizationMembershipTable.userId, verifiedUserId),
+                isNull(organizationMembershipTable.deletedAt),
+            ),
+        );
     for (const mapping of guestOrgMappings) {
-        const destination = destinationMemberships.find((membership) => membership.organizationId === mapping.organizationId);
-        const role = mapping.role === "admin" || destination?.role === "admin" ? "admin"
-            : mapping.role === "manager" || destination?.role === "manager" ? "manager" : "moderator";
+        const destination = destinationMemberships.find(
+            (membership) =>
+                membership.organizationId === mapping.organizationId,
+        );
+        const role =
+            mapping.role === "admin" || destination?.role === "admin"
+                ? "admin"
+                : mapping.role === "manager" || destination?.role === "manager"
+                  ? "manager"
+                  : "moderator";
         await setOrganizationMembershipRole({
             db,
             userId: verifiedUserId,
@@ -386,6 +407,56 @@ export async function mergeGuestIntoVerifiedUser({
         );
 
     await mergeQvResponses({ db, guestUserId, verifiedUserId, now });
+    const destinationGathering = alias(
+        gatheringResponseTable,
+        "merge_destination_gathering",
+    );
+    await db
+        .update(gatheringResponseTable)
+        .set({ authorId: verifiedUserId })
+        .where(
+            and(
+                eq(gatheringResponseTable.authorId, guestUserId),
+                inArray(gatheringResponseTable.conversationId, conversationIds),
+                notExists(
+                    db
+                        .select({ id: destinationGathering.id })
+                        .from(destinationGathering)
+                        .where(
+                            and(
+                                eq(
+                                    destinationGathering.authorId,
+                                    verifiedUserId,
+                                ),
+                                eq(
+                                    destinationGathering.conversationId,
+                                    gatheringResponseTable.conversationId,
+                                ),
+                                eq(destinationGathering.isSeed, false),
+                            ),
+                        ),
+                ),
+            ),
+        );
+    // A destination root wins even if explicitly deleted; merge cannot reset its allowance.
+    await db
+        .update(gatheringResponseTable)
+        .set({ accountHiddenAt: now })
+        .where(
+            and(
+                eq(gatheringResponseTable.authorId, guestUserId),
+                inArray(gatheringResponseTable.conversationId, conversationIds),
+            ),
+        );
+
+    // Sealed history keeps its original participant, never a replacement account.
+    // Retiring the guest must exclude that historical identity just like a
+    // capture that observes the already-retired account.
+    await setRetainedParticipantAccountHidden({
+        db,
+        userId: guestUserId,
+        isAccountHidden: true,
+    });
 
     await db
         .update(userTable)
@@ -404,6 +475,10 @@ export async function mergeGuestIntoVerifiedUser({
         ),
     });
     for (const conversationId of conversationIds) {
-        await scheduleAnalysisUpdate({ db, conversationId, log });
+        await scheduleAnalysisUpdate({
+            db,
+            conversationId,
+            log,
+        });
     }
 }

@@ -45,10 +45,11 @@
       @discard="showDiscard = true"
     />
     <QvAnalysisTab
+      :can-edit-conversation="false"
       v-else
       :conversation-slug-id="undefined"
       :is-closed="closed"
-      :on-view-statements="
+      :on-view-items="
         () => {
           tab = 'comment';
         }
@@ -71,7 +72,7 @@
 import PostActionBar from "src/components/post/interactionBar/PostActionBar.vue";
 import QvAllocationEditor from "src/components/post/qv/QvAllocationEditor.vue";
 import QvAnalysisTab from "src/components/post/qv/QvAnalysisTab.vue";
-import type { QvStatement } from "src/components/post/qv/QvVoting.types";
+import type { QvItem } from "src/components/post/qv/QvVoting.types";
 import ZKConfirmDialog from "src/components/ui-library/ZKConfirmDialog.vue";
 import type { QvAllocation } from "src/shared/utils/qv";
 import { ref } from "vue";
@@ -81,7 +82,7 @@ const closed = ref(false);
 const allowOpposition = ref(true);
 const showDiscard = ref(false);
 const allocations = ref<QvAllocation[]>([]);
-const items: QvStatement[] = [
+const items: QvItem[] = [
   {
     slugId: "trees",
     title: "Plant shade trees along everyday walking routes.",

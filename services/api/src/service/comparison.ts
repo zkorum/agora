@@ -1,4 +1,6 @@
 import {
+    comparisonAnalysisCloseTable,
+    conversationAnalysisCloseTable,
     conversationTable,
     comparisonResponseTable,
     comparisonAnswerTable,
@@ -13,9 +15,12 @@ import {
     comparisonUserEntityScoreTable,
     userTable,
 } from "@/shared-backend/schema.js";
-import { currentRankingItemSourceCondition } from "@/shared-backend/opinionEligibility.js";
+import {
+    currentRankingItemSourceCondition,
+    historicalRankingItemSourceCondition,
+} from "@/shared-backend/opinionEligibility.js";
 import { type PostgresJsDatabase as PostgresDatabase } from "drizzle-orm/postgres-js";
-import { useCommonPost } from "./common.js";
+import { alias } from "drizzle-orm/pg-core";
 import { httpErrors } from "@fastify/sensible";
 
 import {
@@ -24,8 +29,10 @@ import {
     count,
     desc,
     exists,
+    gte,
     inArray,
     isNull,
+    or,
     sql,
 } from "drizzle-orm";
 import {
@@ -48,9 +55,14 @@ import { VALKEY_QUEUE_KEYS } from "@/shared-backend/valkeyQueues.js";
 import { log } from "@/app.js";
 import {
     buildRankingItemDisplayContentByContentId,
+    type RankingItemDisplaySource,
     type RankingItemDisplayPreferences,
 } from "./rankingItemDisplay.js";
-import { getPrimaryDatabase, hasPrimaryDatabase } from "@/shared-backend/db.js";
+import {
+    getPrimaryDatabase,
+    getReplicaDatabase,
+    type ReplicaDatabase,
+} from "@/shared-backend/db.js";
 import type { RankingPerformance } from "@/utils/rankingPerformance.js";
 import { syncComparisonAnswers } from "./comparisonHistory.js";
 import { buildComparisonAppearanceCountQuery } from "./comparisonQueries.js";
@@ -61,6 +73,12 @@ import {
     type CheckConversationParticipationFailure,
 } from "./participationGate.js";
 import type { SupportedDisplayLanguageCodes } from "@/shared/languages.js";
+import {
+    currentAnalysisCloseCondition,
+    readableAnalysisConversationCondition,
+} from "./closedAnalysisQueries.js";
+import { describeClosedAnalysisSelection } from "./closedAnalysisSelectionState.js";
+import { selectedComparisonStatsSnapshot } from "./comparisonCloseSelection.js";
 
 // --- Types ---
 
@@ -483,23 +501,17 @@ export async function loadComparisonResponse({
 
 type LifecycleFilter = RankingItemLifecycleStatus | "all";
 
-async function resolveRankingReadDatabase({
+async function requireRankingSnapshotReadFloor({
     db,
     conversationId,
     requestedRankingStatsSnapshotId,
 }: {
-    db: PostgresDatabase;
+    db: ReplicaDatabase;
     conversationId: number;
-    requestedRankingStatsSnapshotId: number | undefined;
-}): Promise<PostgresDatabase> {
-    if (
-        requestedRankingStatsSnapshotId === undefined ||
-        !hasPrimaryDatabase(db)
-    ) {
-        return db;
-    }
-
-    const latestReplicaRows = await db
+    requestedRankingStatsSnapshotId: number;
+}): Promise<void> {
+    // Publication IDs, not wall-clock order, define this lower bound.
+    const rows = await db
         .select({ id: rankingConversationStatsSnapshotTable.id })
         .from(rankingConversationStatsSnapshotTable)
         .where(
@@ -509,39 +521,16 @@ async function resolveRankingReadDatabase({
                     conversationId,
                 ),
                 isNull(rankingConversationStatsSnapshotTable.deletedAt),
-            ),
-        )
-        .orderBy(
-            desc(rankingConversationStatsSnapshotTable.createdAt),
-            desc(rankingConversationStatsSnapshotTable.id),
-        )
-        .limit(1);
-    if ((latestReplicaRows.at(0)?.id ?? 0) >= requestedRankingStatsSnapshotId) {
-        return db;
-    }
-
-    const primaryDb = getPrimaryDatabase(db);
-    const latestPrimaryRows = await primaryDb
-        .select({ id: rankingConversationStatsSnapshotTable.id })
-        .from(rankingConversationStatsSnapshotTable)
-        .where(
-            and(
-                eq(
-                    rankingConversationStatsSnapshotTable.conversationId,
-                    conversationId,
+                gte(
+                    rankingConversationStatsSnapshotTable.id,
+                    requestedRankingStatsSnapshotId,
                 ),
-                isNull(rankingConversationStatsSnapshotTable.deletedAt),
             ),
         )
-        .orderBy(
-            desc(rankingConversationStatsSnapshotTable.createdAt),
-            desc(rankingConversationStatsSnapshotTable.id),
-        )
         .limit(1);
-    if ((latestPrimaryRows.at(0)?.id ?? 0) < requestedRankingStatsSnapshotId) {
+    if (rows.length === 0) {
         throw httpErrors.notFound("Ranking snapshot not found");
     }
-    return primaryDb;
 }
 
 interface GetComparisonResultsProps {
@@ -567,77 +556,93 @@ async function getHistoricalComparisonResults({
     rankingStatsSnapshotId: number;
     displayPreferences: RankingItemDisplayPreferences;
 }): Promise<ComparisonResultsResponse> {
-    const loadPublishedSnapshot = async (queryDb: PostgresDatabase) => {
-        const earliestSnapshotId = queryDb
-            .select({ id: rankingConversationStatsSnapshotTable.id })
-            .from(rankingConversationStatsSnapshotTable)
-            .where(
-                and(
-                    eq(
-                        rankingConversationStatsSnapshotTable.conversationId,
-                        conversationId,
+    // Historical numbers are frozen, but source redaction must use current rows.
+    const primary = getPrimaryDatabase(db);
+    const snapshot = rankingConversationStatsSnapshotTable;
+    const earliest = primary
+        .select({ id: snapshot.id })
+        .from(snapshot)
+        .where(
+            and(
+                eq(snapshot.conversationId, conversationId),
+                isNull(snapshot.deletedAt),
+            ),
+        )
+        .orderBy(snapshot.createdAt, snapshot.id)
+        .limit(1);
+    const checkpoint = rankingConversationStatsCheckpointTable;
+    const published = await primary
+        .select({
+            id: snapshot.id,
+            closingId: comparisonAnalysisCloseTable.closingStatsSnapshotId,
+        })
+        .from(snapshot)
+        .innerJoin(
+            conversationTable,
+            and(
+                eq(conversationTable.id, snapshot.conversationId),
+                readableAnalysisConversationCondition(primary),
+            ),
+        )
+        .leftJoin(
+            comparisonAnalysisCloseTable,
+            eq(
+                comparisonAnalysisCloseTable.originalStatsSnapshotId,
+                snapshot.id,
+            ),
+        )
+        .where(
+            and(
+                eq(snapshot.id, rankingStatsSnapshotId),
+                eq(snapshot.conversationId, conversationId),
+                isNull(snapshot.deletedAt),
+                or(
+                    eq(snapshot.id, earliest),
+                    exists(
+                        primary
+                            .select({ id: checkpoint.id })
+                            .from(checkpoint)
+                            .where(eq(checkpoint.statsSnapshotId, snapshot.id)),
                     ),
-                    isNull(rankingConversationStatsSnapshotTable.deletedAt),
                 ),
-            )
-            .orderBy(
-                rankingConversationStatsSnapshotTable.createdAt,
-                rankingConversationStatsSnapshotTable.id,
-            )
-            .limit(1);
-        const snapshotRows = await queryDb
-            .select({
-                id: rankingConversationStatsSnapshotTable.id,
-                hasCheckpoint: exists(
-                    queryDb
-                        .select({
-                            id: rankingConversationStatsCheckpointTable.id,
-                        })
-                        .from(rankingConversationStatsCheckpointTable)
-                        .where(
-                            eq(
-                                rankingConversationStatsCheckpointTable.statsSnapshotId,
-                                rankingConversationStatsSnapshotTable.id,
-                            ),
-                        ),
-                ),
-                isEarliest: sql<boolean>`${rankingConversationStatsSnapshotTable.id} = (${earliestSnapshotId})`,
-            })
-            .from(rankingConversationStatsSnapshotTable)
-            .where(
-                and(
-                    eq(
-                        rankingConversationStatsSnapshotTable.id,
-                        rankingStatsSnapshotId,
-                    ),
-                    eq(
-                        rankingConversationStatsSnapshotTable.conversationId,
-                        conversationId,
-                    ),
-                    isNull(rankingConversationStatsSnapshotTable.deletedAt),
-                ),
-            )
-            .limit(1);
-        const snapshot = snapshotRows.at(0);
-        return {
-            queryDb,
-            isPublished:
-                snapshot !== undefined &&
-                [snapshot.hasCheckpoint, snapshot.isEarliest].includes(true),
-        };
-    };
-    let snapshotAttempt = await loadPublishedSnapshot(db);
-    if (!snapshotAttempt.isPublished && hasPrimaryDatabase(db)) {
-        snapshotAttempt = await loadPublishedSnapshot(getPrimaryDatabase(db));
-    }
-    if (!snapshotAttempt.isPublished) {
+            ),
+        )
+        .limit(1);
+    const anchor = published.at(0);
+    if (anchor === undefined) {
         throw httpErrors.notFound("Ranking checkpoint not found");
     }
 
-    const itemRows = await snapshotAttempt.queryDb
+    return await readComparisonResultSnapshot({
+        db: primary,
+        conversationSlugId,
+        rankingStatsSnapshotId: anchor.closingId ?? anchor.id,
+        displayPreferences,
+        contentVisibility: "historical",
+    });
+}
+
+async function readComparisonResultSnapshot({
+    db,
+    conversationSlugId,
+    rankingStatsSnapshotId,
+    displayPreferences,
+    contentVisibility,
+}: {
+    db: PostgresDatabase;
+    conversationSlugId: string;
+    rankingStatsSnapshotId: number;
+    displayPreferences: RankingItemDisplayPreferences;
+    contentVisibility: "current" | "historical";
+}): Promise<ComparisonResultsResponse> {
+    const itemRows = await db
         .select({
             itemSlugId: rankingItemTable.slugId,
             content: rankingItemContentTable,
+            accountHiddenAt: rankingItemTable.accountHiddenAt,
+            authorIsDeleted: userTable.isDeleted,
+            isSeed: rankingItemTable.isSeed,
+            externalId: rankingItemExternalSourceTable.id,
             lifecycleStatus: rankingConversationStatsItemTable.lifecycleStatus,
             score: rankingConversationStatsItemTable.score,
             rank: rankingConversationStatsItemTable.rank,
@@ -655,13 +660,22 @@ async function getHistoricalComparisonResults({
         )
         .leftJoin(userTable, eq(userTable.id, rankingItemTable.authorId))
         .leftJoin(
+            rankingItemExternalSourceTable,
+            eq(
+                rankingItemExternalSourceTable.rankingItemId,
+                rankingItemTable.id,
+            ),
+        )
+        .leftJoin(
             rankingItemContentTable,
             and(
                 eq(
                     rankingItemContentTable.id,
                     rankingConversationStatsItemTable.rankingItemContentId,
                 ),
-                currentRankingItemSourceCondition(),
+                contentVisibility === "historical"
+                    ? historicalRankingItemSourceCondition()
+                    : currentRankingItemSourceCondition(),
             ),
         )
         .innerJoin(
@@ -678,10 +692,14 @@ async function getHistoricalComparisonResults({
                     rankingStatsSnapshotId,
                 ),
                 isNull(rankingConversationStatsItemTable.deletedAt),
+                eq(
+                    rankingConversationStatsItemTable.excludedByModeration,
+                    false,
+                ),
                 isNull(rankingConversationStatsSnapshotTable.deletedAt),
             ),
         );
-    const sources = itemRows.flatMap((row) =>
+    const sources = itemRows.flatMap((row): RankingItemDisplaySource[] =>
         row.content === null
             ? []
             : [
@@ -698,12 +716,15 @@ async function getHistoricalComparisonResults({
                           row.content.sourceLanguageProvider,
                       sourceLanguageConfidence:
                           row.content.sourceLanguageConfidence,
+                      permitsNewTranslation:
+                          row.accountHiddenAt === null &&
+                          (row.isSeed || row.authorIsDeleted === false),
                   },
               ],
     );
     const displayContentByContentId =
         await buildRankingItemDisplayContentByContentId({
-            db: snapshotAttempt.queryDb,
+            db,
             sources,
             preferences: displayPreferences,
         });
@@ -736,6 +757,7 @@ async function getHistoricalComparisonResults({
                 ...metadata,
                 isDeleted: false,
                 displayContent,
+                participantSubmitted: !row.isSeed && row.externalId === null,
                 externalUrl: row.externalUrl,
             };
         })
@@ -753,6 +775,92 @@ async function getHistoricalComparisonResults({
     return { rankings };
 }
 
+async function readSelectedComparisonResult({
+    db,
+    conversationSlugId,
+    displayPreferences,
+}: Pick<
+    GetComparisonResultsProps,
+    "db" | "conversationSlugId" | "displayPreferences"
+>) {
+    const close = conversationAnalysisCloseTable;
+    const native = comparisonAnalysisCloseTable;
+    const ranking = rankingConversationConfigTable;
+    return await getPrimaryDatabase(db).transaction(
+        async (tx) => {
+            const snapshot = selectedComparisonStatsSnapshot(tx);
+            const rows = await tx
+                .select({
+                    close,
+                    snapshotId: snapshot.id,
+                    itemCount: snapshot.itemCount,
+                    totalItemCount: snapshot.totalItemCount,
+                    voteCount: snapshot.voteCount,
+                    totalVoteCount: snapshot.totalVoteCount,
+                    participantCount: snapshot.participantCount,
+                    totalParticipantCount: snapshot.totalParticipantCount,
+                    liveRevision: ranking.scoringInputRevision,
+                    failedClosingRevision: native.failedClosingRevision,
+                    failedLiveRevision: native.failedLiveRevision,
+                })
+                .from(conversationTable)
+                .innerJoin(close, currentAnalysisCloseCondition())
+                .innerJoin(native, eq(native.closeId, close.id))
+                .innerJoin(
+                    ranking,
+                    eq(ranking.id, conversationTable.rankingConfigId),
+                )
+                .innerJoinLateral(snapshot, sql`true`)
+                .where(
+                    and(
+                        eq(conversationTable.slugId, conversationSlugId),
+                        readableAnalysisConversationCondition(tx),
+                    ),
+                )
+                .limit(1);
+            const row = rows.at(0);
+            if (row === undefined) return undefined;
+            const closedAnalysisSelection = describeClosedAnalysisSelection({
+                ...row.close,
+                closeId: row.close.id,
+                isSwitchable: true,
+                requestedResultRevision:
+                    row.close.selectedInputMode === "live"
+                        ? row.liveRevision
+                        : row.close.requestedResultRevision,
+                failed:
+                    row.close.selectedInputMode === "closing"
+                        ? row.failedClosingRevision ===
+                          row.close.minimumClosingResultRevision
+                        : row.failedLiveRevision === row.liveRevision,
+            });
+            const result = await readComparisonResultSnapshot({
+                db: tx,
+                conversationSlugId,
+                rankingStatsSnapshotId: row.snapshotId,
+                displayPreferences,
+                contentVisibility: "current",
+            });
+            return {
+                ...result,
+                closedAnalysisSelection,
+                counters: {
+                    opinionCount: row.itemCount,
+                    totalOpinionCount: row.totalItemCount,
+                    voteCount: row.voteCount,
+                    totalVoteCount: row.totalVoteCount,
+                    participantCount: row.participantCount,
+                    totalParticipantCount: row.totalParticipantCount,
+                    moderatedOpinionCount: 0,
+                    hiddenOpinionCount: 0,
+                    isClosed: true,
+                },
+            };
+        },
+        { isolationLevel: "repeatable read" },
+    );
+}
+
 export async function getComparisonResults({
     db,
     conversationSlugId,
@@ -762,11 +870,35 @@ export async function getComparisonResults({
     requestedRankingStatsSnapshotId,
     valkey,
 }: GetComparisonResultsProps): Promise<ComparisonResultsResponse> {
-    const { id: conversationId } =
-        await useCommonPost().getPostMetadataFromSlugId({
-            db,
-            conversationSlugId,
-        });
+    // A stale replica can still have the previous close after reopening.
+    const primaryDb = getPrimaryDatabase(db);
+    const native = comparisonAnalysisCloseTable;
+    const scope = (
+        await primaryDb
+            .select({
+                conversationId: conversationTable.id,
+                closeId: native.closeId,
+            })
+            .from(conversationTable)
+            .leftJoin(
+                conversationAnalysisCloseTable,
+                currentAnalysisCloseCondition(),
+            )
+            .leftJoin(
+                native,
+                eq(native.closeId, conversationAnalysisCloseTable.id),
+            )
+            .where(
+                and(
+                    eq(conversationTable.slugId, conversationSlugId),
+                    eq(conversationTable.prioritizationType, "comparisons"),
+                    readableAnalysisConversationCondition(primaryDb),
+                ),
+            )
+    ).at(0);
+    if (scope === undefined)
+        throw httpErrors.notFound("Comparison conversation not found");
+    const { conversationId, closeId } = scope;
 
     if (rankingStatsSnapshotId !== undefined) {
         if (requestedRankingStatsSnapshotId !== undefined) {
@@ -779,20 +911,39 @@ export async function getComparisonResults({
                 "Ranking checkpoints cannot be combined with a lifecycle filter",
             );
         }
-        return await getHistoricalComparisonResults({
-            db,
-            conversationId,
-            conversationSlugId,
-            rankingStatsSnapshotId,
-            displayPreferences,
-        });
+        return await primaryDb.transaction(
+            async (tx) =>
+                await getHistoricalComparisonResults({
+                    db: tx,
+                    conversationId,
+                    conversationSlugId,
+                    rankingStatsSnapshotId,
+                    displayPreferences,
+                }),
+            { isolationLevel: "repeatable read" },
+        );
     }
 
-    const readDb = await resolveRankingReadDatabase({
-        db,
-        conversationId,
-        requestedRankingStatsSnapshotId,
-    });
+    if (lifecycleFilter === "active" && closeId !== null) {
+        const selected = await readSelectedComparisonResult({
+            db: primaryDb,
+            conversationSlugId,
+            displayPreferences,
+        });
+        if (selected !== undefined) return selected;
+        throw httpErrors.conflict("The active comparison result changed");
+    }
+
+    // Current item text and the score pointer must not resurrect redacted items
+    // or serve a post-write result from a stale replica.
+    const readDb = primaryDb;
+    if (requestedRankingStatsSnapshotId !== undefined) {
+        await requireRankingSnapshotReadFloor({
+            db: readDb,
+            conversationId,
+            requestedRankingStatsSnapshotId,
+        });
+    }
 
     // Determine which lifecycle statuses to include
     const activeStatuses: RankingItemLifecycleStatus[] =
@@ -807,6 +958,8 @@ export async function getComparisonResults({
         .select({
             slugId: rankingItemTable.slugId,
             contentId: rankingItemContentTable.id,
+            isSeed: rankingItemTable.isSeed,
+            externalId: rankingItemExternalSourceTable.id,
             publicId: rankingItemContentTable.publicId,
             title: rankingItemContentTable.title,
             body: rankingItemContentTable.body,
@@ -859,18 +1012,21 @@ export async function getComparisonResults({
 
     const items = itemRows.map((r) => r.slugId);
     const itemSlugIds = new Set(items);
-    const sources = itemRows.map((r) => ({
-        conversationSlugId,
-        itemSlugId: r.slugId,
-        contentId: r.contentId,
-        publicId: r.publicId,
-        title: r.title,
-        bodyHtml: r.body,
-        sourceLanguageCode: r.sourceLanguageCode,
-        sourceRawLanguageCode: r.sourceRawLanguageCode,
-        sourceLanguageProvider: r.sourceLanguageProvider,
-        sourceLanguageConfidence: r.sourceLanguageConfidence,
-    }));
+    const sources = itemRows.map(
+        (r): RankingItemDisplaySource => ({
+            conversationSlugId,
+            itemSlugId: r.slugId,
+            contentId: r.contentId,
+            publicId: r.publicId,
+            title: r.title,
+            bodyHtml: r.body,
+            sourceLanguageCode: r.sourceLanguageCode,
+            sourceRawLanguageCode: r.sourceRawLanguageCode,
+            sourceLanguageProvider: r.sourceLanguageProvider,
+            sourceLanguageConfidence: r.sourceLanguageConfidence,
+            permitsNewTranslation: true,
+        }),
+    );
     const displayContentByContentId =
         await buildRankingItemDisplayContentByContentId({
             db: readDb,
@@ -902,6 +1058,7 @@ export async function getComparisonResults({
                 return {
                     isDeleted: false,
                     itemSlugId: r.slugId,
+                    participantSubmitted: !r.isSeed && r.externalId === null,
                     displayContent,
                     avgRank: r.snapshotRank,
                     score: r.snapshotScore,
@@ -1018,6 +1175,7 @@ export async function getComparisonResults({
             r.slugId,
             {
                 displayContent: displayContentBySlugId.get(r.slugId),
+                participantSubmitted: !r.isSeed && r.externalId === null,
                 lifecycleStatus: r.lifecycleStatus,
                 externalUrl: r.externalUrl,
             },
@@ -1036,6 +1194,7 @@ export async function getComparisonResults({
         return {
             isDeleted: false,
             itemSlugId: s.itemSlugId,
+            participantSubmitted: content.participantSubmitted,
             displayContent: content.displayContent,
             avgRank: s.avgRank,
             score: s.score,
@@ -1057,6 +1216,7 @@ export async function getComparisonResults({
         rankings.push({
             isDeleted: false,
             itemSlugId: slugId,
+            participantSubmitted: content.participantSubmitted,
             displayContent: content.displayContent,
             avgRank: null,
             score: null,
@@ -1078,23 +1238,39 @@ export async function fetchRankingStatsCheckpoints({
     conversationSlugId: string;
     requestedRankingStatsSnapshotId: number | undefined;
 }): Promise<RankingStatsCheckpointsResponse> {
-    const metadata = await useCommonPost().getPostMetadataFromSlugId({
-        db,
-        conversationSlugId,
-    });
-    if (
-        metadata.conversationType !== "prioritizing" ||
-        metadata.prioritizationType !== "comparisons"
-    ) {
-        throw httpErrors.badRequest(
-            "This conversation is not a BWS conversation",
+    // Admission uses the writer even for ordinary browsing: a replica might
+    // still expose a deleted project. Only the admitted numerical timeline may lag.
+    const primary = getPrimaryDatabase(db);
+    const readDb =
+        requestedRankingStatsSnapshotId === undefined
+            ? getReplicaDatabase(db)
+            : primary;
+    const conversations = await primary
+        .select({
+            id: conversationTable.id,
+            method: conversationTable.prioritizationType,
+        })
+        .from(conversationTable)
+        .where(
+            and(
+                eq(conversationTable.slugId, conversationSlugId),
+                readableAnalysisConversationCondition(primary),
+            ),
         );
+    const metadata = conversations.at(0);
+    if (metadata === undefined)
+        throw httpErrors.notFound("Conversation not found");
+    if (metadata.method !== "comparisons")
+        throw httpErrors.badRequest(
+            "Comparison checkpoints require a comparison conversation",
+        );
+    if (requestedRankingStatsSnapshotId !== undefined) {
+        await requireRankingSnapshotReadFloor({
+            db: readDb,
+            conversationId: metadata.id,
+            requestedRankingStatsSnapshotId,
+        });
     }
-    const readDb = await resolveRankingReadDatabase({
-        db,
-        conversationId: metadata.id,
-        requestedRankingStatsSnapshotId,
-    });
     const earliestRows = await readDb
         .select()
         .from(rankingConversationStatsSnapshotTable)
@@ -1112,9 +1288,16 @@ export async function fetchRankingStatsCheckpoints({
             rankingConversationStatsSnapshotTable.id,
         )
         .limit(1);
+    const anchor = rankingConversationStatsSnapshotTable;
+    const resolved = alias(anchor, "checkpoint_result");
+    const binding = comparisonAnalysisCloseTable;
     const checkpointRows = await readDb
         .select({
-            snapshot: rankingConversationStatsSnapshotTable,
+            anchorId: anchor.id,
+            anchorCreatedAt: anchor.createdAt,
+            anchorParticipantCount: anchor.participantCount,
+            anchorVoteCount: anchor.voteCount,
+            snapshot: resolved,
             reason: rankingConversationStatsCheckpointTable.reason,
             participantMilestone:
                 rankingConversationStatsCheckpointTable.participantMilestone,
@@ -1129,6 +1312,14 @@ export async function fetchRankingStatsCheckpoints({
                 rankingConversationStatsCheckpointTable.statsSnapshotId,
             ),
         )
+        .leftJoin(binding, eq(binding.originalStatsSnapshotId, anchor.id))
+        .innerJoin(
+            resolved,
+            eq(
+                resolved.id,
+                sql<number>`coalesce(${binding.closingStatsSnapshotId}, ${anchor.id})`,
+            ),
+        )
         .where(
             and(
                 eq(
@@ -1136,6 +1327,7 @@ export async function fetchRankingStatsCheckpoints({
                     metadata.id,
                 ),
                 isNull(rankingConversationStatsSnapshotTable.deletedAt),
+                isNull(resolved.deletedAt),
             ),
         )
         .orderBy(
@@ -1164,9 +1356,9 @@ export async function fetchRankingStatsCheckpoints({
         });
     }
     for (const row of checkpointRows) {
-        const checkpoint = checkpointsById.get(row.snapshot.id) ?? {
-            rankingStatsSnapshotId: row.snapshot.id,
-            createdAt: row.snapshot.createdAt,
+        const checkpoint = {
+            rankingStatsSnapshotId: row.anchorId,
+            createdAt: row.anchorCreatedAt,
             itemCount: row.snapshot.itemCount,
             voteCount: row.snapshot.voteCount,
             participantCount: row.snapshot.participantCount,
@@ -1174,21 +1366,21 @@ export async function fetchRankingStatsCheckpoints({
             totalVoteCount: row.snapshot.totalVoteCount,
             totalParticipantCount: row.snapshot.totalParticipantCount,
             isClosed: row.snapshot.isClosed,
-            reasons: [],
+            reasons: checkpointsById.get(row.anchorId)?.reasons ?? [],
         };
         let reason: RankingStatsCheckpointReason;
         switch (row.reason) {
             case "major_participation_milestone":
                 reason = Dto.rankingStatsCheckpointReason.parse({
                     reason: row.reason,
-                    participantCount: row.snapshot.participantCount,
+                    participantCount: row.anchorParticipantCount,
                     participantMilestone: row.participantMilestone,
                 });
                 break;
             case "major_vote_milestone":
                 reason = Dto.rankingStatsCheckpointReason.parse({
                     reason: row.reason,
-                    voteCount: row.snapshot.voteCount,
+                    voteCount: row.anchorVoteCount,
                     voteMilestone: row.voteMilestone,
                 });
                 break;
@@ -1197,7 +1389,7 @@ export async function fetchRankingStatsCheckpoints({
                 break;
         }
         checkpoint.reasons.push(reason);
-        checkpointsById.set(row.snapshot.id, checkpoint);
+        checkpointsById.set(row.anchorId, checkpoint);
     }
     const checkpoints = Dto.rankingStatsCheckpointsResponse.parse(
         Array.from(checkpointsById.values()).sort(

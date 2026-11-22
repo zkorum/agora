@@ -38,7 +38,7 @@
               :class="{ 'item-row--clickable': canOpenItem(item) }"
               @click="handleItemClick(item)"
             >
-              <span class="item-number">{{ index + 1 }}</span>
+              <span class="item-number">{{ numbers.integer(index + 1) }}</span>
               <div class="item-details">
                 <ComparisonItemListContent
                   v-if="item.displayContent !== undefined"
@@ -50,7 +50,7 @@
                   @display-state-changed="updateItemDisplayState"
                 />
                 <span v-else class="deleted-statement">{{
-                  tSource("deletedStatement")
+                  tSource("unavailableStatement")
                 }}</span>
                 <div v-if="item.score !== null" class="item-meta">
                   <div class="score-bar-container">
@@ -62,13 +62,14 @@
                     </div>
                   </div>
                   <span class="score-text">
-                    {{ scoreFormatter.format(item.score) }}
+                    {{ numbers.integer(item.score * 100) }}
                   </span>
                 </div>
                 <div v-else class="item-meta">
                   <span class="score-text unranked-text">—</span>
                 </div>
               </div>
+              <slot name="item-action" :item="item" />
             </li>
           </ol>
         </CompactFadeContainer>
@@ -85,15 +86,16 @@ import AnalysisTitleHeader from "src/components/post/analysis/common/AnalysisTit
 import CompactFadeContainer from "src/components/post/analysis/common/CompactFadeContainer.vue";
 import PageLoadingSpinner from "src/components/ui/PageLoadingSpinner.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useDisplayNumbers } from "src/i18n/numberFormats";
 import { htmlToCountedText } from "src/shared/richText";
 import type { RankingItemDisplayedContent } from "src/shared/types/zod";
 import { computed, ref } from "vue";
-import { useI18n } from "vue-i18n";
 
 import type { ComparisonItemListDisplayState } from "./ComparisonItemListContent.types";
 import ComparisonItemListContent from "./ComparisonItemListContent.vue";
 
 export interface ComparisonListItem {
+  participantSubmitted?: boolean;
   slugId: string;
   title: string;
   body: string | null;
@@ -122,15 +124,8 @@ const props = defineProps<{
 }>();
 
 const COMPACT_LIMIT = 3;
+const numbers = useDisplayNumbers();
 const { t: tSource } = useComponentI18n(analysisOpinionTextTranslations);
-const { locale } = useI18n();
-const scoreFormatter = computed(
-  () =>
-    new Intl.NumberFormat(locale.value, {
-      style: "percent",
-      maximumFractionDigits: 0,
-    })
-);
 const EXPANDABLE_COMPACT_TITLE_LENGTH = 220;
 
 const displayItems = computed(() =>

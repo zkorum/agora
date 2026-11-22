@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { generateCandidateSets } from "./comparisonRouting.js";
 import { buildComparisonMatrix } from "./comparisonEngine.js";
 
@@ -79,7 +79,7 @@ describe("generateCandidateSets", () => {
         expect(result).toEqual([]);
     });
 
-    it("generates requested number of candidate sets", () => {
+    it("returns a nonempty buffer without exceeding its limit", () => {
         const result = generateCandidateSets({
             userComparisons: [],
             items,
@@ -118,25 +118,17 @@ describe("generateCandidateSets", () => {
         }
     });
 
-    it("accounts for user's existing comparisons", () => {
-        // User has already compared everything — should get empty sets
-        const comparisons = [
-            { best: "A", worst: "E", set: ["A", "B", "C", "D", "E"] },
-            { best: "B", worst: "D", set: ["A", "B", "C", "D", "E"] },
-            { best: "A", worst: "C", set: ["A", "B", "C", "D", "E"] },
-            { best: "B", worst: "C", set: ["A", "B", "C", "D", "E"] },
-            { best: "A", worst: "D", set: ["A", "B", "C", "D", "E"] },
-            { best: "C", worst: "E", set: ["A", "B", "C", "D", "E"] },
-        ];
+    it("stops offering tasks when prior answers resolve every pair", () => {
         const result = generateCandidateSets({
-            userComparisons: comparisons,
-            items,
-            globalUncertainty: uniformUncertainty,
+            userComparisons: [
+                { best: "A", worst: "B", set: ["A", "B"] },
+                { best: "B", worst: "C", set: ["B", "C"] },
+            ],
+            items: ["A", "B", "C"],
+            globalUncertainty: new Map(),
             bufferSize: 3,
         });
-        // With enough comparisons, all pairs may be ordered → no more candidates
-        // (depends on transitive closure coverage)
-        expect(result.length).toBeLessThanOrEqual(3);
+        expect(result).toEqual([]);
     });
 
     it("never returns a fully resolved task while other pairs remain unresolved", () => {
@@ -146,10 +138,6 @@ describe("generateCandidateSets", () => {
             { best: "C", worst: "D", set: ["C", "D"] },
             { best: "E", worst: "F", set: ["E", "F"] },
         ];
-        const matrix = buildComparisonMatrix({ items });
-        for (const comparison of userComparisons)
-            matrix.applyComparison(comparison);
-        const unresolved = matrix.getUnorderedPairs();
         const result = generateCandidateSets({
             userComparisons,
             items,
@@ -163,9 +151,11 @@ describe("generateCandidateSets", () => {
         });
         expect(result).not.toHaveLength(0);
         for (const set of result) {
-            expect(
-                unresolved.some(([a, b]) => set.includes(a) && set.includes(b)),
-            ).toBe(true);
+            // A > B > C > D and E > F; only pairs across the chains are unresolved.
+            expect(set.some((item) => ["A", "B", "C", "D"].includes(item))).toBe(
+                true,
+            );
+            expect(set.some((item) => ["E", "F"].includes(item))).toBe(true);
         }
     });
 
@@ -182,39 +172,40 @@ describe("generateCandidateSets", () => {
         expect(new Set(result[0])).toEqual(new Set(["B", "C"]));
     });
 
-    it("uncertainty scoring influences group selection", () => {
-        // Verify that the scoring mechanism uses uncertainty values.
-        // With uniform uncertainty, generate sets and check they contain valid items.
-        // With biased uncertainty, the set content should shift toward uncertain items.
-        const result = generateCandidateSets({
-            userComparisons: [],
-            items,
-            globalUncertainty: uniformUncertainty,
-            bufferSize: 1,
-        });
-        expect(result.length).toBeGreaterThan(0);
-        expect(result[0].length).toBeGreaterThanOrEqual(2);
-        // All items should be from the valid set
-        for (const item of result[0]) {
-            expect(items).toContain(item);
-        }
+    it("favors the more uncertain item when all pairs offer equal coverage", () => {
+        const select = (uncertainItem: string) =>
+            generateCandidateSets({
+                userComparisons: [],
+                items: ["A", "B", "C"],
+                globalUncertainty: new Map([[uncertainItem, 10]]),
+                bufferSize: 1,
+                candidateSetSize: 2,
+            }).map((set) => [...set].sort());
+
+        expect(select("B")).toEqual([["A", "B"]]);
+        expect(select("C")).toEqual([["A", "C"]]);
     });
 
-    it("produces different orderings across calls (shuffled)", () => {
-        const orderings = new Set<string>();
-        for (let i = 0; i < 30; i++) {
-            const result = generateCandidateSets({
+    it("can present either ordering of the same two-item task", () => {
+        const generate = () =>
+            generateCandidateSets({
                 userComparisons: [],
-                items,
-                globalUncertainty: uniformUncertainty,
+                items: ["A", "B"],
+                globalUncertainty: new Map(),
                 bufferSize: 1,
             });
-            if (result.length > 0) {
-                orderings.add(result[0].join(","));
-            }
+        const random = vi.spyOn(Math, "random");
+        try {
+            random.mockReturnValue(0);
+            const first = generate();
+            random.mockReturnValue(0.9);
+            const second = generate();
+            expect([first, second]).toEqual(
+                expect.arrayContaining([[["A", "B"]], [["B", "A"]]]),
+            );
+        } finally {
+            random.mockRestore();
         }
-        // Should see at least 2 different orderings over 30 runs
-        expect(orderings.size).toBeGreaterThan(1);
     });
 
     it("buffer includes diverse items, not just the same subset", () => {
@@ -231,38 +222,6 @@ describe("generateCandidateSets", () => {
         const allItems = new Set(result.flat());
         // With 10 items and 5 sets of 4, should see more than just 4 items
         expect(allItems.size).toBeGreaterThan(4);
-    });
-
-    it("high-uncertainty items appear more often across buffer", () => {
-        const manyItems = ["A", "B", "C", "D", "E", "F", "G", "H"];
-        // H has much higher uncertainty
-        const biasedUnc = new Map(
-            manyItems.map((id) => [id, id === "H" ? 10.0 : 0.1]),
-        );
-        const counts = new Map(manyItems.map((id) => [id, 0]));
-        // Run several times to get statistical tendency
-        for (let trial = 0; trial < 10; trial++) {
-            const result = generateCandidateSets({
-                userComparisons: [],
-                items: manyItems,
-                globalUncertainty: biasedUnc,
-                bufferSize: 3,
-                candidateSetSize: 4,
-            });
-            for (const set of result) {
-                for (const item of set) {
-                    counts.set(item, (counts.get(item) ?? 0) + 1);
-                }
-            }
-        }
-        // H (highest uncertainty) should appear at least as often as average
-        const hCount = counts.get("H") ?? 0;
-        const totalAppearances = [...counts.values()].reduce(
-            (a, b) => a + b,
-            0,
-        );
-        const avgCount = totalAppearances / manyItems.length;
-        expect(hCount).toBeGreaterThanOrEqual(avgCount);
     });
 });
 

@@ -8,12 +8,16 @@
     :collapsed-line-count="collapsedLineCount"
     :desktop-collapsed-line-count="desktopCollapsedLineCount"
     :compact-line-count="compactLineCount"
-    :refresh-key="sanitizedHtmlBody"
+    :refresh-key="sanitizedHtmlBody ?? htmlBody"
     role="user-content"
     :aria-label="compactMode ? t('postContentPreview') : t('postContent')"
     @click="handleClick"
   >
-    <span v-html="sanitizedHtmlBody"></span>
+    <span
+      v-if="sanitizedHtmlBody !== undefined"
+      v-html="sanitizedHtmlBody"
+    ></span>
+    <span v-else>{{ htmlBody }}</span>
   </ZKContentDisclosure>
 </template>
 
@@ -57,17 +61,9 @@ const { t } = useComponentI18n<ZKHtmlContentTranslations>(
 const sanitizedHtmlBody = computed(() => {
   try {
     return processUserGeneratedHtml(props.htmlBody, props.enableLinks);
-  } catch (error) {
-    console.error("Error sanitizing HTML content:", error);
-    // Fallback to plain text if sanitization fails
-    // Strip tags repeatedly to handle malformed/nested tags before v-html rendering
-    let text = props.htmlBody;
-    let prev: string;
-    do {
-      prev = text;
-      text = text.replace(/<[^>]*>/g, "");
-    } while (text !== prev);
-    return text.replace(/<[^>]*$/, "");
+  } catch {
+    // Only sanitizer output belongs in v-html. Vue escapes the plain-text fallback.
+    return undefined;
   }
 });
 

@@ -508,6 +508,7 @@ const currentProjectLanguageProject = computed<
   return {
     projectSlug: option.target.projectSlug,
     projectTitle: option.title,
+    participationMode: option.participationMode,
     defaultLanguageCode: option.defaultLanguageCode,
     languageSettings: option.languageSettings,
   };

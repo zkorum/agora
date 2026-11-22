@@ -63,7 +63,9 @@ describe("participant statement policy", () => {
         db = drizzle({ client });
         const pool = new Pool(connection);
         try {
-            await (await pushSchema(schema, drizzlePg({ client: pool }))).apply();
+            await (
+                await pushSchema(schema, drizzlePg({ client: pool }))
+            ).apply();
         } finally {
             await pool.end();
         }
@@ -132,7 +134,7 @@ describe("participant statement policy", () => {
             family === "qv"
                 ? first(
                       await db
-                          .insert(schema.creditVotingConfigTable)
+                          .insert(schema.qvConfigTable)
                           .values({})
                           .returning(),
                   )
@@ -256,9 +258,9 @@ describe("participant statement policy", () => {
                     ? { supported: false }
                     : { supported: true, enabled: family === "polis" },
             );
-            expect(
-                "allowParticipantStatements" in schema.creditVotingConfigTable,
-            ).toBe(false);
+            expect("allowParticipantStatements" in schema.qvConfigTable).toBe(
+                false,
+            );
         },
     );
 

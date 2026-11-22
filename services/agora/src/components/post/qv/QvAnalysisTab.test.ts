@@ -1,19 +1,36 @@
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { AxiosError, AxiosHeaders } from "axios";
+import { numberFormats } from "src/i18n/numberFormats";
 import { Dto } from "src/shared/types/dto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type App, computed, createApp, h, nextTick, ref } from "vue";
-
-vi.mock("src/composables/ui/useComponentI18n", () => ({
-  useComponentI18n: () => ({
-    t: (key: string, params?: Record<string, string | number>) =>
-      `${key} ${String(params?.count ?? "")}`,
-  }),
-}));
+import { createI18n } from "vue-i18n";
 vi.mock("src/utils/api/post/useQvResults", () => ({
   useQvResults: () => ({ query: { data, error, isError }, ready }),
 }));
+vi.mock("src/composables/conversation/useClosedAnalysisSelection", () => ({
+  useClosedAnalysisSelection: () => ({
+    canSwitch: ref(false),
+    saving: ref(false),
+    saveFailed: ref(false),
+    selectMode: vi.fn(),
+  }),
+}));
 vi.mock("src/components/ui-library/ZKHtmlContent.vue", () => ({
   default: { props: ["htmlBody"], template: "<div>{{htmlBody}}</div>" },
+}));
+vi.mock("pinia", () => ({ storeToRefs: (store: object) => store }));
+vi.mock("src/stores/language", () => ({
+  useLanguageStore: () => ({
+    displayLanguage: ref("en"),
+    spokenLanguages: ref(["en"]),
+  }),
+}));
+vi.mock("src/utils/translation/useContentTranslationPreview", () => ({
+  useRankingItemContentTranslationPreview: () => ({
+    preview: ref(undefined),
+    setMode: vi.fn(),
+  }),
 }));
 import QvAnalysisTab from "./QvAnalysisTab.vue";
 
@@ -27,7 +44,13 @@ function result() {
     items: [1, 1, 3].map((rank, index) => ({
       itemSlugId: `item000${index}`,
       sourceVersion: "00000000-0000-4000-8000-000000000002",
-      title: `Frozen ${index}`,
+      displayContent: {
+        sourceVersion: "00000000-0000-4000-8000-000000000002",
+        status: "available",
+        mode: "original",
+        content: { title: `Frozen ${index}` },
+        translationControl: null,
+      },
       netUnits: index === 2 ? 0 : 2,
       supportUnits: index === 2 ? 0 : 3,
       oppositionUnits: index === 2 ? 0 : 1,
@@ -56,7 +79,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-function mount() {
+function mount(locale = "en") {
   const node = document.createElement("div");
   document.body.append(node);
   const app = createApp({
@@ -64,9 +87,12 @@ function mount() {
       h(QvAnalysisTab, {
         conversationSlugId: "qvtest01",
         isClosed: closed.value,
-        onViewStatements: () => {},
+        canEditConversation: false,
+        onViewItems: () => {},
       }),
   });
+  app.use(VueQueryPlugin, { queryClient: new QueryClient() });
+  app.use(createI18n({ legacy: false, locale, numberFormats }));
   app.component("PrimeButton", {
     props: { label: { type: String, required: true } },
     template: "<button>{{label}}</button>",
@@ -77,20 +103,20 @@ function mount() {
 }
 describe("QV aggregate results presentation", () => {
   it("shows captured participants, signed totals and competition ranks without extra event-wide counters", () => {
-    const node = mount();
-    expect(node.textContent).toContain("basedOnParticipants 2");
+    const node = mount("fa");
+    expect(node.textContent).toContain("تعداد شرکت‌کنندگان در محاسبه: ۲");
     expect(
       [...node.querySelectorAll(".qv-rank")].map((rank) => rank.textContent)
-    ).toEqual(["#1", "#1", "#3"]);
-    expect(node.textContent).toContain("netVotes 2");
-    expect(node.textContent).not.toContain("credits");
+    ).toEqual(["#۱", "#۱", "#۳"]);
+    expect(node.textContent).toContain("خالص رأی‌ها: ۲");
+    expect(node.textContent).not.toContain("اعتبار");
     expect(node.querySelectorAll("button")).toHaveLength(1);
   });
   it("hides an old ready result immediately when voting reopens", async () => {
     const node = mount();
     closed.value = false;
     await nextTick();
-    expect(node.textContent).toContain("analysisOpen");
+    expect(node.textContent).toContain("after this activity closes");
     expect(node.textContent).not.toContain("Frozen");
     expect(node.querySelectorAll(".qv-result")).toHaveLength(0);
   });
@@ -111,7 +137,7 @@ describe("QV aggregate results presentation", () => {
     error.value = denied;
     await nextTick();
     expect(node.textContent).not.toContain("Frozen");
-    expect(node.textContent).toContain("analysisUnavailable");
+    expect(node.textContent).toContain("Results are not available yet.");
   });
   it.each(["calculating", "failed"] as const)(
     "shows %s without fabricated scores or a calculation Retry button",
@@ -120,7 +146,9 @@ describe("QV aggregate results presentation", () => {
       const node = mount();
       expect(node.querySelectorAll(".qv-result")).toHaveLength(0);
       expect(node.textContent).toContain(
-        status === "failed" ? "analysisFailed" : "analysisCalculating"
+        status === "failed"
+          ? "Results could not be calculated."
+          : "Calculating results"
       );
       expect(node.querySelectorAll("button")).toHaveLength(1);
     }
@@ -134,6 +162,8 @@ describe("QV aggregate results presentation", () => {
       participantCount: 0,
       items: [],
     });
-    expect(mount().textContent).toContain("analysisEmpty");
+    expect(mount().textContent).toContain(
+      "No eligible saved responses were included."
+    );
   });
 });

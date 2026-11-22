@@ -1014,6 +1014,7 @@ def _update_counts_and_schedule(
                 and_(
                     AnalysisWorkState.conversation_id == conversation_id,
                     AnalysisWorkState.opinion_group_spec_id.in_(current_spec_ids),
+                    AnalysisWorkState.uses_closing_inputs.is_(False),
                 ),
             )
             .with_for_update(),

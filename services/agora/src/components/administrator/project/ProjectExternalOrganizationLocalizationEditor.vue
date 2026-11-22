@@ -12,13 +12,23 @@
           emit-value
           map-options
           :label="labels.languageLabel"
+          label-slot
+          v-bind="{ 'aria-required': true }"
           :options="availableLanguageOptions"
-        />
-        <q-input
+        >
+          <template #label
+            ><ZKFieldLabel
+              :label="labels.languageLabel"
+              required
+              :required-text="undefined"
+          /></template>
+        </q-select>
+        <ZKInput
           v-model="displayNameInput"
           outlined
           :maxlength="MAX_LENGTH_NAME_CREATOR"
           :label="labels.nameLabel"
+          required
         />
         <q-input
           v-model="descriptionInput"
@@ -84,6 +94,8 @@
 </template>
 
 <script setup lang="ts">
+import ZKFieldLabel from "src/components/ui-library/ZKFieldLabel.vue";
+import ZKInput from "src/components/ui-library/ZKInput.vue";
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 import {
   MAX_LENGTH_DESCRIPTION_CREATOR,

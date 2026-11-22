@@ -14,12 +14,7 @@
       :on-learn-more="props.onLearnMore"
     />
     <div class="me-stats">
-      {{
-        t("meProgress", {
-          percent: String(progress.percent),
-          votes: formatAmount(progress.votes),
-        })
-      }}
+      {{ progressLabel }}
     </div>
   </template>
 
@@ -34,18 +29,17 @@
     </div>
     <div class="me-banner">
       <div class="me-banner-content">
-        <div v-if="hasVoted" class="me-banner-message">
+        <div v-if="hasVoted && !isClosed" class="me-banner-message">
           {{ t("meVotesCounted") }}
         </div>
         <div class="me-banner-progress">
-          {{
-            t("meProgress", {
-              percent: String(progress.percent),
-              votes: formatAmount(progress.votes),
-            })
-          }}
+          {{ progressLabel }}
         </div>
-        <a class="me-keep-voting-link" @click="props.navigateToVotingTab()">
+        <a
+          v-if="!isClosed"
+          class="me-keep-voting-link"
+          @click="props.navigateToVotingTab()"
+        >
           {{ hasVoted ? t("meKeepVoting") : t("meStartVoting") }}
         </a>
       </div>
@@ -56,10 +50,9 @@
 <script setup lang="ts">
 import AnalysisActionButton from "src/components/post/analysis/common/AnalysisActionButton.vue";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
+import { useDisplayNumbers } from "src/i18n/numberFormats";
 import type { ComparisonLoadResponse } from "src/shared/types/dto";
-import type { ComparisonAnswer } from "src/shared/types/zod";
 import { restoreComparisonEngine } from "src/shared/utils/comparisonEngine";
-import { formatAmount } from "src/utils/common";
 import { computed } from "vue";
 
 import type { ComparisonListItem } from "./ComparisonItemListSection.vue";
@@ -76,6 +69,7 @@ interface ClickItemData {
 }
 
 const props = defineProps<{
+  isClosed: boolean;
   conversationSlugId: string;
   loadData: ComparisonLoadResponse | undefined;
   allItems: ComparisonListItem[];
@@ -86,22 +80,21 @@ const props = defineProps<{
   navigateToVotingTab: () => void;
 }>();
 
+const numbers = useDisplayNumbers();
 const { t } = useComponentI18n<ComparisonResultsTabTranslations>(
   comparisonResultsTabTranslations
 );
 
-function parseComparisons(): ComparisonAnswer[] {
-  const data = props.loadData;
-  if (data === undefined || data.comparisons === null) return [];
-  return data.comparisons;
-}
+const comparisons = computed(() => props.loadData?.comparisons ?? []);
 
 const restoredInstance = computed(() => {
-  const comparisons = parseComparisons();
-  if (comparisons.length === 0) return null;
+  if (comparisons.value.length === 0) return null;
   const itemSlugIds = props.allItems.map((i) => i.slugId);
   if (itemSlugIds.length < 2) return null;
-  return restoreComparisonEngine({ items: itemSlugIds, comparisons });
+  return restoreComparisonEngine({
+    items: itemSlugIds,
+    comparisons: comparisons.value,
+  });
 });
 
 const rankingComplete = computed(
@@ -122,16 +115,13 @@ const rankingItems = computed<ComparisonListItem[]>(() => {
     .map((item) => ({ ...item, score: scoreMap.get(item.slugId) ?? null }));
 });
 
-const progress = computed(() => {
-  const instance = restoredInstance.value;
-  if (instance === null) return { percent: 0, votes: 0 };
-  return {
-    percent: Math.round(instance.progress * 100),
-    votes: parseComparisons().length,
-  };
-});
-
-const hasVoted = computed(() => progress.value.votes > 0);
+const progressLabel = computed(() =>
+  t("meProgress", {
+    percent: numbers.percent(restoredInstance.value?.progress ?? 0),
+    votes: numbers.integer(comparisons.value.length),
+  })
+);
+const hasVoted = computed(() => comparisons.value.length > 0);
 </script>
 
 <style lang="scss" scoped>
