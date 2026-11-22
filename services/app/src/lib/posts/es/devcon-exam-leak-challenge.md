@@ -14,6 +14,12 @@ En Devcon 8, en Bombay, preguntamos a los participantes del taller cómo evitar 
 
 Invitamos a los participantes a formar una pequeña asamblea ciudadana. Podían debatir qué debía garantizar el sistema de examen, por ejemplo, si un registro podía modificarse después de crearlo, sin necesidad de saber cómo funciona una cadena de bloques. Podían decidir libremente si les serviría de algo.
 
+Usamos Agora en dos breves rondas de votación para orientar el debate del taller. Ver los resultados en tiempo real ayudó a los participantes a poner a prueba sus suposiciones, profundizar en los desacuerdos y reconocer en qué puntos ya coincidían.
+
+Agora agrupa a quienes votan de forma parecida y destaca las afirmaciones que reciben apoyo en distintos grupos. [Descubre cómo Agora elabora el mapa de opiniones e identifica los puntos de consenso](/es#faq)
+
+Empezamos con dos afirmaciones que planteaban formas distintas de proteger los exámenes. Las llamamos la Bóveda y la Biblioteca.
+
 ## Dos puntos de partida para proteger los exámenes
 
 <figure class="resource-comparison" aria-label="Dos formas de proteger los exámenes">
@@ -51,8 +57,6 @@ Usamos las dos afirmaciones como punto de partida. Mis compañeros facilitadores
 
 4. **Puesta a prueba.** Los participantes empezaron a cuestionar la propuesta que más dividía al grupo antes de que se agotara el tiempo. La sesión terminó sin una clasificación final y dejamos abierta la conversación en Agora una semana más.
 
-Agora agrupó a los participantes según sus patrones de voto. Una vez formados los grupos, un modelo de IA les dio un nombre y resumió sus posturas.
-
 ## Lo que revelaron los votos
 
 El informe de Agora registra 18 participantes, 330 votos y 22 afirmaciones. Los participantes escribieron 12 de esas afirmaciones durante la sesión.
@@ -84,5 +88,9 @@ Cincuenta minutos nos permitieron sacar a la luz desacuerdos más matizados y em
 Esperamos que este pequeño taller anime a ciudadanos, comunidades e instituciones a probar Agora y buscar soluciones conjuntas a los problemas que les importan. [Leer la guía de facilitación de Agora](/resources/facilitation-guide)
 
 [Explorar la conversación original en Agora](https://www.agoracitizen.app/project/devcon8/conversation/Z-n7k2Q) · [Consultar la ficha oficial en el archivo de Devcon](https://archive.devcon.org/devcon8/what-can-ethereum-do-for-india-the-exam-leak-challenge/)
+
+<figure>
+  <img src="https://d36w59669phgb2.cloudfront.net/workshop-devcon-india.jpg" alt="Seis personas se hacen un selfi delante de la pantalla de Devcon India durante el taller." width="1600" height="1201" loading="lazy" decoding="async" />
+</figure>
 
 Gracias en especial a [GCC](https://www.gccofficial.org/) por financiar Agora y otros bienes públicos.

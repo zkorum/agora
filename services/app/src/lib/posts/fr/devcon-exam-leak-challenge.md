@@ -14,6 +14,12 @@ En mai 2026, une fuite de sujets a entraîné l’annulation du NEET, le concour
 
 Nous avons invité les participants à former une petite assemblée citoyenne. Sans avoir à connaître le fonctionnement d’une blockchain, ils pouvaient discuter des garanties que le système d’examen devait offrir : un enregistrement pouvait-il, par exemple, être modifié après sa création ? À eux de décider si une blockchain pouvait être utile.
 
+Nous avons organisé deux courts votes dans Agora pour guider la discussion. En voyant les résultats en temps réel, les participants ont pu mettre leurs hypothèses à l’épreuve, approfondir leurs désaccords et repérer les points sur lesquels ils étaient déjà d’accord.
+
+Agora regroupe les personnes qui votent de façon similaire et met en évidence les propositions qui recueillent du soutien dans plusieurs groupes. [Découvrir comment Agora cartographie les opinions et fait ressortir les points de consensus](/fr#faq)
+
+Nous sommes partis de deux propositions qui abordaient différemment la sécurité des examens. Nous les avons appelées le Coffre-fort et la Bibliothèque.
+
 ## Deux points de départ pour sécuriser les examens
 
 <figure class="resource-comparison" aria-label="Deux approches pour sécuriser les examens">
@@ -51,8 +57,6 @@ Ces deux propositions nous ont servi de point de départ. Mes coanimateurs ont a
 
 4. **Mise à l’épreuve.** Les participants ont commencé à mettre à l’épreuve la proposition la plus clivante avant la fin du temps imparti. La séance s’est terminée sans classement final, et nous avons laissé la conversation ouverte dans Agora une semaine de plus.
 
-Agora a regroupé les participants selon leurs votes. Une fois les groupes constitués, un modèle d’IA a donné un nom à chacun et en a résumé les positions.
-
 ## Ce que les votes ont révélé
 
 Le rapport Agora recense 18 participants, 330 votes et 22 propositions. Les participants ont rédigé 12 de ces propositions pendant la séance.
@@ -84,5 +88,9 @@ En cinquante minutes, nous avons pu faire ressortir des désaccords plus nuancé
 Nous espérons que ce petit atelier donnera aux citoyens, aux communautés et aux institutions l’envie d’essayer Agora et de chercher ensemble des solutions aux questions qui leur tiennent à cœur. [Lire le guide d’animation d’Agora](/resources/facilitation-guide)
 
 [Explorer la conversation originale dans Agora](https://www.agoracitizen.app/project/devcon8/conversation/Z-n7k2Q) · [Consulter la page officielle dans les archives de Devcon](https://archive.devcon.org/devcon8/what-can-ethereum-do-for-india-the-exam-leak-challenge/)
+
+<figure>
+  <img src="https://d36w59669phgb2.cloudfront.net/workshop-devcon-india.jpg" alt="Six personnes prennent un selfie devant l’écran de Devcon India pendant l’atelier." width="1600" height="1201" loading="lazy" decoding="async" />
+</figure>
 
 Un merci tout particulier à [GCC](https://www.gccofficial.org/) pour son soutien financier à Agora et à d’autres biens publics.
