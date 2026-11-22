@@ -28,7 +28,7 @@ import {
 } from "../src/shared-backend/schema.js";
 
 const migration = readFileSync(
-    new URL("../database/flyway/V0113.1__retire_zupass.sql", import.meta.url),
+    new URL("../database/flyway/V0115.1__retire_zupass.sql", import.meta.url),
     "utf8",
 );
 const USER_ID = "00000000-0000-4000-8000-000000000001";

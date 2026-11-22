@@ -3,7 +3,8 @@
 These files are staged for review. No application database has been migrated.
 Use the **Flyway chain**, not the unsplit Drizzle SQL. Upstream V0115
 (`equal_golden_guardian`, project-document compression) is the unchanged
-baseline and must already be applied or run first.
+baseline. From there, `pnpm db:migrate` applies V0115.1 (ticket retirement)
+and then the V0116 phases in order.
 
 | Version | Purpose |
 | --- | --- |
@@ -89,14 +90,6 @@ node scripts/stage_coordinated_migration.mjs --write
 
 ## Deployment gates
 
-- Inspect actual target Flyway history, including pending V0113.1, before choosing
-  any deployment command. A database migrated with upstream main through V0115
-  does **not** have this branch's V0113.1. Stop if it is missing; do not let
-  application cutover silently skip ticket retirement. In a separately approved
-  maintenance window, verify V0113.1 is the **only** outstanding migration
-  through V0115, drain incompatible writers, apply that pinned version, and
-  verify its successful history entry before normal V0116 migration. Do not
-  enable out-of-order execution globally or apply other historical gaps by guess.
 - This packaging is editable only while unapplied. Once any phase is deployed,
   freeze its contents/checksum and use forward migrations for changes; do not
   restage an already-applied version.
@@ -128,6 +121,7 @@ Detailed intent and sequencing: `doc/coordinated-backfill-order.md`.
 Local verification covers final-schema catalog parity, one-row batch boundaries,
 failure/retry, frozen evidence, and writer compatibility during concurrent index
 creation and FK validation. A separate Flyway 11.20.3 / PostgreSQL 16 rehearsal
-applied the SQL history through V0115, seeded legacy rows, and applied all 17
-V0116 phases; `validate` passed and a second `migrate` had no work. Preexisting
+applied the SQL history through V0115, seeded legacy rows, and applied V0115.1
+followed by all 17 V0116 phases; `validate` passed and a second `migrate` had
+no work. Preexisting
 Flyway files through V0115 are unchanged. No application migration was run.

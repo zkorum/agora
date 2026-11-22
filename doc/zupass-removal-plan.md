@@ -1,12 +1,12 @@
 # Remove Zupass support
 
-**Date:** 2026-10-29. **Status:** implemented in this checkout; the data migration is tested against an isolated database and has not been applied to deployed databases. Final migration ordering follows the next generated structural migration.
+**Date:** 2026-10-29. **Status:** implemented in this checkout; the data migration is tested against an isolated database and has not been applied to deployed databases.
 
 **Approved implementation decision:** permanently purge the retired `event_ticket` premium entitlement records. This approval is specific to those entitlement rows; stored ticket/nullifier records use non-destructive retirement. Add an exact, hash-pinned feature-retirement migration exception to the deletion policy rather than treating this new purge as historical SQL.
 
 ### Implemented release strategy
 
-This checkout implements the final ticket-free API/frontend contracts in one coordinated release, rather than shipping the optional multi-release wire bridge below. Stop old API/import writers, apply the generated structural migration first, then `V0113.1__retire_zupass.sql`, and deploy the rebuilt API/frontend/import worker together. The retirement version is provisional until `pnpm db:generate` establishes the preceding structural version. Existing open tabs need to load the new bundle at cutover; do not run old strict-SSE clients against the final settings contract. Old ticket URLs retain SPA redirects; queued imports discard only the retired setting. No database tables or ticket/nullifier rows are hard-deleted. The database's legacy enums/columns remain storage-only, so Zupass retirement itself requires no schema-removal migration.
+This checkout implements the final ticket-free API/frontend contracts in one coordinated release, rather than shipping the optional multi-release wire bridge below. Stop old API/import writers and run the normal Flyway migration: `V0115.1__retire_zupass.sql` follows V0115 and precedes V0116. Then deploy the rebuilt API/frontend/import worker together. Existing open tabs need to load the new bundle at cutover; do not run old strict-SSE clients against the final settings contract. Old ticket URLs retain SPA redirects; queued imports discard only the retired setting. No database tables or ticket/nullifier rows are hard-deleted. The database's legacy enums/columns remain storage-only, so Zupass retirement itself requires no schema-removal migration.
 
 ## 1. Intended behavior
 

@@ -115,7 +115,7 @@ Prepared paths below are relative to `services/api/scripts/`.
 | `prepare-deletion-intent-backfill.sql` | Intent/hidden/retirement-cycle columns and compatible scoring/AI triggers | Dependent source-intent validation and live refresh | Discovery times are not historical deletion requests; preserve seed content and frozen evidence. |
 | Data part of `prepare-realtime-retention-contract.sql` | Delivery timestamps/replay floor and compatible event readers | Retention/pruning enablement and replay verification | Preserve IDs/topics; timestamp legacy delivered rows at discovery; scrub obsolete free text. Never guess delivery age for pending events. |
 | `refresh-deleted-account-live-inputs.sql` | Ownership repair, source normalization, correct eligibility and renamed scoring functions | Compatible workers reconcile live results | Update working counts/dirty revisions only. Preserve finalized results/history. Record once rather than rerunning arbitrary maintenance. |
-| Retired ticket entitlement removal | Resolve pending V0113.1 against actual Flyway history; drain incompatible writers | Ticket-free runtime contract | Use the exact hash-pinned migration. Do not broaden the purge or change deployed checksums. |
+| Retired ticket entitlement removal (`V0115.1`) | V0115 applied; incompatible writers drained | V0116 and the ticket-free runtime contract | Use the exact hash-pinned migration. Do not broaden the purge or change deployed checksums. |
 | `backfill-default-project-directory-visibility.sql` (`V0116.15`) | Existing conversation indexing intent and current content, after lifecycle repairs | Deploying project-aware feed/crawler discovery | List qualifying active auto-provisioned projects only; keep named projects and conversation flags unchanged. |
 
 The participant-policy plan explicitly gives existing mapping configs true and
@@ -163,8 +163,8 @@ did not connect to it. An incomplete old-schema audit does not mean zero blocker
 
 Count missing roles, orphan owners/admins, cross-owned vote pointers, participant
 mismatches, invalid comparison answers, legacy blobs, unfinished closes and
-retained results without exact captures. Resolve V0113.1 if V0114 is already
-applied; do not globally enable out-of-order migrations by assumption.
+retained results without exact captures. From the V0115 baseline, ticket
+retirement runs first in the normal forward migration.
 
 Remove verified serializer-only SQL; hold destructive column removal if legacy
 data classification has not established a safe action.

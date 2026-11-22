@@ -50,7 +50,7 @@ describe("database hard-delete source policy", () => {
     it("pins only the explicitly approved entitlement retirement migration", async () => {
         const source = await readFile(
             new URL(
-                "../database/flyway/V0113.1__retire_zupass.sql",
+                "../database/flyway/V0115.1__retire_zupass.sql",
                 import.meta.url,
             ),
             "utf8",

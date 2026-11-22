@@ -119,7 +119,7 @@ verify relevant changes to the Vue app.
 
 ## Database and generated code
 
-Ordinary API and worker row removal must use soft deletion (set `deletedAt`) or non-destructive updates/upserts. `make check-soft-deletes` enforces this in CI, API lint, and scoring-worker lint. The planned dedicated `services/deletion-worker/` is the intended hard-purge exception. See [the deletion plan](AGENTS_DELETION_SERVICE_PLAN.md), section 6.5.1, for scoring tombstones and eligibility and coordination rules. Other exceptions are tests, guarded production-excluded development cleanup, and exact hash-pinned historical destructive migrations. The separately approved, hash-pinned `V0113.1__retire_zupass.sql` may permanently remove only retired event-ticket premium entitlements. Ticket/nullifier records and other application rows remain outside its scope.
+Ordinary API and worker row removal must use soft deletion (set `deletedAt`) or non-destructive updates/upserts. `make check-soft-deletes` enforces this in CI, API lint, and scoring-worker lint. The planned dedicated `services/deletion-worker/` is the intended hard-purge exception. See [the deletion plan](AGENTS_DELETION_SERVICE_PLAN.md), section 6.5.1, for scoring tombstones and eligibility and coordination rules. Other exceptions are tests, guarded production-excluded development cleanup, and exact hash-pinned historical destructive migrations. The separately approved, hash-pinned `V0115.1__retire_zupass.sql` may permanently remove only retired event-ticket premium entitlements. Ticket/nullifier records and other application rows remain outside its scope.
 
 ### Shared code and schema generation
 

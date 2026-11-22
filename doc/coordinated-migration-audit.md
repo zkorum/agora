@@ -325,12 +325,9 @@ All paths below are under `services/api/scripts/`.
 | `prepare-organization-governance.sql` | After role backfill, required role/indexes and existing organization/project reconciliation | Multi-table trigger installation needs brief metadata locks. Trigger creation alone does not prove legacy data meets the invariant. |
 | `prepare-comparison-retention-contract.sql` | After renamed nullable comparison sources and all `ranking_input_*` tables; coordinate compatible scoring writer | Sealing/immutability/unlink guards; drain incompatible scoring writers. Legacy evidence blockers must remain blockers. |
 
-`services/api/database/flyway/V0113.1__retire_zupass.sql` is already prepared
-separately and hash-pinned by the soft-delete policy. Its exact filename/content
-must not be casually changed. If V0114 is already applied, the lower pending
-version requires an explicit Flyway deployment decision: inspected configurations
-do not set `outOfOrder`. Confirm migration history first; do not globally enable
-out-of-order execution or change a deployed checksum by assumption.
+`services/api/database/flyway/V0115.1__retire_zupass.sql` is hash-pinned by
+the soft-delete policy. It runs after the deployed V0115 baseline and before
+V0116; its approved SQL is unchanged.
 
 ### Fractional versions must separate real phases
 

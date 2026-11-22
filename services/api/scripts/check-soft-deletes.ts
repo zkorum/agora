@@ -93,7 +93,7 @@ export async function loadHistoricalMigrationHashes(): Promise<
 // Explicit approval for permanent deletion of retired event-ticket grants.
 // Pin the entire migration rather than allowing general table/DELETE exceptions.
 export const approvedEntitlementRetirement = {
-    path: "services/api/database/flyway/V0113.1__retire_zupass.sql",
+    path: "services/api/database/flyway/V0115.1__retire_zupass.sql",
     sha256: "178bd7ad290f429453a68683ae488f58fa4a5cded6fce9760a1f5b364745b8b8",
 };
 
