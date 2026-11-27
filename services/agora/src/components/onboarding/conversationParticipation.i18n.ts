@@ -14,6 +14,14 @@ export const conversationParticipationTranslations: Readonly<
     description:
       "This short setup helps ensure the quality of the consultation. You participate under a pseudonym.",
   },
+  de: {
+    description:
+      "Diese kurze Einrichtung hilft, die Qualität der Konsultation zu gewährleisten. Sie nehmen unter einem Pseudonym teil.",
+  },
+  hi: {
+    description:
+      "यह छोटी सेटअप परामर्श की गुणवत्ता सुनिश्चित करने में मदद करता है। आप एक छद्म नाम के तहत भाग लेते हैं।",
+  },
   ar: {
     description:
       "تساعد هذه الخطوات القصيرة على ضمان جودة المشاورة. تشارك باسم مستعار.",

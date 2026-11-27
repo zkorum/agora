@@ -23,6 +23,25 @@ export const polisUrlInputTranslations: Record<
     termsOfUse: "Terms of Use",
     ccLicense: "CC BY 4.0",
   },
+  de: {
+    importTitle: "Diskussion aus Polis importieren",
+    description:
+      "Fügen Sie hier eine Polis-URL ein, um eine Diskussion zu importieren.",
+    validUrlExamples: "Gültige URL-Beispiele:",
+    urlPlaceholder: "z.B. https://pol.is/xxxxx",
+    polisTerms: "Pol.is Bedingungen",
+    termsOfUse: "Nutzungsbedingungen",
+    ccLicense: "CC BY 4.0",
+  },
+  hi: {
+    importTitle: "Polis से चर्चा आयात करें",
+    description: "चर्चा आयात करने के लिए नीचे एक Polis URL पेस्ट करें।",
+    validUrlExamples: "वैध URL उदाहरण:",
+    urlPlaceholder: "उदाहरण के लिए, https://pol.is/xxxxx",
+    polisTerms: "Pol.is नियम",
+    termsOfUse: "उपयोग की शर्तें",
+    ccLicense: "CC BY 4.0",
+  },
   ar: {
     importTitle: "استيراد محادثة من بوليس",
     description: "الصق رابط بوليس أدناه لاستيراد محادثة.",

@@ -16,6 +16,18 @@ export const embeddedBrowserWarningTestTranslations: Record<
       "Test the embedded browser warning dialog that appears when users open the app in an in-app browser (Telegram, WeChat, etc.)",
     openWarningButton: "Open Warning Dialog",
   },
+  de: {
+    embeddedBrowserWarning: "Warnung eingebetteter Browser",
+    embeddedBrowserWarningDescription:
+      "Testen Sie den Warnhinweis für den eingebetteten Browser, der erscheint, wenn Teilnehmende die App in einem In-App-Browser öffnen (Telegram, WeChat usw.)",
+    openWarningButton: "Warnhinweis öffnen",
+  },
+  hi: {
+    embeddedBrowserWarning: "एम्बेडेड ब्राउज़र चेतावनी",
+    embeddedBrowserWarningDescription:
+      "ऐप में इन-ऐप ब्राउज़र (Telegram, WeChat, आदि) में खोलने पर दिखने वाले एम्बेडेड ब्राउज़र चेतावनी संवाद का परीक्षण करें",
+    openWarningButton: "चेतावनी संवाद खोलें",
+  },
   ar: {
     embeddedBrowserWarning: "تحذير المتصفح المضمن",
     embeddedBrowserWarningDescription:

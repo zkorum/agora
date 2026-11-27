@@ -8,17 +8,17 @@
       <div class="settings-section">
         <div class="settings-background">
             <MenuItem
-            v-for="(language, index) in availableDisplayLanguages"
+            v-for="(language, index) in SupportedDisplayLanguageMetadataList"
             :key="language.code"
             :label="language.name"
             :value="language.englishName"
-            :show-separator="index < availableDisplayLanguages.length - 1"
+            :show-separator="index < SupportedDisplayLanguageMetadataList.length - 1"
             :border-radius="
-              availableDisplayLanguages.length === 1
+              SupportedDisplayLanguageMetadataList.length === 1
                 ? 'both'
                 : index === 0
                   ? 'top'
-                  : index === availableDisplayLanguages.length - 1
+                  : index === SupportedDisplayLanguageMetadataList.length - 1
                     ? 'bottom'
                     : 'none'
             "
@@ -49,15 +49,13 @@ import MenuItem from "src/components/ui-library/MenuItem.vue";
 import ZKIcon from "src/components/ui-library/ZKIcon.vue";
 import { usePageLayout } from "src/composables/layout/usePageLayout";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
-import type {
-  DisplayLanguageMetadata,
-  SupportedDisplayLanguageCodes,
+import {
+  SupportedDisplayLanguageMetadataList,
+  type SupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import { useAuthenticationStore } from "src/stores/authentication";
 import { useLanguageStore } from "src/stores/language";
-import { getDisplayLanguages } from "src/utils/language";
-import type { ComputedRef } from "vue";
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 
 import {
   type DisplayLanguageSettingsTranslations,
@@ -76,8 +74,6 @@ const { changeDisplayLanguage, loadLanguagePreferencesFromBackend } =
 
 const authStore = useAuthenticationStore();
 
-const availableDisplayLanguages: ComputedRef<DisplayLanguageMetadata[]> =
-  computed(() => getDisplayLanguages());
 const pendingDisplayLanguage = ref<SupportedDisplayLanguageCodes | undefined>();
 
 async function selectDisplayLanguage(

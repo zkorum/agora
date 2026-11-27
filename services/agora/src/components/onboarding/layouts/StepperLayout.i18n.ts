@@ -10,6 +10,8 @@ export const stepperLayoutTranslations: Record<
   StepperLayoutTranslations
 > = {
   en: { continue: "Continue", stepProgress: "Step {current} of {total}" },
+  de: { continue: "Weiter", stepProgress: "Schritt {current} von {total}" },
+  hi: { continue: "जारी रखें", stepProgress: "चरण {current}, {total} में से" },
   ar: { continue: "متابعة", stepProgress: "الخطوة {current} من {total}" },
   es: { continue: "Continuar", stepProgress: "Paso {current} de {total}" },
   fa: { continue: "ادامه", stepProgress: "مرحلهٔ {current} از {total}" },

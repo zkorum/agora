@@ -13,6 +13,14 @@ export const zkContentDisclosureTranslations: Record<
     readMore: "Read more",
     showLess: "Show less",
   },
+  de: {
+    readMore: "Mehr lesen",
+    showLess: "Weniger anzeigen",
+  },
+  hi: {
+    readMore: "और पढ़ें",
+    showLess: "कम दिखाएँ",
+  },
   ar: {
     readMore: "اقرأ المزيد",
     showLess: "عرض أقل",

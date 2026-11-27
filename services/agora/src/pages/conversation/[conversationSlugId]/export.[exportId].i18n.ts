@@ -13,6 +13,14 @@ export const exportStatusPageTranslations: Record<
     pageTitle: "Export Status",
     exportFeatureDisabled: "Export feature is disabled",
   },
+  de: {
+    pageTitle: "Exportstatus",
+    exportFeatureDisabled: "Exportfunktion ist deaktiviert",
+  },
+  hi: {
+    pageTitle: "निर्यात स्थिति",
+    exportFeatureDisabled: "निर्यात सुविधा अक्षम है",
+  },
   ar: {
     pageTitle: "حالة التصدير",
     exportFeatureDisabled: "ميزة التصدير معطلة",

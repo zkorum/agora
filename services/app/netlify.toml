@@ -23,30 +23,6 @@ status = 301
 force = true
 
 [[redirects]]
-from = "/fr/blog"
-to = "/fr/resources"
-status = 301
-force = true
-
-[[redirects]]
-from = "/fr/blog/*"
-to = "/fr/resources/:splat"
-status = 301
-force = true
-
-[[redirects]]
-from = "/es/blog"
-to = "/es/resources"
-status = 301
-force = true
-
-[[redirects]]
-from = "/es/blog/*"
-to = "/es/resources/:splat"
-status = 301
-force = true
-
-[[redirects]]
 from = "/ar/blog"
 to = "/ar/resources"
 status = 301
@@ -55,42 +31,6 @@ force = true
 [[redirects]]
 from = "/ar/blog/*"
 to = "/ar/resources/:splat"
-status = 301
-force = true
-
-[[redirects]]
-from = "/fa/blog"
-to = "/fa/resources"
-status = 301
-force = true
-
-[[redirects]]
-from = "/fa/blog/*"
-to = "/fa/resources/:splat"
-status = 301
-force = true
-
-[[redirects]]
-from = "/he/blog"
-to = "/he/resources"
-status = 301
-force = true
-
-[[redirects]]
-from = "/he/blog/*"
-to = "/he/resources/:splat"
-status = 301
-force = true
-
-[[redirects]]
-from = "/ja/blog"
-to = "/ja/resources"
-status = 301
-force = true
-
-[[redirects]]
-from = "/ja/blog/*"
-to = "/ja/resources/:splat"
 status = 301
 force = true
 
@@ -119,6 +59,66 @@ status = 301
 force = true
 
 [[redirects]]
+from = "/fr/blog"
+to = "/fr/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/fr/blog/*"
+to = "/fr/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "/de/blog"
+to = "/de/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/de/blog/*"
+to = "/de/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "/he/blog"
+to = "/he/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/he/blog/*"
+to = "/he/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "/hi/blog"
+to = "/hi/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/hi/blog/*"
+to = "/hi/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "/ja/blog"
+to = "/ja/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/ja/blog/*"
+to = "/ja/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
 from = "/ky/blog"
 to = "/ky/resources"
 status = 301
@@ -131,6 +131,18 @@ status = 301
 force = true
 
 [[redirects]]
+from = "/fa/blog"
+to = "/fa/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/fa/blog/*"
+to = "/fa/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
 from = "/ru/blog"
 to = "/ru/resources"
 status = 301
@@ -139,5 +151,17 @@ force = true
 [[redirects]]
 from = "/ru/blog/*"
 to = "/ru/resources/:splat"
+status = 301
+force = true
+
+[[redirects]]
+from = "/es/blog"
+to = "/es/resources"
+status = 301
+force = true
+
+[[redirects]]
+from = "/es/blog/*"
+to = "/es/resources/:splat"
 status = 301
 force = true

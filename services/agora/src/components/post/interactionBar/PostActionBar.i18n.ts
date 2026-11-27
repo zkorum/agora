@@ -39,6 +39,46 @@ export const postActionBarTranslations: Record<
     maxdiffParticipantsExplanation:
       "Participants who only voted on completed and canceled items are excluded from ranking.",
   },
+  de: {
+    share: "Teilen",
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+    totalVotes: "Gesamtstimmen",
+    totalParticipants: "Gesamtzahl der Teilnehmenden",
+    usedForAnalysis: "Für die Analyse verwendet",
+    usedForRanking: "Für die Rangfolge verwendet",
+    moderatedVotesExplanation:
+      "Stimmen zu moderierten Aussagen fließen nicht in die Analyse ein.",
+    moderatedParticipantsExplanation:
+      "Wer ausschließlich über moderierte Aussagen abgestimmt hat, wird in der Analyse nicht berücksichtigt.",
+    surveyVotesExplanation:
+      "Stimmen von Teilnehmenden, die die Umfrage nicht abgeschlossen haben, werden von der Analyse ausgeschlossen.",
+    surveyParticipantsExplanation:
+      "Teilnehmende, die die Umfrage nicht abgeschlossen haben, werden von der Analyse ausgeschlossen.",
+    maxdiffVotesExplanation:
+      "Stimmen zu abgeschlossenen und stornierten Punkten werden von der Rangfolge ausgeschlossen.",
+    maxdiffParticipantsExplanation:
+      "Teilnehmende, die nur an abgeschlossenen und stornierten Punkten teilgenommen haben, werden von der Rangfolge ausgeschlossen.",
+  },
+  hi: {
+    share: "साझा करें",
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी किया गया",
+    totalVotes: "कुल मत",
+    totalParticipants: "कुल प्रतिभागी",
+    usedForAnalysis: "विश्लेषण के लिए उपयोग किया गया",
+    usedForRanking: "रैंकिंग के लिए उपयोग किया गया",
+    moderatedVotesExplanation:
+      "जिन कथनों पर मॉडरेशन हुआ है, उनके मत विश्लेषण में शामिल नहीं होते।",
+    moderatedParticipantsExplanation:
+      "जिन प्रतिभागियों ने केवल ऐसे कथनों पर मत दिए हैं जिन पर मॉडरेशन हुआ है, वे विश्लेषण में शामिल नहीं होते।",
+    surveyVotesExplanation:
+      "उन प्रतिभागियों के मत जो सर्वेक्षण पूरा नहीं कर पाए हैं, उन्हें विश्लेषण से बाहर रखा जाता है।",
+    surveyParticipantsExplanation:
+      "जिन प्रतिभागियों ने सर्वेक्षण पूरा नहीं किया है, उन्हें विश्लेषण से बाहर रखा जाता है।",
+    maxdiffVotesExplanation:
+      "पूर्ण और रद्द किए गए मदों पर मत रैंकिंग से बाहर रखे जाते हैं।",
+    maxdiffParticipantsExplanation:
+      "जिन प्रतिभागियों ने केवल पूर्ण और रद्द किए गए मदों पर मतदान किया है, उन्हें रैंकिंग से बाहर रखा जाता है।",
+  },
   ar: {
     share: "مشاركة",
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",

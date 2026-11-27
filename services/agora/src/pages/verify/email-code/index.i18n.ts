@@ -11,6 +11,12 @@ export const verifyEmailCodeTranslations: Record<
   en: {
     title: "Enter Code",
   },
+  de: {
+    title: "Code eingeben",
+  },
+  hi: {
+    title: "कोड दर्ज करें",
+  },
   ar: {
     title: "أدخل الرمز",
   },

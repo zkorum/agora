@@ -11,6 +11,12 @@ export const moderationTimeTranslations: Record<
   en: {
     edited: "(edited)",
   },
+  de: {
+    edited: "(bearbeitet)",
+  },
+  hi: {
+    edited: "(संपादित)",
+  },
   ar: {
     edited: "(معدل)",
   },

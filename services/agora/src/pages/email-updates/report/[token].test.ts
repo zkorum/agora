@@ -330,7 +330,7 @@ describe("Email Update report page", () => {
 });
 
 describe("Email Update report translations", () => {
-  it("provides complete localized reporting and opt-out copy in all 11 languages", () => {
+  it("provides complete localized reporting and opt-out copy in every display language", () => {
     expect(Object.keys(emailUpdateReportTranslations).sort()).toEqual(
       [...ZodSupportedDisplayLanguageCodes.options].sort()
     );

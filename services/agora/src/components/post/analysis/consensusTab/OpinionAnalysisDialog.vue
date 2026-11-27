@@ -136,7 +136,7 @@
                   >
                     <td class="group-name">
                       {{
-                        `${formatClusterLabel(group.key, true, getClusterLabel(group.key))} (${formatAmount(group.numUsers)})`
+                        `${getClusterLabel(group.key)} (${formatAmount(group.numUsers)})`
                       }}
                     </td>
                     <td class="agree-cell">
@@ -190,11 +190,12 @@
 <script setup lang="ts">
 import OpinionIdentityCard from "src/components/post/comments/OpinionIdentityCard.vue";
 import ZKButton from "src/components/ui-library/ZKButton.vue";
+import { useGroupLabel } from "src/composables/opinion/useGroupLabel";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { AnalysisOpinionItem, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { useRouterNavigation } from "src/utils/router/navigation";
 import { computed } from "vue";
 
@@ -214,14 +215,15 @@ const props = defineProps<{
 
 const { openComment } = useRouterNavigation();
 
+const formatGroupLabel = useGroupLabel();
 const { t } = useComponentI18n<OpinionAnalysisDialogTranslations>(
   opinionAnalysisDialogTranslations
 );
 
 const showDialog = defineModel<boolean>({ required: true });
 
-function getClusterLabel(key: PolisKey): string | undefined {
-  return props.clusterLabels[key];
+function getClusterLabel(key: PolisKey): string {
+  return props.clusterLabels[key] ?? formatGroupLabel(getClusterLetter(key));
 }
 
 const noGroupStats = computed(() => {

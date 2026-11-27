@@ -21,16 +21,18 @@ posts/
 │   ├── bloquonstout.md
 │   ├── facilitation-guide.md
 │   └── tech4nature.md
-├── fr/
-├── es/
 ├── ar/
-├── fa/
+├── zh-hans/
+├── zh-hant/
+├── fr/
+├── de/
 ├── he/
+├── hi/
 ├── ja/
 ├── ky/
+├── fa/
 ├── ru/
-├── zh-hans/
-└── zh-hant/
+└── es/
 ```
 
 Each locale folder mirrors the same set of slugs. The slug is derived from the filename.

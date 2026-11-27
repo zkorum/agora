@@ -14,6 +14,16 @@ export const editConversationRouteGuardTranslations: Record<
     cancel: "Keep editing",
     discard: "Discard changes",
   },
+  de: {
+    message: "Möchten Sie Ihre ungespeicherten Änderungen an der Diskussion verwerfen?",
+    cancel: "Bearbeitung beibehalten",
+    discard: "Änderungen verwerfen",
+  },
+  hi: {
+    message: "क्या आप अपनी सहेजी न गई चर्चा में बदलाव छोड़ना चाहते हैं?",
+    cancel: "संपादित करना जारी रखें",
+    discard: "बदलाव छोड़ें",
+  },
   fr: {
     message:
       "Abandonner les modifications non enregistrées de la conversation ?",

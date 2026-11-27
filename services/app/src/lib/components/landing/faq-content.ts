@@ -131,6 +131,198 @@ export const faqContentByLocale: Record<Locale, FaqContent> = {
       },
     ],
   },
+  de: {
+    questionCountLabel: "Fragen",
+    groups: [
+      {
+        title: "Nutzung von Agora",
+        items: [
+          {
+            question: "Für wen ist Agora gedacht?",
+            answer:
+              "Agora richtet sich an Menschen, die Veranstaltungen moderieren, Gemeinschaften organisieren oder Beteiligungsprozesse begleiten. Auch Unternehmen, DAOs, NGOs und öffentliche Einrichtungen können Agora nutzen, wenn sie unterschiedliche Sichtweisen besser verstehen möchten.",
+          },
+          {
+            question: "Wann nutze ich den Diskussionsmodus und wann den Priorisierungsmodus?",
+            answer:
+              "Ist die Frage noch offen? Im Diskussionsmodus sammeln Sie Sichtweisen und finden heraus, worüber Uneinigkeit herrscht und worauf sich die Gruppe verständigen kann. Liegen bereits Vorschläge vor, hilft der Priorisierungsmodus, sie nach Wichtigkeit zu ordnen. [Zum Moderationsleitfaden](/resources/facilitation-guide).",
+          },
+          {
+            question: "Wir haben einen Konsens gefunden. Wie geht es weiter?",
+            answer:
+              "Ein Konsens zeigt, was die Gruppe mitträgt. Er sagt noch nichts darüber aus, was zuerst geschehen soll. Übernehmen Sie die Vorschläge mit dem breitesten Rückhalt in den Priorisierungsmodus. Die Teilnehmenden vergleichen sie; mit [Solidago](https://solidago.tournesol.app/) erstellt Agora daraus eine gemeinsame Rangfolge. Sie kann als Grundlage für einen Zeitplan, ein Budget, konkrete Maßnahmen oder eine Entscheidung dienen. [So hat ein 30-köpfiges Team seine KI-Charta gemeinsam erarbeitet](/resources/ai-charter-workshop).",
+          },
+        ],
+      },
+      {
+        title: "Wie Konsens funktioniert",
+        items: [
+          {
+            question: "Wie findet Agora Gemeinsamkeiten?",
+            answer:
+              "Zu jeder Aussage wählen die Teilnehmenden „Stimme zu“, „Stimme nicht zu“ oder „Unsicher“. Agora wertet die Muster in diesen Stimmen aus, nicht den Wortlaut der Aussagen. Die Karte zeigt, wer ähnlich abstimmt, wo die Meinungen auseinandergehen und welche Aussagen gruppenübergreifend Unterstützung finden. Agora nutzt dafür [Red Dwarf](https://github.com/polis-community/red-dwarf), eine freie Bibliothek für maschinelles Lernen. Dafür ist kein großes Sprachmodell (LLM) nötig. Dieselben Stimmen und Einstellungen ergeben dieselbe Karte. Die Ergebnisse lassen sich so überprüfen und sind für diese Aufgabe verlässlicher als die Einschätzung eines LLM allein.",
+          },
+          {
+            question: "Was unterscheidet Konsens von einer Mehrheit?",
+            answer:
+              "Eine Aussage hat eine Mehrheit, wenn die meisten Teilnehmenden ihr zustimmen. Für einen Konsens braucht sie Rückhalt in allen Meinungsgruppen. Eine zahlenmäßig große Gruppe kann eine kleinere also nicht einfach überstimmen. Konsens bedeutet bei Agora nicht Einstimmigkeit, sondern Zustimmung über die wesentlichen Meinungsunterschiede hinweg.",
+          },
+          {
+            question: "Was sind Meinungsgruppen und welche Aussagen verbinden sie?",
+            answer:
+              "Eine Meinungsgruppe besteht aus Personen, die ähnlich abgestimmt haben. Entscheidend ist ihr Abstimmungsverhalten, nicht ihre demografische Zugehörigkeit oder eine KI-Bezeichnung. Manche Aussagen finden in unterschiedlichen Gruppen Unterstützung, selbst wenn diese in vielen anderen Fragen uneins sind.",
+          },
+          getComparisonFaq("de"),
+          {
+            question: "Bestimmt eine KI die Ergebnisse?",
+            answer:
+              "Nein. Agora erkennt Meinungsgruppen und Gemeinsamkeiten anhand einer deterministischen Auswertung der Stimmen. Erst danach benennt Mistral Large die Gruppen und fasst deren Sichtweisen anhand der jeweils charakteristischen Aussagen zusammen. Namen und Zusammenfassungen erläutern das Ergebnis, sie bestimmen es nicht. Die ursprünglichen Aussagen bleiben bei jeder Gruppe sichtbar. Wer die Diskussion organisiert, kann die KI-Zusammenfassungen abschalten.",
+          },
+          {
+            question: "Wie funktioniert der Priorisierungsmodus?",
+            answer:
+              "Die Teilnehmenden sehen jeweils einige Vorschläge und wählen daraus den wichtigsten und den unwichtigsten. [Solidago](https://solidago.tournesol.app/) führt diese Entscheidungen zu einer gemeinsamen Rangfolge zusammen. Wir arbeiten daran, zusätzlich quadratische Abstimmungen anzubieten.",
+          },
+        ],
+      },
+      {
+        title: "Datenschutz & Vertrauen",
+        items: [
+          {
+            question: "Wie schützen Zero-Knowledge-Beweise die Privatsphäre?",
+            answer:
+              "Mit einem [Zero-Knowledge-Beweis (ZKP)](https://en.wikipedia.org/wiki/Zero-knowledge_proof) können Teilnehmende etwa ihre Berechtigung oder Einmaligkeit belegen, ohne personenbezogene Daten offenzulegen. Sie können beispielsweise ihre Altersgruppe nachweisen, ohne ihr genaues Alter zu nennen. Agora unterstützt derzeit [ZK Passport](https://rarimo.com/) für anonyme Nachweise zu Staatsangehörigkeit, Alter und Geschlecht. Kontaktieren Sie uns, wenn Sie andere Nachweise einrichten möchten, etwa für eine Veranstaltungsteilnahme, einen GPS-Standort oder eine WLAN-Verbindung.",
+          },
+          {
+            question: "Ist die Teilnahme an Agora anonym?",
+            answer:
+              "Agora ermöglicht eine datensparsame Teilnahme. Ob sie anonym bleibt, hängt von den Einstellungen und davon ab, was die Teilnehmenden selbst schreiben. [Warum Zero-Knowledge-Beweise allein die Privatsphäre nicht schützen können](/resources/why-zk-proofs-alone-arent-enough).",
+          },
+          {
+            question: "Wie funktioniert die Moderation?",
+            answer:
+              "Alle können Inhalte melden, etwa Spam, irreführende, antisoziale, sexuelle oder rechtswidrige Beiträge sowie die Veröffentlichung privater Daten (Doxing). Wer die Diskussion erstellt hat oder moderiert, kann auf Meldungen reagieren. Die Maßnahmen sind im Moderationsverlauf dokumentiert.",
+          },
+          {
+            question: "Ist Agora DSGVO-konform?",
+            answer:
+              "ZKorum SAS entwickelt Agora in Frankreich. Datenschutz durch Technikgestaltung, Datensparsamkeit, die Rechte der Nutzenden und die Vorgaben der DSGVO fließen in die Entwicklung ein.",
+          },
+        ],
+      },
+      {
+        title: "Offene Infrastruktur",
+        items: [
+          {
+            question: "Ist Agora Open Source?",
+            answer:
+              "Ja. Der Quellcode steht auf [GitHub](https://github.com/zkorum/agora) unter freien Lizenzen zur Verfügung. Wir freuen uns über Prüfungen, Rückmeldungen und Beiträge. Demokratie braucht aus unserer Sicht eine digitale Infrastruktur, die alle nutzen, verändern und verbessern können. Auch unsere Entwicklungsplanung ist öffentlich. [Entscheiden Sie mit, woran wir als Nächstes arbeiten](https://www.agoracitizen.app/conversation/nRAynpw).",
+          },
+          {
+            question: "Lässt sich Agora mit anderen Werkzeugen verbinden?",
+            answer:
+              "Ja. Importe, Exporte, Einbettungen und der offene Quellcode ermöglichen den Austausch; APIs sind in Entwicklung. Wir haben auch den [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/) angestoßen. Eine W3C Community Group entwickelt ihn weiter, damit Werkzeuge für gemeinsame Beratungen zusammenarbeiten können, ohne von einem einzigen Protokoll abzuhängen.",
+          },
+        ],
+      },
+    ],
+  },
+  hi: {
+    questionCountLabel: "प्रश्न",
+    groups: [
+      {
+        title: "Agora का उपयोग करना",
+        items: [
+          {
+            question: "Agora किसके लिए है?",
+            answer:
+              "Agora उन सभी समूहों के लिए है जो मतभेदों के बावजूद एक-दूसरे का नज़रिया समझना चाहते हैं। इनमें संचालक, कार्यक्रम आयोजक, नागरिक भागीदारी पर काम करने वाली टीमें, समुदाय प्रबंधक, कंपनियाँ, DAO, गैर-सरकारी संगठन और सार्वजनिक संस्थाएँ शामिल हैं।",
+          },
+          {
+            question: "चर्चा मोड और प्राथमिकता निर्धारण मोड में से किसे चुनें?",
+            answer:
+              "अगर सवाल अभी खुला है, तो चर्चा मोड चुनें। इसमें आप अलग-अलग नज़रिए जान सकते हैं और देख सकते हैं कि सहमति और असहमति कहाँ है। अगर प्रस्ताव पहले से तैयार हैं और आप उनका महत्व तय करना चाहते हैं, तो प्राथमिकता निर्धारण मोड चुनें। [संचालन मार्गदर्शिका पढ़ें](/resources/facilitation-guide)।",
+          },
+          {
+            question: "सहमति बन गई है। अब आगे क्या करें?",
+            answer:
+              "सहमति से पता चलता है कि समूह किन प्रस्तावों का समर्थन करता है, लेकिन यह तय नहीं होता कि पहले क्या किया जाए। जिन प्रस्तावों को अलग-अलग मत समूहों का सबसे मज़बूत समर्थन मिला है, उन्हें प्राथमिकता निर्धारण मोड में ले जाएँ। प्रतिभागी विकल्पों की तुलना करते हैं और Agora [Solidago](https://solidago.tournesol.app/) की मदद से साझा प्राथमिकता सूची बनाता है। इसके आधार पर आप योजना, बजट, अगले कदम या अंतिम फ़ैसला तय कर सकते हैं। [देखें कि कैसे 30 लोगों की एक टीम ने इसी तरीके से अपना एआई चार्टर मिलकर लिखा](/resources/ai-charter-workshop)।",
+          },
+        ],
+      },
+      {
+        title: "सहमति कैसे काम करती है",
+        items: [
+          {
+            question: "Agora सहमति के बिंदु कैसे खोजता है?",
+            answer:
+              "हर कथन पर प्रतिभागी “सहमत”, “असहमत” या “तय नहीं” चुनते हैं। Agora कथनों के शब्दों के बजाय मतदान के रुझानों को देखता है। मानचित्र दिखाता है कि किन लोगों की राय मिलती है, कहाँ मतभेद हैं और किन कथनों को अलग-अलग मत समूहों का समर्थन मिलता है। इसे बनाने के लिए Agora [Red Dwarf](https://github.com/polis-community/red-dwarf) नाम की ओपन-सोर्स मशीन लर्निंग लाइब्रेरी इस्तेमाल करता है। इसके लिए बड़े भाषा मॉडल (LLM) की ज़रूरत नहीं होती। मत और सेटिंग्स एक जैसी हों तो मानचित्र भी वही बनता है। इससे नतीजों को जाँचना आसान होता है और इस काम के लिए वे अकेले LLM पर निर्भर रहने से अधिक भरोसेमंद होते हैं।",
+          },
+          {
+            question: "सहमति और बहुमत में क्या अंतर है?",
+            answer:
+              "बहुमत का मतलब है कि कुल प्रतिभागियों में से अधिकांश किसी कथन का समर्थन करते हैं। सहमति के लिए उस कथन को अलग-अलग मत समूहों का समर्थन चाहिए। इसलिए बड़ा समूह केवल अपनी संख्या के बल पर छोटे समूह की राय को दरकिनार नहीं कर सकता। Agora में सहमति का अर्थ यह नहीं कि हर व्यक्ति सहमत है, बल्कि यह है कि मुख्य मतभेदों के बावजूद उस कथन को समर्थन मिला है।",
+          },
+          {
+            question: "मत समूह क्या हैं और उन्हें कौन-से कथन जोड़ते हैं?",
+            answer:
+              "एक मत समूह में वे प्रतिभागी होते हैं जिनके मतदान के रुझान मिलते हैं। समूह बनाने का आधार उनके मत हैं, न कि उनकी जनसांख्यिकीय जानकारी या एआई का दिया हुआ नाम। कुछ कथनों को अलग-अलग समूहों का समर्थन मिल जाता है, भले ही वे कई दूसरे मुद्दों पर असहमत हों।",
+          },
+          getComparisonFaq("hi"),
+          {
+            question: "क्या नतीजे एआई तय करता है?",
+            answer:
+              "नहीं। Agora मत समूहों और सहमति के बिंदुओं की पहचान मतदान के रुझानों के विश्लेषण से करता है, जनरेटिव एआई से नहीं। समूह बनने के बाद Mistral Large हर समूह का प्रतिनिधित्व करने वाले कथनों के आधार पर उसे एक नाम देता है और उसकी राय का सार लिखता है। ये नाम और सार नतीजे समझने में मदद करते हैं, उन्हें तय नहीं करते। हर समूह के मूल कथन दिखाई देते हैं। चर्चा के आयोजक एआई सारांश बंद कर सकते हैं।",
+          },
+          {
+            question: "प्राथमिकता निर्धारण मोड कैसे काम करता है?",
+            answer:
+              "प्रतिभागियों को एक बार में कुछ प्रस्ताव दिखते हैं। वे उनमें से सबसे ज़रूरी और सबसे कम ज़रूरी प्रस्ताव चुनते हैं। [Solidago](https://solidago.tournesol.app/) इन चुनावों को मिलाकर साझा रैंकिंग बनाता है। हम एक और विकल्प के रूप में द्विघात मतदान जोड़ने पर काम कर रहे हैं।",
+          },
+        ],
+      },
+      {
+        title: "गोपनीयता और विश्वास",
+        items: [
+          {
+            question: "Agora शून्य-ज्ञान प्रमाणों से निजता की रक्षा कैसे करता है?",
+            answer:
+              "[शून्य-ज्ञान प्रमाण (ZKP)](https://en.wikipedia.org/wiki/Zero-knowledge_proof) से प्रतिभागी अपनी निजी जानकारी बताए बिना पात्रता साबित कर सकते हैं या यह दिखा सकते हैं कि वे एक ही व्यक्ति के रूप में भाग ले रहे हैं। उदाहरण के लिए, आप अपनी सटीक उम्र बताए बिना अपना आयु वर्ग साबित कर सकते हैं। अभी Agora [ZK Passport](https://rarimo.com/) का समर्थन करता है, जिससे पहचान गुप्त रखते हुए नागरिकता, उम्र और लिंग का प्रमाण दिया जा सकता है। अगर आप किसी कार्यक्रम में मौजूदगी, GPS स्थान या वाई-फ़ाई कनेक्शन का गुमनाम प्रमाण जैसी कोई दूसरी व्यवस्था अपनाना चाहते हैं, तो हमसे संपर्क करें।",
+          },
+          {
+            question: "क्या Agora में भाग लेने वालों की पहचान गुप्त रहती है?",
+            answer:
+              "Agora में अपनी निजता बचाते हुए भाग लेना संभव है। पहचान गुप्त रहेगी या नहीं, यह सेटिंग्स पर और इस पर निर्भर करता है कि प्रतिभागी खुद क्या लिखते हैं। [जानें कि निजता के लिए अकेले शून्य-ज्ञान प्रमाण काफ़ी क्यों नहीं हैं](/resources/why-zk-proofs-alone-arent-enough)।",
+          },
+          {
+            question: "मॉडरेशन कैसे काम करता है?",
+            answer:
+              "कोई भी स्पैम, भ्रामक, असामाजिक, यौन या अवैध सामग्री की शिकायत कर सकता है। किसी की निजी जानकारी उजागर किए जाने की भी शिकायत की जा सकती है। चर्चा के आयोजक और मॉडरेटर शिकायतों पर कार्रवाई कर सकते हैं। हर कार्रवाई मॉडरेशन के इतिहास में दर्ज होती है।",
+          },
+          {
+            question: "क्या Agora GDPR के अनुरूप है?",
+            answer:
+              "Agora को फ़्रांस में ZKorum SAS विकसित करता है। इसे बनाते समय शुरू से ही निजता की रक्षा, केवल आवश्यक डेटा के संग्रह, उपयोगकर्ताओं के अधिकारों और GDPR के दायित्वों को ध्यान में रखा जाता है।",
+          },
+        ],
+      },
+      {
+        title: "खुला बुनियादी ढांचा",
+        items: [
+          {
+            question: "क्या Agora ओपन सोर्स है?",
+            answer:
+              "हाँ। Agora का कोड [GitHub](https://github.com/zkorum/agora) पर ओपन-सोर्स लाइसेंस के तहत उपलब्ध है। हम समुदाय को इसकी जाँच करने, सुझाव देने और योगदान करने के लिए आमंत्रित करते हैं। हमारा मानना है कि लोकतंत्र के लिए ऐसा डिजिटल ढाँचा ज़रूरी है जिसे कोई भी इस्तेमाल कर सके, बदल सके और बेहतर बना सके। हमारे विकास की योजना भी सार्वजनिक है। [आगे क्या बनाया जाए, यह तय करने में मदद करें](https://www.agoracitizen.app/conversation/nRAynpw)।",
+          },
+          {
+            question: "क्या Agora दूसरे टूल के साथ काम कर सकता है?",
+            answer:
+              "हाँ। डेटा इम्पोर्ट और एक्सपोर्ट करने, सामग्री एम्बेड करने और खुले स्रोत कोड की मदद से Agora को दूसरे टूल से जोड़ा जा सकता है। API पर भी काम चल रहा है। हमने [Decentralized Deliberation Stack (DDS)](https://www.w3.org/community/dds/) की शुरुआत की थी। अब एक W3C सामुदायिक समूह इसे विकसित कर रहा है, ताकि विचार-विमर्श के अलग-अलग टूल किसी एक प्रोटोकॉल पर निर्भर हुए बिना साथ काम कर सकें।",
+          },
+        ],
+      },
+    ],
+  },
   fr: {
     questionCountLabel: "questions",
     groups: [

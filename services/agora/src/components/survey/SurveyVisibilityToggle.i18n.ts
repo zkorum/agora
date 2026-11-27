@@ -13,6 +13,14 @@ export const surveyVisibilityToggleTranslations: Record<
     suppressed: "Suppressed",
     full: "Full",
   },
+  de: {
+    suppressed: "Öffentliche Ansicht",
+    full: "Vollständig",
+  },
+  hi: {
+    suppressed: "सार्वजनिक दृश्य",
+    full: "पूर्ण",
+  },
   ar: {
     suppressed: "محجوب",
     full: "كامل",

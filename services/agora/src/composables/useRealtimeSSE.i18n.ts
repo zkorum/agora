@@ -42,6 +42,48 @@ export const realtimeSSETranslations: Record<
     facilitatorGroupCountPreferenceChanged:
       "Facilitator group count preference changed",
   },
+  de: {
+    sessionEnded: "Sitzung beendet",
+    conversationClosed:
+      "Diese Diskussion wurde von der Moderationsleitung geschlossen",
+    conversationOpened:
+      "Diese Diskussion wurde von der Moderationsleitung wiedereröffnet",
+    conversationSettingsUpdated: "Diskussionseinstellungen aktualisiert",
+    conversationPublic: "Diese Diskussion ist nun öffentlich",
+    conversationPrivate: "Diese Diskussion ist nun privat",
+    participationGuestAllowed: "Jeder kann nun als Gast teilnehmen",
+    participationAccountRequired: "Die Teilnahme erfordert nun ein Konto",
+    participationEmailVerificationRequired:
+      "Die Teilnahme erfordert nun eine E-Mail-Verifizierung",
+    participationStrongVerificationRequired:
+      "Die Teilnahme erfordert nun eine starke Verifizierung",
+    eventTicketRequired: "Ein Event-Ticket ist nun erforderlich",
+    eventTicketNotRequired: "Ein Event-Ticket ist nicht mehr erforderlich",
+    llmTurnedOnByFacilitator: "Die Moderationsleitung hat das LLM aktiviert",
+    llmTurnedOffByFacilitator: "Die Moderationsleitung hat das LLM deaktiviert",
+    facilitatorGroupCountPreferenceChanged:
+      "Die Moderationsleitung hat die gewünschte Anzahl der Meinungsgruppen geändert",
+  },
+  hi: {
+    sessionEnded: "सत्र समाप्त",
+    conversationClosed: "संचालक द्वारा यह चर्चा बंद कर दी गई",
+    conversationOpened: "संचालक द्वारा यह चर्चा फिर से खोली गई",
+    conversationSettingsUpdated: "चर्चा सेटिंग्स अद्यतन की गईं",
+    conversationPublic: "यह चर्चा अब सार्वजनिक है",
+    conversationPrivate: "यह चर्चा अब निजी है",
+    participationGuestAllowed: "अब कोई भी अतिथि के रूप में भाग ले सकता है",
+    participationAccountRequired: "भाग लेने के लिए अब खाते की आवश्यकता है",
+    participationEmailVerificationRequired:
+      "भाग लेने के लिए अब ईमेल सत्यापन की आवश्यकता है",
+    participationStrongVerificationRequired:
+      "भाग लेने के लिए अब मजबूत सत्यापन की आवश्यकता है",
+    eventTicketRequired: "अब इवेंट टिकट की आवश्यकता है",
+    eventTicketNotRequired: "अब इवेंट टिकट की आवश्यकता नहीं है",
+    llmTurnedOnByFacilitator: "संचालक द्वारा LLM चालू किया गया था",
+    llmTurnedOffByFacilitator: "संचालक द्वारा LLM बंद किया गया था",
+    facilitatorGroupCountPreferenceChanged:
+      "संचालक ने मत समूहों की पसंदीदा संख्या बदली",
+  },
   ar: {
     sessionEnded: "انتهت الجلسة",
     conversationClosed: "تم إغلاق هذه المحادثة",

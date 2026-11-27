@@ -26,6 +26,34 @@ export const verifyPhoneTranslations: Record<
       "This phone number is already linked to another account",
     somethingWrong: "Oops! Something went wrong—please try again",
   },
+  de: {
+    title: "Telefon verifizieren",
+    alreadyHasPhone:
+      "Sie haben bereits eine Telefonnummer mit Ihrem Konto verknüpft",
+    throttled:
+      "Zu viele Versuche – bitte warten Sie, bevor Sie es erneut versuchen",
+    invalidPhoneNumber:
+      "Entschuldigung, diese Telefonnummer ist ungültig. Bitte überprüfen Sie diese und versuchen Sie es erneut.",
+    restrictedPhoneType:
+      "Entschuldigung, diese Telefonnummer wird aus Sicherheitsgründen nicht unterstützt. Bitte versuchen Sie es mit einer anderen.",
+    credentialAlreadyLinked:
+      "Diese Telefonnummer ist bereits mit einem anderen Konto verknüpft",
+    somethingWrong:
+      "Hoppla! Etwas ist schiefgelaufen – bitte versuchen Sie es erneut",
+  },
+  hi: {
+    title: "फ़ोन सत्यापित करें",
+    alreadyHasPhone: "आपके खाते से पहले से ही एक फ़ोन नंबर जुड़ा हुआ है",
+    throttled:
+      "बहुत ज़्यादा प्रयास—कृपया दोबारा कोशिश करने से पहले प्रतीक्षा करें",
+    invalidPhoneNumber:
+      "क्षमा करें, यह फ़ोन नंबर अमान्य है। कृपया जांचें और पुनः प्रयास करें।",
+    restrictedPhoneType:
+      "क्षमा करें, सुरक्षा कारणों से इस फ़ोन नंबर का समर्थन नहीं किया जाता है। कृपया कोई अन्य प्रयास करें।",
+    credentialAlreadyLinked:
+      "यह फ़ोन नंबर पहले से ही किसी अन्य खाते से जुड़ा हुआ है",
+    somethingWrong: "ओह! कुछ गड़बड़ हुई—कृपया पुनः प्रयास करें",
+  },
   ar: {
     title: "التحقق من الهاتف",
     alreadyHasPhone: "لديك بالفعل رقم هاتف مرتبط بحسابك",

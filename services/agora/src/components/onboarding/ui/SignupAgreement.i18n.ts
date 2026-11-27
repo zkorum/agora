@@ -19,6 +19,20 @@ export const signupAgreementTranslations: Record<
     and: "and",
     privacyPolicy: "Privacy Policy",
   },
+  de: {
+    agreementText: "Mit der Anmeldung akzeptieren Sie unsere",
+    agreementTextVerify: "Mit der Verifizierung akzeptieren Sie unsere",
+    termsOfService: "Nutzungsbedingungen",
+    and: "und",
+    privacyPolicy: "Datenschutzerklärung",
+  },
+  hi: {
+    agreementText: "लॉगिन करने का अर्थ है कि आप इनसे सहमत हैं:",
+    agreementTextVerify: "सत्यापन करने का अर्थ है कि आप इनसे सहमत हैं:",
+    termsOfService: "सेवा की शर्तें",
+    and: "और",
+    privacyPolicy: "गोपनीयता नीति",
+  },
   ar: {
     agreementText: "بتسجيل الدخول، فإنك توافق على",
     agreementTextVerify: "بالتحقق، فإنك توافق على",

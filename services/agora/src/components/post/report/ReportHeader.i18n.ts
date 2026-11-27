@@ -21,6 +21,23 @@ export const reportHeaderTranslations: Record<
     votes: "Votes",
     footnote: "Votes on moderated statements are excluded from the analysis.",
   },
+  de: {
+    by: "Von",
+    of: "von",
+    participants: "Teilnehmende",
+    statements: "Aussagen",
+    votes: "Stimmen",
+    footnote:
+      "Stimmen zu moderierten Aussagen fließen nicht in die Analyse ein.",
+  },
+  hi: {
+    by: "द्वारा",
+    of: "में से",
+    participants: "प्रतिभागी",
+    statements: "कथन",
+    votes: "मत",
+    footnote: "जिन कथनों पर मॉडरेशन हुआ है, उनके मत विश्लेषण में शामिल नहीं होते।",
+  },
   ar: {
     by: "بواسطة",
     of: "من",

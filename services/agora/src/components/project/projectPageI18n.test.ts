@@ -10,6 +10,8 @@ describe("translateProjectPageText", () => {
   test("uses Facilitator terminology in every supported language", () => {
     const expected = {
       en: "Facilitator version",
+      de: "Version für die Moderationsleitung",
+      hi: "संचालक संस्करण",
       es: "Versión para facilitadores",
       fr: "Version pour les facilitateurs",
       "zh-Hans": "引导员版本",

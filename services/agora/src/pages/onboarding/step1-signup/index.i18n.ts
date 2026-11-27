@@ -14,6 +14,16 @@ export const signupOnboardingTranslations: Record<
     description:
       "In a world marked by increasing polarizations, Agora strives to rehumanize and depolarize citizen dialogues on key societal issues.",
   },
+  de: {
+    pageTitle: "Warum existiert Agora?",
+    description:
+      "In einer von zunehmender Polarisierung geprägten Welt strebt Agora danach, Bürgerdialoge zu wichtigen gesellschaftlichen Themen zu rehumanisieren und zu depolarisieren.",
+  },
+  hi: {
+    pageTitle: "Agora क्यों मौजूद है?",
+    description:
+      "बढ़ते ध्रुवीकरण वाले संसार में, Agora प्रमुख सामाजिक मुद्दों पर नागरिक संवादों को मानवीय और गैर-ध्रुवीकृत बनाने का प्रयास करता है।",
+  },
   ar: {
     pageTitle: "ما الهدف من وجود أغورا؟",
     description:

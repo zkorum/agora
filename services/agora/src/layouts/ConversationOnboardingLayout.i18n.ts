@@ -9,6 +9,8 @@ export const conversationOnboardingLayoutTranslations: Record<
   ConversationOnboardingLayoutTranslations
 > = {
   en: { dialogLabel: "Conversation setup" },
+  de: { dialogLabel: "Diskussion einrichten" },
+  hi: { dialogLabel: "चर्चा सेटअप" },
   fr: { dialogLabel: "Préparation à la conversation" },
   es: { dialogLabel: "Preparación para la conversación" },
   ar: { dialogLabel: "الإعداد للمحادثة" },

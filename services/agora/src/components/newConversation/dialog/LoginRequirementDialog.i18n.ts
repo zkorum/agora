@@ -29,6 +29,34 @@ export const loginRequirementDialogTranslations: Record<
     guestParticipationDescription:
       "Anyone with the link can view the conversation, vote and contribute statements",
   },
+  de: {
+    requiresAccountTitle: "Konto erforderlich",
+    requiresAccountDescription:
+      "Jede Teilnehmende mit dem Link kann die Diskussion einsehen, benötigt jedoch ein Konto, um abzustimmen und Aussagen beizutragen",
+    requiresLoginTitle: "Starke Verifizierung erforderlich",
+    requiresLoginDescription:
+      "Jede Teilnehmende mit dem Link kann die Diskussion einsehen, benötigt jedoch eine Telefon- oder Pass-Verifizierung, um abzustimmen und Aussagen beizutragen",
+    requiresEmailVerificationTitle: "E-Mail-Verifizierung erforderlich",
+    requiresEmailVerificationDescription:
+      "Jede Teilnehmende mit dem Link kann die Diskussion einsehen, benötigt jedoch die E-Mail-Verifizierung, um abzustimmen und Aussagen beizutragen",
+    guestParticipationTitle: "Teilnahme als Gast",
+    guestParticipationDescription:
+      "Jede Teilnehmende mit dem Link kann die Diskussion einsehen, abstimmen und Aussagen beitragen",
+  },
+  hi: {
+    requiresAccountTitle: "खाता आवश्यक है",
+    requiresAccountDescription:
+      "लिंक वाला कोई भी व्यक्ति चर्चा देख सकता है, लेकिन वोट करने और कथन देने के लिए खाते की आवश्यकता होगी",
+    requiresLoginTitle: "मजबूत सत्यापन आवश्यक है",
+    requiresLoginDescription:
+      "लिंक वाला कोई भी व्यक्ति चर्चा देख सकता है, लेकिन वोट करने और कथन देने के लिए फ़ोन या पासपोर्ट सत्यापन की आवश्यकता होगी",
+    requiresEmailVerificationTitle: "ईमेल सत्यापन आवश्यक है",
+    requiresEmailVerificationDescription:
+      "लिंक वाला कोई भी व्यक्ति चर्चा देख सकता है, लेकिन वोट करने और कथन देने के लिए अपने ईमेल का सत्यापन करना होगा",
+    guestParticipationTitle: "अतिथि भागीदारी",
+    guestParticipationDescription:
+      "लिंक वाला कोई भी व्यक्ति चर्चा देख सकता है, वोट कर सकता है और कथन दे सकता है",
+  },
   ar: {
     requiresAccountTitle: "يتطلب حسابًا",
     requiresAccountDescription:

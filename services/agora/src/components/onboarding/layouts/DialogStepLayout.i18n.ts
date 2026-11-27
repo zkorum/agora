@@ -11,6 +11,12 @@ export const dialogStepLayoutTranslations: Record<
   en: {
     welcomeTitle: "Welcome to Agora!",
   },
+  de: {
+    welcomeTitle: "Willkommen bei Agora!",
+  },
+  hi: {
+    welcomeTitle: "Agora में आपका स्वागत है!",
+  },
   ar: {
     welcomeTitle: "مرحباً بك في أغورا!",
   },

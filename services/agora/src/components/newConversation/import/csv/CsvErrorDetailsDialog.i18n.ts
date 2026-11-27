@@ -25,6 +25,27 @@ export const csvErrorDetailsDialogTranslations: Record<
     errorCopied: "Error message copied to clipboard",
     close: "Close",
   },
+  de: {
+    dialogTitle: "Fehlerdetails",
+    helpText: "Bitte überprüfen Sie das Format Ihrer CSV-Datei.",
+    supportTextPrefix:
+      "Wenn etwas nicht stimmt, kontaktieren Sie uns bitte unter ",
+    supportLinkText: "Discord",
+    supportTextSuffix: " für Unterstützung.",
+    copyError: "Kopierfehler",
+    errorCopied: "Fehlermeldung in die Zwischenablage kopiert",
+    close: "Schließen",
+  },
+  hi: {
+    dialogTitle: "त्रुटि विवरण",
+    helpText: "कृपया अपनी CSV फ़ाइल प्रारूप की दोबारा जाँच करें।",
+    supportTextPrefix: "यदि कुछ गलत लगता है, तो कृपया हमें इस पर संपर्क करें ",
+    supportLinkText: "Discord",
+    supportTextSuffix: " सहायता के लिए।",
+    copyError: "कॉपी त्रुटि",
+    errorCopied: "त्रुटि संदेश क्लिपबोर्ड पर कॉपी किया गया",
+    close: "बंद करें",
+  },
   ar: {
     dialogTitle: "تفاصيل الخطأ",
     helpText: "يرجى التحقق مرة أخرى من تنسيق ملف CSV الخاص بك.",

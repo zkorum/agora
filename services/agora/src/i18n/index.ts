@@ -1,11 +1,13 @@
 import type { SupportedDisplayLanguageCodes } from "src/shared/languages";
 
 import ar from "./ar";
+import de from "./de";
 import en from "./en";
 import es from "./es";
 import fa from "./fa";
 import fr from "./fr";
 import he from "./he";
+import hi from "./hi";
 import ja from "./ja";
 import ky from "./ky";
 import ru from "./ru";
@@ -15,6 +17,8 @@ import zh_Hant from "./zh-Hant";
 
 const translations: Record<SupportedDisplayLanguageCodes, TranslationSchema> = {
   en: en,
+  de: de,
+  hi: hi,
   es: es,
   fr: fr,
   "zh-Hans": zh_Hans,

@@ -9,6 +9,8 @@ export const step3Phone2Translations: Record<
   Step3Phone2Translations
 > = {
   en: { title: "Enter the 6-digit code" },
+  de: { title: "Geben Sie den 6-stelligen Code ein" },
+  hi: { title: "6-अंकीय कोड दर्ज करें" },
   ar: { title: "أدخل الرمز المكون من 6 أرقام" },
   es: { title: "Ingrese el código de 6 dígitos" },
   fa: { title: "کد ۶ رقمی را وارد کنید" },

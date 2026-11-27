@@ -43,6 +43,48 @@ export const step3Email2Translations: Record<
     tooManyAttempts:
       "Too many attempts—please wait before requesting a new code",
   },
+  de: {
+    title: "Geben Sie den 6-stelligen Code ein",
+    instructions:
+      "Geben Sie den 6-stelligen Code ein, den wir an Sie gesendet haben",
+    expiresIn: "Gültig in",
+    codeExpired: "Code abgelaufen",
+    changeEmail: "E-Mail ändern",
+    resendCodeIn: "Code in",
+    resendCode: "Code erneut senden",
+    pleaseEnterValidCode: "Bitte geben Sie einen gültigen 6-stelligen Code ein",
+    verificationSuccessful: "Anmeldung erfolgreich!",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt",
+    codeExpiredResend: "Code abgelaufen – senden Sie einen neuen Code an",
+    wrongCodeTryAgain: "Falscher Code – bitte erneut versuchen",
+    credentialAlreadyLinked:
+      "Diese E-Mail-Adresse ist bereits mit einem anderen Konto verknüpft",
+    authStateChanged:
+      "Der Authentifizierungsstatus hat sich geändert – bitte fordern Sie einen neuen Code an",
+    somethingWrong: "Hoppla! Etwas ist nicht in Ordnung",
+    tooManyAttempts:
+      "Zu viele Versuche – bitte warten Sie, bevor Sie einen neuen Code anfordern",
+  },
+  hi: {
+    title: "6-अंकीय कोड दर्ज करें",
+    instructions: "कृपया वह 6-अंकीय कोड दर्ज करें जो हमने आपको भेजा है",
+    expiresIn: "समाप्त होने में",
+    codeExpired: "कोड समाप्त हो गया",
+    changeEmail: "ईमेल बदलें",
+    resendCodeIn: "कोड पुनः भेजें",
+    resendCode: "कोड पुनः भेजें",
+    pleaseEnterValidCode: "कृपया एक वैध 6-अंकीय कोड दर्ज करें",
+    verificationSuccessful: "लॉगिन सफल हुआ!",
+    accountMerged: "सफलता! आपके खाते मिला दिए गए हैं",
+    codeExpiredResend: "कोड समाप्त हो गया—एक नया कोड भेजें",
+    wrongCodeTryAgain: "गलत कोड—फिर से प्रयास करें",
+    credentialAlreadyLinked:
+      "यह ईमेल पता पहले से ही किसी अन्य खाते से जुड़ा हुआ है",
+    authStateChanged: "प्रमाणीकरण स्थिति बदल गई है—कृपया नया कोड माँगें",
+    somethingWrong: "ओह! कुछ गड़बड़ है",
+    tooManyAttempts:
+      "बहुत अधिक प्रयास—कृपया नया कोड मांगने से पहले प्रतीक्षा करें",
+  },
   ar: {
     title: "أدخل الرمز المكون من 6 أرقام",
     instructions: "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى",

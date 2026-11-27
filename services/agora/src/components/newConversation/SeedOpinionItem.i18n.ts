@@ -19,6 +19,20 @@ export const seedOpinionItemTranslations: Record<
     confirmDeleteConfirm: "Delete",
     confirmDeleteCancel: "Cancel",
   },
+  de: {
+    inputTextPlaceholder: "Text eingeben",
+    deleteOpinion: "Aussage löschen",
+    confirmDeleteMessage: "Möchten Sie diese Aussage wirklich löschen?",
+    confirmDeleteConfirm: "Löschen",
+    confirmDeleteCancel: "Abbrechen",
+  },
+  hi: {
+    inputTextPlaceholder: "पाठ दर्ज करें",
+    deleteOpinion: "कथन हटाएं",
+    confirmDeleteMessage: "क्या आप इस कथन को हटाना चाहते हैं?",
+    confirmDeleteConfirm: "हटाएँ",
+    confirmDeleteCancel: "रद्द करें",
+  },
   ar: {
     inputTextPlaceholder: "أدخل النص",
     deleteOpinion: "حذف المقترح",

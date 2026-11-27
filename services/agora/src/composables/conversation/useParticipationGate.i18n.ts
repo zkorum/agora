@@ -15,6 +15,18 @@ export const participationGateTranslations: Record<
     participationNeedsOnboarding:
       "Your action wasn’t saved. Complete the participation steps, then try again.",
   },
+  de: {
+    participationUnavailable:
+      "Diese Diskussion ist geschlossen oder gesperrt. Die Teilnahme ist nicht möglich.",
+    participationNeedsOnboarding:
+      "Ihre Aktion wurde nicht gespeichert. Bitte schließen Sie die Teilnahme-Schritte ab und versuchen Sie es erneut.",
+  },
+  hi: {
+    participationUnavailable:
+      "यह चर्चा बंद या लॉक है। भाग लेना उपलब्ध नहीं है।",
+    participationNeedsOnboarding:
+      "आपकी कार्रवाई सहेजी नहीं गई। कृपया भागीदारी के चरण पूरे करें, फिर से प्रयास करें।",
+  },
   ar: {
     participationUnavailable:
       "هذه المحادثة مغلقة أو مقفلة. المشاركة غير متاحة.",

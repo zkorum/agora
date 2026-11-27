@@ -68,15 +68,6 @@ export function shouldHideGroupAnalysis(
   );
 }
 
-export function formatClusterLabel(
-  index: PolisKey,
-  withGroup: boolean,
-  aiLabel?: string
-) {
-  const clusterKeyName = String.fromCharCode(65 + parseInt(index));
-  if (withGroup) {
-    return aiLabel ?? `Group ${clusterKeyName}`;
-  } else {
-    return aiLabel ?? clusterKeyName;
-  }
+export function getClusterLetter(key: PolisKey): string {
+  return String.fromCharCode(65 + Number(key));
 }

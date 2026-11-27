@@ -27,6 +27,30 @@ export const phoneInputFormTranslations: Record<
     phoneTypeNotSupported: "This phone number type is not supported",
     pleaseEnterPhoneNumber: "Please enter a phone number",
   },
+  de: {
+    smsDescription:
+      "Wenn diese Nummer berechtigt ist, erhalten Sie einen 6-stelligen Einmalcode per SMS",
+    phoneNumberPlaceholder: "Telefonnummer",
+    developmentNumbers: "Entwicklungsnummern:",
+    pleaseEnterValidPhone: "Bitte geben Sie eine gültige Telefonnummer ein",
+    countryNotSupported: "Dieses Land wird noch nicht unterstützt",
+    countryRegistrationUnavailable:
+      "Die Registrierung per Telefon ist für dieses Land nicht verfügbar. Bestehende Telefonnutzer können sich anmelden.",
+    phoneTypeNotSupported: "Dieser Telefonnummerntyp wird nicht unterstützt",
+    pleaseEnterPhoneNumber: "Bitte geben Sie eine Telefonnummer ein",
+  },
+  hi: {
+    smsDescription:
+      "यदि यह नंबर पात्र है, तो आपको SMS द्वारा एक 6-अंकीय एक बार का कोड प्राप्त होगा",
+    phoneNumberPlaceholder: "फ़ोन नंबर",
+    developmentNumbers: "विकास संख्याएँ:",
+    pleaseEnterValidPhone: "कृपया एक वैध फ़ोन नंबर दर्ज करें",
+    countryNotSupported: "यह देश अभी समर्थित नहीं है",
+    countryRegistrationUnavailable:
+      "इस देश के लिए फ़ोन से पंजीकरण उपलब्ध नहीं है। मौजूदा फ़ोन उपयोगकर्ता लॉग इन कर सकते हैं।",
+    phoneTypeNotSupported: "इस फ़ोन नंबर प्रकार का समर्थन नहीं किया जाता है",
+    pleaseEnterPhoneNumber: "कृपया एक फ़ोन नंबर दर्ज करें",
+  },
   ar: {
     smsDescription:
       "إذا كان هذا الرقم مؤهلاً، فستتلقى رمزًا مكوّنًا من 6 أرقام عبر رسالة نصية",

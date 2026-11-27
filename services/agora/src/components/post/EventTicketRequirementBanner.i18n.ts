@@ -39,6 +39,49 @@ export const eventTicketRequirementBannerTranslations: Record<
     errorTicketAlreadyUsed: 'This ticket has already been verified by another account.',
     errorUnknown: 'An unknown error occurred. Please try again.',
   },
+  de: {
+    verifyButton: "Verifizieren",
+    verifyButtonRequirement: "{eventName} Ticket erforderlich",
+    verifyingButton: "Wird verifiziert...",
+    ticketVerified: "{eventName} Ticket verifiziert",
+    accountRestored: "Willkommen zurück! Ihr Konto wurde wiederhergestellt 🎉",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt 🎉",
+    accountMergedSuccessfully: "Konto erfolgreich zusammengeführt",
+    accountRestoredAndMerged:
+      "Willkommen zurück! Ihr Konto wurde wiederhergestellt und Ihre Gastdaten zusammengeführt 🎉",
+    eventTicketVerifiedSuccessfully: "Event-Ticket erfolgreich verifiziert",
+    errorDeserialization:
+      "Ungültiges Nachweisformat. Bitte versuchen Sie es erneut.",
+    errorInvalidProof:
+      "Kryptografische Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    errorInvalidSigner: "Ticket nicht von Zupass signiert.",
+    errorWrongEvent: "Falsches Event-Ticket. {eventName} Ticket erforderlich.",
+    errorTicketAlreadyUsed:
+      "Dieses Ticket wurde bereits von einem anderen Konto verifiziert.",
+    errorUnknown:
+      "Ein unbekannter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+  },
+  hi: {
+    verifyButton: "सत्यापित करें",
+    verifyButtonRequirement: "{eventName} टिकट आवश्यक है",
+    verifyingButton: "सत्यापित कर रहे हैं...",
+    ticketVerified: "{eventName} टिकट सत्यापित हो गया",
+    accountRestored: "आपका स्वागत है! आपका खाता बहाल कर दिया गया है 🎉",
+    accountMerged: "सफलता! आपके खातों को मिला दिया गया है 🎉",
+    accountMergedSuccessfully: "खाता सफलतापूर्वक मिला दिया गया",
+    accountRestoredAndMerged:
+      "आपका स्वागत है! आपका खाता बहाल कर दिया गया है और आपका अतिथि डेटा मिला दिया गया है 🎉",
+    eventTicketVerifiedSuccessfully:
+      "कार्यक्रम टिकट सफलतापूर्वक सत्यापित हो गया",
+    errorDeserialization: "अमान्य प्रमाण प्रारूप। कृपया पुनः प्रयास करें।",
+    errorInvalidProof:
+      "क्रिप्टोग्राफ़िक सत्यापन विफल रहा। कृपया पुनः प्रयास करें।",
+    errorInvalidSigner: "टिकट Zupass द्वारा हस्ताक्षरित नहीं है।",
+    errorWrongEvent: "गलत कार्यक्रम टिकट। {eventName} टिकट आवश्यक है।",
+    errorTicketAlreadyUsed:
+      "इस टिकट को पहले ही किसी अन्य खाते द्वारा सत्यापित किया जा चुका है।",
+    errorUnknown: "एक अज्ञात त्रुटि हुई। कृपया पुनः प्रयास करें।",
+  },
   ar: {
     verifyButton: 'التحقق',
     verifyButtonRequirement: 'تذكرة {eventName} مطلوبة',

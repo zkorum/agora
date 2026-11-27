@@ -47,6 +47,56 @@ export const administratorOrganizationApiTranslations: Record<
   AdministratorOrganizationApiTranslations
 > = {
   en,
+  de: {
+    failedToFetchOrganizations: "Fehler beim Abrufen der Organisationen",
+    failedToFetchOrganizationMembers:
+      "Fehler beim Abrufen der Mitglieder der Organisation",
+    addedUserOrganizationMapping:
+      "Zuordnung von Benutzer und Organisation hinzugefügt",
+    failedToAddUserOrganizationMapping:
+      "Fehler beim Hinzufügen der Zuordnung von Benutzer und Organisation",
+    removedUserOrganizationMapping:
+      "Zuordnung von Benutzer und Organisation entfernt",
+    failedToRemoveUserOrganizationMapping:
+      "Fehler beim Entfernen der Zuordnung von Benutzer und Organisation",
+    deletedOrganization: "Organisation gelöscht",
+    failedToDeleteOrganization: "Fehler beim Löschen der Organisation",
+    createdUserOrganization: "Organisation erstellt",
+    failedToCreateUserOrganization:
+      "Fehler bei der Erstellung der Organisation",
+    updatedOrganization: "Organisation aktualisiert",
+    failedToUpdateOrganization: "Fehler beim Aktualisieren der Organisation",
+    updatedOrganizationSlug: "Slug der Organisation aktualisiert",
+    failedToUpdateOrganizationSlug:
+      "Es ist fehlgeschlagen, den Organisations-Slug zu aktualisieren",
+    organizationSlugAlreadyExists:
+      "Eine Organisation mit diesem Slug existiert bereits",
+    organizationNotFound: "Organisation nicht gefunden",
+    failedToGetUserOrganizations:
+      "Es ist fehlgeschlagen, die Organisationen des Teilnehmers abzurufen",
+  },
+  hi: {
+    failedToFetchOrganizations: "संगठनों को प्राप्त करने में विफल",
+    failedToFetchOrganizationMembers: "संगठन सदस्यों को प्राप्त करने में विफल",
+    addedUserOrganizationMapping: "उपयोगकर्ता संगठन मैपिंग जोड़ी गई",
+    failedToAddUserOrganizationMapping:
+      "उपयोगकर्ता संगठन मैपिंग जोड़ने में विफल",
+    removedUserOrganizationMapping: "उपयोगकर्ता संगठन मैपिंग हटाई गई",
+    failedToRemoveUserOrganizationMapping:
+      "उपयोगकर्ता संगठन मैपिंग हटाने में विफल",
+    deletedOrganization: "संगठन हटा दिया गया",
+    failedToDeleteOrganization: "संगठन हटाने में विफल",
+    createdUserOrganization: "संगठन बनाया गया",
+    failedToCreateUserOrganization: "संगठन बनाने में विफल",
+    updatedOrganization: "संगठन अद्यतन किया गया",
+    failedToUpdateOrganization: "संगठन अद्यतन करने में विफल",
+    updatedOrganizationSlug: "संगठन स्लग अद्यतन किया गया",
+    failedToUpdateOrganizationSlug: "संगठन स्लग अपडेट करने में विफल",
+    organizationSlugAlreadyExists: "इस स्लग का एक संगठन पहले से मौजूद है",
+    organizationNotFound: "संगठन नहीं मिला",
+    failedToGetUserOrganizations:
+      "उपयोगकर्ता के संगठनों को प्राप्त करने में विफल",
+  },
   es: {
     failedToFetchOrganizations: "No se pudieron obtener las organizaciones",
     failedToFetchOrganizationMembers:

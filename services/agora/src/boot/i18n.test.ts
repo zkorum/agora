@@ -59,6 +59,8 @@ describe("locale loading and selection", () => {
   const quasarLocales = [
     { locale: "en", pack: "en-US", direction: "ltr" },
     { locale: "ar", pack: "ar", direction: "rtl" },
+    { locale: "de", pack: "de", direction: "ltr" },
+    { locale: "hi", pack: "hi", direction: "ltr" },
     { locale: "es", pack: "es", direction: "ltr" },
     { locale: "fa", pack: "fa", direction: "rtl" },
     { locale: "fr", pack: "fr", direction: "ltr" },

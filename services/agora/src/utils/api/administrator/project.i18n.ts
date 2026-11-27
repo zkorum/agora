@@ -295,6 +295,58 @@ export const administratorProjectApiTranslations: Record<
   AdministratorProjectApiTranslations
 > = {
   en,
+  de: {
+    createdProject: "Projekt erstellt",
+    failedToCreateProject: "Es ist fehlgeschlagen, das Projekt zu erstellen",
+    failedToFetchProjects: "Es ist fehlgeschlagen, die Projekte abzurufen",
+    updatedProject: "Projekt aktualisiert",
+    failedToUpdateProject:
+      "Es ist fehlgeschlagen, das Projekt zu aktualisieren",
+    updatedProjectLanguageSettings:
+      "Spracheinstellungen des Projekts aktualisiert",
+    failedToUpdateProjectLanguageSettings:
+      "Es ist fehlgeschlagen, die Spracheinstellungen des Projekts zu aktualisieren",
+    updatedProjectSlug: "Projekt-Slug aktualisiert",
+    failedToUpdateProjectSlug:
+      "Es ist fehlgeschlagen, den Projekt-Slug zu aktualisieren",
+    deletedProject: "Projekt gelöscht",
+    failedToDeleteProject: "Es ist fehlgeschlagen, das Projekt zu löschen",
+    projectNotFound: "Projekt nicht gefunden",
+    unknownOrganizationSlug:
+      "Unbekannter Organisations-Slug: {organizationSlugs}",
+    organizationNotListed:
+      "Die Organisation muss aufgeführt sein: {organizationSlugs}",
+    projectSlugAlreadyExists: "Ein Projekt mit diesem Slug existiert bereits",
+    projectConflict:
+      "Die Projektdaten stehen im Konflikt mit einem bestehenden Datensatz",
+    dynamicTranslationEntitlementRequired:
+      "Mindestens eine Organisation des Projektbesitzers muss das Recht auf dynamische Übersetzung besitzen",
+    missingManualProjectContentLocalization:
+      "Für jede aktive Zielsprache ist ein manueller Projektinhalt erforderlich, wenn die dynamische Übersetzung deaktiviert ist",
+  },
+  hi: {
+    createdProject: "परियोजना बनाई गई",
+    failedToCreateProject: "परियोजना बनाने में विफल",
+    failedToFetchProjects: "परियोजनाएं प्राप्त करने में विफल",
+    updatedProject: "परियोजना अपडेट हुई",
+    failedToUpdateProject: "परियोजना अपडेट करने में विफल",
+    updatedProjectLanguageSettings: "परियोजना भाषा सेटिंग्स अपडेट हुई",
+    failedToUpdateProjectLanguageSettings:
+      "परियोजना भाषा सेटिंग्स अपडेट करने में विफल",
+    updatedProjectSlug: "परियोजना स्लग अपडेट हुआ",
+    failedToUpdateProjectSlug: "परियोजना स्लग अपडेट करने में विफल",
+    deletedProject: "परियोजना हटा दी गई",
+    failedToDeleteProject: "परियोजना हटाने में विफल",
+    projectNotFound: "परियोजना नहीं मिली",
+    unknownOrganizationSlug: "अज्ञात संगठन स्लग: {organizationSlugs}",
+    organizationNotListed: "संगठन सूचीबद्ध होना चाहिए: {organizationSlugs}",
+    projectSlugAlreadyExists: "इस स्लग का एक प्रोजेक्ट पहले से मौजूद है",
+    projectConflict: "प्रोजेक्ट डेटा मौजूदा रिकॉर्ड से टकराता है",
+    dynamicTranslationEntitlementRequired:
+      "कम से कम एक प्रोजेक्ट मालिक संगठन के पास डायनामिक अनुवाद का अधिकार होना चाहिए",
+    missingManualProjectContentLocalization:
+      "डायनामिक अनुवाद बंद होने पर हर सक्रिय लक्ष्य भाषा के लिए मैन्युअल प्रोजेक्ट सामग्री आवश्यक है",
+  },
   ar,
   es,
   fa,

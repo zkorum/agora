@@ -241,6 +241,8 @@ class DisplayLanguageCode(StrEnum):
     he = "he"
     ky = "ky"
     ru = "ru"
+    de = "de"
+    hi = "hi"
 
 
 class ConversationViewSnapshotCheckpointReasonEnum(StrEnum):

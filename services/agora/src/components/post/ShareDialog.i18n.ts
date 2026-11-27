@@ -22,6 +22,18 @@ export const shareDialogTranslations: Record<
     couldNotCopy: "Could not copy to clipboard",
     qrCodeAlt: "QR code",
   },
+  de: {
+    copyLink: "Link kopieren",
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+    couldNotCopy: "Konnte nicht in die Zwischenablage kopieren",
+    qrCodeAlt: "QR-Code",
+  },
+  hi: {
+    copyLink: "लिंक कॉपी करें",
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी हो गया",
+    couldNotCopy: "क्लिपबोर्ड पर कॉपी नहीं किया जा सका",
+    qrCodeAlt: "QR कोड",
+  },
   ar: {
     copyLink: "نسخ الرابط",
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",

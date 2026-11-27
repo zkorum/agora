@@ -61,6 +61,74 @@ export const opinionWritingGuidelinesDialogTranslations: Record<
     dontCombineExampleGood1: "Healthcare should be free at point of service",
     dontCombineExampleGood2: "College tuition should be free",
   },
+  de: {
+    title: "Tipps zum Verfassen guter Aussagen",
+    singleIdeaTitle: "Ein spezifischer Gedanke",
+    singleIdeaDescription:
+      "Konzentrieren Sie sich auf einen einzigen Punkt, über den andere abstimmen können",
+    singleIdeaExampleGood:
+      "Fahrdienste sollten dieselben Versicherungsanforderungen wie Taxifahrer haben",
+    singleIdeaExampleBad:
+      "Uber sollte verboten werden und Taxis benötigen bessere Apps und Bewertungssysteme",
+    easyVoteTitle: "Einfach zustimmen/ablehnen",
+    easyVoteDescription: "Vermeiden Sie komplexe oder mehrteilige Aussagen",
+    easyVoteExampleGood:
+      "Soziale Medienunternehmen sollten für Fehlinformationen auf ihren Plattformen haftbar gemacht werden",
+    easyVoteExampleBad:
+      "Die Regulierung sozialer Medien ist komplex und hängt von verschiedenen Faktoren und kulturellen Kontexten ab",
+    keepBriefTitle: "Kurz halten",
+    keepBriefDescription: "Streben Sie {maxLength} Zeichen oder weniger an",
+    keepBriefExampleGood:
+      "Öffentlicher Nahverkehr sollte für Studierende kostenlos sein",
+    keepBriefExampleBad:
+      "Ich denke, dass städtische Verkehrssysteme die Einführung von reduzierten oder kostenlosen Tarifrichtlinien für Personen in Bildungsprogrammen in Betracht ziehen sollten, weil...",
+    beClearTitle: "Seien Sie klar",
+    beClearDescription: "Andere sollten Ihren Standpunkt sofort verstehen",
+    beClearExampleGood: "Telearbeit steigert die Produktivität der Mitarbeiter",
+    beClearExampleBad:
+      "Telearbeitsparadigmen erfordern eine Neubewertung der Organisationsdynamik",
+    dontCombineTitle: "Nicht kombinieren",
+    dontCombineDescription:
+      'Teilen Sie "A und B" in separate Aussagen für eine klarere Abstimmung auf',
+    dontCombineExampleBad:
+      "Wir brauchen eine universelle Gesundheitsversorgung und kostenlose Studiengebühren",
+    dontCombineExampleGood1:
+      "Die Gesundheitsversorgung sollte am Leistungspunkt kostenlos sein",
+    dontCombineExampleGood2: "Studiengebühren sollten kostenlos sein",
+  },
+  hi: {
+    title: "अच्छे कथन लिखने के लिए सुझाव",
+    singleIdeaTitle: "एक विशिष्ट विचार",
+    singleIdeaDescription:
+      "एकल बिंदु पर ध्यान केंद्रित करें जिस पर अन्य मतदान कर सकें",
+    singleIdeaExampleGood:
+      "राइड-शेयरिंग ड्राइवरों के लिए टैक्सी ड्राइवरों के समान बीमा आवश्यकताएँ होनी चाहिए",
+    singleIdeaExampleBad:
+      "Uber पर प्रतिबंध लगना चाहिए और टैक्सियों को बेहतर ऐप्स और रेटिंग सिस्टम की ज़रूरत है",
+    easyVoteTitle: "सहमत/असहमत करना आसान",
+    easyVoteDescription: "जटिल या बहु-भाग वाले कथनों से बचें",
+    easyVoteExampleGood:
+      "सोशल मीडिया कंपनियों को अपने प्लेटफॉर्म पर गलत सूचना के लिए ज़िम्मेदार होना चाहिए",
+    easyVoteExampleBad:
+      "सोशल मीडिया विनियमन जटिल है और विभिन्न कारकों और सांस्कृतिक संदर्भों पर निर्भर करता है",
+    keepBriefTitle: "संक्षिप्त रखें",
+    keepBriefDescription: "{maxLength} वर्णों या उससे कम का लक्ष्य रखें",
+    keepBriefExampleGood: "छात्रों के लिए सार्वजनिक परिवहन निःशुल्क होना चाहिए",
+    keepBriefExampleBad:
+      "मेरा मानना है कि नगर निगम के परिवहन प्रणालियों को उन व्यक्तियों के लिए कम लागत या शून्य-लागत किराया नीतियों को लागू करने पर विचार करना चाहिए जो शैक्षिक कार्यक्रमों में नामांकित हैं क्योंकि...",
+    beClearTitle: "स्पष्ट रहें",
+    beClearDescription: "दूसरों को तुरंत आपका बिंदु समझ आना चाहिए",
+    beClearExampleGood: "रिमोट काम से कर्मचारी उत्पादकता बढ़ती है",
+    beClearExampleBad:
+      "दूरस्थ कार्य प्रतिमानों के लिए संगठनात्मक गतिशीलता पर पुनर्विचार की आवश्यकता है",
+    dontCombineTitle: "संयोजन न करें",
+    dontCombineDescription:
+      'स्पष्ट मतदान के लिए "A और B" को अलग-अलग कथनों में विभाजित करें',
+    dontCombineExampleBad:
+      "हमें सार्वभौमिक स्वास्थ्य सेवा और मुफ्त कॉलेज ट्यूशन की आवश्यकता है",
+    dontCombineExampleGood1: "स्वास्थ्य सेवा सेवा बिंदु पर मुफ्त होनी चाहिए",
+    dontCombineExampleGood2: "कॉलेज ट्यूशन मुफ्त होनी चाहिए",
+  },
   ar: {
     title: "نصائح لكتابة مقترحات جيدة",
     singleIdeaTitle: "فكرة واحدة محددة",

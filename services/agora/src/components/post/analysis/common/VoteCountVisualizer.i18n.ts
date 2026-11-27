@@ -19,6 +19,20 @@ export const voteCountVisualizerTranslations: Record<
     group3: "Group 3",
     group4: "Group 4",
   },
+  de: {
+    voteCountTitle: "Stimmen: {count} ({percentage})",
+    group1: "Gruppe 1",
+    group2: "Gruppe 2",
+    group3: "Gruppe 3",
+    group4: "Gruppe 4",
+  },
+  hi: {
+    voteCountTitle: "मत: {count} ({percentage})",
+    group1: "समूह 1",
+    group2: "समूह 2",
+    group3: "समूह 3",
+    group4: "समूह 4",
+  },
   ar: {
     voteCountTitle: "الأصوات: {count} ({percentage})",
     group1: "مجموعة 1",

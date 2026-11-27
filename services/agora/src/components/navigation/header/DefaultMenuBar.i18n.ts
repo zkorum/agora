@@ -11,6 +11,12 @@ export const defaultMenuBarTranslations: Record<
   en: {
     logIn: "Log in",
   },
+  de: {
+    logIn: "Anmelden",
+  },
+  hi: {
+    logIn: "लॉग इन करें",
+  },
   ar: {
     logIn: "تسجيل الدخول",
   },

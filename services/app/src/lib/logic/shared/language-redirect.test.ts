@@ -121,7 +121,7 @@ describe("landing homepage language policy", () => {
     "",
   ])("prefers website languages outside Android: %s", (userAgent) => {
     expect(
-      runLanguageRedirect({ userAgent, languages: ["de-DE", "fr-FR"] })
+      runLanguageRedirect({ userAgent, languages: ["nl-NL", "fr-FR"] })
         .redirects,
     ).toEqual(["/fr"]);
     expect(
@@ -158,7 +158,7 @@ describe("landing homepage language policy", () => {
     expect(
       runLanguageRedirect({
         userAgent,
-        intlLocale: "de-DE",
+        intlLocale: "nl-NL",
         languages: ["it-IT", "fr-FR"],
         savedLanguage: "invalid",
       }).redirects,
@@ -166,7 +166,7 @@ describe("landing homepage language policy", () => {
     expect(
       runLanguageRedirect({
         userAgent,
-        intlLocale: "de-DE",
+        intlLocale: "nl-NL",
         languages: [],
         language: "es-AR",
       }).redirects,
@@ -175,13 +175,13 @@ describe("landing homepage language policy", () => {
       runLanguageRedirect({
         userAgent,
         intlLocale: "fr-FR",
-        languages: ["de-DE"],
+        languages: ["nl-NL"],
         language: "it-IT",
       }).redirects,
     ).toEqual(["/fr"]);
     const result = runLanguageRedirect({
       userAgent,
-      intlLocale: "de-DE",
+      intlLocale: "nl-NL",
       languages: ["it-IT"],
       language: "pt-BR",
     });

@@ -13,6 +13,14 @@ export const conversationPageTranslations: Record<
     errorTitle: "Something went wrong",
     retryButton: "Retry",
   },
+  de: {
+    errorTitle: "Etwas ist schiefgelaufen",
+    retryButton: "Erneut versuchen",
+  },
+  hi: {
+    errorTitle: "कुछ गलत हो गया",
+    retryButton: "फिर कोशिश करें",
+  },
   ar: {
     errorTitle: "حدث خطأ ما",
     retryButton: "إعادة المحاولة",

@@ -16,6 +16,18 @@ export const opinionGroupVisualizationTestTranslations: Record<
       "Test the full analysis tabs (Groups, Agreements, Disagreements, Divisive) with configurable cluster count, AI labels, and empty sections.",
     openTestButton: "Open Analysis Test",
   },
+  de: {
+    analysisTabTest: "Tabellenanalyseprüfung",
+    analysisTabTestDescription:
+      "Testen Sie die vollständigen Analyse-Tabs (Gruppen, Einigungen, Uneinigkeiten, Polarisierend) mit konfigurierbarer Clusteranzahl, KI-Bezeichnungen und leeren Abschnitten.",
+    openTestButton: "Analyse-Test öffnen",
+  },
+  hi: {
+    analysisTabTest: "विश्लेषण टैब परीक्षण",
+    analysisTabTestDescription:
+      "विन्यास योग्य क्लस्टर गणना, AI लेबल और खाली अनुभागों के साथ पूर्ण विश्लेषण टैब (समूह, सहमति, असहमति, विभाजनकारी) का परीक्षण करें।",
+    openTestButton: "विश्लेषण परीक्षण खोलें",
+  },
   ar: {
     analysisTabTest: "اختبار تبويب التحليل",
     analysisTabTestDescription:

@@ -39,6 +39,44 @@ export const emailOnboardingTranslations: Record<
       "This email address is already linked to another account",
     somethingWrong: "Oops! Something went wrong—please try again",
   },
+  de: {
+    pageTitle: "Geben Sie bitte Ihre E-Mail-Adresse ein",
+    emailDescription: "Sie erhalten per E-Mail einen 6-stelligen Einmalcode",
+    emailPlaceholder: "E-Mail-Adresse",
+    preferPrivateLogin:
+      "Ich würde eine Anmeldung mit vollständiger Privatsphäre bevorzugen",
+    preferPhoneLogin: "Ich würde lieber meine Telefonnummer verwenden",
+    pleaseEnterValidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    pleaseEnterEmail: "Bitte geben Sie eine E-Mail-Adresse ein",
+    alreadyHasEmail:
+      "Sie haben bereits eine E-Mail-Adresse mit Ihrem Konto verknüpft",
+    throttled:
+      "Zu viele Versuche – bitte warten Sie, bevor Sie es erneut versuchen",
+    unreachable:
+      "Diese E-Mail-Adresse scheint nicht zu existieren – bitte überprüfen und erneut versuchen",
+    disposable: "Temporäre oder Einweg-E-Mail-Adressen sind nicht gestattet",
+    credentialAlreadyLinked:
+      "Diese E-Mail-Adresse ist bereits mit einem anderen Konto verknüpft",
+    somethingWrong:
+      "Hoppla! Etwas ist schiefgelaufen – bitte versuchen Sie es erneut",
+  },
+  hi: {
+    pageTitle: "अपना ईमेल पता दर्ज करें",
+    emailDescription: "आपको ईमेल द्वारा 6-अंकीय एक बार का कोड प्राप्त होगा",
+    emailPlaceholder: "ईमेल पता",
+    preferPrivateLogin: "मैं पूरी गोपनीयता के साथ लॉगिन करना पसंद करूँगा",
+    preferPhoneLogin: "मैं अपना फ़ोन नंबर इस्तेमाल करना चाहूँगा",
+    pleaseEnterValidEmail: "कृपया एक वैध ईमेल पता दर्ज करें",
+    pleaseEnterEmail: "कृपया एक ईमेल पता दर्ज करें",
+    alreadyHasEmail: "आपके खाते से पहले से ही एक ईमेल पता जुड़ा हुआ है",
+    throttled:
+      "बहुत ज़्यादा प्रयास—कृपया दोबारा कोशिश करने से पहले प्रतीक्षा करें",
+    unreachable: "यह ईमेल पता मौजूद नहीं लगता—कृपया जाँचें और पुनः प्रयास करें",
+    disposable: "अस्थायी या डिस्पोजेबल ईमेल पते की अनुमति नहीं है",
+    credentialAlreadyLinked:
+      "यह ईमेल पता पहले से ही किसी अन्य खाते से जुड़ा हुआ है",
+    somethingWrong: "ओह! कुछ गड़बड़ हुई—कृपया पुनः प्रयास करें",
+  },
   ar: {
     pageTitle: "أدخل عنوان بريدك الإلكتروني",
     emailDescription: "ستتلقى رمزًا مكوّنًا من 6 أرقام لمرة واحدة عبر البريد الإلكتروني",

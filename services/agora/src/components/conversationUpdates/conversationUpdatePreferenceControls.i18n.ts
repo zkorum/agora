@@ -19,6 +19,21 @@ export const conversationUpdatePreferenceControlsTranslations: Record<
     receiveEmailUpdatesFor: "Receive Email Updates for {name}",
     receiveEmailUpdatesByDefaultFor: "Email Updates by default for {name}",
   },
+  de: {
+    projectDefaultDescription: "Standardbeschreibung des Projekts",
+    inheritedFromProject: "Aus dem Projekt geerbt",
+    loadingConversations: "Lade weitere Diskussionen",
+    receiveEmailUpdatesFor: "E-Mail-Benachrichtigungen für {name} erhalten",
+    receiveEmailUpdatesByDefaultFor:
+      "E-Mail-Benachrichtigungen standardmäßig für {name} erhalten",
+  },
+  hi: {
+    projectDefaultDescription: "परियोजना का डिफ़ॉल्ट",
+    inheritedFromProject: "परियोजना से विरासत में मिला",
+    loadingConversations: "अधिक चर्चाएँ लोड हो रही हैं",
+    receiveEmailUpdatesFor: "{name} के लिए ईमेल अपडेट प्राप्त करें",
+    receiveEmailUpdatesByDefaultFor: "{name} के लिए डिफ़ॉल्ट रूप से ईमेल अपडेट",
+  },
   es: {
     projectDefaultDescription: "Valor predeterminado del proyecto",
     inheritedFromProject: "Heredado del proyecto",

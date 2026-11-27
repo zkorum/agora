@@ -24,11 +24,13 @@ export interface DetectedLanguageResult {
 
 const DISPLAY_LANGUAGE_TO_GOOGLE_CODE: Partial<Record<string, string>> = {
     ar: "ar",
+    de: "de",
     en: "en",
     es: "es",
     fa: "fa",
     fr: "fr",
     he: "he",
+    hi: "hi",
     ja: "ja",
     ky: "ky",
     ru: "ru",
@@ -40,7 +42,9 @@ const LANGUAGE_NAME_TO_COMPARISON_CODE: ReadonlyMap<string, string> = new Map([
     ["arabic", "ar"],
     ["english", "en"],
     ["french", "fr"],
+    ["german", "de"],
     ["hebrew", "he"],
+    ["hindi", "hi"],
     ["japanese", "ja"],
     ["persian", "fa"],
     ["russian", "ru"],

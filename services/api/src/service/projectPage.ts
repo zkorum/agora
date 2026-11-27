@@ -438,21 +438,8 @@ function buildProjectPageLanguageOptions({
 }: {
     projectSupportedLanguageCodes: readonly SupportedDisplayLanguageCodes[];
 }): ProjectPageLanguageOption[] {
-    const dedupedProjectSupportedLanguageCodes = Array.from(
-        new Set(projectSupportedLanguageCodes),
-    );
-    const projectSupportedLanguageSet = new Set(
-        dedupedProjectSupportedLanguageCodes,
-    );
-    const remainingLanguageCodes =
-        ZodSupportedDisplayLanguageCodes.options.filter(
-            (languageCode) => !projectSupportedLanguageSet.has(languageCode),
-        );
-
-    return [
-        ...dedupedProjectSupportedLanguageCodes,
-        ...remainingLanguageCodes,
-    ].map((languageCode) =>
+    const projectSupportedLanguageSet = new Set(projectSupportedLanguageCodes);
+    return ZodSupportedDisplayLanguageCodes.options.map((languageCode) =>
         languageOptionFor({
             languageCode,
             isProjectSupported: projectSupportedLanguageSet.has(languageCode),

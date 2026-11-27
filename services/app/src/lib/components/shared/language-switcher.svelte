@@ -14,16 +14,18 @@
 
   const localeData: Record<Locale, { label: string; name: string }> = {
     en: { label: "EN", name: "English" },
-    fr: { label: "FR", name: "Français" },
-    es: { label: "ES", name: "Español" },
     ar: { label: "AR", name: "العربية" },
-    fa: { label: "FA", name: "فارسی" },
-    he: { label: "HE", name: "עברית" },
-    ja: { label: "JA", name: "日本語" },
-    ky: { label: "KY", name: "Кыргызча" },
-    ru: { label: "RU", name: "Русский" },
     "zh-hans": { label: "中简", name: "简体中文" },
     "zh-hant": { label: "中繁", name: "繁體中文" },
+    fr: { label: "FR", name: "Français" },
+    de: { label: "DE", name: "Deutsch" },
+    he: { label: "HE", name: "עברית" },
+    hi: { label: "HI", name: "हिन्दी" },
+    ja: { label: "JA", name: "日本語" },
+    ky: { label: "KY", name: "Кыргызча" },
+    fa: { label: "FA", name: "فارسی" },
+    ru: { label: "RU", name: "Русский" },
+    es: { label: "ES", name: "Español" },
   };
 
   const selectItems = locales.map((locale) => ({

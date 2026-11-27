@@ -14,6 +14,17 @@ export const useVoteQueriesTranslations: Record<
     voteSavedSessionRefreshFailed:
       "Your vote was saved, but your session could not be refreshed.",
   },
+  de: {
+    failedToCastVote:
+      "Stimme konnte nicht abgegeben werden. Bitte versuchen Sie es erneut.",
+    voteSavedSessionRefreshFailed:
+      "Ihre Stimme wurde gespeichert, aber Ihre Sitzung konnte nicht aktualisiert werden.",
+  },
+  hi: {
+    failedToCastVote: "मतदान करने में विफल। कृपया पुनः प्रयास करें।",
+    voteSavedSessionRefreshFailed:
+      "आपका मत सहेजा गया, लेकिन आपका सत्र ताज़ा नहीं किया जा सका।",
+  },
   es: {
     failedToCastVote: "No se pudo registrar el voto. Inténtelo de nuevo.",
     voteSavedSessionRefreshFailed:

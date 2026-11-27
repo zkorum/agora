@@ -4,7 +4,7 @@
       <div v-for="clusterItem in clusterMetadataList" :key="clusterItem.key">
         <ZKTab
           :text="
-            formatClusterLabel(clusterItem.key, false, clusterItem.aiLabel)
+            clusterItem.aiLabel ?? getClusterLetter(clusterItem.key)
           "
           :is-highlighted="selectedClusterKey === clusterItem.key"
           :should-underline-on-highlight="true"
@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import ZKTab from "src/components/ui-library/ZKTab.vue";
 import type { ClusterMetadata, PolisKey } from "src/shared/types/zod";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 
 defineProps<{
   clusterMetadataList: ClusterMetadata[];

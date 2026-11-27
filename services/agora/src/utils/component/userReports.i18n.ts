@@ -21,6 +21,22 @@ export const userReportsTranslations: Record<
     sexual: "Sexual",
     spam: "Spam",
   },
+  de: {
+    misleading: "Irreführend",
+    antisocial: "Antisozial",
+    illegal: "Illegal",
+    doxing: "Doxing",
+    sexual: "Sexuell",
+    spam: "Spam",
+  },
+  hi: {
+    misleading: "भ्रामक",
+    antisocial: "असामाजिक",
+    illegal: "अवैध",
+    doxing: "डॉक्सिंग",
+    sexual: "यौन",
+    spam: "स्पैम",
+  },
   ar: {
     misleading: "مضلل",
     antisocial: "غير اجتماعي",

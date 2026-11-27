@@ -14,6 +14,16 @@ export const projectPageFooterTranslations: Readonly<
     termsOfService: "Terms of Service",
     privacyPolicy: "Privacy Policy",
   },
+  de: {
+    homeAriaLabel: "Zur Agora Citizen Network-Startseite",
+    termsOfService: "Nutzungsbedingungen",
+    privacyPolicy: "Datenschutzerklärung",
+  },
+  hi: {
+    homeAriaLabel: "Agora Citizen Network होम पर जाएँ",
+    termsOfService: "सेवा की शर्तें",
+    privacyPolicy: "गोपनीयता नीति",
+  },
   es: {
     homeAriaLabel: "Ir al inicio de Agora Citizen Network",
     termsOfService: "Términos de servicio",

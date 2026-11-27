@@ -16,6 +16,18 @@ export const analysisReportTestTranslations: Record<
       "Test the analysis report layout with different numbers of opinion groups and AI label configurations.",
     openReportTestButton: "Open Report Test",
   },
+  de: {
+    analysisReportTest: "Analysebericht",
+    analysisReportTestDescription:
+      "Testen Sie das Layout des Analyseberichts mit unterschiedlichen Anzahlen von Meinungsgruppen und KI-Label-Konfigurationen.",
+    openReportTestButton: "Berichtstest öffnen",
+  },
+  hi: {
+    analysisReportTest: "विश्लेषण रिपोर्ट",
+    analysisReportTestDescription:
+      "विभिन्न मत समूहों और AI लेबल कॉन्फ़िगरेशन के साथ विश्लेषण रिपोर्ट लेआउट का परीक्षण करें।",
+    openReportTestButton: "रिपोर्ट परीक्षण खोलें",
+  },
   ar: {
     analysisReportTest: "تقرير التحليل",
     analysisReportTestDescription:

@@ -9,6 +9,11 @@ export const languageApiTranslations: Record<
   LanguageApiTranslations
 > = {
   en: { failedToSaveLanguagePreferences: "Failed to save language preferences" },
+  de: {
+    failedToSaveLanguagePreferences:
+      "Fehler beim Speichern der Spracheinstellungen",
+  },
+  hi: { failedToSaveLanguagePreferences: "भाषा प्राथमिकताएँ सहेजने में विफल" },
   es: { failedToSaveLanguagePreferences: "No se pudieron guardar las preferencias de idioma" },
   fr: { failedToSaveLanguagePreferences: "Échec de l’enregistrement des préférences linguistiques" },
   "zh-Hant": { failedToSaveLanguagePreferences: "無法儲存語言偏好設定" },

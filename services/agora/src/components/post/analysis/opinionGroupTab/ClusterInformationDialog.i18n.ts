@@ -20,6 +20,24 @@ export const clusterInformationDialogTranslations: Record<
     description3:
       "Participants must vote on at least {minVotes} statements to be assigned to a group. Those who have not yet reached this threshold appear as ungrouped.",
   },
+  de: {
+    title: "Konsensgruppen",
+    description1:
+      "Konsensgruppen werden basierend darauf erstellt, wie Teilnehmende Aussagen zustimmen oder nicht zustimmen.",
+    description2:
+      "Wir nutzen maschinelles Lernen, um verschiedene Denkrichtungen zu identifizieren. Dies ist exakt derselbe Algorithmus, der pol.is antreibt, das Open-Source-Wiki-Umfragetool von Computational Democracy.",
+    description3:
+      "Teilnehmende müssen mindestens {minVotes} Aussagen bewerten, um einer Gruppe zugeordnet zu werden. Wer diese Schwelle noch nicht erreicht hat, wird als nicht zugeordnet angezeigt.",
+  },
+  hi: {
+    title: "सहमति समूह",
+    description1:
+      "मतों के आधार पर लोगों की सहमति और असहमति के अनुसार समूह बनाए जाते हैं।",
+    description2:
+      "हम अलग-अलग विचारों की पहचान करने के लिए मशीन लर्निंग का उपयोग करते हैं। यह वही एल्गोरिथम है जो Computational Democracy द्वारा विकसित ओपन-सोर्स विकीसर्वे टूल pol.is को शक्ति प्रदान करता है।",
+    description3:
+      "किसी समूह में शामिल होने के लिए प्रतिभागियों को कम से कम {minVotes} कथनों पर मतदान करना होगा। जो अभी तक इस सीमा तक नहीं पहुंचे हैं, वे बिना समूह वाले दिखते हैं।",
+  },
   ar: {
     title: "مجموعات التوافق",
     description1:

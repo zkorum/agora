@@ -24,6 +24,28 @@ export const divisiveTabTranslations: Record<
     noDivisiveOpinionsMessage: "No significant divisive statements found yet.",
     lowerRankedDivider: "Less statistically significant",
   },
+  de: {
+    divisiveTitle: "Umstritten",
+    divisiveLongTitle: "Bei welchen Aussagen {keyword} die Meinungen der Gruppen?",
+    divisiveKeyword: "unterscheiden sich",
+    subtitle:
+      "Bei diesen Aussagen gehen die Meinungsgruppen in ihrer Bewertung auseinander. Die statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    loadMore: "Alle laden",
+    noDivisiveOpinionsMessage:
+      "Bisher zeigt keine Aussage statistisch signifikante Unterschiede zwischen den Meinungsgruppen.",
+    lowerRankedDivider: "Geringere statistische Aussagekraft",
+  },
+  hi: {
+    divisiveTitle: "मतभेद",
+    divisiveLongTitle: "किन कथनों पर मत समूहों की राय {keyword} है?",
+    divisiveKeyword: "बँटी हुई",
+    subtitle:
+      "इन कथनों पर अलग-अलग मत समूहों की राय बँटी है। जिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    loadMore: "सभी लोड करें",
+    noDivisiveOpinionsMessage:
+      "अभी किसी कथन पर मत समूहों के बीच सांख्यिकीय रूप से स्पष्ट मतभेद नहीं दिखा है।",
+    lowerRankedDivider: "कमज़ोर सांख्यिकीय प्रमाण",
+  },
   ar: {
     divisiveTitle: "مثير للجدل",
     divisiveLongTitle: "ما الذي {keyword} المشاركين عبر مجموعات الرأي؟",

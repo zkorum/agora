@@ -13,6 +13,18 @@ export const startupErrorMessages = {
     description: "Please check your connection and reload to try again.",
     reload: "Reload",
   },
+  de: {
+    title: "Agora kann nicht gestartet werden",
+    description:
+      "Bitte überprüfen Sie Ihre Verbindung und laden Sie neu, um es erneut zu versuchen.",
+    reload: "Neu laden",
+  },
+  hi: {
+    title: "Agora शुरू नहीं हो सका",
+    description:
+      "कृपया अपने कनेक्शन की जाँच करें और पुनः लोड करें ताकि आप फिर से प्रयास कर सकें।",
+    reload: "पुनः लोड करें",
+  },
   ar: {
     title: "تعذّر تشغيل أغورا",
     description: "يرجى التحقق من اتصالك وإعادة تحميل الصفحة للمحاولة مجددًا.",

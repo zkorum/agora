@@ -87,6 +87,98 @@ export const seedOpinionsTranslations: Record<
     aiSuggestionsRateLimited:
       "Too many requests. Please wait a minute before trying again.",
   },
+  de: {
+    nextButton: "Weiter",
+    publishButton: "Veröffentlichen",
+    addSeedOpinions: "Startaussagen hinzufügen",
+    addMaxDiffItems: "Aussagen zum Rangordnen hinzufügen",
+    seedOpinionsDescription:
+      "Es wird empfohlen, 8 bis 15 Aussagen aus verschiedenen Blickwinkeln als Startaussagen zu verwenden. Dies hat einen starken Einfluss auf die frühe Teilnahme.",
+    maxDiffSeedDescription:
+      "Für die Priorisierung sind mindestens 2 Aussagen erforderlich. Wir empfehlen 10 bis 25 für das beste Erlebnis.",
+    addStatementShortcut:
+      "Drücken Sie Shift + Enter beim Schreiben, um eine neue Aussage zu beginnen.",
+    needMinimumForMaxDiff:
+      "Für die Priorisierung sind mindestens 2 Aussagen erforderlich.",
+    addOpinion: "Aussage hinzufügen",
+    opinionCannotBeEmpty: "Die Aussage darf nicht leer sein",
+    opinionHtmlTooLong:
+      "Die Formatierung der Aussage ist zu groß. Bitte vereinfachen Sie diese.",
+    opinionExceedsLimit:
+      "Die Aussage überschreitet das Zeichenlimit von {limit} ({count}/{limit})",
+    opinionDuplicate: "Diese Aussage ist ein Duplikat",
+    errorCreatingConversation:
+      "Fehler beim Versuch, eine neue Diskussion zu erstellen",
+    githubSyncTitle: "Elemente von GitHub",
+    githubSyncDescription:
+      "Diese Elemente werden von GitHub-Issues synchronisiert. Sie können hier nicht bearbeitet werden – verwalten Sie diese auf GitHub.",
+    loadingGithubPreview: "Lade Issues von GitHub...",
+    noGithubIssuesFound:
+      "Es wurden keine Issues mit dem konfigurierten Label gefunden. Elemente werden synchronisiert, wenn Issues auf GitHub erstellt oder mit einem Label versehen werden.",
+    githubPreviewError: "Fehler beim Laden der Issues von GitHub",
+    githubPreviewRetry: "Erneut versuchen",
+    aiSuggestionsButton: "KI-Vorschläge",
+    aiGenerateSeedOpinions: "Mit KI generieren",
+    aiSuggestionsGenerating: "Generiert",
+    aiSuggestionsGenerateMore: "Mehr generieren",
+    aiSuggestionsNote:
+      "Abgeleitet aus Ihrem Titel und Ihrer Beschreibung. Links und Dokumente werden nicht berücksichtigt.",
+    aiSuggestionsNotClear:
+      "Ihr Titel und Ihre Beschreibung sind noch nicht klar genug für KI-Vorschläge.",
+    aiSuggestionAdd: "Hinzufügen",
+    aiSuggestionDiscard: "Verwerfen",
+    aiSuggestionsEditConversation: "Diskussion bearbeiten",
+    aiSuggestionsFailed:
+      "Vorschläge konnten nicht generiert werden. Sie können Aussagen selbst hinzufügen oder es erneut versuchen.",
+    aiSuggestionsNotAvailable:
+      "KI-Vorschläge sind für dieses Konto nicht verfügbar.",
+    aiSuggestionsRateLimited:
+      "Zu viele Anfragen. Bitte warten Sie eine Minute, bevor Sie es erneut versuchen.",
+  },
+  hi: {
+    nextButton: "आगे बढ़ें",
+    publishButton: "प्रकाशित करें",
+    addSeedOpinions: "शुरुआती कथन जोड़ें",
+    addMaxDiffItems: "रैंक करने के लिए कथन जोड़ें",
+    seedOpinionsDescription:
+      "विभिन्न दृष्टिकोणों में 8 से 15 कथन जोड़ने की सलाह दी जाती है। इसका शुरुआती भागीदारी पर गहरा प्रभाव पड़ता है।",
+    maxDiffSeedDescription:
+      "प्राथमिकता निर्धारण के लिए कम से कम 2 कथन आवश्यक हैं। सर्वोत्तम अनुभव के लिए हम 10 से 25 की सलाह देते हैं।",
+    addStatementShortcut:
+      "नया कथन शुरू करने के लिए लिखते समय Shift + Enter दबाएं।",
+    needMinimumForMaxDiff:
+      "प्राथमिकता निर्धारण के लिए कम से कम 2 कथन आवश्यक हैं।",
+    addOpinion: "कथन जोड़ें",
+    opinionCannotBeEmpty: "कथन खाली नहीं हो सकता",
+    opinionHtmlTooLong: "कथन का स्वरूपण बहुत बड़ा है। कृपया इसे सरल बनाएं।",
+    opinionExceedsLimit: "कथन {limit} वर्ण सीमा से अधिक है ({count}/{limit})",
+    opinionDuplicate: "यह कथन दोहराया गया है",
+    errorCreatingConversation: "नई चर्चा बनाने में त्रुटि हुई",
+    githubSyncTitle: "GitHub से आइटम",
+    githubSyncDescription:
+      "ये आइटम GitHub मुद्दों से सिंक किए जाएंगे। इन्हें यहां संपादित नहीं किया जा सकता - इन्हें GitHub पर प्रबंधित करें।",
+    loadingGithubPreview: "GitHub से मुद्दे लोड हो रहे हैं...",
+    noGithubIssuesFound:
+      "निर्धारित लेबल के साथ कोई मुद्दा नहीं मिला। जब GitHub पर मुद्दे बनाए जाएंगे या लेबल किए जाएंगे तो आइटम सिंक होंगे।",
+    githubPreviewError: "GitHub से मुद्दे लोड करने में विफल",
+    githubPreviewRetry: "फिर कोशिश करें",
+    aiSuggestionsButton: "AI सुझाव",
+    aiGenerateSeedOpinions: "AI से उत्पन्न करें",
+    aiSuggestionsGenerating: "उत्पन्न हो रहा है",
+    aiSuggestionsGenerateMore: "और उत्पन्न करें",
+    aiSuggestionsNote:
+      "आपके शीर्षक और विवरण से लिया गया। लिंक और दस्तावेज़ों को ध्यान में नहीं रखा गया है।",
+    aiSuggestionsNotClear:
+      "AI सुझावों के लिए आपका शीर्षक और विवरण अभी पर्याप्त स्पष्ट नहीं है।",
+    aiSuggestionAdd: "जोड़ें",
+    aiSuggestionDiscard: "खारिज करें",
+    aiSuggestionsEditConversation: "चर्चा संपादित करें",
+    aiSuggestionsFailed:
+      "सुझाव उत्पन्न नहीं किए जा सके। आप स्वयं कथन जोड़ सकते हैं या पुनः प्रयास कर सकते हैं।",
+    aiSuggestionsNotAvailable: "इस खाते के लिए AI सुझाव उपलब्ध नहीं हैं।",
+    aiSuggestionsRateLimited:
+      "बहुत ज़्यादा अनुरोध। कृपया फिर से प्रयास करने से पहले एक मिनट प्रतीक्षा करें।",
+  },
   ar: {
     nextButton: "التالي",
     publishButton: "نشر",

@@ -13,6 +13,14 @@ export const spokenLanguageStepTranslations: Record<
     title: "What languages do you speak?",
     nextButton: "Next",
   },
+  de: {
+    title: "Welche Sprachen sprechen Sie?",
+    nextButton: "Weiter",
+  },
+  hi: {
+    title: "आप कौन-कौन सी भाषाएँ बोलते हैं?",
+    nextButton: "आगे बढ़ें",
+  },
   ar: {
     title: "ما هي اللغات التي تتحدثها؟",
     nextButton: "التالي",

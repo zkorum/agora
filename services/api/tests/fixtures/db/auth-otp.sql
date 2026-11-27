@@ -7,7 +7,7 @@ CREATE TYPE "public"."conversation_language_settings_source" AS ENUM('conversati
 
 CREATE TYPE "public"."conversation_type" AS ENUM('polis', 'ranking');
 
-CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru');
+CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru', 'de', 'hi');
 
 CREATE TYPE "public"."email_reachability" AS ENUM('safe', 'risky', 'invalid', 'unknown');
 

@@ -18,6 +18,14 @@ export const webShareTranslations: Record<
     copiedToClipboard: "Copied link to clipboard",
     shareLink: "Share link",
   },
+  de: {
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+    shareLink: "Link teilen",
+  },
+  hi: {
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी हो गया",
+    shareLink: "लिंक साझा करें",
+  },
   ar: {
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
     shareLink: "مشاركة الرابط",

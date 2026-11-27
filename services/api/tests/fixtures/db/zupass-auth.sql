@@ -1,7 +1,7 @@
 -- WARNING: GENERATED FROM services/shared-backend/src/schema.ts. DO NOT EDIT.
 -- Regenerate with: make sync-api-test-db-fixtures
 
-CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru');
+CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru', 'de', 'hi');
 
 CREATE TYPE "public"."email_reachability" AS ENUM('safe', 'risky', 'invalid', 'unknown');
 

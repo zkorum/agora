@@ -18,6 +18,20 @@ export const emailInputFormTranslations: Record<
     pleaseEnterValidEmail: "Please enter a valid email address",
     pleaseEnterEmail: "Please enter an email address",
   },
+  de: {
+    emailDescription:
+      "Sie erhalten einen 6-stelligen Einmalcode per E-Mail. Ihre E-Mail-Adresse bleibt privat.",
+    emailPlaceholder: "E-Mail-Adresse",
+    pleaseEnterValidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    pleaseEnterEmail: "Bitte geben Sie eine E-Mail-Adresse ein",
+  },
+  hi: {
+    emailDescription:
+      "आपको ईमेल द्वारा 6-अंकीय एक बार का कोड प्राप्त होगा। आपका ईमेल निजी रहेगा।",
+    emailPlaceholder: "ईमेल पता",
+    pleaseEnterValidEmail: "कृपया एक वैध ईमेल पता दर्ज करें",
+    pleaseEnterEmail: "कृपया एक ईमेल पता दर्ज करें",
+  },
   ar: {
     emailDescription:
       "ستتلقى رمزًا مكوّنًا من 6 أرقام لمرة واحدة عبر البريد الإلكتروني. يظل بريدك الإلكتروني خاصًا.",

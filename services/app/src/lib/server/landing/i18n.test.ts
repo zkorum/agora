@@ -59,7 +59,7 @@ describe("landing localization", () => {
 
     visit(source);
     expect(displayLanguages.length).toBeGreaterThan(0);
-    expect([...locales].sort()).toEqual(displayLanguages.sort());
+    expect([...locales]).toEqual(displayLanguages);
   });
 
   it.each(locales)("has complete messages and posts for %s", (locale) => {

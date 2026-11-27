@@ -270,10 +270,10 @@ describe("language store", () => {
     const options = new Intl.DateTimeFormat().resolvedOptions();
     vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
       ...options,
-      locale: "de-DE",
+      locale: "nl-NL",
     });
-    vi.spyOn(navigator, "languages", "get").mockReturnValue(["de-DE"]);
-    vi.spyOn(navigator, "language", "get").mockReturnValue("de-DE");
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["nl-NL"]);
+    vi.spyOn(navigator, "language", "get").mockReturnValue("nl-NL");
   }
 
   it("uses conversation language only as an unsaved last fallback and updates request defaults", async () => {

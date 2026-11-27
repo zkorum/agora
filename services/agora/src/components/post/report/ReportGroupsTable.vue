@@ -23,10 +23,10 @@
         <tr v-for="entry in clusterEntries" :key="entry.key">
           <td class="col-label cell-label">
             <template v-if="useLetterCodes">
-              <strong>{{ formatClusterLabel(entry.key, false) }}</strong><template v-if="entry.cluster.aiLabel"> · <strong>{{ entry.cluster.aiLabel }}</strong></template>
+              <strong>{{ getClusterLetter(entry.key) }}</strong><template v-if="entry.cluster.aiLabel"> · <strong>{{ entry.cluster.aiLabel }}</strong></template>
             </template>
             <template v-else>
-              <strong>{{ entry.cluster.aiLabel || formatClusterLabel(entry.key, true) }}</strong>
+              <strong>{{ entry.cluster.aiLabel || formatGroupLabel(getClusterLetter(entry.key)) }}</strong>
             </template>
           </td>
           <td class="col-participants cell-participants">
@@ -55,12 +55,13 @@
 </template>
 
 <script setup lang="ts">
+import { useGroupLabel } from "src/composables/opinion/useGroupLabel";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
 import {
-  formatClusterLabel,
+  getClusterLetter,
   isClustersImbalanced,
   MIN_VOTES_FOR_CLUSTER,
 } from "src/utils/component/opinion";
@@ -76,6 +77,7 @@ const props = defineProps<{
   totalParticipantCount: number;
 }>();
 
+const formatGroupLabel = useGroupLabel();
 const { t } = useComponentI18n<ReportGroupsTableTranslations>(
   reportGroupsTableTranslations,
 );

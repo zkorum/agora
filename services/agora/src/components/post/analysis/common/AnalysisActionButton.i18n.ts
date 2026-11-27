@@ -15,6 +15,16 @@ export const analysisActionButtonTranslations: Record<
     viewMore: "View more",
     informationIconAriaLabel: "Information",
   },
+  de: {
+    learnMore: "Mehr erfahren",
+    viewMore: "Mehr anzeigen",
+    informationIconAriaLabel: "Information",
+  },
+  hi: {
+    learnMore: "और जानें",
+    viewMore: "और देखें",
+    informationIconAriaLabel: "जानकारी",
+  },
   ar: {
     learnMore: "تعلّم أكثر",
     viewMore: "عرض أكثر",

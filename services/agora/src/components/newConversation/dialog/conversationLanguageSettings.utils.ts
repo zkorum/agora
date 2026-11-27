@@ -1,6 +1,5 @@
 import {
-  type DisplayLanguageMetadata,
-  type LanguageMetadata,
+  SupportedDisplayLanguageMetadataList,
   type SupportedDisplayLanguageCodes,
   type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
@@ -12,12 +11,6 @@ export interface LanguageOption {
   caption: string;
   searchText: string;
   value: SupportedDisplayLanguageCodes;
-}
-
-export function isDisplayLanguageMetadata(
-  language: LanguageMetadata
-): language is DisplayLanguageMetadata {
-  return language.displaySupported;
 }
 
 export function getLocalizedLanguageName({
@@ -75,7 +68,7 @@ export function getLanguageOptions({
 }: {
   locale: string;
 }): LanguageOption[] {
-  return SupportedSpokenLanguageMetadataList.filter(isDisplayLanguageMetadata).map(
+  return SupportedDisplayLanguageMetadataList.map(
     (language) => {
       const label =
         getLocalizedLanguageName({ languageCode: language.code, locale }) ??

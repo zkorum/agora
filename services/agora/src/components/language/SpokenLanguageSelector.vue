@@ -169,10 +169,8 @@ const allSpokenLanguages: ComputedRef<SpokenLanguageMetadata[]> = computed(() =>
 
 // Get currently selected languages with metadata
 const selectedLanguages: ComputedRef<SpokenLanguageMetadata[]> = computed(() => {
-  return spokenLanguages.value
-    .map((code) => allSpokenLanguages.value.find((lang) => lang.code === code))
-    .filter((lang): lang is SpokenLanguageMetadata => lang !== undefined)
-    .sort((a, b) => a.englishName.localeCompare(b.englishName));
+  const selectedCodes = new Set(spokenLanguages.value);
+  return allSpokenLanguages.value.filter((lang) => selectedCodes.has(lang.code));
 });
 
 // Get available languages (not yet selected)

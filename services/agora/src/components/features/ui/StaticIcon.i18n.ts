@@ -8,6 +8,12 @@ export const staticIconTranslations: Record<SupportedDisplayLanguageCodes, Stati
   en: {
     stars: "Stars",
   },
+  de: {
+    stars: "Sterne",
+  },
+  hi: {
+    stars: "तारे",
+  },
   ar: {
     stars: "نجوم",
   },

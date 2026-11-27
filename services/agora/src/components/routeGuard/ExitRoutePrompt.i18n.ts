@@ -13,6 +13,14 @@ export const exitRoutePromptTranslations: Record<
     saveAsDraft: "Save as draft",
     discard: "Discard",
   },
+  de: {
+    saveAsDraft: "Als Entwurf speichern",
+    discard: "Verwerfen",
+  },
+  hi: {
+    saveAsDraft: "ड्राफ्ट के रूप में सहेजें",
+    discard: "खारिज करें",
+  },
   ar: {
     saveAsDraft: "حفظ كمسودة",
     discard: "إلغاء",

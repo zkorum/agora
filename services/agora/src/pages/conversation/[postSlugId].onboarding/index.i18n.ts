@@ -102,6 +102,111 @@ export const conversationSurveyOnboardingTranslations: Record<
     openSurveyLabel: "Open survey",
     startSurveyLabel: "Start survey",
   },
+  de: {
+    failedToLoadSurveyTitle: "Umfrage konnte nicht geladen werden",
+    tryAgainLabel: "Erneut versuchen",
+    currentStatusLabel: "Aktueller Status",
+    welcomeTitle: "Willkommen",
+    surveyStatusLoading: "Wird geladen",
+    surveyStatusComplete: "Abgeschlossen",
+    surveyStatusNeedsUpdate: "Benötigt Aktualisierung",
+    surveyStatusWithdrawn: "Zurückgezogen",
+    surveyStatusInProgress: "In Bearbeitung",
+    surveyStatusNotStarted: "Nicht begonnen",
+    surveyStatusNoSurvey: "Keine Umfrage",
+    surveyUnavailableTitle: "Umfrage nicht verfügbar",
+    verifyAccountTitle: "Bitte zuerst Ihr Konto verifizieren",
+    verifyTicketTitle: "Bitte zuerst Ihr Ticket verifizieren",
+    ticketVerifiedTitle: "Ticket verifiziert",
+    surveyCompleteTitle: "Umfrage abgeschlossen",
+    surveyUpdateTitle: "Ihre Umfrage aktualisieren",
+    surveyWithdrawnTitle: "Ihre Umfrage fortsetzen",
+    surveyInProgressTitle: "Ihre Umfrage fortführen",
+    optionalSurveyTitle: "Optionale Umfrage",
+    requiredSurveyTitle: "Umfrage erforderlich",
+    surveyUnavailableDescription: "Diese Diskussion hat derzeit keine Umfrage.",
+    verifyAccountDescription:
+      "Schließen Sie den erforderlichen Anmelde- oder Verifizierungsschritt ab, bevor Sie die Umfrage öffnen.",
+    verifyTicketDescription:
+      "Verifizieren Sie Ihr Veranstaltungsticket, bevor Sie mit der Umfrage fortfahren.",
+    ticketVerifiedDescription:
+      "Ihr Eventticket ist für diese Diskussion verifiziert.",
+    surveyCompleteDescription:
+      "Ihre gespeicherten Antworten sind für diese Diskussion gültig.",
+    surveyUpdateDescription:
+      "Diese Umfrage hat sich seit Ihren letzten gespeicherten Antworten geändert.",
+    surveyWithdrawnDescription:
+      "Sie können die Umfrage jederzeit wieder öffnen und erneut antworten.",
+    surveyInProgressAvailableDescription:
+      "Sie können fortfahren oder Ihre gespeicherten Antworten überprüfen.",
+    surveyInProgressRequiredDescription:
+      "Schließen Sie die Umfrage ab, um an dieser Diskussion teilnehmen zu können.",
+    surveyNotStartedAvailableDescription:
+      "Diese Diskussion hat eine optionale Umfrage, die Sie jederzeit öffnen können.",
+    surveyNotStartedRequiredDescription:
+      "Bitte schließen Sie die Umfrage ab, bevor Sie an dieser Diskussion teilnehmen.",
+    backToConversationLabel: "Zurück zur Diskussion",
+    continueLabel: "Weiter",
+    verifyTicketLabel: "Ticket verifizieren",
+    reviewAnswersLabel: "Antworten überprüfen",
+    updateAnswersLabel: "Antworten aktualisieren",
+    resumeSurveyLabel: "Umfrage fortsetzen",
+    continueSurveyLabel: "Umfrage fortsetzen",
+    openSurveyLabel: "Umfrage öffnen",
+    startSurveyLabel: "Umfrage starten",
+  },
+  hi: {
+    failedToLoadSurveyTitle: "सर्वेक्षण लोड करने में विफल",
+    tryAgainLabel: "फिर से प्रयास करें",
+    currentStatusLabel: "वर्तमान स्थिति",
+    welcomeTitle: "स्वागत है",
+    surveyStatusLoading: "लोड हो रहा है",
+    surveyStatusComplete: "पूर्ण",
+    surveyStatusNeedsUpdate: "अपडेट की आवश्यकता है",
+    surveyStatusWithdrawn: "वापस ले लिया गया",
+    surveyStatusInProgress: "प्रगति में",
+    surveyStatusNotStarted: "शुरू नहीं हुआ",
+    surveyStatusNoSurvey: "कोई सर्वेक्षण नहीं",
+    surveyUnavailableTitle: "सर्वेक्षण उपलब्ध नहीं है",
+    verifyAccountTitle: "पहले अपना खाता सत्यापित करें",
+    verifyTicketTitle: "पहले अपना टिकट सत्यापित करें",
+    ticketVerifiedTitle: "टिकट सत्यापित है",
+    surveyCompleteTitle: "सर्वेक्षण पूरा हुआ",
+    surveyUpdateTitle: "अपना सर्वेक्षण अपडेट करें",
+    surveyWithdrawnTitle: "अपना सर्वेक्षण फिर से शुरू करें",
+    surveyInProgressTitle: "अपना सर्वेक्षण जारी रखें",
+    optionalSurveyTitle: "वैकल्पिक सर्वेक्षण",
+    requiredSurveyTitle: "सर्वेक्षण आवश्यक है",
+    surveyUnavailableDescription:
+      "इस चर्चा में वर्तमान में कोई सर्वेक्षण नहीं है।",
+    verifyAccountDescription:
+      "सर्वेक्षण शुरू करने से पहले आवश्यक साइन-इन या सत्यापन चरण पूरा करें।",
+    verifyTicketDescription:
+      "सर्वेक्षण में आगे बढ़ने से पहले अपने इवेंट टिकट को सत्यापित करें।",
+    ticketVerifiedDescription: "इस चर्चा के लिए आपका इवेंट टिकट सत्यापित है।",
+    surveyCompleteDescription: "आपके सहेजे गए उत्तर इस चर्चा के लिए मान्य हैं।",
+    surveyUpdateDescription:
+      "यह सर्वेक्षण आपके पिछले सहेजे गए उत्तरों से बदल गया है।",
+    surveyWithdrawnDescription:
+      "आप किसी भी समय सर्वेक्षण फिर से खोल सकते हैं और फिर से उत्तर दे सकते हैं।",
+    surveyInProgressAvailableDescription:
+      "आप जारी रख सकते हैं या अपने सहेजे गए उत्तरों की समीक्षा कर सकते हैं।",
+    surveyInProgressRequiredDescription:
+      "इस चर्चा में भाग लेने के लिए सर्वेक्षण पूरा करें।",
+    surveyNotStartedAvailableDescription:
+      "इस चर्चा में एक वैकल्पिक सर्वेक्षण है जिसे आप किसी भी समय खोल सकते हैं।",
+    surveyNotStartedRequiredDescription:
+      "इस चर्चा में भाग लेने से पहले सर्वेक्षण पूरा करें।",
+    backToConversationLabel: "चर्चा पर वापस जाएं",
+    continueLabel: "जारी रखें",
+    verifyTicketLabel: "टिकट सत्यापित करें",
+    reviewAnswersLabel: "उत्तरों की समीक्षा करें",
+    updateAnswersLabel: "उत्तर अपडेट करें",
+    resumeSurveyLabel: "सर्वेक्षण फिर से शुरू करें",
+    continueSurveyLabel: "सर्वेक्षण जारी रखें",
+    openSurveyLabel: "सर्वेक्षण खोलें",
+    startSurveyLabel: "सर्वेक्षण शुरू करें",
+  },
   ar: {
     failedToLoadSurveyTitle: "فشل تحميل الاستبيان",
     tryAgainLabel: "حاول مرة أخرى",

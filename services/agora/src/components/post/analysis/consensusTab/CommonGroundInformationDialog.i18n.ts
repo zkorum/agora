@@ -19,6 +19,22 @@ export const commonGroundInformationDialogTranslations: Record<
     disagreementsDescription:
       "These are statements all opinion groups agree to disagree on.\n\nThis goes beyond a simple majority: even if most individuals reject, a single group's approval — no matter how small the group — is enough to exclude a statement.\n\nOnly statements that reflect true cross-group consensus appear here, not those based on majority rule alone.\n\nOnly the most statistically significant are shown first.",
   },
+  de: {
+    agreementsTitle: "Zustimmung",
+    agreementsDescription:
+      "Diese Aussagen finden in allen Meinungsgruppen Zustimmung.\n\nEine Mehrheit aller Teilnehmenden reicht nicht aus: Lehnt auch nur eine Gruppe eine Aussage ab, erscheint sie hier nicht – unabhängig davon, wie klein diese Gruppe ist.\n\nDie statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    disagreementsTitle: "Ablehnung",
+    disagreementsDescription:
+      "Diese Aussagen stoßen in allen Meinungsgruppen auf Ablehnung.\n\nEine Mehrheit aller Teilnehmenden reicht nicht aus: Stimmt auch nur eine Gruppe einer Aussage zu, erscheint sie hier nicht – unabhängig davon, wie klein diese Gruppe ist.\n\nDie statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+  },
+  hi: {
+    agreementsTitle: "समर्थन",
+    agreementsDescription:
+      "इन कथनों को हर मत समूह में समर्थन मिला है।\n\nकेवल कुल मतों का बहुमत काफ़ी नहीं है। एक भी समूह किसी कथन का विरोध करे तो वह यहाँ नहीं दिखता, चाहे वह समूह कितना भी छोटा हो।\n\nजिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    disagreementsTitle: "विरोध",
+    disagreementsDescription:
+      "इन कथनों का हर मत समूह में विरोध हुआ है।\n\nकेवल कुल मतों का बहुमत काफ़ी नहीं है। एक भी समूह किसी कथन का समर्थन करे तो वह यहाँ नहीं दिखता, चाहे वह समूह कितना भी छोटा हो।\n\nजिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+  },
   ar: {
     agreementsTitle: "معتمدة",
     agreementsDescription:

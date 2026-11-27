@@ -36,6 +36,42 @@ export const reportGroupsTableTranslations: Record<
     noGroupExplanation:
       "Participants who voted on fewer than {minVotes} statements",
   },
+  de: {
+    title: "Meinungsgruppen",
+    subtitle:
+      "Gruppen werden aus Abstimmungsmustern gebildet, ohne den Inhalt der Aussagen zu analysieren. Ein KI-Modell liest dann die Aussagen jeder Gruppe, um einen Namen und eine Zusammenfassung zu generieren.",
+    subtitleNoAi:
+      "Gruppen werden aus Abstimmungsmustern gebildet, ohne den Inhalt der Aussagen zu analysieren.",
+    label: "Gruppe",
+    participants: "Teilnehmende",
+    aiSummary: "Zusammenfassung",
+    notEnoughGroups:
+      "Noch nicht genügend Teilnehmende, um unterschiedliche Meinungsgruppen zu bilden.",
+    noSummary: "Zusammenfassung noch nicht verfügbar.",
+    noGroup: "Keine Gruppe",
+    imbalanceNotice:
+      "Die meisten Teilnehmenden befinden sich in derselben Gruppe, da sie nahezu identisch abgestimmt haben.",
+    noGroupExplanation:
+      "Teilnehmende, die über weniger als {minVotes} Aussagen abgestimmt haben",
+  },
+  hi: {
+    title: "मत समूह",
+    subtitle:
+      "समूह मतदान पैटर्न से बनते हैं, कथन की सामग्री का विश्लेषण किए बिना। फिर एक AI मॉडल प्रत्येक समूह के कथनों को पढ़कर एक नाम और सारांश उत्पन्न करता है।",
+    subtitleNoAi:
+      "समूह मतदान पैटर्न से बनते हैं, कथन की सामग्री का विश्लेषण किए बिना।",
+    label: "समूह",
+    participants: "प्रतिभागी",
+    aiSummary: "सारांश",
+    notEnoughGroups:
+      "अलग-अलग मत समूह बनाने के लिए अभी पर्याप्त भागीदारी नहीं हुई है।",
+    noSummary: "सारांश अभी उपलब्ध नहीं है।",
+    noGroup: "कोई समूह नहीं",
+    imbalanceNotice:
+      "अधिकांश प्रतिभागी एक ही समूह में हैं क्योंकि उन्होंने लगभग समान रूप से मतदान किया।",
+    noGroupExplanation:
+      "ऐसे प्रतिभागी जिन्होंने {minVotes} से कम कथनों पर मत दिया",
+  },
   ar: {
     title: "مجموعات الرأي",
     subtitle:

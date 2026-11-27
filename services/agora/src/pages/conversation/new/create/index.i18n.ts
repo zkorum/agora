@@ -47,6 +47,52 @@ export const createConversationTranslations: Record<
     polisImportError: "Error while trying to import conversation from Polis",
     viewImportStatus: "View Import Status",
   },
+  de: {
+    importButton: "Importieren",
+    nextButton: "Weiter",
+    titlePlaceholder: "Titel (erforderlich)",
+    titleRequired: "Ein Titel ist erforderlich, um fortzufahren",
+    bodyPlaceholder:
+      "Textkörper. Geben Sie Kontext oder relevante Ressourcen an. Stellen Sie sicher, dass es mit der Hauptfrage übereinstimmt!",
+    activeImportMessage:
+      "Sie haben einen Import im Gange. Bitte warten Sie, bis dieser abgeschlossen ist, bevor Sie einen neuen starten.",
+    githubConfig: "GitHub-Quelle",
+    githubRepository: "Repository",
+    githubRepositoryPlaceholder: "besitzer/repo",
+    githubLabel: "Issue-Label",
+    githubLabelPlaceholder: "roadmap",
+    organizationUnavailable:
+      "Die ausgewählte Organisation ist nicht mehr verfügbar.",
+    missingProjectCreateCapability:
+      "Sie haben nicht die Berechtigung, Diskussionen in den Projekten dieser Organisation zu erstellen.",
+    missingRequiredCsvFiles: "Erforderliche CSV-Dateien fehlen",
+    csvImportError: "Fehler beim Importieren der Diskussion aus CSV",
+    polisImportError:
+      "Fehler beim Versuch, die Diskussion aus Polis zu importieren",
+    viewImportStatus: "Importstatus anzeigen",
+  },
+  hi: {
+    importButton: "आयात करें",
+    nextButton: "आगे बढ़ें",
+    titlePlaceholder: "शीर्षक (आवश्यक)",
+    titleRequired: "आगे बढ़ने के लिए शीर्षक आवश्यक है",
+    bodyPlaceholder:
+      "मुख्य पाठ। संदर्भ या प्रासंगिक संसाधन प्रदान करें। सुनिश्चित करें कि यह मुख्य प्रश्न के अनुरूप है!",
+    activeImportMessage:
+      "आपका आयात प्रगति पर है। कृपया नया शुरू करने से पहले इसे पूरा होने दें।",
+    githubConfig: "GitHub स्रोत",
+    githubRepository: "रिपॉजिटरी",
+    githubRepositoryPlaceholder: "मालिक/रिपॉ",
+    githubLabel: "समस्या लेबल",
+    githubLabelPlaceholder: "रोडमैप",
+    organizationUnavailable: "चयनित संगठन अब उपलब्ध नहीं है।",
+    missingProjectCreateCapability:
+      "आपके पास इस संगठन की सूचीबद्ध परियोजनाओं में चर्चाएँ बनाने की अनुमति नहीं है।",
+    missingRequiredCsvFiles: "आवश्यक CSV फ़ाइलें गायब हैं",
+    csvImportError: "CSV से चर्चा आयात करते समय त्रुटि",
+    polisImportError: "Polis से चर्चा आयात करने का प्रयास करते समय त्रुटि",
+    viewImportStatus: "आयात स्थिति देखें",
+  },
   ar: {
     importButton: "استيراد",
     nextButton: "التالي",

@@ -11,6 +11,12 @@ export const eventTicketSelectionDialogTranslations: Record<
   en: {
     devconnect2025: "Devconnect 2025",
   },
+  de: {
+    devconnect2025: "Devconnect 2025",
+  },
+  hi: {
+    devconnect2025: "Devconnect 2025",
+  },
   ar: {
     devconnect2025: "Devconnect 2025",
   },

@@ -9,6 +9,8 @@ export const conversationOnboardingCompletionTranslations: Record<
   ConversationOnboardingCompletionTranslations
 > = {
   en: { onboardingComplete: "You’re all set!" },
+  de: { onboardingComplete: "Sie sind bereit!" },
+  hi: { onboardingComplete: "आप तैयार हैं!" },
   ar: { onboardingComplete: "كل شيء جاهز!" },
   es: { onboardingComplete: "¡Todo listo!" },
   fa: { onboardingComplete: "همه‌چیز آماده است!" },

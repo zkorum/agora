@@ -14,6 +14,16 @@ export const divisiveInformationDialogTranslations: Record<
     description:
       "Statements where opinion groups disagree with each other. One group approves while another rejects.\n\nThese reveal the key dividing lines in the conversation.\n\nOnly the most statistically significant are shown first.",
   },
+  de: {
+    title: "Spaltende Aussagen",
+    description:
+      "Aussagen, bei denen sich die Meinungsgruppen widersprechen. Eine Gruppe befürwortet, während eine andere ablehnt.\n\nDiese zeigen die wesentlichen Trennlinien in der Diskussion auf.\n\nNur die statistisch signifikantesten werden zuerst angezeigt.",
+  },
+  hi: {
+    title: "विभाजनकारी कथन",
+    description:
+      "ऐसे कथन जिन पर मत समूह एक-दूसरे से असहमत हैं। एक समूह अनुमोदन करता है जबकि दूसरा अस्वीकार करता है।\n\nये चर्चा में मुख्य विभाजन रेखाओं को दर्शाते हैं।\n\nकेवल सबसे सांख्यिकीय रूप से महत्वपूर्ण पहले दिखाए जाते हैं।",
+  },
   ar: {
     title: "المقترحات المثيرة للانقسام",
     description:

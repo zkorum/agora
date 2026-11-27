@@ -47,6 +47,54 @@ export const conversationLanguageSettingDialogTranslations: Record<
   ConversationLanguageSettingDialogTranslations
 > = {
   en: englishTranslations,
+  de: {
+    languagesTitle: "Sprachen",
+    languagesDescription:
+      "Wählen Sie die Sprachen, die Agora für diese Diskussion unterstützen soll.",
+    languageAutoLabel: "Automatisch",
+    detectedLanguageAfterPublishing:
+      "Hauptsprache nach Veröffentlichung erkennen",
+    autoDetectDetectedDescription: "Erkannt: {language}",
+    autoDetectUnknownDescription: "Sprache konnte nicht erkannt werden.",
+    autoDetectRetryableUnknownDescription:
+      "Sprache konnte nicht erkannt werden. Das Speichern mit automatischem Erkennen wird es erneut versuchen.",
+    autoDetectUnsupportedDescription:
+      "Erkannt: {language}. Nicht für Übersetzungen unterstützt.",
+    additionalLanguagesEmptyDescription:
+      "Fügen Sie bis zu 2 weitere Zielsprachen hinzu. Wenn Auto eine davon erkennt, zählt sie einmal.",
+    additionalLanguagesDescription:
+      "Wählen Sie bis zu 2 weitere Zielsprachen. Wenn Auto eine davon erkennt, zählt sie einmal.",
+    dynamicTranslationTitle: "Dynamische Übersetzung",
+    dynamicTranslationDescription:
+      "Übersetzen Sie Titel, Textkörper, Aussagen und Umfragen in die ausgewählten Sprachen.",
+    dynamicTranslationOn: "An",
+    dynamicTranslationOff: "Aus",
+    languageSearchPlaceholder: "Sprachen suchen",
+  },
+  hi: {
+    languagesTitle: "भाषाएँ",
+    languagesDescription:
+      "वे भाषाएँ चुनें जिनका Agora इस चर्चा के लिए समर्थन करना चाहिए।",
+    languageAutoLabel: "स्वचालित",
+    detectedLanguageAfterPublishing:
+      "प्रकाशित करने के बाद मुख्य भाषा का पता लगाएं",
+    autoDetectDetectedDescription: "पता चला: {language}",
+    autoDetectUnknownDescription: "भाषा का पता नहीं लगाया जा सका।",
+    autoDetectRetryableUnknownDescription:
+      "भाषा का पता नहीं लगाया जा सका। ऑटो-डिटेक्ट के साथ सहेजना फिर से प्रयास करेगा।",
+    autoDetectUnsupportedDescription:
+      "पता चला: {language}। अनुवाद के लिए समर्थित नहीं है।",
+    additionalLanguagesEmptyDescription:
+      "अधिकतम 2 अतिरिक्त लक्ष्य भाषाएँ जोड़ें। यदि ऑटो में से कोई एक का पता चलता है, तो यह एक बार गिना जाएगा।",
+    additionalLanguagesDescription:
+      "अधिकतम 2 अतिरिक्त लक्ष्य भाषाएँ चुनें। यदि ऑटो में से कोई एक का पता चलता है, तो यह एक बार गिना जाएगा।",
+    dynamicTranslationTitle: "गतिशील अनुवाद",
+    dynamicTranslationDescription:
+      "शीर्षक, मुख्य भाग, कथन और सर्वेक्षणों का चयनित भाषाओं में अनुवाद करें।",
+    dynamicTranslationOn: "चालू",
+    dynamicTranslationOff: "बंद",
+    languageSearchPlaceholder: "भाषाएँ खोजें",
+  },
   es: {
     languagesTitle: "Idiomas",
     languagesDescription:

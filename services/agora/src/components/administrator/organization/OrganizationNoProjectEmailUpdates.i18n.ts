@@ -44,6 +44,50 @@ export const organizationNoProjectEmailUpdatesTranslations: Record<
   OrganizationNoProjectEmailUpdatesTranslations
 > = {
   en,
+  de: {
+    cancel: "Abbrechen",
+    configurationUnavailable:
+      "Die E-Mail-Einstellungen für Diskussionen ohne Projekt sind derzeit nicht verfügbar.",
+    contactDescription:
+      "An diese regelmäßig gelesene Adresse können sich Teilnehmende an Diskussionen ohne zugeordnetes Projekt wenden.",
+    contactEmailLabel: "Kontakt-E-Mail",
+    contactInUse:
+      "Deaktivieren Sie den Standardwert 'Kein Projekt' und alle Überschreibungen für Diskussionen, bevor Sie diesen Kontakt löschen.",
+    contactNameLabel: "Kontaktname",
+    contactTitle: "Kontakt für Diskussionen ohne Projekt",
+    deleteConfirmation:
+      "Möchten Sie den Kontakt für Diskussionen ohne Projekt löschen?",
+    deleteContact: "Kontakt löschen",
+    entitlementRequired:
+      "Diese Organisation verfügt nicht über den Zugriff auf E-Mail-Benachrichtigungen.",
+    missingContact:
+      "Fügen Sie einen Kontakt für Rückfragen hinzu, bevor Sie E-Mail-Benachrichtigungen aktivieren.",
+    organizationNotFound: "Die Organisation konnte nicht gefunden werden.",
+    saveContact: "Kontakt speichern",
+    saved:
+      "Einstellungen für E-Mail-Benachrichtigungen für 'Kein Projekt' gespeichert.",
+    tryAgain: "Erneut versuchen",
+  },
+  hi: {
+    cancel: "रद्द करें",
+    configurationUnavailable:
+      "बिना प्रोजेक्ट वाली चर्चाओं के लिए ईमेल अपडेट की सेटिंग्स अभी उपलब्ध नहीं हैं।",
+    contactDescription:
+      "जिन चर्चाओं का कोई सूचीबद्ध प्रोजेक्ट नहीं है, उनके प्रतिभागी इस पते पर सवाल भेज सकते हैं। ऐसा पता दें जिसे नियमित रूप से देखा जाता हो।",
+    contactEmailLabel: "संपर्क ईमेल",
+    contactInUse:
+      "इस संपर्क को हटाने से पहले बिना प्रोजेक्ट वाली चर्चाओं के लिए ईमेल अपडेट बंद करें। जिन चर्चाओं के लिए इसे अलग से चालू किया गया है, वहाँ भी इसे बंद करें।",
+    contactNameLabel: "संपर्क का नाम",
+    contactTitle: "बिना प्रोजेक्ट वाली चर्चाओं के लिए संपर्क",
+    deleteConfirmation: "बिना प्रोजेक्ट वाली चर्चाओं के लिए यह संपर्क हटाएँ?",
+    deleteContact: "संपर्क हटाएँ",
+    entitlementRequired: "इस संगठन के पास ईमेल अपडेट तक पहुँच नहीं है।",
+    missingContact: "ईमेल अपडेट चालू करने से पहले प्रतिभागियों के सवालों के लिए संपर्क जोड़ें।",
+    organizationNotFound: "संगठन नहीं मिल सका।",
+    saveContact: "संपर्क सहेजें",
+    saved: "'कोई परियोजना नहीं' ईमेल अपडेट सेटिंग्स सहेजी गईं।",
+    tryAgain: "फिर से प्रयास करें",
+  },
   ar: {
     cancel: "إلغاء",
     configurationUnavailable:

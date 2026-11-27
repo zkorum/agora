@@ -10,6 +10,8 @@ export const zkSelectTranslations: Record<
   ZKSelectTranslations
 > = {
   en: { done: "Done", noResults: "No results" },
+  de: { done: "Fertig", noResults: "Keine Ergebnisse" },
+  hi: { done: "हो गया", noResults: "कोई परिणाम नहीं" },
   ar: { done: "تم", noResults: "لا توجد نتائج" },
   es: { done: "Listo", noResults: "Sin resultados" },
   fa: { done: "انجام شد", noResults: "نتیجه‌ای یافت نشد" },

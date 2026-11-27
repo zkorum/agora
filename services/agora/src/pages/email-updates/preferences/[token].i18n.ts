@@ -34,6 +34,42 @@ export const emailUpdatePreferencesTranslations = {
     optedOut: "Opted out",
     submitFailed: "Could not opt out. Please try again.",
   },
+  de: {
+    pageTitle: "Einstellungen für E-Mail-Benachrichtigungen",
+    loading: "Einstellungen für E-Mail-Benachrichtigungen werden geladen",
+    unavailableTitle: "Dieser Link ist nicht verfügbar",
+    unavailableDescription:
+      "Der Link könnte ungültig, abgelaufen oder für eine andere Aktion vorgesehen sein.",
+    returnHome: "Zurück zu Agora",
+    title: "Einstellungen für E-Mail-Benachrichtigungen",
+    description:
+      "Hier können Sie E-Mail-Benachrichtigungen für das ganze Projekt oder für einzelne Diskussionen abbestellen. Über diesen Link können Sie sie nicht wieder aktivieren.",
+    project: "Projekt",
+    conversation: "Diskussion",
+    optOut: "Abbestellen",
+    optOutTarget: "E-Mail-Benachrichtigungen zu „{title}“ abbestellen",
+    optingOut: "Wird abbestellt …",
+    optedOut: "Abbestellt",
+    submitFailed: "Die Benachrichtigungen konnten nicht abbestellt werden. Bitte versuchen Sie es erneut.",
+  },
+  hi: {
+    pageTitle: "ईमेल अपडेट की सेटिंग्स",
+    loading: "ईमेल अपडेट की सेटिंग्स लोड हो रही हैं",
+    unavailableTitle: "यह लिंक अनुपलब्ध है",
+    unavailableDescription:
+      "लिंक अमान्य, समाप्त हो चुका हो सकता है, या किसी अन्य कार्रवाई के लिए हो सकता है।",
+    returnHome: "Agora पर वापस जाएँ",
+    title: "ईमेल अपडेट की सेटिंग्स",
+    description:
+      "यहाँ आप पूरी परियोजना या अलग-अलग चर्चाओं के ईमेल अपडेट बंद कर सकते हैं। इस लिंक से उन्हें दोबारा चालू नहीं किया जा सकता।",
+    project: "परियोजना",
+    conversation: "चर्चा",
+    optOut: "बंद करें",
+    optOutTarget: "“{title}” के ईमेल अपडेट बंद करें",
+    optingOut: "बंद किए जा रहे हैं…",
+    optedOut: "बंद हैं",
+    submitFailed: "ईमेल अपडेट बंद नहीं हो सके। कृपया फिर कोशिश करें।",
+  },
   es: {
     pageTitle: "Preferencia de seguimiento por correo",
     loading: "Cargando la preferencia de seguimiento por correo",

@@ -15,6 +15,16 @@ export const topicSelectionStepTranslations: Record<
     backButton: "Back",
     closeButton: "Close",
   },
+  de: {
+    title: "Wählen Sie Themen aus, die Sie interessieren, um zu beginnen",
+    backButton: "Zurück",
+    closeButton: "Schließen",
+  },
+  hi: {
+    title: "शुरू करने के लिए उन विषयों का चयन करें जिनमें आपकी रुचि है",
+    backButton: "वापस जाएँ",
+    closeButton: "बंद करें",
+  },
   ar: {
     title: "اختر المواضيع التي تهتم بها للبدء",
     backButton: "العودة",

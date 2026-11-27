@@ -25,6 +25,28 @@ export const conversationMutationsTranslations: Record<
     alreadyClosed: "This conversation is already closed",
     alreadyOpen: "This conversation is already open",
   },
+  de: {
+    closeSuccess: "Diskussion geschlossen",
+    openSuccess: "Diskussion wieder geöffnet",
+    closeError:
+      "Schließen der Diskussion fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    openError:
+      "Öffnen der Diskussion fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    closeNotAllowed: "Sie sind nicht berechtigt, diese Diskussion zu schließen",
+    openNotAllowed: "Sie sind nicht berechtigt, diese Diskussion zu öffnen",
+    alreadyClosed: "Diese Diskussion ist bereits geschlossen",
+    alreadyOpen: "Diese Diskussion ist bereits geöffnet",
+  },
+  hi: {
+    closeSuccess: "चर्चा बंद हो गई",
+    openSuccess: "चर्चा फिर से खोल दी गई",
+    closeError: "चर्चा बंद करने में विफल। कृपया पुनः प्रयास करें।",
+    openError: "चर्चा खोलने में विफल। कृपया पुनः प्रयास करें।",
+    closeNotAllowed: "आपको इस चर्चा को बंद करने की अनुमति नहीं है",
+    openNotAllowed: "आपको इस चर्चा को खोलने की अनुमति नहीं है",
+    alreadyClosed: "यह चर्चा पहले से ही बंद है",
+    alreadyOpen: "यह चर्चा पहले से ही खुली है",
+  },
   ar: {
     closeSuccess: "تم إغلاق المحادثة",
     openSuccess: "تمت إعادة فتح المحادثة",

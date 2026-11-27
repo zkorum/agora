@@ -60,6 +60,70 @@ export const conversationUpdateComposerFormTranslations: Record<
     optionalEmailSomeWarning:
       "Email is optional for participants in some selected conversations. The eligible recipient count includes only participants who verified an email and opted in to Email Updates.",
   },
+  de: {
+    composeUpdate: "Update verfassen",
+    testDialogTitle: "Diesen Test-E-Mail senden?",
+    testEmailNotice:
+      "Dieser Test geht nur an die Moderationsleitung bei {email}. Niemand erhält etwas, bis Sie das eigentliche Update senden.",
+    cancel: "Abbrechen",
+    zeroAudienceWarning:
+      "Derzeit sind keine Teilnehmenden berechtigt, diese E-Mail zu erhalten. Das Testen und Senden wird verfügbar sein, sobald mindestens ein Teilnehmender berechtigt ist.",
+    zeroAudienceOwnerCopyWarning:
+      "Derzeit sind keine Teilnehmenden berechtigt. Autorisierte Projektmanager für eine separate Besitzerkopie: {count}. Testen und Senden erfordern mindestens einen berechtigten Teilnehmenden.",
+    subjectLabel: "Betreff",
+    subjectHint: "Maximal {max} Unicode-Zeichen",
+    messageLabel: "Nachricht",
+    editorPlaceholder:
+      "Mögliche Updates:\n• Ergebnisse teilen\n• Aktuelle Änderungen teilen\n• Neue Aussagen hervorheben\n• Teilnehmende einladen, zurückzukehren und über neu hinzugefügte Aussagen abzustimmen, um die Analyse mit zunehmender Teilnahme zu verbessern\n\nDiese E-Mail geht an berechtigte Teilnehmende, die mindestens über eine Aussage abgestimmt, mindestens eine Aussage veröffentlicht oder an einer Rangfolge teilgenommen haben.\n\nLinks zu den ausgewählten Diskussionen werden automatisch am Ende der E-Mail hinzugefügt, unter Verwendung ihrer Projektseiten, wenn dies zutreffend ist. Sie müssen diese hier nicht einfügen, können aber.",
+    policyWarning:
+      "Bitte halten Sie dieses Update strikt auf die ausgewählten Diskussionen bezogen. Werbung, Spendenaufrufe, politische Kampagnen und nicht verwandte Promotionen sind nicht gestattet.",
+    contentConfirmation:
+      "Ich bestätige, dass dieses Update den oben genannten Regeln entspricht.",
+    ownerCopySummary:
+      "Berechtigte Teilnehmende: {participantCount}. Autorisierte Projektmanager: {managerCount}. Jeder in beiden Gruppen erhält nur eine Kopie für den Eigentümer.",
+    checkingRecipients: "Überprüfung der berechtigten Teilnehmenden...",
+    sendAnotherTest: "Weitere Test-E-Mail senden",
+    sendTest: "Test-E-Mail senden",
+    sendingTest: "Test-E-Mail wird gesendet...",
+    replyToConversation: "Antworten an (Diskussions-E-Mail)",
+    replyToProject: "Antworten an (Projekt-E-Mail)",
+    optionalEmailAllWarning:
+      "Die E-Mail ist für Teilnehmende in den ausgewählten Diskussionen optional. Die Anzahl der berechtigten Empfänger umfasst nur Teilnehmende, die eine E-Mail verifiziert und sich für E-Mail-Updates angemeldet haben.",
+    optionalEmailSomeWarning:
+      "Die E-Mail ist für Teilnehmende in einigen ausgewählten Diskussionen optional. Die Anzahl der berechtigten Empfänger umfasst nur Teilnehmende, die eine E-Mail verifiziert und sich für E-Mail-Updates angemeldet haben.",
+  },
+  hi: {
+    composeUpdate: "अपडेट लिखें",
+    testDialogTitle: "क्या यह परीक्षण ईमेल भेजें?",
+    testEmailNotice:
+      "यह परीक्षण केवल संचालक को {email} पर भेजा जाता है। जब तक आप वास्तविक अपडेट नहीं भेजते, तब तक किसी और को कुछ नहीं मिलता।",
+    cancel: "रद्द करें",
+    zeroAudienceWarning:
+      "वर्तमान में कोई प्रतिभागी इस ईमेल प्राप्त करने के योग्य नहीं है। जब कम से कम एक प्रतिभागी योग्य हो जाएगा तो परीक्षण और भेजना उपलब्ध होगा।",
+    zeroAudienceOwnerCopyWarning:
+      "वर्तमान में कोई प्रतिभागी योग्य नहीं है। एक अलग मालिक प्रति के लिए अधिकृत परियोजना प्रबंधक सूचीबद्ध हैं: {count}। परीक्षण और भेजने के लिए कम से कम एक योग्य प्रतिभागी की आवश्यकता है।",
+    subjectLabel: "विषय",
+    subjectHint: "अधिकतम {max} यूनिकोड वर्ण",
+    messageLabel: "संदेश",
+    editorPlaceholder:
+      "संभावित अपडेट:\n• परिणाम साझा करें\n• हाल के परिवर्तनों को साझा करें\n• नए कथनों को उजागर करें\n• प्रतिभागियों को वापस आने और नए जोड़े गए कथनों पर मतदान करने के लिए आमंत्रित करें, जिससे भागीदारी बढ़ने पर विश्लेषण में सुधार होता है\n\nयह ईमेल योग्य प्रतिभागियों को जाता है जिन्होंने कम से कम एक कथन पर मतदान किया है, कम से कम एक कथन प्रकाशित किया है, या रैंकिंग में भाग लिया है।\n\nचयनित चर्चाओं के लिंक स्वचालित रूप से ईमेल के अंत में जोड़े जाते हैं, लागू होने पर उनकी परियोजना पृष्ठों का उपयोग करते हुए। आपको उन्हें यहां शामिल करने की आवश्यकता नहीं है, लेकिन आप कर सकते हैं।",
+    policyWarning:
+      "कृपया यह अपडेट केवल चुनी गई चर्चाओं के बारे में रखें। विज्ञापन, धन उगाही, राजनीतिक प्रचार और असंबंधित प्रचार की अनुमति नहीं है।",
+    contentConfirmation:
+      "मैं पुष्टि करता/करती हूँ कि यह अपडेट ऊपर लिखे नियमों का पालन करता है।",
+    ownerCopySummary:
+      "पात्र प्रतिभागी: {participantCount}। अधिकृत परियोजना प्रबंधक: {managerCount}। दोनों समूहों में कोई भी केवल एक मालिक प्रति प्राप्त करता है।",
+    checkingRecipients: "पात्र प्राप्तकर्ताओं की जाँच कर रहा/रही हूँ...",
+    sendAnotherTest: "एक और परीक्षण ईमेल भेजें",
+    sendTest: "परीक्षण ईमेल भेजें",
+    sendingTest: "परीक्षण ईमेल भेज रहा/रही हूँ...",
+    replyToConversation: "(चर्चा ईमेल) का उत्तर दें",
+    replyToProject: "(परियोजना ईमेल) का उत्तर दें",
+    optionalEmailAllWarning:
+      "चुनी गई चर्चाओं में प्रतिभागियों के लिए ईमेल वैकल्पिक है। पात्र प्राप्तकर्ताओं की संख्या में केवल वे प्रतिभागी शामिल हैं जिन्होंने ईमेल सत्यापित किया और ईमेल अपडेट के लिए सहमति दी।",
+    optionalEmailSomeWarning:
+      "चुनी गई कुछ चर्चाओं में प्रतिभागियों के लिए ईमेल वैकल्पिक है। पात्र प्राप्तकर्ताओं की संख्या में केवल वे प्रतिभागी शामिल हैं जिन्होंने ईमेल सत्यापित किया और ईमेल अपडेट के लिए सहमति दी।",
+  },
   ar: {
     composeUpdate: "إنشاء تحديث",
     testDialogTitle: "هل تريد إرسال هذا البريد التجريبي؟",

@@ -13,6 +13,16 @@ export const commentModerationTranslations: Record<
     edit: "Edit",
     moderatorFlaggedMessage: "Moderator flagged this response as",
   },
+  de: {
+    edit: "Bearbeiten",
+    moderatorFlaggedMessage:
+      "Der Moderator hat diese Antwort als gekennzeichnet",
+  },
+  hi: {
+    edit: "संपादित करें",
+    moderatorFlaggedMessage:
+      "संचालक ने इस प्रतिक्रिया को इस रूप में चिह्नित किया है",
+  },
   ar: {
     edit: "تحرير",
     moderatorFlaggedMessage: "أشر المشرف إلى هذا الرد كـ",

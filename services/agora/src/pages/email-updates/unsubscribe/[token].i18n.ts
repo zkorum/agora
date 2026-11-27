@@ -36,6 +36,47 @@ export const emailUpdateUnsubscribeTranslations = {
     successTitle: "You are unsubscribed",
     successDescription: "You will no longer receive these Email Updates.",
   },
+  de: {
+    pageTitle: "E-Mail-Benachrichtigungen abbestellen",
+    loading: "Einstellungen für E-Mail-Benachrichtigungen werden geladen",
+    unavailableTitle: "Dieser Link ist nicht verfügbar",
+    unavailableDescription:
+      "Der Link könnte ungültig, abgelaufen oder für eine andere Aktion vorgesehen sein.",
+    returnHome: "Zurück zu Agora",
+    title: "E-Mail-Benachrichtigungen abbestellen?",
+    projectDescription:
+      "Sie bestellen alle E-Mail-Benachrichtigungen zum Projekt „{title}“ ab, auch für einzeln abonnierte Diskussionen.",
+    conversationDescription:
+      "E-Mail-Benachrichtigungen für die Diskussion „{title}“ stoppen.",
+    conversationsDescription:
+      "E-Mail-Benachrichtigungen für alle in dieser E-Mail aufgeführten Diskussionen stoppen.",
+    confirm: "Abbestellung bestätigen",
+    submitting: "Wird abbestellt …",
+    submitFailed:
+      "Die Benachrichtigungen konnten nicht abbestellt werden. Bitte versuchen Sie es erneut.",
+    successTitle: "Benachrichtigungen abbestellt",
+    successDescription:
+      "Sie erhalten diese E-Mail-Benachrichtigungen nicht mehr.",
+  },
+  hi: {
+    pageTitle: "ईमेल अपडेट बंद करें",
+    loading: "ईमेल अपडेट की सेटिंग्स लोड हो रही हैं",
+    unavailableTitle: "यह लिंक अनुपलब्ध है",
+    unavailableDescription:
+      "लिंक अमान्य, समाप्त हो चुका हो सकता है, या किसी अन्य कार्रवाई के लिए हो सकता है।",
+    returnHome: "Agora पर वापस जाएँ",
+    title: "ईमेल अपडेट बंद करें?",
+    projectDescription:
+      "परियोजना “{title}” के सभी ईमेल अपडेट बंद हो जाएँगे। इसमें वे चर्चाएँ भी शामिल हैं जिनके अपडेट आपने अलग से चालू किए थे।",
+    conversationDescription: 'चर्चा "{title}" के लिए ईमेल अपडेट बंद करें।',
+    conversationsDescription:
+      "इस ईमेल में सूचीबद्ध प्रत्येक चर्चा के लिए ईमेल अपडेट बंद करें।",
+    confirm: "ईमेल अपडेट बंद करने की पुष्टि करें",
+    submitting: "ईमेल अपडेट बंद किए जा रहे हैं…",
+    submitFailed: "ईमेल अपडेट बंद नहीं हो सके। कृपया फिर कोशिश करें।",
+    successTitle: "ईमेल अपडेट बंद हो गए हैं",
+    successDescription: "आपको अब ये ईमेल अपडेट प्राप्त नहीं होंगे।",
+  },
   es: {
     pageTitle: "Dejar de recibir novedades por correo",
     loading: "Cargando la configuración de novedades por correo",

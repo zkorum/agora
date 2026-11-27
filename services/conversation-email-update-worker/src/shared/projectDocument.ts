@@ -94,6 +94,8 @@ export function isInlineProjectDocumentContentType(
 
 const internalRestrictedFileNameSuffixes = {
     en: "internal-restricted",
+    de: "nur-intern",
+    hi: "केवल-आंतरिक-उपयोग",
     es: "interno-restringido",
     fr: "interne-restreint",
     "zh-Hant": "內部受限",

@@ -25,6 +25,30 @@ export const projectEmailUpdatesMenuTranslations: Record<
     saveDisabled: "The project email update default is off.",
     saveError: "Couldn’t save your email update preference.",
   },
+  de: {
+    projectActions: "Projektaktionen",
+    receiveUpdates: "E-Mail-Updates für dieses Projekt standardmäßig erhalten",
+    manageUpdates: "E-Mail-Benachrichtigungen senden und Verlauf einsehen",
+    manageMyUpdates: "Meine E-Mail-Updates für dieses Projekt verwalten",
+    viewHistory: "E-Mail-Update-Verlauf für dieses Projekt ansehen",
+    saveEnabled:
+      "Die Standardeinstellung für E-Mail-Updates des Projekts ist aktiviert.",
+    saveDisabled:
+      "Die Standardeinstellung für E-Mail-Updates des Projekts ist deaktiviert.",
+    saveError:
+      "Die Speicherung Ihrer E-Mail-Update-Präferenz war nicht möglich.",
+  },
+  hi: {
+    projectActions: "परियोजना क्रियाएँ",
+    receiveUpdates:
+      "इस परियोजना के लिए डिफ़ॉल्ट रूप से ईमेल अपडेट प्राप्त करें",
+    manageUpdates: "ईमेल अपडेट भेजें और इतिहास देखें",
+    manageMyUpdates: "इस परियोजना के लिए मेरे ईमेल अपडेट प्रबंधित करें",
+    viewHistory: "इस परियोजना के लिए ईमेल अपडेट इतिहास देखें",
+    saveEnabled: "परियोजना ईमेल अपडेट डिफ़ॉल्ट चालू है।",
+    saveDisabled: "परियोजना ईमेल अपडेट डिफ़ॉल्ट बंद है।",
+    saveError: "आपकी ईमेल अपडेट प्राथमिकता सहेजी नहीं जा सकी।",
+  },
   ar: {
     projectActions: "إجراءات المشروع",
     receiveUpdates: "تحديثات البريد الإلكتروني افتراضيًا لهذا المشروع",

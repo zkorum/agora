@@ -17,6 +17,18 @@ export const voteLegendTranslations: Record<
     disagree: "Disagree",
     noVote: "No Vote",
   },
+  de: {
+    agree: "Stimme zu",
+    unsure: "Unsicher",
+    disagree: "Stimme nicht zu",
+    noVote: "Nicht abgestimmt",
+  },
+  hi: {
+    agree: "सहमत",
+    unsure: "तय नहीं",
+    disagree: "असहमत",
+    noVote: "मत नहीं दिया",
+  },
   ar: {
     agree: "أوافق",
     unsure: "غير متأكد",

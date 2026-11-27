@@ -13,6 +13,15 @@ export const commentLoadingErrorTranslations: Record<
     defaultRetryLabel: "Try again",
     defaultErrorMessage: "Something went wrong. Please try again.",
   },
+  de: {
+    defaultRetryLabel: "Erneut versuchen",
+    defaultErrorMessage:
+      "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+  },
+  hi: {
+    defaultRetryLabel: "फिर से प्रयास करें",
+    defaultErrorMessage: "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",
+  },
   ar: {
     defaultRetryLabel: "حاول مرة أخرى",
     defaultErrorMessage: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",

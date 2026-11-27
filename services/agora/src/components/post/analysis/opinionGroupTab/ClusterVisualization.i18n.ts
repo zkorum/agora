@@ -13,6 +13,14 @@ export const clusterVisualizationTranslations: Record<
     groupsTitle: "Opinion groups",
     meLabel: "Me",
   },
+  de: {
+    groupsTitle: "Meinungsgruppen",
+    meLabel: "Ich",
+  },
+  hi: {
+    groupsTitle: "मत समूह",
+    meLabel: "मैं",
+  },
   ar: {
     groupsTitle: "مجموعات الرأي",
     meLabel: "أنا",

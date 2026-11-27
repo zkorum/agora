@@ -11,6 +11,12 @@ export const importStatusPageTranslations: Record<
   en: {
     pageTitle: "Import Status",
   },
+  de: {
+    pageTitle: "Importstatus",
+  },
+  hi: {
+    pageTitle: "आयात स्थिति",
+  },
   ar: {
     pageTitle: "حالة الاستيراد",
   },

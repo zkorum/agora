@@ -29,6 +29,32 @@ export const reportContentDialogTranslations: Record<
     reportTypeConversation: "conversation",
     reportTypeOpinion: "statement",
   },
+  de: {
+    submitReportTitle: "Meldung senden",
+    improveCommunityText:
+      "Vielen Dank für Ihre Hilfe. Welches Problem möchten Sie melden ({reportType})?",
+    thanksForFeedbackTitle: "Vielen Dank für Ihr Feedback!",
+    flaggingReasonText:
+      "Warum melden Sie diesen Inhalt ({reportType}) als „{selectedReason}“?",
+    addExplanationLabel: "Erklärung hinzufügen",
+    skipButton: "Überspringen",
+    submitButton: "Senden",
+    reportTypeConversation: "Diskussion",
+    reportTypeOpinion: "Aussage",
+  },
+  hi: {
+    submitReportTitle: "शिकायत भेजें",
+    improveCommunityText:
+      "समुदाय को बेहतर बनाने में मदद के लिए धन्यवाद। इस {reportType} में क्या समस्या है?",
+    thanksForFeedbackTitle: "आपकी प्रतिक्रिया के लिए धन्यवाद!",
+    flaggingReasonText:
+      "इस सामग्री ({reportType}) की शिकायत के लिए आपने “{selectedReason}” क्यों चुना?",
+    addExplanationLabel: "स्पष्टीकरण जोड़ें",
+    skipButton: "छोड़ें",
+    submitButton: "जमा करें",
+    reportTypeConversation: "चर्चा",
+    reportTypeOpinion: "कथन",
+  },
   ar: {
     submitReportTitle: "إرسال تقرير",
     improveCommunityText:

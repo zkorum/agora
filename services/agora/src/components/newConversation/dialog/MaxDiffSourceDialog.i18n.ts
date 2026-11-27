@@ -17,6 +17,19 @@ export const maxDiffSourceDialogTranslations: Record<
     githubTitle: "GitHub",
     githubDescription: "Import items from GitHub issues with a specific label",
   },
+  de: {
+    manualTitle: "Manuell",
+    manualDescription: "Fügen Sie Aussagen hinzu, um diese manuell zu ordnen",
+    githubTitle: "GitHub",
+    githubDescription:
+      "Importieren Sie Elemente aus GitHub-Issues mit einem bestimmten Label",
+  },
+  hi: {
+    manualTitle: "मैनुअल",
+    manualDescription: "मैन्युअल रूप से रैंक करने के लिए कथन जोड़ें",
+    githubTitle: "GitHub",
+    githubDescription: "एक विशिष्ट लेबल वाले GitHub मुद्दों से आइटम आयात करें",
+  },
   ar: {
     manualTitle: "يدوي",
     manualDescription: "أضف عبارات لترتيبها يدويًا",

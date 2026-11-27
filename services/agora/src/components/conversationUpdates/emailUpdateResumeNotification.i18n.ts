@@ -12,6 +12,14 @@ export const emailUpdateResumeNotificationTranslations: Record<
     preferenceSavedAndGlobalResumed:
       "Email Updates were turned back on globally, and your preference was saved.",
   },
+  de: {
+    preferenceSavedAndGlobalResumed:
+      "E-Mail-Benachrichtigungen wurden global wieder aktiviert und Ihre Präferenz wurde gespeichert.",
+  },
+  hi: {
+    preferenceSavedAndGlobalResumed:
+      "ईमेल अपडेट वैश्विक स्तर पर वापस चालू कर दिए गए हैं, और आपकी प्राथमिकता सहेज ली गई है।",
+  },
   ar: {
     preferenceSavedAndGlobalResumed:
       "أُعيد تفعيل تحديثات البريد الإلكتروني بشكل عام وحُفظ تفضيلك.",

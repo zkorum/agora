@@ -57,6 +57,16 @@ const otpEmailTranslations: Record<
         text: (code) =>
             `Your confirmation code is ${code}\n\nEnter it shortly in the same browser/device that you used for your authentication request.\n\nIf you didn't request this email, there's nothing to worry about: you can safely ignore it.`,
     },
+    de: {
+        subject: "Ihr Bestätigungscode für Agora",
+        text: (code) =>
+            `Ihr Bestätigungscode lautet ${code}\n\nGeben Sie den Code zeitnah auf demselben Gerät und im selben Browser ein, in dem Sie ihn angefordert haben.\n\nWenn Sie diese E-Mail nicht angefordert haben, können Sie sie einfach ignorieren.`,
+    },
+    hi: {
+        subject: "Agora के लिए आपका सत्यापन कोड",
+        text: (code) =>
+            `आपका सत्यापन कोड है: ${code}\n\nइसे जल्द ही उसी डिवाइस और ब्राउज़र में दर्ज करें जिससे आपने सत्यापन का अनुरोध किया था।\n\nअगर आपने यह ईमेल नहीं माँगा था, तो चिंता न करें। आप इसे अनदेखा कर सकते हैं।`,
+    },
     es: {
         subject: "Su código de confirmación de Agora",
         text: (code) =>

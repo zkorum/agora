@@ -14,6 +14,16 @@ export const activeImportBannerTranslations: Record<
       "You have an import in progress. Please wait for it to complete before starting a new one.",
     viewStatus: "View Import Status",
   },
+  de: {
+    message:
+      "Sie haben einen Import im Gange. Bitte warten Sie, bis dieser abgeschlossen ist, bevor Sie einen neuen starten.",
+    viewStatus: "Importstatus anzeigen",
+  },
+  hi: {
+    message:
+      "आपका आयात प्रगति पर है। कृपया नया शुरू करने से पहले इसे पूरा होने दें।",
+    viewStatus: "आयात स्थिति देखें",
+  },
   ar: {
     message:
       "لديك عملية استيراد قيد التقدم. يرجى الانتظار حتى تكتمل قبل بدء عملية جديدة.",

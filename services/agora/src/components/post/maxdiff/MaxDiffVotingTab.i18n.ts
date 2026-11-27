@@ -63,6 +63,77 @@ export const maxDiffVotingTabTranslations: Record<
     scoringDetailCocm: "Connection-Oriented Cluster Match (COCM) is an optional setup that is not enabled here yet. When enabled, it helps correct unrepresentative participation by quadratically improving how votes are distributed across groups.",
     scoringDetailReference: "Learn more:",
   },
+  de: {
+    title: "Aussagen priorisieren",
+    stepSelectBest: "Wählen Sie die WICHTIGSTE",
+    stepSelectWorst: "Nun wählen Sie die UNWICHTIGSTE",
+    mostImportant: "Am wichtigsten",
+    leastImportant: "Am unwichtigsten",
+    votesCountMessage: "Jede Stimme trägt zur Analyse bei",
+    complete: "Rangfolge abgeschlossen!",
+    completeMessage:
+      "Ihre Rangfolge wurde gespeichert. Sehen Sie sie im Reiter Analyse.",
+    viewMyRanking: "Meine Rangfolge ansehen",
+    redoRanking: "Rangfolge neu festlegen",
+    redoConfirmTitle: "Rangfolge neu festlegen?",
+    redoConfirmMessage:
+      "Dies setzt alle Ihre Vergleiche zurück. Sie beginnen von Neuem.",
+    noStatements: "Noch keine Aussagen zum Rangordnen.",
+    needMoreStatements:
+      "Für die Rangfolge sind mindestens 2 Aussagen erforderlich.",
+    savingError:
+      "Ihre Rangfolge konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    loadingError: "Ihre Rangfolge konnte nicht geladen werden.",
+    cancelSelection: "Auswahl abbrechen",
+    itemsChanged: "Aussagen geändert. Bitte treffen Sie Ihre Auswahl erneut.",
+    retryButton: "Erneut versuchen",
+    learnMoreTitle: "Wie dies funktioniert",
+    learnMoreHow:
+      "Sie vergleichen Aussagen in Gruppen von 4 und wählen die wichtigsten und unwichtigsten aus. Das System wählt Gruppen basierend auf dem aus, was mehr Daten benötigt, und überspringt redundante Vergleiche automatisch.",
+    learnMoreWhy:
+      "Diese Methode (Best-Worst Scaling) liefert zuverlässigere Ranglisten als Bewertungsskalen, da sie Zwänge zwischen den Optionen erzeugt. Ihre Stimmen werden sofort berücksichtigt.",
+    learnMoreScoringLink: "Wie Ihre Stimmen zu einer Rangliste werden →",
+    scoringDetailTitle: "Von Stimmen zur Rangliste",
+    scoringDetailPipeline:
+      "Ihre beste-schlechteste Auswahl wird mithilfe eines mathematischen Modells in Präferenzwerte umgewandelt. Diese Werte werden von Solidago, einem Open-Source-Aggregationsalgorithmus, mit den Stimmen anderer Teilnehmender kombiniert, welcher Beiträge basierend auf dem Vertrauensniveau des Nutzers gewichtet.",
+    scoringDetailCocm:
+      "Connection-Oriented Cluster Match (COCM) ist eine optionale Einrichtung, die hier noch nicht aktiviert ist. Wenn sie aktiviert wird, hilft sie, unrepräsentative Teilnahme zu korrigieren, indem sie die Verteilung der Stimmen über Gruppen quadratisch verbessert.",
+    scoringDetailReference: "Erfahren Sie mehr:",
+  },
+  hi: {
+    title: "कथनों को प्राथमिकता दें",
+    stepSelectBest: "सबसे महत्वपूर्ण चुनें",
+    stepSelectWorst: "अब सबसे कम महत्वपूर्ण चुनें",
+    mostImportant: "सबसे महत्वपूर्ण",
+    leastImportant: "सबसे कम महत्वपूर्ण",
+    votesCountMessage: "हर मत विश्लेषण में योगदान देता है",
+    complete: "रैंकिंग पूरी हुई!",
+    completeMessage: "आपकी रैंकिंग सहेज ली गई है। इसे विश्लेषण टैब में देखें।",
+    viewMyRanking: "मेरी रैंकिंग देखें",
+    redoRanking: "रैंकिंग फिर से तय करें",
+    redoConfirmTitle: "रैंकिंग फिर से तय करें?",
+    redoConfirmMessage:
+      "इससे आपकी सभी तुलनाएँ रीसेट हो जाएंगी। आप शुरुआत से शुरू करेंगे।",
+    noStatements: "अभी कोई कथन नहीं है जिसे रैंक किया जाए।",
+    needMoreStatements: "रैंकिंग के लिए कम से कम 2 कथनों की आवश्यकता है।",
+    savingError: "आपकी रैंकिंग सहेजी नहीं जा सकी। कृपया फिर कोशिश करें।",
+    loadingError: "आपकी रैंकिंग लोड नहीं हो सकी।",
+    cancelSelection: "चयन रद्द करें",
+    itemsChanged: "कथनों में बदलाव हुआ है। कृपया अपना चयन फिर से करें।",
+    retryButton: "फिर से प्रयास करें",
+    learnMoreTitle: "यह कैसे काम करता है",
+    learnMoreHow:
+      "आप 4 के समूहों में कथनों की तुलना करते हैं, सबसे और सबसे कम महत्वपूर्ण चुनते हैं। सिस्टम उन समूहों का चयन करता है जिन्हें अधिक डेटा की आवश्यकता है और स्वचालित रूप से अनावश्यक तुलनाओं को छोड़ देता है।",
+    learnMoreWhy:
+      "यह तरीका (Best-Worst Scaling) रेटिंग स्केल की तुलना में अधिक विश्वसनीय रैंकिंग देता है क्योंकि यह विकल्पों के बीच समझौता करने पर ज़ोर देता है। आपके मत तुरंत गिने जाते हैं।",
+    learnMoreScoringLink: "आपके मत रैंकिंग कैसे बनते हैं →",
+    scoringDetailTitle: "मतों से रैंकिंग तक",
+    scoringDetailPipeline:
+      "आपके सर्वश्रेष्ठ-सबसे खराब विकल्प एक गणितीय मॉडल का उपयोग करके प्राथमिकता स्कोर में परिवर्तित किए जाते हैं। इन स्कोर को Solidago द्वारा अन्य प्रतिभागियों के मतों के साथ जोड़ा जाता है, जो एक ओपन-सोर्स एग्रीगेशन एल्गोरिथम है जो उपयोगकर्ता विश्वास स्तर के अनुसार योगदान को तौलता है।",
+    scoringDetailCocm:
+      "Connection-Oriented Cluster Match (COCM) एक वैकल्पिक सेटअप है जो अभी सक्षम नहीं किया गया है। सक्षम होने पर, यह समूहों में मतों के वितरण को चतुर्घात रूप से बेहतर बनाकर गैर-प्रतिनिधित्वपूर्ण भागीदारी को सही करने में मदद करता है।",
+    scoringDetailReference: "और जानें:",
+  },
   ar: {
     title: "رتّب العبارات حسب الأولوية",
     stepSelectBest: "اختر الأكثر أهمية",

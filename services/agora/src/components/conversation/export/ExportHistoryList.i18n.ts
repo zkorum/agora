@@ -23,6 +23,25 @@ export const exportHistoryListTranslations: Record<
     statusFailed: "Failed",
     statusCancelled: "Cancelled",
   },
+  de: {
+    loadingExports: "Exporte werden geladen...",
+    noExportsYet:
+      "Noch keine Exporte. Fordern Sie Ihren ersten Export oben an!",
+    errorLoadingExports: "Fehler beim Laden der Exporthistorie",
+    statusProcessing: "Wird verarbeitet",
+    statusCompleted: "Abgeschlossen",
+    statusFailed: "Fehlgeschlagen",
+    statusCancelled: "Abgebrochen",
+  },
+  hi: {
+    loadingExports: "निर्यात लोड हो रहे हैं...",
+    noExportsYet: "अभी कोई निर्यात नहीं है। ऊपर अपना पहला निर्यात मांगें!",
+    errorLoadingExports: "निर्यात इतिहास लोड करने में विफल",
+    statusProcessing: "प्रक्रिया हो रही है",
+    statusCompleted: "पूरा हुआ",
+    statusFailed: "विफल",
+    statusCancelled: "रद्द किया गया",
+  },
   ar: {
     loadingExports: "جارٍ تحميل الصادرات...",
     noExportsYet: "لا توجد صادرات بعد. اطلب أول تصدير أعلاه.",

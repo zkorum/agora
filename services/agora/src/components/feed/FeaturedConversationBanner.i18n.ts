@@ -11,6 +11,14 @@ export const featuredConversationBannerTranslations: Record<
   en: {
     message: "Help shape Agora Citizen Network's future — vote on which features we build next",
   },
+  de: {
+    message:
+      "Helfen Sie mit, die Zukunft des Agora Citizen Networks zu gestalten – stimmen Sie darüber ab, welche Funktionen wir als Nächstes entwickeln sollen",
+  },
+  hi: {
+    message:
+      "Agora Citizen Network के भविष्य को आकार देने में मदद करें — वोट करें कि हम आगे कौन सी सुविधाएँ बनाएँ",
+  },
   ar: {
     message:
       "ساعد في تشكيل مستقبل شبكة أغورا المدنية — صوّت على الميزات التي نبنيها بعد ذلك",

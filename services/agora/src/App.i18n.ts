@@ -15,6 +15,16 @@ export const appTranslations: Record<
     reconnecting: "Reconnecting...",
     connected: "Connected",
   },
+  de: {
+    connectionLost: "Verbindung verloren",
+    reconnecting: "Verbinde mich neu...",
+    connected: "Verbunden",
+  },
+  hi: {
+    connectionLost: "जुड़ाव खो गया",
+    reconnecting: "पुनः जुड़ रहा है...",
+    connected: "जुड़ गया",
+  },
   ar: {
     connectionLost: "انقطع الاتصال",
     reconnecting: "جارٍ إعادة الاتصال...",

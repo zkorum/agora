@@ -45,6 +45,53 @@ export const exportPageTranslations: Record<
       "Export is not available for prioritization conversations yet.",
     exportFeatureDisabled: "Export feature is disabled",
   },
+  de: {
+    pageTitle: "Diskussion exportieren",
+    pageDescription:
+      "Laden Sie eine CSV-Exportdatei aller Aussagen und Stimmen für diese Diskussion herunter.",
+    previousExports: "Vorherige Exporte",
+    conversationLoadError:
+      "Fehler beim Laden der Diskussionsdetails. Bitte versuchen Sie es erneut.",
+    exportRequestError:
+      "Fehler beim Erstellen des Exports. Bitte versuchen Sie es erneut.",
+    exportCooldownMinutes:
+      "Export-Abkühlzeit aktiv. Sie können einen weiteren Export in {minutes} Minute(n) anfordern.",
+    exportCooldownSeconds:
+      "Export-Abkühlzeit aktiv. Sie können einen weiteren Export in {seconds} Sekunde(n) anfordern.",
+    viewConversation: "Diskussion ansehen",
+    requestExportAriaLabel: "Export von Diskussionsdaten anfordern",
+    errorActiveExportInProgress:
+      "Ein Export läuft bereits ab. Bitte warten Sie, bis dieser abgeschlossen ist.",
+    errorConversationNotFound: "Diskussion nicht gefunden",
+    errorNoOpinions:
+      "Diese Diskussion enthält keine Aussagen zum Export. Bitte fügen Sie zuerst einige Aussagen hinzu.",
+    errorUnsupportedConversationType:
+      "Der Export ist für Diskussionen im Priorisierungsmodus noch nicht verfügbar.",
+    exportFeatureDisabled: "Exportfunktion ist deaktiviert",
+  },
+  hi: {
+    pageTitle: "चर्चा निर्यात करें",
+    pageDescription:
+      "इस चर्चा के सभी कथनों और मतों का CSV निर्यात डाउनलोड करें।",
+    previousExports: "पिछले निर्यात",
+    conversationLoadError:
+      "चर्चा विवरण लोड करने में विफल। कृपया पुनः प्रयास करें।",
+    exportRequestError: "निर्यात बनाने में विफल। कृपया पुनः प्रयास करें।",
+    exportCooldownMinutes:
+      "निर्यात कूलडाउन सक्रिय है। आप {minutes} मिनट(ों) में एक और निर्यात का अनुरोध कर सकते हैं।",
+    exportCooldownSeconds:
+      "निर्यात कूलडाउन सक्रिय है। आप {seconds} सेकंड(ों) में एक और निर्यात का अनुरोध कर सकते हैं।",
+    viewConversation: "चर्चा देखें",
+    requestExportAriaLabel: "चर्चा डेटा का निर्यात का अनुरोध करें",
+    errorActiveExportInProgress:
+      "एक निर्यात पहले से ही प्रगति पर है। कृपया इसके पूरा होने तक प्रतीक्षा करें।",
+    errorConversationNotFound: "चर्चा नहीं मिली",
+    errorNoOpinions:
+      "इस चर्चा में निर्यात करने के लिए कोई कथन नहीं है। पहले कुछ कथन जोड़ें।",
+    errorUnsupportedConversationType:
+      "प्राथमिकता निर्धारण चर्चाओं के लिए निर्यात अभी उपलब्ध नहीं है।",
+    exportFeatureDisabled: "निर्यात सुविधा अक्षम है",
+  },
   ar: {
     pageTitle: "تصدير المحادثة",
     pageDescription: "قم بتنزيل ملف CSV لجميع المقترحات والأصوات لهذه المحادثة.",

@@ -10,6 +10,8 @@ describe("ProjectDocumentManager translations", () => {
   it("labels private files for facilitators in every supported language", () => {
     const expected = {
       en: "Facilitator download (optional)",
+      de: "Privater Download für die Moderationsleitung (optional)",
+      hi: "संचालक के लिए निजी डाउनलोड (वैकल्पिक)",
       es: "Archivo privado para facilitadores (opcional)",
       fr: "Fichier privé pour les facilitateurs (facultatif)",
       "zh-Hans": "引导员私密文件（选填）",

@@ -45,6 +45,51 @@ export const phoneOtpFormTranslations: Record<
     alreadyHasCredential:
       "You already have a phone number linked to your account",
   },
+  de: {
+    instructions:
+      "Geben Sie die 6-stellige Nummer ein, die wir Ihnen per SMS gesendet haben",
+    expiresIn: "Gültig in",
+    codeExpired: "Code abgelaufen",
+    changeNumber: "Nummer ändern",
+    resendCodeIn: "Code in",
+    resendCode: "Code erneut senden",
+    pleaseEnterValidCode: "Bitte geben Sie einen gültigen 6-stelligen Code ein",
+    verificationSuccessful: "Verifizierung erfolgreich",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt",
+    codeExpiredResend: "Code abgelaufen – senden Sie einen neuen Code an",
+    wrongCodeTryAgain: "Falscher Code – bitte erneut versuchen",
+    somethingWrong: "Hoppla! Etwas ist nicht in Ordnung",
+    tooManyAttempts:
+      "Zu viele Versuche – bitte warten Sie, bevor Sie einen neuen Code anfordern",
+    invalidPhoneNumber:
+      "Entschuldigung, diese Telefonnummer ist ungültig. Bitte überprüfen Sie diese und versuchen Sie es erneut.",
+    restrictedPhoneType:
+      "Entschuldigung, diese Telefonnummer wird aus Sicherheitsgründen nicht unterstützt. Bitte versuchen Sie es mit einer anderen.",
+    alreadyHasCredential:
+      "Sie haben bereits eine Telefonnummer mit Ihrem Konto verknüpft",
+  },
+  hi: {
+    instructions:
+      "वह 6-अंकीय कोड दर्ज करें जो हमने फ़ोन नंबर के माध्यम से भेजा है",
+    expiresIn: "समाप्त होने में",
+    codeExpired: "कोड समाप्त हो गया",
+    changeNumber: "नंबर बदलें",
+    resendCodeIn: "कोड पुनः भेजें",
+    resendCode: "कोड पुनः भेजें",
+    pleaseEnterValidCode: "कृपया एक वैध 6-अंकीय कोड दर्ज करें",
+    verificationSuccessful: "सत्यापन सफल रहा",
+    accountMerged: "सफलता! आपके खाते मिला दिए गए हैं",
+    codeExpiredResend: "कोड समाप्त हो गया—एक नया कोड भेजें",
+    wrongCodeTryAgain: "गलत कोड—फिर से प्रयास करें",
+    somethingWrong: "ओह! कुछ गड़बड़ है",
+    tooManyAttempts:
+      "बहुत अधिक प्रयास—कृपया नया कोड मांगने से पहले प्रतीक्षा करें",
+    invalidPhoneNumber:
+      "क्षमा करें, यह फ़ोन नंबर अमान्य है। कृपया जांचें और पुनः प्रयास करें।",
+    restrictedPhoneType:
+      "क्षमा करें, सुरक्षा कारणों से इस फ़ोन नंबर का समर्थन नहीं किया जाता है। कृपया कोई अन्य प्रयास करें।",
+    alreadyHasCredential: "आपके खाते से पहले से ही एक फ़ोन नंबर जुड़ा हुआ है",
+  },
   ar: {
     instructions: "أدخل الرمز المكون من 6 أرقام الذي أرسلناه عبر رقم الهاتف",
     expiresIn: "ينتهي في",

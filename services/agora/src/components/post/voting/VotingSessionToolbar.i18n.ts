@@ -10,6 +10,8 @@ export const votingSessionToolbarTranslations: Record<
   VotingSessionToolbarTranslations
 > = {
   en: { undo: "Undo", votingProgress: "Voting progress" },
+  de: { undo: "Rückgängig machen", votingProgress: "Abstimmungsergebnis" },
+  hi: { undo: "वापस करें", votingProgress: "मतदान प्रगति" },
   fr: { undo: "Annuler", votingProgress: "Progression du vote" },
   es: { undo: "Deshacer", votingProgress: "Progreso de la votación" },
   ar: { undo: "تراجع", votingProgress: "تقدم التصويت" },

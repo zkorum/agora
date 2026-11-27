@@ -6,29 +6,33 @@ from .generated_models import DisplayLanguageCode
 # Display Languages
 SUPPORTED_DISPLAY_LANGUAGE_CODES: tuple[DisplayLanguageCode, ...] = (
     DisplayLanguageCode.en,
-    DisplayLanguageCode.es,
-    DisplayLanguageCode.fr,
-    DisplayLanguageCode.zh_hant,
-    DisplayLanguageCode.zh_hans,
-    DisplayLanguageCode.ja,
     DisplayLanguageCode.ar,
-    DisplayLanguageCode.fa,
+    DisplayLanguageCode.zh_hans,
+    DisplayLanguageCode.zh_hant,
+    DisplayLanguageCode.fr,
+    DisplayLanguageCode.de,
     DisplayLanguageCode.he,
+    DisplayLanguageCode.hi,
+    DisplayLanguageCode.ja,
     DisplayLanguageCode.ky,
+    DisplayLanguageCode.fa,
     DisplayLanguageCode.ru,
+    DisplayLanguageCode.es,
 )
 
 SUPPORTED_TRANSLATION_TARGET_LANGUAGE_CODES: tuple[DisplayLanguageCode, ...] = (
-    DisplayLanguageCode.es,
-    DisplayLanguageCode.fr,
-    DisplayLanguageCode.zh_hant,
-    DisplayLanguageCode.zh_hans,
-    DisplayLanguageCode.ja,
     DisplayLanguageCode.ar,
-    DisplayLanguageCode.fa,
+    DisplayLanguageCode.zh_hans,
+    DisplayLanguageCode.zh_hant,
+    DisplayLanguageCode.fr,
+    DisplayLanguageCode.de,
     DisplayLanguageCode.he,
+    DisplayLanguageCode.hi,
+    DisplayLanguageCode.ja,
     DisplayLanguageCode.ky,
+    DisplayLanguageCode.fa,
     DisplayLanguageCode.ru,
+    DisplayLanguageCode.es,
 )
 
 # Length Constants

@@ -4,6 +4,8 @@ export const AGORA_WEBSITE_URL = "https://www.agoracitizen.app";
 
 export const poweredByAgoraTranslations = {
     en: "Powered by",
+    de: "Bereitgestellt von",
+    hi: "तकनीकी सहयोग:",
     es: "Con tecnología de",
     fr: "Propulsé par",
     "zh-Hans": "技术支持",

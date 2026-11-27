@@ -24,13 +24,13 @@
           </th>
           <th v-for="entry in clusterEntries" :key="entry.key" class="col-vote">
             <template v-if="useLetterCodes">
-              {{ formatClusterLabel(entry.key, false) }} ({{
+              {{ getClusterLetter(entry.key) }} ({{
                 formatAmount(entry.cluster.numUsers)
               }})
             </template>
             <template v-else>
               {{
-                entry.cluster.aiLabel || formatClusterLabel(entry.key, false)
+                entry.cluster.aiLabel || getClusterLetter(entry.key)
               }}
               ({{ formatAmount(entry.cluster.numUsers) }})
             </template>
@@ -102,7 +102,7 @@ import type {
   PolisKey,
 } from "src/shared/types/zod";
 import { formatAmount } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { computed } from "vue";
 
 import {

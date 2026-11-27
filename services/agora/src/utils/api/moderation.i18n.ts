@@ -14,6 +14,28 @@ export const moderationApiTranslations: Record<
   ModerationApiTranslations
 > = {
   en: { moderationDecisionCompleted: "Moderation decision completed", moderationDecisionWithdrawn: "Moderation decision withdrawn", failedToSubmitModerationDecision: "Failed to submit moderation decision", failedToWithdrawModerationDecision: "Failed to withdraw moderation decision", failedToFetchPostModerationDetails: "Failed to fetch post moderation details", failedToFetchCommentModerationDetails: "Failed to fetch comment moderation details" },
+  de: {
+    moderationDecisionCompleted: "Moderationsentscheidung getroffen",
+    moderationDecisionWithdrawn: "Moderationsentscheidung zurückgezogen",
+    failedToSubmitModerationDecision:
+      "Die Moderationsentscheidung konnte nicht gespeichert werden",
+    failedToWithdrawModerationDecision:
+      "Die Moderationsentscheidung konnte nicht zurückgezogen werden",
+    failedToFetchPostModerationDetails:
+      "Moderationsdetails zur Diskussion konnten nicht geladen werden",
+    failedToFetchCommentModerationDetails:
+      "Moderationsdetails zur Aussage konnten nicht geladen werden",
+  },
+  hi: {
+    moderationDecisionCompleted: "मॉडरेशन का फ़ैसला हो गया",
+    moderationDecisionWithdrawn: "मॉडरेशन का फ़ैसला वापस ले लिया गया",
+    failedToSubmitModerationDecision: "मॉडरेशन का फ़ैसला सहेजा नहीं जा सका",
+    failedToWithdrawModerationDecision: "मॉडरेशन का फ़ैसला वापस नहीं लिया जा सका",
+    failedToFetchPostModerationDetails:
+      "चर्चा पर हुई मॉडरेशन कार्रवाई का विवरण नहीं मिल सका",
+    failedToFetchCommentModerationDetails:
+      "कथन पर हुई मॉडरेशन कार्रवाई का विवरण नहीं मिल सका",
+  },
   es: { moderationDecisionCompleted: "Decisión de moderación completada", moderationDecisionWithdrawn: "Decisión de moderación retirada", failedToSubmitModerationDecision: "No se pudo enviar la decisión de moderación", failedToWithdrawModerationDecision: "No se pudo retirar la decisión de moderación", failedToFetchPostModerationDetails: "No se pudieron obtener los detalles de moderación de la publicación", failedToFetchCommentModerationDetails: "No se pudieron obtener los detalles de moderación del comentario" },
   fr: { moderationDecisionCompleted: "Décision de modération terminée", moderationDecisionWithdrawn: "Décision de modération retirée", failedToSubmitModerationDecision: "Échec de l’envoi de la décision de modération", failedToWithdrawModerationDecision: "Échec du retrait de la décision de modération", failedToFetchPostModerationDetails: "Échec de la récupération des détails de modération de la publication", failedToFetchCommentModerationDetails: "Échec de la récupération des détails de modération du commentaire" },
   "zh-Hant": { moderationDecisionCompleted: "審核決定已完成", moderationDecisionWithdrawn: "審核決定已撤回", failedToSubmitModerationDecision: "提交審核決定失敗", failedToWithdrawModerationDecision: "撤回審核決定失敗", failedToFetchPostModerationDetails: "取得貼文審核詳情失敗", failedToFetchCommentModerationDetails: "取得評論審核詳情失敗" },

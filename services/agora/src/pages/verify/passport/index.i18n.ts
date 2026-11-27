@@ -19,6 +19,23 @@ export const verifyPassportTranslations: Record<
     alreadyHasPassport:
       "You already have a verified passport linked to your account",
   },
+  de: {
+    title: "Identität verifizieren",
+    description:
+      "Rarimo ist eine ZK-gestützte Identitäts-Wallet, die Ihren Reisepass in einen anonymen digitalen Ausweis umwandelt, der auf Ihrem Gerät gespeichert wird, sodass Sie nachweisen können, dass Sie ein einzigartiger Mensch sind, ohne persönliche Daten mit jemandem zu teilen.",
+    preferPhoneVerification:
+      "Ich würde lieber mit meiner Telefonnummer verifizieren",
+    alreadyHasPassport:
+      "Sie haben bereits einen verifizierten Reisepass mit Ihrem Konto verknüpft",
+  },
+  hi: {
+    title: "पहचान सत्यापित करें",
+    description:
+      "Rarimo एक ZK-संचालित पहचान वॉलेट है जो आपके पासपोर्ट को एक गुमनाम डिजिटल आईडी में बदलता है, जो आपके डिवाइस पर संग्रहीत होती है, ताकि आप किसी के साथ कोई व्यक्तिगत डेटा साझा किए बिना यह साबित कर सकें कि आप एक अद्वितीय इंसान हैं।",
+    preferPhoneVerification: "मैं अपने फ़ोन नंबर से सत्यापित करना चाहूँगा",
+    alreadyHasPassport:
+      "आपके खाते से पहले से ही सत्यापित पासपोर्ट जुड़ा हुआ है",
+  },
   ar: {
     title: "تحقق من الهوية",
     description:

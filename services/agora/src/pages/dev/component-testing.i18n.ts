@@ -11,6 +11,12 @@ export const componentTestingTranslations: Record<
   en: {
     componentTesting: "Component Testing",
   },
+  de: {
+    componentTesting: "Komponentenprüfung",
+  },
+  hi: {
+    componentTesting: "घटक परीक्षण",
+  },
   ar: {
     componentTesting: "اختبار المكونات",
   },

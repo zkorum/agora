@@ -69,8 +69,8 @@ describe("initial display language", () => {
   });
 
   it("leaves the conversation fallback available when Intl fails and website languages are unsupported", () => {
-    vi.spyOn(navigator, "languages", "get").mockReturnValue(["de-DE"]);
-    vi.spyOn(navigator, "language", "get").mockReturnValue("de-DE");
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["nl-NL"]);
+    vi.spyOn(navigator, "language", "get").mockReturnValue("nl-NL");
     vi.spyOn(
       Intl.DateTimeFormat.prototype,
       "resolvedOptions"
@@ -102,7 +102,7 @@ describe("initial display language", () => {
   it("skips unsupported browser preferences", () => {
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Firefox/145.0");
     vi.spyOn(navigator, "languages", "get").mockReturnValue([
-      "de-DE",
+      "nl-NL",
       "fr-FR",
       "es-ES",
     ]);
@@ -112,6 +112,8 @@ describe("initial display language", () => {
   });
 
   it.each([
+    { browserLanguage: "de-AT", expectedLanguage: "de" },
+    { browserLanguage: "hi-IN", expectedLanguage: "hi" },
     { browserLanguage: "es-MX", expectedLanguage: "es" },
     { browserLanguage: "zh-HK", expectedLanguage: "zh-Hant" },
     { browserLanguage: "zh-CN", expectedLanguage: "zh-Hans" },
@@ -133,10 +135,10 @@ describe("initial display language", () => {
     const options = new Intl.DateTimeFormat().resolvedOptions();
     vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
       ...options,
-      locale: "de-DE",
+      locale: "nl-NL",
     });
     vi.spyOn(navigator, "languages", "get").mockReturnValue(["it-IT", "pt-BR"]);
-    vi.spyOn(navigator, "language", "get").mockReturnValue("de-DE");
+    vi.spyOn(navigator, "language", "get").mockReturnValue("nl-NL");
     expect(detectBrowserDisplayLanguage()).toBeUndefined();
     expect(detectInitialDisplayLanguage({ storedLanguage: null })).toBe("en");
   });
@@ -227,7 +229,7 @@ describe("initial display language", () => {
       locale: "en-US",
     });
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
-    vi.spyOn(navigator, "languages", "get").mockReturnValue(["de-DE", "fr-FR"]);
+    vi.spyOn(navigator, "languages", "get").mockReturnValue(["nl-NL", "fr-FR"]);
 
     expect(detectInitialDisplayLanguage({ storedLanguage: undefined })).toBe(
       "fr"
@@ -254,7 +256,7 @@ describe("initial display language", () => {
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
     vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
       ...options,
-      locale: "de-DE",
+      locale: "nl-NL",
     });
     vi.spyOn(navigator, "languages", "get").mockReturnValue(["it-IT"]);
     vi.spyOn(navigator, "language", "get").mockReturnValue("es-AR");

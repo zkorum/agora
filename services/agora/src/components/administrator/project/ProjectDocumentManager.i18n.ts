@@ -95,6 +95,106 @@ export const projectDocumentManagerTranslations: Readonly<
   Record<SupportedDisplayLanguageCodes, ProjectDocumentManagerTranslations>
 > = {
   en,
+  de: {
+    title: "Projektdokumente",
+    description:
+      "Laden Sie Teilnehmerversionen hoch, die für alle zugänglich sind, und optionale private Versionen für die Moderationsleitung, und geben Sie einen Anzeigenamen in jeder relevanten Sprache an.",
+    publicationWarningTitle: "Vor Veröffentlichung prüfen",
+    publicationWarningBody:
+      "Teilnehmerdateien können heruntergeladen werden. Fügen Sie keine Namen, Kontaktdaten, Konten oder Teilnehmer-Identifikatoren, Rohstimmen oder Umfrageantworten, kleine demografische Gruppen, Geheimnisse oder versteckte, nicht unterdrückte Daten hinzu. Interaktives HTML führt die hochgeladenen Skripte in einem isolierten Rahmen aus; laden Sie nur vertrauenswürdige, eigenständige Berichte hoch. Externe Ressourcen und Netzwerk-APIs sind blockiert. Wenden Sie dieselbe Sorgfalt auf private Dateien der Moderationsleitung an.",
+    chooseFilesTitle: "Dateien auswählen",
+    chooseFilesDescription:
+      "Die Teilnehmerdatei ist erforderlich und für alle zugänglich. Die optionale Datei der Moderationsleitung ist eine zusätzliche Version, die nur für Projektmoderationsleitungen verfügbar ist. Beide Dateien müssen das gleiche Format verwenden.",
+    participantFileLabel: "Teilnehmer-Download (erforderlich)",
+    participantFileHint:
+      "Die für alle zugängliche, datenschutzsichere Version, auch wenn eine Version der Moderationsleitung bereitgestellt wird.",
+    ownerFileLabel: "Privater Download für die Moderationsleitung (optional)",
+    ownerFileHint:
+      "Eine zusätzliche private Version, die nur für Projektmoderationsleitungen verfügbar ist. Moderationsleitungen können beide Versionen öffnen und herunterladen; Teilnehmer erhalten diese Datei niemals.",
+    dropFile: "Ziehen und ablegen oder klicken zum Durchsuchen von Dateien",
+    removeFile: "Ausgewählte Datei entfernen",
+    detailsTitle: "Dokumentendetails",
+    detailsDescription:
+      "Der Anzeigename erscheint in Agora. Der Dateiname beim Download ist der Name, der auf das Gerät der Person gespeichert wird.",
+    defaultLanguageLabel: "Standard-Namenssprache",
+    nameLabel: "Anzeigename",
+    downloadFileNameLabel: "Dateiname beim Download",
+    additionalNamesTitle: "Namen in anderen Sprachen",
+    languageLabel: "Sprache",
+    addName: "Name hinzufügen",
+    upload: "Dokument hochladen",
+    remove: "Entfernen",
+    empty: "Es wurden keine Dokumente hochgeladen.",
+    allowedFormats:
+      "HTML, PDF, Textdatei, Markdown, CSV und JSON. Maximal {size} MB.",
+    uploadComplete: "Dokument hochgeladen",
+    uploadFailed: "Dokumenten-Upload fehlgeschlagen",
+    deleteComplete: "Dokument entfernt",
+    deleteFailed: "Dokument konnte nicht entfernt werden",
+    ownerVersionAvailable: "Private Version für die Moderationsleitung enthalten",
+    invalidFile:
+      "Bitte wählen Sie eine nicht leere Datei in einem der unterstützten Formate.",
+    invalidName: "Geben Sie für jede Sprache einen Dokumentenamen ein.",
+    mismatchedFiles:
+      "Die Dateien der Teilnehmenden und des Moderators müssen dieselbe Erweiterung verwenden.",
+    invalidDownloadFileName:
+      "Jeder heruntergeladene Dateiname muss die hochgeladene Dateierweiterung beibehalten.",
+    loadFailed: "Dokumente konnten nicht geladen werden.",
+    retry: "Erneut versuchen",
+    deleteTitle: "Dokument entfernen?",
+    deleteMessage:
+      "Dadurch werden die Version für Teilnehmende und die Version für die Moderationsleitung entfernt.",
+    cancel: "Abbrechen",
+  },
+  hi: {
+    title: "प्रोजेक्ट दस्तावेज़",
+    description:
+      "सभी के लिए उपलब्ध प्रतिभागी संस्करण और वैकल्पिक निजी संचालक संस्करण अपलोड करें, और प्रत्येक प्रासंगिक भाषा में एक प्रदर्शन नाम प्रदान करें।",
+    publicationWarningTitle: "प्रकाशित करने से पहले समीक्षा करें",
+    publicationWarningBody:
+      "प्रतिभागी फ़ाइलें डाउनलोड करने योग्य हैं। नामों, संपर्क विवरणों, खाते या प्रतिभागी पहचानकर्ताओं, कच्चे मतों या सर्वेक्षण प्रतिक्रियाओं, छोटे जनसांख्यिकीय समूहों, रहस्यों या छिपे हुए अप्रतिबंधित डेटा को शामिल न करें। इंटरैक्टिव HTML एक अलग फ्रेम में अपलोड की गई स्क्रिप्ट चलाता है; केवल विश्वसनीय, स्व-निहित रिपोर्ट अपलोड करें। बाहरी संसाधनों और नेटवर्क एपीआई को अवरुद्ध किया जाता है। निजी संचालक फ़ाइलों के लिए भी समान सावधानी बरतें।",
+    chooseFilesTitle: "फ़ाइलें चुनें",
+    chooseFilesDescription:
+      "प्रतिभागी फ़ाइल आवश्यक है और सभी के लिए उपलब्ध है। वैकल्पिक संचालक फ़ाइल एक अतिरिक्त संस्करण है जो केवल प्रोजेक्ट संचालकों के लिए उपलब्ध है। दोनों फ़ाइलों को एक ही प्रारूप का उपयोग करना चाहिए।",
+    participantFileLabel: "प्रतिभागी डाउनलोड (आवश्यक)",
+    participantFileHint:
+      "सभी के लिए उपलब्ध गोपनीयता-सुरक्षित संस्करण, भले ही संचालक संस्करण भी प्रदान किया गया हो।",
+    ownerFileLabel: "संचालक के लिए निजी डाउनलोड (वैकल्पिक)",
+    ownerFileHint:
+      "एक अतिरिक्त निजी संस्करण जो केवल प्रोजेक्ट संचालकों के लिए उपलब्ध है। संचालक दोनों संस्करण खोल और डाउनलोड कर सकते हैं; प्रतिभागियों को कभी भी यह फ़ाइल प्राप्त नहीं होती है।",
+    dropFile: "फ़ाइलें खींचें और छोड़ें या ब्राउज़ करने के लिए क्लिक करें",
+    removeFile: "चयनित फ़ाइल हटाएं",
+    detailsTitle: "दस्तावेज़ विवरण",
+    detailsDescription:
+      "प्रदर्शन नाम Agora में दिखाई देता है। डाउनलोड फ़ाइल नाम वह नाम है जो किसी व्यक्ति के डिवाइस पर सहेजा जाता है।",
+    defaultLanguageLabel: "डिफ़ॉल्ट नाम भाषा",
+    nameLabel: "प्रदर्शन नाम",
+    downloadFileNameLabel: "डाउनलोड फ़ाइल नाम",
+    additionalNamesTitle: "अन्य भाषाओं में नाम",
+    languageLabel: "भाषा",
+    addName: "नाम जोड़ें",
+    upload: "दस्तावेज़ अपलोड करें",
+    remove: "हटाएँ",
+    empty: "कोई दस्तावेज़ अपलोड नहीं किया गया है।",
+    allowedFormats:
+      "HTML, PDF, सादा पाठ, Markdown, CSV, और JSON। अधिकतम {size} MB।",
+    uploadComplete: "दस्तावेज़ अपलोड हो गया",
+    uploadFailed: "दस्तावेज़ अपलोड करने में विफल",
+    deleteComplete: "दस्तावेज़ हटा दिया गया",
+    deleteFailed: "दस्तावेज़ नहीं हटाया जा सका",
+    ownerVersionAvailable: "संचालक के लिए निजी संस्करण शामिल है",
+    invalidFile: "समर्थित प्रारूपों में से एक में कोई खाली फ़ाइल चुनें।",
+    invalidName: "प्रत्येक भाषा के लिए एक दस्तावेज़ नाम दर्ज करें।",
+    mismatchedFiles:
+      "प्रतिभागी और संचालक फ़ाइलों में समान एक्सटेंशन होना चाहिए।",
+    invalidDownloadFileName:
+      "हर डाउनलोड किए गए फ़ाइल नाम में अपलोड किए गए फ़ाइल एक्सटेंशन को बनाए रखना चाहिए।",
+    loadFailed: "दस्तावेज़ लोड नहीं किए जा सके।",
+    retry: "फिर कोशिश करें",
+    deleteTitle: "दस्तावेज़ हटाएँ?",
+    deleteMessage: "इससे प्रतिभागियों और संचालकों के लिए बनाए गए दोनों संस्करण हट जाएँगे।",
+    cancel: "रद्द करें",
+  },
   es: {
     ...en,
     title: "Documentos del proyecto",

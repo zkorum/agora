@@ -13,6 +13,14 @@ export const actionHandlersTranslations: Record<
     conversationDeleted: "Conversation deleted",
     conversationDeletedSuccessfully: "Conversation deleted successfully",
   },
+  de: {
+    conversationDeleted: "Diskussion gelöscht",
+    conversationDeletedSuccessfully: "Diskussion erfolgreich gelöscht",
+  },
+  hi: {
+    conversationDeleted: "चर्चा हटा दी गई",
+    conversationDeletedSuccessfully: "चर्चा सफलतापूर्वक हटा दी गई",
+  },
   ar: {
     conversationDeleted: "تم حذف المحادثة",
     conversationDeletedSuccessfully: "تم حذف المحادثة بنجاح",

@@ -37,6 +37,41 @@ export const commentComposerTranslations: Record<
       "Tip: This might contain multiple ideas - make sure voters can clearly agree or disagree",
     opinionWritingGuidelines: "Statement writing guidelines",
   },
+  de: {
+    placeholder: "Fügen Sie Ihre eigene Aussage hinzu",
+    placeholderExpanded:
+      "Konzentrieren Sie sich auf einen einzigen Punkt, mit dem Sie leicht zustimmen oder nicht zustimmen können",
+    postButton: "Veröffentlichen",
+    conversationLockedError:
+      "Aussage kann nicht erstellt werden, da die Diskussion gesperrt ist",
+    conversationClosedError: "Diese Diskussion wurde geschlossen",
+    createOpinionError: "Fehler beim Versuch, eine neue Aussage zu erstellen",
+    eventTicketRequiredTitle: "Event-Ticket erforderlich",
+    eventTicketRequiredMessage:
+      "Sie müssen Ihr Devconnect 2025 Ticket verifizieren, um an dieser Diskussion teilzunehmen.",
+    exitPromptTitle: "Aussage als Entwurf speichern?",
+    exitPromptDescription: "Ihr Entwurf wird hier sein, wenn Sie zurückkehren.",
+    validationWarningMultipleIdeas:
+      "Tipp: Dies könnte mehrere Ideen enthalten – stellen Sie sicher, dass die Teilnehmenden klar zustimmen oder nicht zustimmen können",
+    opinionWritingGuidelines: "Richtlinien zum Verfassen von Aussagen",
+  },
+  hi: {
+    placeholder: "अपना कथन जोड़ें",
+    placeholderExpanded:
+      "एक ऐसे एकल बिंदु पर ध्यान दें जिस पर सहमत या असहमत होना आसान हो",
+    postButton: "प्रकाशित करें",
+    conversationLockedError: "चर्चा लॉक होने के कारण कथन नहीं बनाया जा सकता",
+    conversationClosedError: "यह चर्चा बंद हो चुकी है",
+    createOpinionError: "नया कथन बनाने में त्रुटि",
+    eventTicketRequiredTitle: "इवेंट टिकट आवश्यक",
+    eventTicketRequiredMessage:
+      "इस चर्चा में भाग लेने के लिए आपको अपने Devconnect 2025 टिकट को सत्यापित करने की आवश्यकता है।",
+    exitPromptTitle: "कथन को ड्राफ्ट के रूप में सहेजें?",
+    exitPromptDescription: "आपका ड्राफ्ट कथन वापस आने पर यहीं होगा।",
+    validationWarningMultipleIdeas:
+      "टिप: इसमें कई विचार हो सकते हैं - सुनिश्चित करें कि मतदाता स्पष्ट रूप से सहमत या असहमत हो सकें",
+    opinionWritingGuidelines: "कथन लिखने के दिशानिर्देश",
+  },
   ar: {
     placeholder: "أضف مقترحك",
     placeholderExpanded:

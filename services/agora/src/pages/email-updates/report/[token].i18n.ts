@@ -57,6 +57,71 @@ export const emailUpdateReportTranslations = {
       "We could not unsubscribe you. Try again or use the unsubscribe link in the email.",
     unsubscribed: "You have been unsubscribed from these updates.",
   },
+  de: {
+    pageTitle: "E-Mail-Benachrichtigung melden",
+    loading: "Meldeformular wird geladen",
+    unavailableTitle: "Dieser Link ist nicht verfügbar",
+    unavailableDescription:
+      "Der Link könnte ungültig, abgelaufen oder für eine andere Aktion vorgesehen sein.",
+    returnHome: "Zurück zu Agora",
+    title: "Diese E-Mail-Benachrichtigung melden",
+    description: "Sagen Sie uns, was mit „{subject}“ nicht in Ordnung war.",
+    spam: "Spam",
+    abuse: "Missbrauch",
+    unrelatedContent: "Nicht zutreffender Inhalt",
+    other: "Sonstiges",
+    details: "Details (optional)",
+    detailsHint: "Bis zu 2.000 Zeichen",
+    submit: "Meldung senden",
+    submitting: "Sende Meldung",
+    submitFailed:
+      "Ihre Meldung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    successTitle: "Meldung erhalten",
+    successDescription: "Vielen Dank, Ihre Meldung wurde erfasst.",
+    unsubscribeProject:
+      "Benachrichtigungen zum Projekt „{title}“ abbestellen?",
+    unsubscribeConversation:
+      "Benachrichtigungen zu dieser Diskussion abbestellen?",
+    unsubscribeConversations:
+      "Benachrichtigungen zu diesen Diskussionen abbestellen?",
+    unsubscribe: "Abbestellen",
+    noThanks: "Nein, danke",
+    unsubscribeFailed:
+      "Die Benachrichtigungen konnten nicht abbestellt werden. Versuchen Sie es erneut oder nutzen Sie den Abmeldelink in der E-Mail.",
+    unsubscribed: "Sie erhalten diese Benachrichtigungen nicht mehr.",
+  },
+  hi: {
+    pageTitle: "ईमेल अपडेट की शिकायत करें",
+    loading: "शिकायत फ़ॉर्म लोड हो रहा है",
+    unavailableTitle: "यह लिंक अनुपलब्ध है",
+    unavailableDescription:
+      "लिंक अमान्य, समाप्त हो चुका हो सकता है, या किसी अन्य कार्रवाई के लिए हो सकता है।",
+    returnHome: "Agora पर वापस जाएँ",
+    title: "इस ईमेल अपडेट की शिकायत करें",
+    description: 'हमें बताएं कि "{subject}" में क्या गलत था।',
+    spam: "स्पैम",
+    abuse: "दुर्व्यवहार",
+    unrelatedContent: "असंबंधित सामग्री",
+    other: "अन्य",
+    details: "विवरण (वैकल्पिक)",
+    detailsHint: "अधिकतम 2,000 अक्षर",
+    submit: "शिकायत भेजें",
+    submitting: "जमा कर रहे हैं",
+    submitFailed: "आपकी शिकायत नहीं भेजी जा सकी। कृपया फिर कोशिश करें।",
+    successTitle: "शिकायत मिल गई",
+    successDescription: "धन्यवाद, आपकी शिकायत दर्ज कर ली गई है।",
+    unsubscribeProject:
+      "परियोजना “{title}” के ईमेल अपडेट बंद करें?",
+    unsubscribeConversation:
+      "इस चर्चा के ईमेल अपडेट बंद करें?",
+    unsubscribeConversations:
+      "इन चर्चाओं के ईमेल अपडेट बंद करें?",
+    unsubscribe: "ईमेल अपडेट बंद करें",
+    noThanks: "नहीं, धन्यवाद",
+    unsubscribeFailed:
+      "ईमेल अपडेट बंद नहीं हो सके। फिर कोशिश करें या ईमेल में दिए गए लिंक से इन्हें बंद करें।",
+    unsubscribed: "अब आपको ये ईमेल अपडेट नहीं मिलेंगे।",
+  },
   es: {
     pageTitle: "Denunciar una novedad",
     loading: "Cargando el formulario de denuncia",

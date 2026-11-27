@@ -37,18 +37,14 @@
           <div class="clusterLabelFlex">
             <div class="clusterOverlayFontBold">
               <template v-if="props.reportMode && useLetterCodes">
-                {{ formatClusterLabel(String(imageIndex) as PolisKey, false) }}<template v-if="clusters[String(imageIndex) as PolisKey]?.aiLabel"> · {{ clusters[String(imageIndex) as PolisKey]?.aiLabel }}</template>
+                {{ getClusterLetter(String(imageIndex) as PolisKey) }}<template v-if="clusters[String(imageIndex) as PolisKey]?.aiLabel"> · {{ clusters[String(imageIndex) as PolisKey]?.aiLabel }}</template>
               </template>
               <template v-else-if="props.reportMode">
-                {{ clusters[String(imageIndex) as PolisKey]?.aiLabel || formatClusterLabel(String(imageIndex) as PolisKey, false) }}
+                {{ clusters[String(imageIndex) as PolisKey]?.aiLabel || getClusterLetter(String(imageIndex) as PolisKey) }}
               </template>
               <template v-else>
                 {{
-                  formatClusterLabel(
-                    String(imageIndex) as PolisKey,
-                    false,
-                    clusters[String(imageIndex) as PolisKey]?.aiLabel
-                  )
+                  clusters[String(imageIndex) as PolisKey]?.aiLabel ?? getClusterLetter(String(imageIndex) as PolisKey)
                 }}
               </template>
             </div>
@@ -87,7 +83,7 @@ import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { computed, ref, watch } from "vue";
 import { z } from "zod";
 
@@ -365,7 +361,7 @@ function getClusterAriaLabel(clusterKey: PolisKey): string {
     return `${t("groupsTitle")} ${Number(clusterKey) + 1}`;
   }
 
-  const clusterLabel = formatClusterLabel(clusterKey, false, cluster.aiLabel);
+  const clusterLabel = cluster.aiLabel ?? getClusterLetter(clusterKey);
   const userCount = cluster.numUsers;
   const percentage = formatPercentage(
     calculatePercentage(userCount, props.totalParticipantCount)

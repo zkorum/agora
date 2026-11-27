@@ -14,6 +14,16 @@ export const surveyInformationDialogTranslations: Record<
     description:
       "This tab shows how participants counted in the selected analysis answered each survey question. Overall results combine counted participants, and when opinion groups exist you can compare answers by group.\n\nIf privacy suppression is enabled for a question, public results hide very small groups across all checkpoints. Owners can switch between the suppressed public view and the full aggregate view.\n\nOnce privacy suppression is enabled for a question, it cannot be turned off, so participants can rely on that public privacy guarantee.",
   },
+  de: {
+    title: "Umfrage",
+    description:
+      "Hier sehen Sie, wie die in dieser Analyse berücksichtigten Teilnehmenden die Fragen beantwortet haben. Die Gesamtansicht fasst alle Antworten zusammen. Gibt es Meinungsgruppen, können Sie deren Antworten vergleichen.\n\nIst der Datenschutz für eine Frage aktiviert, bleiben die Ergebnisse sehr kleiner Gruppen in allen öffentlichen Analyseständen verborgen. Die Diskussionsleitung kann zwischen der öffentlichen Ansicht und den vollständigen zusammengefassten Ergebnissen wechseln.\n\nEinmal aktiviert, lässt sich dieser Schutz für die Frage nicht mehr aufheben. Darauf können sich die Teilnehmenden verlassen.",
+  },
+  hi: {
+    title: "सर्वेक्षण",
+    description:
+      "यहाँ आप देख सकते हैं कि इस विश्लेषण में शामिल प्रतिभागियों ने हर सवाल का क्या जवाब दिया। समग्र नतीजों में सभी के जवाब शामिल हैं। अगर मत समूह बने हैं, तो आप उनके जवाबों की तुलना भी कर सकते हैं।\n\nअगर किसी सवाल के लिए निजता की सुरक्षा चालू है, तो उसके सार्वजनिक नतीजों में बहुत छोटे समूहों के आँकड़े हर चेकपॉइंट पर छिपे रहते हैं। चर्चा के आयोजक सार्वजनिक दृश्य और पूरी सारणी, दोनों देख सकते हैं। पूरी सारणी में भी जवाब समूह के स्तर पर दिखते हैं।\n\nएक बार चालू करने के बाद उस सवाल की यह सुरक्षा बंद नहीं की जा सकती। प्रतिभागी इस भरोसे के साथ जवाब दे सकते हैं।",
+  },
   ar: {
     title: "الاستبيان",
     description:

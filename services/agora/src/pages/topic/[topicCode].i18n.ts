@@ -8,6 +8,12 @@ export const topicPageTranslations: Record<SupportedDisplayLanguageCodes, TopicP
   en: {
     loadPostsHere: "Load posts here",
   },
+  de: {
+    loadPostsHere: "Beiträge hier laden",
+  },
+  hi: {
+    loadPostsHere: "यहाँ पोस्ट लोड करें",
+  },
   ar: {
     loadPostsHere: "تحميل المنشورات هنا",
   },

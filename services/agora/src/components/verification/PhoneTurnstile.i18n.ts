@@ -9,6 +9,11 @@ export const phoneTurnstileTranslations: Record<
   PhoneTurnstileTranslations
 > = {
   en: { retrySecurityCheck: "Complete the security check and try again." },
+  de: {
+    retrySecurityCheck:
+      "Führen Sie die Sicherheitsüberprüfung durch und versuchen Sie es erneut.",
+  },
+  hi: { retrySecurityCheck: "सुरक्षा जांच पूरी करें और पुनः प्रयास करें।" },
   ar: { retrySecurityCheck: "أكمل التحقق الأمني ثم حاول مرة أخرى." },
   es: {
     retrySecurityCheck:

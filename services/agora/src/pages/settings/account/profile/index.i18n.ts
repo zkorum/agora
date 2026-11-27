@@ -13,6 +13,14 @@ export const profileSettingsTranslations: Record<
     pageTitle: "Profile Settings",
     changeUsernameTitle: "Change username",
   },
+  de: {
+    pageTitle: "Profil-Einstellungen",
+    changeUsernameTitle: "Benutzernamen ändern",
+  },
+  hi: {
+    pageTitle: "प्रोफ़ाइल सेटिंग्स",
+    changeUsernameTitle: "उपयोगकर्ता नाम बदलें",
+  },
   ar: {
     pageTitle: "إعدادات الملف الشخصي",
     changeUsernameTitle: "تغيير اسم المستخدم",

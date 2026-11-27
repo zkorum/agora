@@ -19,6 +19,20 @@ export const loginOnboardingTranslations: Record<
     loginWithPhone: "Login with phone number",
     loginWithEmail: "Login with email",
   },
+  de: {
+    pageTitle: "Anmelden",
+    description: "Bitte wählen Sie eine Anmeldemethode.",
+    loginWithRarimo: "Mit Rarimo anmelden",
+    loginWithPhone: "Mit Telefonnummer anmelden",
+    loginWithEmail: "Mit E-Mail anmelden",
+  },
+  hi: {
+    pageTitle: "लॉगिन करें",
+    description: "कृपया एक लॉग इन विधि चुनें।",
+    loginWithRarimo: "Rarimo से लॉग इन करें",
+    loginWithPhone: "फ़ोन नंबर से लॉग इन करें",
+    loginWithEmail: "ईमेल से लॉग इन करें",
+  },
   ar: {
     pageTitle: "تسجيل الدخول",
     description: "يرجى اختيار طريقة تسجيل الدخول.",

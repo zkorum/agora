@@ -1,5 +1,6 @@
 import {
   parseSupportedDisplayLanguageOrUndefined,
+  ZodSupportedDisplayLanguageCodes,
   type SupportedDisplayLanguageCodes,
   type SupportedSpokenLanguageCodes,
 } from "src/shared/languages";
@@ -77,34 +78,21 @@ export function buildProjectLanguageDisplayOptions({
   const conversationSupportedLanguageSet = new Set(
     conversationSupportedLanguageCodes
   );
-  const seenLanguageCodes = new Set<SupportedDisplayLanguageCodes>();
-  const supportedOptions: ProjectLanguageOption[] = [];
-  const unsupportedOptions: ProjectLanguageOption[] = [];
-
-  for (const option of languageOptions) {
-    if (seenLanguageCodes.has(option.value)) {
-      continue;
-    }
-
-    seenLanguageCodes.add(option.value);
+  const options: ProjectLanguageOption[] = [];
+  for (const languageCode of ZodSupportedDisplayLanguageCodes.options) {
+    const option = languageOptions.find(({ value }) => value === languageCode);
+    if (option === undefined) continue;
     const conversationSupported = conversationSupportedLanguageSet.has(
       option.value
     );
-    const displayOption = {
+    options.push({
       ...option,
       caption: option.projectSupported
         ? projectSupportedCaption
         : conversationSupported
           ? conversationSupportedCaption
           : undefined,
-    } satisfies ProjectLanguageOption;
-
-    if (option.projectSupported || conversationSupported) {
-      supportedOptions.push(displayOption);
-    } else {
-      unsupportedOptions.push(displayOption);
-    }
+    });
   }
-
-  return [...supportedOptions, ...unsupportedOptions];
+  return options;
 }

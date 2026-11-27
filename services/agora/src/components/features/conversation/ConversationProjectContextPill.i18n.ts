@@ -13,6 +13,14 @@ export const conversationProjectContextPillTranslations: Record<
     partOfProject: "Part of",
     openProject: "Open",
   },
+  de: {
+    partOfProject: "Teil von",
+    openProject: "Öffnen",
+  },
+  hi: {
+    partOfProject: "परियोजना का हिस्सा",
+    openProject: "खोलें",
+  },
   ar: {
     partOfProject: "جزء من",
     openProject: "افتح",

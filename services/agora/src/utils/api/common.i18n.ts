@@ -39,6 +39,49 @@ export const commonApiTranslations: Record<
     unexpectedError: "An unexpected error occurred. Please try again.",
     noInternetConnection: "No internet connection",
   },
+  de: {
+    timeoutError:
+      "Anfrage ist abgelaufen. Der Server benötigt länger als erwartet zum Antworten.",
+    networkError:
+      "Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+    requestCanceled: "Die Anfrage wurde abgebrochen.",
+    invalidRequest:
+      "Ungültige Anfrage. Bitte überprüfen Sie Ihre Eingabe und versuchen Sie es erneut.",
+    serverError: "Serverfehler. Bitte versuchen Sie es später erneut.",
+    tooManyRedirects:
+      "Zu viele Weiterleitungen. Bitte kontaktieren Sie den Support, falls dies anhält.",
+    configurationError:
+      "Konfigurationsfehler. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",
+    featureNotSupported:
+      "Diese Funktion wird nicht mehr unterstützt. Bitte aktualisieren Sie Ihre Anwendung.",
+    operationNotSupported:
+      "Diese Operation wird in Ihrer aktuellen Umgebung nicht unterstützt.",
+    invalidUrl: "Ungültige Anfrageseite. Bitte kontaktieren Sie den Support.",
+    unexpectedError:
+      "Es ist ein unerwarteter Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+    noInternetConnection: "Keine Internetverbindung",
+  },
+  hi: {
+    timeoutError:
+      "अनुरोध का समय समाप्त हो गया। सर्वर को प्रतिक्रिया देने में अपेक्षा से अधिक समय लग रहा है।",
+    networkError:
+      "नेटवर्क त्रुटि। कृपया अपने इंटरनेट कनेक्शन की जाँच करें और पुनः प्रयास करें।",
+    requestCanceled: "अनुरोध रद्द कर दिया गया।",
+    invalidRequest:
+      "अमान्य अनुरोध। कृपया अपने इनपुट की जाँच करें और पुनः प्रयास करें।",
+    serverError: "सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें।",
+    tooManyRedirects:
+      "बहुत अधिक रीडायरेक्ट। यदि यह जारी रहता है तो कृपया सहायता से संपर्क करें।",
+    configurationError:
+      "विन्यास त्रुटि। कृपया पृष्ठ को रीफ़्रेश करें और पुनः प्रयास करें।",
+    featureNotSupported:
+      "यह सुविधा अब समर्थित नहीं है। कृपया अपने ऐप को अपडेट करें।",
+    operationNotSupported:
+      "यह ऑपरेशन आपके वर्तमान वातावरण में समर्थित नहीं है।",
+    invalidUrl: "अमान्य अनुरोध URL। कृपया सहायता से संपर्क करें।",
+    unexpectedError: "एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    noInternetConnection: "कोई इंटरनेट कनेक्शन नहीं",
+  },
   ar: {
     timeoutError:
       "انتهت مهلة الطلب. الخادم يستغرق وقتاً أطول من المتوقع للاستجابة.",

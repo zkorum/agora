@@ -17,6 +17,19 @@ export const topicStoreTranslations: Record<
     followedTopicsLoadError: "Error while trying to load followed topics",
     topicsLoadError: "Error while trying to load topics",
   },
+  de: {
+    failedToFollowTopic: "Thema konnte nicht abonniert werden",
+    failedToUnfollowTopic: "Thema konnte nicht ababonniert werden",
+    followedTopicsLoadError: "Fehler beim Laden der abonnierten Themen",
+    topicsLoadError: "Fehler beim Laden der Themen",
+  },
+  hi: {
+    failedToFollowTopic: "विषय का पालन करने में विफल",
+    failedToUnfollowTopic: "विषय का पालन करने में विफल",
+    followedTopicsLoadError:
+      "अनुसरण किए गए विषयों को लोड करने का प्रयास करते समय त्रुटि",
+    topicsLoadError: "विषयों को लोड करने का प्रयास करते समय त्रुटि",
+  },
   ar: {
     failedToFollowTopic: "فشل متابعة الموضوع",
     failedToUnfollowTopic: "فشل إلغاء متابعة الموضوع",

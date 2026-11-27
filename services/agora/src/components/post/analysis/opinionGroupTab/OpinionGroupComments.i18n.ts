@@ -21,6 +21,22 @@ export const opinionGroupCommentsTranslations: Record<
     allOthers: "All other participants",
     allOtherGroups: "All other groups",
   },
+  de: {
+    opinionsTitle: "Aussagen",
+    opinionsTitleLong: "Repräsentative Aussagen",
+    noOpinionsMessage: "Für diese Gruppe sind keine Aussagen verfügbar.",
+    thisGroup: "Diese Gruppe",
+    allOthers: "Alle anderen Teilnehmenden",
+    allOtherGroups: "Alle anderen Gruppen",
+  },
+  hi: {
+    opinionsTitle: "कथन",
+    opinionsTitleLong: "प्रतिनिधि कथन",
+    noOpinionsMessage: "इस समूह के लिए कोई कथन उपलब्ध नहीं है।",
+    thisGroup: "यह समूह",
+    allOthers: "अन्य सभी प्रतिभागी",
+    allOtherGroups: "अन्य सभी समूह",
+  },
   ar: {
     opinionsTitle: "المقترحات",
     opinionsTitleLong: "المقترحات الممثّلة",

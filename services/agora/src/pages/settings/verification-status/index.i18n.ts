@@ -15,6 +15,16 @@ export const verificationStatusTranslations: Record<
     detectedSex: "Detected Sex",
     citizenship: "Citizenship",
   },
+  de: {
+    pageTitle: "Verifizierungsstatus",
+    detectedSex: "Erkanntes Geschlecht",
+    citizenship: "Staatsangehörigkeit",
+  },
+  hi: {
+    pageTitle: "सत्यापन स्थिति",
+    detectedSex: "पहचाना गया लिंग",
+    citizenship: "नागरिकता",
+  },
   ar: {
     pageTitle: "حالة التحقق",
     detectedSex: "الجنس المكتشف",

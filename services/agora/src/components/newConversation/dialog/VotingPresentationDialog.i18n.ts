@@ -19,6 +19,22 @@ export const votingPresentationTranslations: Record<
     oneAtATimeDescription:
       "Best for live events. Respond to one statement at a time and see your progress.",
   },
+  de: {
+    list: "Liste",
+    listDescription:
+      "Am besten für asynchrone Teilnahme. Durchsuchen und Antworten auf Aussagen in Ihrem eigenen Tempo.",
+    oneAtATime: "Eins nach dem anderen",
+    oneAtATimeDescription:
+      "Am besten für Live-Veranstaltungen. Antworten Sie nacheinander auf eine Aussage und sehen Sie Ihren Fortschritt.",
+  },
+  hi: {
+    list: "सूची",
+    listDescription:
+      "अतुल्यकालिक भागीदारी के लिए सर्वश्रेष्ठ। अपनी गति से कथनों को ब्राउज़ करें और जवाब दें।",
+    oneAtATime: "एक-एक करके",
+    oneAtATimeDescription:
+      "लाइव आयोजनों के लिए सर्वश्रेष्ठ। एक समय में एक कथन का जवाब दें और अपनी प्रगति देखें।",
+  },
   fr: {
     list: "Liste",
     listDescription:
