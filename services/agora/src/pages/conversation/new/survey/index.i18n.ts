@@ -90,6 +90,103 @@ export const conversationSurveyStepTranslations: Record<
     confirmRemoveOptionButtonLabel: "Remove option",
     cancelLabel: "Cancel",
   },
+  de: {
+    publishButton: "Veröffentlichen",
+    addQuestionButton: "Frage hinzufügen",
+    pageTitle: "Umfrage zur Diskussion",
+    pageDescription:
+      "Konfigurieren Sie den Umfrageschritt, der angezeigt wird, bevor Teilnehmende über Aussagen abstimmen oder diese erstellen können.",
+    optionalSurveyToggleLabel:
+      "Teilnehmenden erlauben, die Umfrage zu überspringen",
+    optionalSurveyToggleHint:
+      "Der Umfrageabschnitt kann übersprungen werden. Teilnehmende können abstimmen oder Aussagen erstellen, ohne die Umfrage zu beantworten; ihre Stimmen werden immer in die Analyse einbezogen, und erforderliche Fragen werden ignoriert.",
+    requiredSurveyToggleHint:
+      "Wenn eine Umfrage existiert, ist der Umfrageabschnitt erforderlich. Teilnehmende müssen ihn durchlaufen, bevor sie abstimmen oder Aussagen erstellen, auch wenn einige oder alle Fragen optional sind. Nur Stimmen von Teilnehmenden, die diesen Schritt abschließen, werden in die Analyse einbezogen.",
+    questionRequirementDisabledHint:
+      "Diese Frage wird als optional behandelt, da der Umfrageabschnitt übersprungen werden kann.",
+    noQuestionsTitle: "Noch keine Umfrage",
+    noQuestionsDescription:
+      "Lassen Sie dieses Feld leer, um ohne Umfrage zu veröffentlichen, oder fügen Sie jetzt Fragen hinzu.",
+    questionLabel: "Frage {number}",
+    requiredLabel: "Erforderlich",
+    optionalLabel: "Optional",
+    questionTypeLabel: "Fragetyp",
+    questionPromptLabel: "Frageaufforderung",
+    removeQuestionLabel: "Entfernen",
+    optionLabel: "Option {number}",
+    addOptionLabel: "Option hinzufügen",
+    minSelectionsLabel: "Mindestauswahl",
+    maxSelectionsLabel: "Höchste Auswahl",
+    minTextLengthLabel: "Mindesttextlänge",
+    maxTextLengthLabel: "Höchste textlänge",
+    freeTextHelp:
+      "Rich Text ist erlaubt. Die Vervollständigung erfolgt basierend auf der Länge des einfachen Textes.",
+    typeChoice: "Auswahl",
+    typeFreeText: "Freitext",
+    choiceDisplayLabel: "Anzeigen",
+    choiceDisplayAuto: "Automatisch",
+    choiceDisplayList: "Liste",
+    choiceDisplayDropdown: "Suchfähiges Dropdown",
+    surveyValidationError:
+      "Vervollständigen Sie vor der Veröffentlichung alle Fragen der Umfrage.",
+    publishError: "Fehler beim Versuch, eine neue Diskussion zu erstellen",
+    largeOptionCountWarning:
+      "Diese Frage ist auf Liste eingestellt und hat {count} Optionen. Ziehen Sie ein Auto- oder Suchfähiges Dropdown in Betracht, damit Teilnehmende Antworten schneller durchsehen können.",
+    confirmRemoveQuestionMessage: "Diese Frage aus der Umfrage entfernen?",
+    confirmRemoveOptionMessage: "Diese Option aus der Frage entfernen?",
+    confirmRemoveQuestionButtonLabel: "Frage entfernen",
+    confirmRemoveOptionButtonLabel: "Option entfernen",
+    cancelLabel: "Abbrechen",
+  },
+  hi: {
+    publishButton: "प्रकाशित करें",
+    addQuestionButton: "प्रश्न जोड़ें",
+    pageTitle: "चर्चा सर्वेक्षण",
+    pageDescription:
+      "प्रतिभागियों के वोट करने या कथन बनाने से पहले दिखाए जाने वाले सर्वेक्षण चरण को कॉन्फ़िगर करें।",
+    optionalSurveyToggleLabel: "प्रतिभागियों को सर्वेक्षण छोड़ने की अनुमति दें",
+    optionalSurveyToggleHint:
+      "सर्वेक्षण चरण छोड़ा जा सकता है। प्रतिभागी सर्वेक्षण का उत्तर दिए बिना वोट कर सकते हैं या कथन बना सकते हैं; उनके मत हमेशा विश्लेषण में शामिल होते हैं, और आवश्यक प्रश्न सेटिंग्स को अनदेखा किया जाता है।",
+    requiredSurveyToggleHint:
+      "जब कोई सर्वेक्षण मौजूद होता है, तो सर्वेक्षण चरण आवश्यक होता है। प्रतिभागी को वोट करने या कथन बनाने से पहले इससे गुजरना होगा, भले ही कुछ या सभी प्रश्न वैकल्पिक हों। केवल उन प्रतिभागियों के मत शामिल होते हैं जो इस चरण को पूरा करते हैं।",
+    questionRequirementDisabledHint:
+      "इस प्रश्न को वैकल्पिक माना जाता है क्योंकि सर्वेक्षण चरण छोड़ा जा सकता है।",
+    noQuestionsTitle: "अभी कोई सर्वेक्षण नहीं",
+    noQuestionsDescription:
+      "सर्वेक्षण के बिना प्रकाशित करने के लिए इसे खाली छोड़ दें, या अभी प्रश्न जोड़ें।",
+    questionLabel: "प्रश्न {number}",
+    requiredLabel: "आवश्यक",
+    optionalLabel: "वैकल्पिक",
+    questionTypeLabel: "प्रश्न का प्रकार",
+    questionPromptLabel: "प्रश्न का संकेत",
+    removeQuestionLabel: "हटाएँ",
+    optionLabel: "विकल्प {number}",
+    addOptionLabel: "विकल्प जोड़ें",
+    minSelectionsLabel: "न्यूनतम चयन",
+    maxSelectionsLabel: "अधिकतम चयन",
+    minTextLengthLabel: "न्यूनतम पाठ लंबाई",
+    maxTextLengthLabel: "अधिकतम पाठ लंबाई",
+    freeTextHelp:
+      "रिच टेक्स्ट की अनुमति है। पूर्णता सादे पाठ की लंबाई का उपयोग करती है।",
+    typeChoice: "विकल्प",
+    typeFreeText: "मुक्त पाठ",
+    choiceDisplayLabel: "प्रदर्शित करें",
+    choiceDisplayAuto: "स्वचालित",
+    choiceDisplayList: "सूची",
+    choiceDisplayDropdown: "खोज योग्य ड्रॉपडाउन",
+    surveyValidationError:
+      "प्रकाशित करने से पहले सर्वेक्षण के सभी सवाल तैयार कर लें।",
+    publishError: "नई चर्चा बनाने में त्रुटि हुई",
+    largeOptionCountWarning:
+      "इस प्रश्न को सूची के रूप में सेट किया गया है और इसमें {count} विकल्प हैं। विचार करें कि प्रतिभागी उत्तरों को तेज़ी से स्कैन कर सकें, इसलिए ऑटो या खोज योग्य ड्रॉपडाउन का उपयोग करें।",
+    confirmRemoveQuestionMessage:
+      "क्या आप इस प्रश्न को सर्वेक्षण से हटाना चाहते हैं?",
+    confirmRemoveOptionMessage:
+      "क्या आप इस विकल्प को प्रश्न से हटाना चाहते हैं?",
+    confirmRemoveQuestionButtonLabel: "प्रश्न हटाएं",
+    confirmRemoveOptionButtonLabel: "विकल्प हटाएं",
+    cancelLabel: "रद्द करें",
+  },
   ar: {
     publishButton: "نشر",
     addQuestionButton: "إضافة سؤال",

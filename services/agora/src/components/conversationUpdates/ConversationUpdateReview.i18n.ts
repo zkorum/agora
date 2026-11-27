@@ -94,6 +94,113 @@ export const conversationUpdateReviewTranslations: Record<
     unsubscribeProject: "Unsubscribe scope: project",
     unsubscribeConversation: "Unsubscribe scope: conversation",
   },
+  de: {
+    testUnknown:
+      "Die Testanfrage wurde nicht bestätigt. Sie könnte bereits in der Warteschlange sein. Bitte wiederholen Sie dieselbe Anfrage, ohne einen weiteren Test zu erstellen.",
+    sendUnknown:
+      "Die Zustellung wurde nicht bestätigt. Das Update wurde möglicherweise bereits angenommen. Bitte wiederholen Sie die Sendeanfrage, um den Status zu klären; erstellen Sie keinen weiteren Test oder Update.",
+    retryTestRequest: "Testanfrage erneut senden",
+    retrySendRequest: "Senden erneut versuchen",
+    checkDelivery: "Zustellung prüfen",
+    reconcileError:
+      "Die akzeptierte Zustellung konnte nicht geladen werden. Versuchen Sie erneut, deren Verlauf anzuzeigen; senden Sie keinen weiteren Update.",
+    deliveryAccepted:
+      "Dieser Update wurde bereits zur Zustellung akzeptiert. Sein Verlauf zeigt den Zustellstatus.",
+    deliveryNotFound:
+      "Der Zustellungsdatensatz ist noch nicht verfügbar. Versuchen Sie erneut, seinen Verlauf zu laden.",
+    requestIdConflict:
+      "Diese Anforderungs-ID gehört zu einem anderen Vorgang. Bitten Sie um einen neuen Test für diese Überprüfung.",
+    testStatusUnavailable:
+      "Der Teststatus ist vorübergehend nicht verfügbar. Bitte überprüfen Sie den bestehenden Test, anstatt einen neuen anzufordern.",
+    leaveSendUnknown:
+      "Dieses Senden wurde möglicherweise bereits akzeptiert. Bevor Sie gehen, prüfen wir, ob die Überprüfung abgebrochen oder die akzeptierte Zustellung geladen werden kann. Das Verlassen kann eine akzeptierte Zustellung nicht stoppen.",
+    rateLimited:
+      "Zu viele Anfragen. Bitte versuchen Sie es nach {date} erneut.",
+    completeRequiredFields:
+      "Bitte füllen Sie die Pflichtfelder (Betreff, Auswahl und Nachricht) aus, bevor Sie die Überprüfung starten.",
+    fixInvalidFields:
+      "Bitte korrigieren Sie Betreff oder Nachricht, um die angegebenen Limits einzuhalten, bevor Sie die Überprüfung starten.",
+    review: "E-Mail überprüfen",
+    locked:
+      "Die Überprüfung sperrt diese Version. Senden Sie einen Test aus der Überprüfung, bevor Sie die Zustellung bestätigen.",
+    backToEdit: "Zurück zur Bearbeitung",
+    cancelUpdate: "Update abbrechen",
+    leaveTitle: "Überprüfung verlassen?",
+    stay: "In Überprüfung bleiben",
+    leave: "Überprüfung verlassen",
+    leaveWarning:
+      "Das Verlassen bricht diese Überprüfung ab. Ihre Nachricht bleibt im Editor.",
+    leaveTestWarning:
+      "Ein Test wurde angefordert. Das Verlassen ungültig macht ihn. Sie müssen nach dem erneuten Öffnen der Überprüfung einen neuen Test senden, auch wenn sich nichts ändert.",
+    cancelWarning:
+      "Das Abbrechen des Updates löscht auch Ihren Betreff, Ihre Nachricht und Ihre Auswahl.",
+    prepareError:
+      "Die Vorbereitung wurde nicht bestätigt. Bitte versuchen Sie erneut, eine neue Vorbereitung durchzuführen.",
+    cancelError:
+      "Die Stornierung wurde nicht bestätigt. Bitte bleiben Sie hier und versuchen Sie es erneut, bevor Sie gehen.",
+    reviewInvalid:
+      "Diese Überprüfung ist nicht mehr aktiv. Bitte kehren Sie zur Bearbeitung zurück und bereiten Sie eine neue Überprüfung vor, senden Sie dann einen neuen Test.",
+    previewError: "Die E-Mail-Vorschau konnte nicht geladen werden.",
+    reconstructed: "Rekonstruierte Vorschau, keine archivierte Zustellung",
+    sender: "Absender",
+    language: "Sprache der E-Mail",
+    expires: "Überprüfung läuft ab: {date}",
+    unsubscribeProject: "Abmeldungsbereich: Projekt",
+    unsubscribeConversation: "Abmeldungsbereich: Diskussion",
+  },
+  hi: {
+    testUnknown:
+      "परीक्षण अनुरोध की पुष्टि नहीं हुई। यह पहले से ही कतार में हो सकता है। कोई और परीक्षण बनाने के बिना उसी अनुरोध को पुनः प्रयास करें।",
+    sendUnknown:
+      "डिलीवरी की पुष्टि नहीं हुई। अपडेट पहले ही स्वीकार किया जा चुका हो सकता है। स्थिति को हल करने के लिए उसी भेज अनुरोध को पुनः प्रयास करें; कोई और परीक्षण या अपडेट न बनाएं।",
+    retryTestRequest: "वही टेस्ट अनुरोध दोबारा करें",
+    retrySendRequest: "वही भेजने का अनुरोध दोबारा करें",
+    checkDelivery: "स्वीकृत डिलीवरी की जाँच करें",
+    reconcileError:
+      "स्वीकृत डिलीवरी लोड नहीं हो सकी। इतिहास देखने के लिए दोबारा प्रयास करें; कोई और अपडेट न भेजें।",
+    deliveryAccepted:
+      "इस अपडेट को पहले ही डिलीवरी के लिए स्वीकार किया जा चुका है। इसका इतिहास डिलीवरी की स्थिति दिखाएगा।",
+    deliveryNotFound:
+      "डिलीवरी रिकॉर्ड अभी उपलब्ध नहीं है। इसका इतिहास लोड करने के लिए दोबारा प्रयास करें।",
+    requestIdConflict:
+      "यह अनुरोध ID किसी अन्य ऑपरेशन से संबंधित है। इस समीक्षा के लिए एक नया टेस्ट अनुरोध करें।",
+    testStatusUnavailable:
+      "टेस्ट की स्थिति अस्थायी रूप से अनुपलब्ध है। दूसरा अनुरोध करने के बजाय मौजूदा टेस्ट की जाँच करते रहें।",
+    leaveSendUnknown:
+      "यह भेजना पहले ही स्वीकार किया जा चुका हो सकता है। छोड़ने से पहले, हम जाँच करेंगे कि क्या समीक्षा रद्द की जा सकती है या स्वीकृत डिलीवरी लोड की जा सकती है। छोड़ने से स्वीकृत डिलीवरी रुक नहीं सकती।",
+    rateLimited: "बहुत अधिक अनुरोध। {date} के बाद पुनः प्रयास करें।",
+    completeRequiredFields:
+      "समीक्षा करने से पहले आवश्यक चयन, विषय और संदेश फ़ील्ड (*) पूरे करें।",
+    fixInvalidFields:
+      "समीक्षा करने से पहले बताए गए सीमाओं को पूरा करने के लिए विषय या संदेश ठीक करें।",
+    review: "ईमेल की समीक्षा करें",
+    locked:
+      "समीक्षा इस संस्करण को लॉक करती है। डिलीवरी की पुष्टि करने से पहले समीक्षा से एक टेस्ट भेजें।",
+    backToEdit: "संपादित करने पर वापस जाएँ",
+    cancelUpdate: "अपडेट रद्द करें",
+    leaveTitle: "क्या आप यह समीक्षा छोड़ना चाहते हैं?",
+    stay: "समीक्षा में रहें",
+    leave: "समीक्षा छोड़ें",
+    leaveWarning:
+      "छोड़ने से यह समीक्षा रद्द हो जाएगी। आपका संदेश कंपोजर में रहेगा।",
+    leaveTestWarning:
+      "एक टेस्ट का अनुरोध किया गया है। छोड़ने से यह अमान्य हो जाएगा। समीक्षा फिर से खोलने के बाद आपको एक नया टेस्ट भेजना होगा, भले ही कुछ न बदला हो।",
+    cancelWarning:
+      "अपडेट रद्द करने से आपका विषय, संदेश और चयन भी साफ़ हो जाएगा।",
+    prepareError:
+      "तैयारी की समीक्षा की पुष्टि नहीं हुई। नई समीक्षा तैयार करने के लिए पुनः प्रयास करें।",
+    cancelError:
+      "रद्दीकरण की पुष्टि नहीं हुई। छोड़ने से पहले यहीं रुकें और पुनः प्रयास करें।",
+    reviewInvalid:
+      "यह समीक्षा अब सक्रिय नहीं है। संपादन पर वापस जाएं और एक नई समीक्षा तैयार करें, फिर एक नया परीक्षण भेजें।",
+    previewError: "ईमेल पूर्वावलोकन लोड नहीं हो सका।",
+    reconstructed: "पुनर्निर्मित पूर्वावलोकन, संग्रहीत वितरण नहीं",
+    sender: "प्रेषक",
+    language: "ईमेल भाषा",
+    expires: "समीक्षा समाप्त: {date}",
+    unsubscribeProject: "सदस्यता छोड़ने का दायरा: परियोजना",
+    unsubscribeConversation: "सदस्यता छोड़ने का दायरा: चर्चा",
+  },
   fr: {
     testUnknown:
       "La demande de test n’a pas été confirmée. Elle est peut-être déjà en attente. Réessayez la même demande sans créer un autre test.",

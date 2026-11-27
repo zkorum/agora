@@ -44,7 +44,7 @@
 import type { PolisClusters, PolisKey } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -154,11 +154,11 @@ function isClusterSelected({ clusterKey }: { clusterKey: PolisKey }): boolean {
 function getClusterLabel({ clusterKey }: { clusterKey: PolisKey }): string {
   const cluster = props.clusters[clusterKey];
   if (useLetterCodes.value) {
-    const code = formatClusterLabel(clusterKey, false);
+    const code = getClusterLetter(clusterKey);
     return cluster?.aiLabel ? `${code} · ${cluster.aiLabel}` : code;
   }
 
-  return cluster?.aiLabel || formatClusterLabel(clusterKey, false);
+  return cluster?.aiLabel || getClusterLetter(clusterKey);
 }
 
 function composeImagePath({

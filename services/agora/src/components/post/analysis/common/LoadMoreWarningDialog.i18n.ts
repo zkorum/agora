@@ -20,6 +20,22 @@ export const loadMoreWarningDialogTranslations: Record<
     cancelButton: "Cancel",
     loadMoreButton: "Load all",
   },
+  de: {
+    title: "Alle Aussagen laden",
+    description:
+      "Alle Aussagen werden nach abnehmender statistischer Signifikanz sortiert. Einige sind möglicherweise {emphasis} signifikant.",
+    descriptionEmphasis: "überhaupt nicht",
+    cancelButton: "Abbrechen",
+    loadMoreButton: "Alle laden",
+  },
+  hi: {
+    title: "सभी कथन लोड करें",
+    description:
+      "सभी कथन सांख्यिकीय प्रमाण की मज़बूती के क्रम में दिखेंगे। कुछ कथनों के लिए सांख्यिकीय प्रमाण {emphasis} हो सकता है।",
+    descriptionEmphasis: "बिल्कुल न के बराबर",
+    cancelButton: "रद्द करें",
+    loadMoreButton: "सभी लोड करें",
+  },
   ar: {
     title: "تحميل جميع المقترحات",
     description:

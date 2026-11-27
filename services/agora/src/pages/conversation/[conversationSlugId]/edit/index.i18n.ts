@@ -42,6 +42,50 @@ export const editConversationTranslations: Record<
     premiumAccessRequiredError:
       "This setting is not available with your current plan.",
   },
+  de: {
+    saveButton: "Speichern",
+    titlePlaceholder: "Titel der Diskussion",
+    bodyPlaceholder: "Was beschäftigt Sie?",
+    updateSuccess: "Diskussion erfolgreich aktualisiert",
+    updateError: "Aktualisierung der Diskussion fehlgeschlagen",
+    notFoundError: "Diskussion nicht gefunden",
+    notAuthorError: "Sie sind nicht die Moderationsleitung dieser Diskussion",
+    conversationLockedError:
+      "Diese Diskussion ist gesperrt und kann nicht bearbeitet werden",
+    invalidAccessSettingsError:
+      "Ungültige Zugriffseinstellungen. Für private Diskussionen darf keine Anmeldung erforderlich sein.",
+    loadingErrorMessage:
+      "Beim Laden der Diskussion ist ein Fehler aufgetreten.",
+    createSurveyButton: "Umfrage erstellen",
+    editSurveyButton: "Umfrage bearbeiten",
+    premiumEditRestrictedBanner:
+      "Der Premium-Zugang ist abgelaufen. Sie können normale Einstellungen weiterhin aktualisieren, aber Änderungen an Premium-Inhalten sind deaktiviert.",
+    premiumAccessExpiredError:
+      "Der Premium-Zugang ist für diese Änderung abgelaufen.",
+    premiumAccessRequiredError:
+      "Diese Einstellung ist mit Ihrem aktuellen Plan nicht verfügbar.",
+  },
+  hi: {
+    saveButton: "सहेजें",
+    titlePlaceholder: "चर्चा का शीर्षक",
+    bodyPlaceholder: "आपके मन में क्या है?",
+    updateSuccess: "चर्चा सफलतापूर्वक अद्यतन की गई",
+    updateError: "चर्चा अद्यतन करने में विफल",
+    notFoundError: "चर्चा नहीं मिली",
+    notAuthorError: "आप इस चर्चा के संचालक नहीं हैं",
+    conversationLockedError: "यह चर्चा लॉक है और इसे संपादित नहीं किया जा सकता",
+    invalidAccessSettingsError:
+      "अवैध पहुँच सेटिंग्स। निजी चर्चाओं के लिए लॉगिन आवश्यक नहीं हो सकता।",
+    loadingErrorMessage: "चर्चा लोड करते समय एक त्रुटि हुई।",
+    createSurveyButton: "सर्वेक्षण बनाएँ",
+    editSurveyButton: "सर्वेक्षण संपादित करें",
+    premiumEditRestrictedBanner:
+      "प्रीमियम पहुँच समाप्त हो गई है। आप अभी भी सामान्य सेटिंग्स अपडेट कर सकते हैं, लेकिन प्रीमियम सामग्री परिवर्तन अक्षम हैं।",
+    premiumAccessExpiredError:
+      "इस परिवर्तन के लिए प्रीमियम पहुँच समाप्त हो गई है।",
+    premiumAccessRequiredError:
+      "यह सेटिंग आपकी वर्तमान योजना के साथ उपलब्ध नहीं है।",
+  },
   fr: {
     saveButton: "Enregistrer",
     titlePlaceholder: "Titre de la conversation",

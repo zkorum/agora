@@ -43,6 +43,29 @@ const englishCopy: FixedCopy = {
 
 const fixedCopy: Record<SupportedDisplayLanguageCodes, FixedCopy> = {
     en: englishCopy,
+    de: {
+        test: "TEST-E-MAIL – Aktionen für Teilnehmende sind deaktiviert",
+        adminCopy: "Kopie für die Administration",
+        why: "Sie haben Benachrichtigungen zu dieser Diskussion abonniert.",
+        conversations: "Enthaltene Diskussionen",
+        unsubscribeConversations:
+            "Benachrichtigungen zu diesen Diskussionen abbestellen",
+        unsubscribeProject: "Alle Projektbenachrichtigungen abbestellen",
+        manage: "Einstellungen verwalten",
+        report: "Diese Nachricht melden",
+        reply: "Antworten Sie auf diese E-Mail, um die Moderationsleitung zu erreichen.",
+    },
+    hi: {
+        test: "परीक्षण ईमेल — प्रतिभागियों के लिए कोई कार्रवाई सक्रिय नहीं है",
+        adminCopy: "प्रशासक की प्रति",
+        why: "आपने इस चर्चा के ईमेल अपडेट पाने का विकल्प चुना था।",
+        conversations: "शामिल चर्चाएँ",
+        unsubscribeConversations: "इन चर्चाओं के ईमेल अपडेट बंद करें",
+        unsubscribeProject: "परियोजना के सभी ईमेल अपडेट बंद करें",
+        manage: "ईमेल अपडेट की सेटिंग्स देखें",
+        report: "इस ईमेल अपडेट की शिकायत करें",
+        reply: "संचालक से संपर्क करने के लिए इस ईमेल का जवाब दें।",
+    },
     es: {
         test: "CORREO DE PRUEBA - las acciones para participantes no están activas",
         adminCopy: "Copia de administración",

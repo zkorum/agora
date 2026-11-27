@@ -72,6 +72,84 @@ export const conversationUpdateHistoryListTranslations: Record<
     failureAllParticipantAttempts:
       "No participant attempt was provider-accepted; every participant attempt failed or ended with an unknown outcome.",
   },
+  de: {
+    deliveryHistory: "Zustellhistorie",
+    sentUpdates: "Gesendete Updates",
+    emptyHeading: "Noch keine E-Mail-Updates gesendet",
+    emptyDescription:
+      "Akzeptierte Updates werden hier mit ihrem Zustellstatus angezeigt.",
+    audienceSingular:
+      "Berechtigter Teilnehmender {count} bei der Überprüfung des Versands",
+    audiencePlural:
+      "{count} berechtigte Teilnehmende bei Versand der Übersicht",
+    conversationSingular: "{count} Diskussion",
+    conversationPlural: "{count} Diskussionen",
+    ownerCopySingular: "{count} Kopie des Besitzers",
+    ownerCopyPlural: "{count} Kopien der Besitzer",
+    viewEmailContent: "E-Mail-Inhalt ansehen",
+    statusPreparing: "Vorbereitung",
+    statusSending: "Versand",
+    statusQueued: "In Warteschlange",
+    statusStopping: "Stoppen",
+    statusCompleted: "Abgeschlossen",
+    statusCompletedWithFailures: "Abgeschlossen mit Fehlern",
+    statusFailed: "Fehlgeschlagen",
+    statusStopped: "Gestoppt",
+    outcomeCompletedWithFailures:
+      "Die Zustellung an die Teilnehmenden wurde abgeschlossen, aber einer oder mehrere Versuche der Empfänger schlug fehl oder hatten ein unbekanntes Anbieterergebnis.",
+    stopGlobalKillSwitch:
+      "Automatisch gestoppt, bevor der Rest der Zustellung erfolgte, da Agora den Notfall-globalen Versandstopp aktiviert hat.",
+    stopLegalOrAbuseBlock:
+      "Automatisch gestoppt, bevor der Rest der Zustellung erfolgte, da Agora einen Notfall-rechtlichen oder Missbrauchsschutzblock angewendet hat.",
+    failureOwnerCopyNotAccepted:
+      "Die Zustellung an die Teilnehmenden wurde nicht begonnen, da mindestens eine erforderliche Kopie für die Diskussionsleitung vom E-Mail-Anbieter nicht akzeptiert wurde.",
+    failureAudienceMaterialization:
+      "Die berechtigte Teilnehmenden-Zielgruppe konnte nicht sicher vorbereitet werden, daher wurde keine Zustellung an die Teilnehmenden begonnen.",
+    failureNoEligibleParticipants:
+      "Keine Teilnehmenden blieben nach dem akzeptierten Zielgruppen-Cutoff berechtigt, daher wurde keine Zustellung an die Teilnehmenden begonnen.",
+    failureProviderConfiguration:
+      "Die Zustellung an die Teilnehmenden konnte nicht beginnen, da die Konfiguration des E-Mail-Anbieters ungültig war.",
+    failureAllParticipantAttempts:
+      "Kein Zustellversuch an die Teilnehmenden wurde vom Anbieter akzeptiert; jeder Versuch der Teilnehmenden schlug fehl oder endete mit einem unbekannten Ergebnis.",
+  },
+  hi: {
+    deliveryHistory: "वितरण इतिहास",
+    sentUpdates: "भेजे गए अपडेट",
+    emptyHeading: "अभी तक कोई ईमेल अपडेट नहीं भेजा गया है",
+    emptyDescription:
+      "स्वीकृत अपडेट यहाँ उनकी वितरण स्थिति के साथ दिखाई देंगे।",
+    audienceSingular: "भेजने की समीक्षा में {count} पात्र प्राप्तकर्ता",
+    audiencePlural: "{count} भेजने के लिए पात्र प्राप्तकर्ता",
+    conversationSingular: "{count} चर्चा",
+    conversationPlural: "{count} चर्चाएँ",
+    ownerCopySingular: "{count} स्वामी प्रतिलिपि",
+    ownerCopyPlural: "{count} स्वामी प्रतियाँ",
+    viewEmailContent: "ईमेल सामग्री देखें",
+    statusPreparing: "तैयार हो रहा है",
+    statusSending: "भेजा जा रहा है",
+    statusQueued: "कतारबद्ध",
+    statusStopping: "रोक रहा है",
+    statusCompleted: "पूरा हुआ",
+    statusCompletedWithFailures: "विफलताओं के साथ पूरा हुआ",
+    statusFailed: "विफल",
+    statusStopped: "रुक गया",
+    outcomeCompletedWithFailures:
+      "प्रतिभागी वितरण समाप्त हुआ, लेकिन एक या अधिक प्राप्तकर्ता प्रयासों में विफलता हुई या अज्ञात प्रदाता परिणाम रहा।",
+    stopGlobalKillSwitch:
+      "Agora द्वारा आपातकालीन वैश्विक भेजने की रोक सक्रिय होने के कारण शेष वितरण से पहले स्वचालित रूप से रोका गया।",
+    stopLegalOrAbuseBlock:
+      "Agora द्वारा आपातकालीन कानूनी या दुर्व्यवहार सुरक्षा अवरोध लागू होने के कारण शेष वितरण से पहले स्वचालित रूप से रोका गया।",
+    failureOwnerCopyNotAccepted:
+      "प्रतिभागी वितरण शुरू नहीं हुआ क्योंकि कम से कम एक आवश्यक चर्चा स्वामी प्रतिलिपि ईमेल प्रदाता द्वारा स्वीकार नहीं की गई थी।",
+    failureAudienceMaterialization:
+      "पात्र प्रतिभागी दर्शक को सुरक्षित रूप से तैयार नहीं किया जा सका, इसलिए कोई प्रतिभागी वितरण शुरू नहीं हुआ।",
+    failureNoEligibleParticipants:
+      "स्वीकृत दर्शक कटऑफ पर कोई प्रतिभागी पात्र नहीं बचा, इसलिए कोई प्रतिभागी वितरण शुरू नहीं हुआ।",
+    failureProviderConfiguration:
+      "प्रतिभागी वितरण शुरू नहीं हो सका क्योंकि ईमेल प्रदाता विन्यास अमान्य था।",
+    failureAllParticipantAttempts:
+      "कोई भी प्रतिभागी प्रयास प्रदाता द्वारा स्वीकार नहीं किया गया; प्रत्येक प्रतिभागी प्रयास विफल रहा या अज्ञात परिणाम के साथ समाप्त हुआ।",
+  },
   ar: {
     deliveryHistory: "سجل التسليم",
     sentUpdates: "التحديثات المرسلة",

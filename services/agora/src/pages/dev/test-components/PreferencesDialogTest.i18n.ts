@@ -16,6 +16,18 @@ export const preferencesDialogTestTranslations: Record<
       "Test the post-signup preferences dialog that allows users to select their language and topic preferences after creating an account.",
     openPreferencesDialogButton: "Open Preferences Dialog",
   },
+  de: {
+    preferencesDialog: "Einstellungen-Dialog",
+    preferencesDialogDescription:
+      "Testen Sie den Einstellungen-Dialog nach der Registrierung, der es Teilnehmenden ermöglicht, ihre Sprache und Themenpräferenzen nach der Erstellung eines Kontos auszuwählen.",
+    openPreferencesDialogButton: "Einstellungen-Dialog öffnen",
+  },
+  hi: {
+    preferencesDialog: "प्राथमिकताएँ संवाद",
+    preferencesDialogDescription:
+      "साइन अप के बाद की प्राथमिकताएँ संवाद का परीक्षण करें जो उपयोगकर्ताओं को खाता बनाने के बाद अपनी भाषा और विषय प्राथमिकताएँ चुनने की अनुमति देता है।",
+    openPreferencesDialogButton: "प्राथमिकताएँ संवाद खोलें",
+  },
   ar: {
     preferencesDialog: "حوار التفضيلات",
     preferencesDialogDescription:

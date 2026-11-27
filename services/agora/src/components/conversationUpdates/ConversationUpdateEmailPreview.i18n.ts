@@ -22,6 +22,24 @@ export const conversationUpdateEmailPreviewTranslations: Record<
     emptySelection:
       "Select a scope and at least one conversation to preview the email.",
   },
+  de: {
+    emailPreview: "E-Mail-Vorschau",
+    defaultSubject: "Ihr Update-Betreff",
+    eligibleRecipientSingular: "Derzeit berechtigter Teilnehmender {count}",
+    eligibleRecipientPlural: "Derzeit berechtigte Teilnehmende {count}",
+    replyToLabel: "Antworten an",
+    emptySelection:
+      "Wählen Sie einen Umfang und mindestens eine Diskussion, um die E-Mail vorzusehen.",
+  },
+  hi: {
+    emailPreview: "ईमेल पूर्वावलोकन",
+    defaultSubject: "आपके अपडेट का विषय",
+    eligibleRecipientSingular: "वर्तमान में {count} पात्र प्राप्तकर्ता",
+    eligibleRecipientPlural: "वर्तमान में {count} पात्र प्राप्तकर्ता",
+    replyToLabel: "उत्तर दें",
+    emptySelection:
+      "ईमेल पूर्वावलोकन करने के लिए एक दायरा और कम से कम एक चर्चा चुनें।",
+  },
   ar: {
     emailPreview: "معاينة البريد الإلكتروني",
     defaultSubject: "موضوع تحديثك",

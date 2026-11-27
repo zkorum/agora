@@ -12,6 +12,23 @@ export const reportApiTranslations: Record<
   ReportApiTranslations
 > = {
   en: { submittedReport: "Submitted report", failedToSubmitPostReport: "Failed to submit user report for post", failedToSubmitCommentReport: "Failed to submit user report for comment", failedToFetchPostReports: "Failed to fetch post reports" },
+  de: {
+    submittedReport: "Eingereichte Meldung",
+    failedToSubmitPostReport:
+      "Die Meldung zur Diskussion konnte nicht gesendet werden",
+    failedToSubmitCommentReport:
+      "Die Meldung zur Aussage konnte nicht gesendet werden",
+    failedToFetchPostReports:
+      "Meldungen zur Diskussion konnten nicht geladen werden",
+  },
+  hi: {
+    submittedReport: "भेजी गई शिकायत",
+    failedToSubmitPostReport:
+      "चर्चा की शिकायत नहीं भेजी जा सकी",
+    failedToSubmitCommentReport:
+      "कथन की शिकायत नहीं भेजी जा सकी",
+    failedToFetchPostReports: "चर्चा से जुड़ी शिकायतें लोड नहीं हो सकीं",
+  },
   es: { submittedReport: "Reporte enviado", failedToSubmitPostReport: "No se pudo enviar el reporte de la publicación", failedToSubmitCommentReport: "No se pudo enviar el reporte del comentario", failedToFetchPostReports: "No se pudieron obtener los reportes de la publicación" },
   fr: { submittedReport: "Signalement envoyé", failedToSubmitPostReport: "Échec de l’envoi du signalement de la publication", failedToSubmitCommentReport: "Échec de l’envoi du signalement du commentaire", failedToFetchPostReports: "Échec de la récupération des signalements de la publication" },
   "zh-Hant": { submittedReport: "檢舉已提交", failedToSubmitPostReport: "提交貼文檢舉失敗", failedToSubmitCommentReport: "提交評論檢舉失敗", failedToFetchPostReports: "取得貼文檢舉失敗" },

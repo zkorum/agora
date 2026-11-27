@@ -66,6 +66,74 @@ export const sessionSettingsTranslations: Record<
       "Local logout finished, but the home page could not be opened.",
     retryNavigation: "Open home page",
   },
+  de: {
+    pageTitle: "Sitzungen",
+    description: "Überprüfen Sie Ihre aktiven Sitzungen.",
+    currentSession: "Aktuelle Sitzung",
+    otherSession: "Andere Sitzung",
+    started: "Gestartet:",
+    expires: "Läuft ab:",
+    logoutCurrent: "Abmelden",
+    revoke: "Zugriff widerrufen",
+    revokeTitle: "Zugriff für diese Sitzung widerrufen?",
+    revokeMessage:
+      "Die ausgewählte Sitzung, gestartet {startedAt}, verliert sofort den Zugriff.",
+    logoutAll: "Alle Geräte abmelden",
+    logoutAllTitle: "Alle Geräte abmelden?",
+    logoutAllMessage:
+      "Jede aktive Sitzung, einschließlich dieser, wird widerrufen.",
+    confirm: "Bestätigen",
+    cancel: "Abbrechen",
+    loadFailed:
+      "Sitzungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    revokeFailed:
+      "Zugriff konnte nicht widerrufen werden. Bitte versuchen Sie es erneut.",
+    logoutAllFailed: "Server-Abmeldung konnte nicht bestätigt werden.",
+    localOnlyTitle: "Nur dieses Gerät löschen?",
+    localOnlyMessage:
+      "Lokale Kontodaten und Schlüssel werden gelöscht, aber Server-Sitzungen können aktiv bleiben, bis Sie sich erneut anmelden oder diese ablaufen.",
+    clearLocalData: "Dieses Gerät löschen",
+    retry: "Erneut versuchen",
+    localCleanupFailed:
+      "Lokale Kontodaten oder Schlüssel können auf diesem Gerät verbleiben. Bleiben Sie auf dieser Seite und versuchen Sie erneut, um sich sicher abzumelden.",
+    retryLocalCleanup: "Gerätebereinigung erneut versuchen",
+    navigationFailed:
+      "Lokales Abmelden abgeschlossen, aber die Startseite konnte nicht geöffnet werden.",
+    retryNavigation: "Startseite öffnen",
+  },
+  hi: {
+    pageTitle: "सत्र",
+    description: "अपने सक्रिय सत्रों की समीक्षा करें।",
+    currentSession: "वर्तमान सत्र",
+    otherSession: "अन्य सत्र",
+    started: "शुरू हुआ:",
+    expires: "समाप्त हो रहा है:",
+    logoutCurrent: "लॉग आउट करें",
+    revoke: "पहुँच रद्द करें",
+    revokeTitle: "क्या इस सत्र के लिए पहुँच रद्द करें?",
+    revokeMessage:
+      "चयनित सत्र, जो {startedAt} से शुरू हुआ था, तुरंत पहुँच खो देगा।",
+    logoutAll: "सभी डिवाइस से लॉग आउट करें",
+    logoutAllTitle: "क्या सभी डिवाइस से लॉग आउट करें?",
+    logoutAllMessage:
+      "हर सक्रिय सत्र, जिसमें यह भी शामिल है, रद्द कर दिया जाएगा।",
+    confirm: "पुष्टि करें",
+    cancel: "रद्द करें",
+    loadFailed: "सत्र लोड नहीं हो सके। कृपया पुनः प्रयास करें।",
+    revokeFailed: "पहुँच रद्द नहीं किया जा सका। कृपया पुनः प्रयास करें।",
+    logoutAllFailed: "सर्वर लॉग आउट की पुष्टि नहीं हो सकी।",
+    localOnlyTitle: "केवल इस डिवाइस को साफ़ करें?",
+    localOnlyMessage:
+      "स्थानीय खाता डेटा और कुंजियाँ मिटा दी जाएंगी, लेकिन सर्वर सत्र तब तक सक्रिय रह सकते हैं जब तक आप दोबारा लॉग इन करने के बाद उन्हें रद्द नहीं करते या वे समाप्त नहीं हो जाते।",
+    clearLocalData: "इस डिवाइस को साफ़ करें",
+    retry: "फिर कोशिश करें",
+    localCleanupFailed:
+      "स्थानीय खाता डेटा या कुंजियाँ इस डिवाइस पर रह सकती हैं। सुरक्षित रूप से लॉग आउट करने के लिए इस पृष्ठ पर रहें और पुनः प्रयास करें।",
+    retryLocalCleanup: "डिवाइस की सफ़ाई पुनः प्रयास करें",
+    navigationFailed:
+      "स्थानीय लॉग आउट पूरा हो गया, लेकिन होम पेज नहीं खोला जा सका।",
+    retryNavigation: "होम पेज खोलें",
+  },
   ar: {
     pageTitle: "الجلسات",
     description: "راجع جلساتك النشطة.",

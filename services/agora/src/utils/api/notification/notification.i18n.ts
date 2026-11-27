@@ -9,6 +9,14 @@ export const notificationApiTranslations: Record<
   NotificationApiTranslations
 > = {
   en: { failedToMarkNotificationsRead: "Failed to mark user notifications as read" },
+  de: {
+    failedToMarkNotificationsRead:
+      "Benachrichtigungen des Nutzers konnten nicht als gelesen markiert werden",
+  },
+  hi: {
+    failedToMarkNotificationsRead:
+      "उपयोगकर्ता की सूचनाओं को पढ़ा हुआ चिह्नित करने में विफल",
+  },
   es: { failedToMarkNotificationsRead: "No se pudieron marcar las notificaciones como leídas" },
   fr: { failedToMarkNotificationsRead: "Échec du marquage des notifications comme lues" },
   "zh-Hant": { failedToMarkNotificationsRead: "標記通知為已讀失敗" },

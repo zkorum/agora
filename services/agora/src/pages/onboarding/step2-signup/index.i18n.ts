@@ -20,6 +20,22 @@ export const step2SignupOnboardingTranslations: Record<
     verifyWithPhone: "Verify with my phone number",
     useEmail: "I prefer to use my email address",
   },
+  de: {
+    pageTitle: "Agora strebt eine rein menschliche Teilnahme an",
+    description:
+      "Mehr als die Hälfte des Internetverkehrs stammt von Bots. Deshalb verifizieren wir Teilnehmende, damit Sie mit Menschen und nicht mit Robotern debattieren, die die Welt erobern wollen!",
+    verifyAnonymously: "Anonym verifizieren",
+    verifyWithPhone: "Mit meiner Telefonnummer verifizieren",
+    useEmail: "Ich bevorzuge die Nutzung meiner E-Mail-Adresse",
+  },
+  hi: {
+    pageTitle: "Agora का लक्ष्य पूरी तरह से मानवीय होना है",
+    description:
+      "इंटरनेट ट्रैफिक का आधे से ज़्यादा हिस्सा बॉट्स से आता है। इसीलिए हम उपयोगकर्ताओं को सत्यापित करते हैं, ताकि आप इंसानों से बहस करें, न कि दुनिया पर कब्ज़ा करने की योजना बनाने वाले रोबोटों से!",
+    verifyAnonymously: "गुमनाम रूप से सत्यापित करें",
+    verifyWithPhone: "मेरे फ़ोन नंबर से सत्यापित करें",
+    useEmail: "मैं अपना ईमेल पता इस्तेमाल करना पसंद करूँगा",
+  },
   ar: {
     pageTitle: "تهدف أجورا إلى أن تكون للبشر حصرياً",
     description:

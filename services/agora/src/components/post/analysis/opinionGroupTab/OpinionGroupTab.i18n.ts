@@ -25,6 +25,36 @@ export const opinionGroupTabTranslations: Record<
     imbalanceNotice: "Most participants are in the same group because they voted almost identically.",
     selectGroup: "Select group",
   },
+  de: {
+    groupsTitle: "Meinungsgruppen",
+    groupsSubtitle:
+      "Gruppen werden aus Abstimmungsmustern gebildet, ohne den Inhalt der Aussagen zu analysieren. Ein LLM liest dann die Aussagen jeder Gruppe, um einen Namen und eine Zusammenfassung zu generieren.",
+    groupsSubtitlePendingAi:
+      "Gruppen werden aus Abstimmungsmustern gebildet, ohne den Inhalt der Aussagen zu analysieren. Die vom LLM generierten Namen und Zusammenfassungen für diese Gruppen werden noch erstellt.",
+    groupsSubtitleNoAi:
+      "Gruppen werden aus Abstimmungsmustern gebildet, ohne den Inhalt der Aussagen zu analysieren.",
+    groupAiPendingNotice:
+      "Die vom LLM generierten Details für diese Gruppe sind noch nicht verfügbar. Agora zeigt vorerst das neutrale Gruppennamen an.",
+    notEnoughGroupsMessage: "Nicht genügend Gruppen zur Anzeige.",
+    imbalanceNotice:
+      "Die meisten Teilnehmenden befinden sich in derselben Gruppe, da sie nahezu identisch abgestimmt haben.",
+    selectGroup: "Gruppe auswählen",
+  },
+  hi: {
+    groupsTitle: "मत समूह",
+    groupsSubtitle:
+      "समूह मतदान पैटर्न से बनते हैं, कथन की सामग्री का विश्लेषण किए बिना। फिर एक LLM प्रत्येक समूह के कथनों को पढ़कर एक नाम और सारांश उत्पन्न करता है।",
+    groupsSubtitlePendingAi:
+      "समूह मतदान पैटर्न से बनते हैं, कथन की सामग्री का विश्लेषण किए बिना। इन समूहों के लिए LLM-जनरेटेड नाम और सारांश अभी भी उत्पन्न हो रहे हैं।",
+    groupsSubtitleNoAi:
+      "समूह मतदान पैटर्न से बनते हैं, कथन की सामग्री का विश्लेषण किए बिना।",
+    groupAiPendingNotice:
+      "इस समूह के लिए LLM-जनरेटेड विवरण अभी उपलब्ध नहीं हैं। Agora अभी अपना तटस्थ समूह लेबल दिखाता है।",
+    notEnoughGroupsMessage: "दिखाने के लिए पर्याप्त समूह नहीं हैं।",
+    imbalanceNotice:
+      "अधिकांश प्रतिभागी एक ही समूह में हैं क्योंकि उन्होंने लगभग समान रूप से मतदान किया।",
+    selectGroup: "समूह चुनें",
+  },
   ar: {
     groupsTitle: "مجموعات الرأي",
     groupsSubtitle: "تُنشأ المجموعات من طريقة تصويت الناس، وليس من لغة المقترحات أو محتواها. ثم يقرأ نموذج LLM مقترحات كل مجموعة لإنشاء اسم وملخص.",

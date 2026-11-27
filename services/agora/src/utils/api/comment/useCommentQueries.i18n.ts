@@ -15,6 +15,18 @@ export const useCommentQueriesTranslations: Record<
     failedToDeleteComment: "Failed to delete statement. Please try again.",
     failedToCreateComment: "Failed to create comment. Please try again.",
   },
+  de: {
+    commentDeletedSuccessfully: "Aussage erfolgreich gelöscht",
+    failedToDeleteComment:
+      "Fehler beim Löschen der Aussage. Bitte versuchen Sie es erneut.",
+    failedToCreateComment:
+      "Die Aussage konnte nicht veröffentlicht werden. Bitte versuchen Sie es erneut.",
+  },
+  hi: {
+    commentDeletedSuccessfully: "कथन सफलतापूर्वक हटा दिया गया",
+    failedToDeleteComment: "कथन हटाने में विफल। कृपया पुनः प्रयास करें।",
+    failedToCreateComment: "कथन प्रकाशित नहीं हो सका। कृपया फिर कोशिश करें।",
+  },
   es: {
     commentDeletedSuccessfully: "Proposición eliminada exitosamente",
     failedToDeleteComment:

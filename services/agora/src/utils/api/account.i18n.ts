@@ -10,6 +10,17 @@ export const accountApiTranslations: Record<
   AccountApiTranslations
 > = {
   en: { failedToCheckUsername: "Error while checking if the username is in use.", failedToGenerateRandomUsername: "Failed to generate random username" },
+  de: {
+    failedToCheckUsername:
+      "Fehler beim Überprüfen, ob der Benutzername verwendet wird.",
+    failedToGenerateRandomUsername:
+      "Fehler bei der Generierung eines zufälligen Benutzernamens",
+  },
+  hi: {
+    failedToCheckUsername: "उपयोगकर्ता नाम की जाँच करने में त्रुटि हुई।",
+    failedToGenerateRandomUsername:
+      "यादृच्छिक उपयोगकर्ता नाम उत्पन्न करने में विफल",
+  },
   es: { failedToCheckUsername: "Error al comprobar si el nombre de usuario está en uso.", failedToGenerateRandomUsername: "No se pudo generar un nombre de usuario aleatorio" },
   fr: { failedToCheckUsername: "Erreur lors de la vérification de la disponibilité du nom d’utilisateur.", failedToGenerateRandomUsername: "Échec de la génération d’un nom d’utilisateur aléatoire" },
   "zh-Hant": { failedToCheckUsername: "檢查使用者名稱是否被使用時發生錯誤。", failedToGenerateRandomUsername: "產生隨機使用者名稱失敗" },

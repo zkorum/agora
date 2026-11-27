@@ -21,6 +21,24 @@ export const conversationUpdateOnboardingConsentTranslations: Record<
     conversationDescription:
       "Only conversation-related updates from the team running it. You can change your preference at any time in your email settings.",
   },
+  de: {
+    projectLabel: "Projekt-Updates per E-Mail erhalten (optional)",
+    conversationLabel: "Diskussions-Updates per E-Mail erhalten (optional)",
+    emailGuarantee: "Keine Werbe- oder Marketing-E-Mails.",
+    projectDescription:
+      "Nur projektbezogene Aktualisierungen vom verantwortlichen Team. Sie können Ihre Präferenz jederzeit in Ihren E-Mail-Einstellungen ändern.",
+    conversationDescription:
+      "Nur Nachrichten zur Diskussion vom verantwortlichen Team. Sie können Ihre Präferenz jederzeit in Ihren E-Mail-Einstellungen ändern.",
+  },
+  hi: {
+    projectLabel: "ईमेल द्वारा परियोजना अपडेट प्राप्त करें (वैकल्पिक)",
+    conversationLabel: "ईमेल द्वारा चर्चा अपडेट प्राप्त करें (वैकल्पिक)",
+    emailGuarantee: "कोई विज्ञापन या मार्केटिंग ईमेल नहीं।",
+    projectDescription:
+      "केवल उस टीम से परियोजना से संबंधित अपडेट। आप अपनी ईमेल सेटिंग्स में किसी भी समय अपनी प्राथमिकता बदल सकते हैं।",
+    conversationDescription:
+      "केवल उस टीम से चर्चा से संबंधित अपडेट। आप अपनी ईमेल सेटिंग्स में किसी भी समय अपनी प्राथमिकता बदल सकते हैं।",
+  },
   ar: {
     emailGuarantee: "لا إعلانات أو رسائل تسويقية.",
     projectLabel:

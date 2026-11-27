@@ -13,6 +13,14 @@ export const reportFooterTranslations: Record<
     generatedOn: "Report generated on",
     poweredBy: "Powered by Agora Citizen Network",
   },
+  de: {
+    generatedOn: "Bericht erstellt am",
+    poweredBy: "Betrieben von Agora Citizen Network",
+  },
+  hi: {
+    generatedOn: "रिपोर्ट जनरेट होने की तिथि",
+    poweredBy: "Agora Citizen Network द्वारा संचालित",
+  },
   ar: {
     generatedOn: "تم إنشاء التقرير في",
     poweredBy: "مدعوم من شبكة أغورا المواطنين",

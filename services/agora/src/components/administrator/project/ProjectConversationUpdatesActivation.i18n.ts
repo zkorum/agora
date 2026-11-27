@@ -42,6 +42,49 @@ export const projectConversationUpdatesActivationTranslations: Record<
   ProjectConversationUpdatesActivationTranslations
 > = {
   en,
+  de: {
+    configurationUnavailable:
+      "Die Konfiguration für E-Mail-Benachrichtigungen ist für dieses Projekt nicht verfügbar.",
+    defaultAriaLabel: "E-Mail-Benachrichtigungen standardmäßig aktiviert",
+    defaultDisabledSaved:
+      "E-Mail-Benachrichtigungen sind nun standardmäßig deaktiviert.",
+    defaultEnabledSaved:
+      "E-Mail-Benachrichtigungen sind nun standardmäßig aktiviert.",
+    defaultLabel: "Standardmäßig aktiviert",
+    defaultSaveError:
+      "Der Standardwert für E-Mail-Benachrichtigungen konnte nicht gespeichert werden.",
+    editParticipantContact: "Kontakt der teilnehmenden Person bearbeiten",
+    listedDefaultDescription:
+      "Diskussionen in diesem Projekt übernehmen diese Einstellung, sofern sie nicht von einem Eigentümer überschrieben werden.",
+    listedDescription: "Standard für Diskussionen in {projectTitle} festlegen.",
+    missingContact:
+      "Geben Sie vor dem Versand eine regelmäßig gelesene Kontaktadresse für Rückfragen der Teilnehmenden an.",
+    noProjectDefaultDescription:
+      "Diese Einstellung gilt für Diskussionen ohne Projekt, sofern die jeweilige Diskussionsleitung sie nicht ändert.",
+    noProjectDescription:
+      "Legen Sie den Standard für Diskussionen fest, die ohne ein aufgelistetes Projekt erstellt wurden.",
+    title: "E-Mail-Benachrichtigungen",
+  },
+  hi: {
+    configurationUnavailable:
+      "इस परियोजना के लिए ईमेल अपडेट कॉन्फ़िगरेशन उपलब्ध नहीं है।",
+    defaultAriaLabel: "डिफ़ॉल्ट रूप से ईमेल अपडेट चालू",
+    defaultDisabledSaved: "ईमेल अपडेट अब डिफ़ॉल्ट रूप से बंद हैं।",
+    defaultEnabledSaved: "ईमेल अपडेट अब डिफ़ॉल्ट रूप से चालू हैं।",
+    defaultLabel: "डिफ़ॉल्ट रूप से चालू",
+    defaultSaveError: "ईमेल अपडेट डिफ़ॉल्ट को सहेजा नहीं जा सका।",
+    editParticipantContact: "प्रतिभागी संपर्क संपादित करें",
+    listedDefaultDescription:
+      "इस परियोजना में चर्चाएँ इस सेटिंग को विरासत में लेती हैं जब तक कि कोई स्वामी उन्हें ओवरराइड न करे।",
+    listedDescription: "{projectTitle} में चर्चाओं के लिए डिफ़ॉल्ट सेट करें।",
+    missingContact:
+      "ईमेल अपडेट भेजने से पहले प्रतिभागियों के लिए ऐसा संपर्क ईमेल पता जोड़ें जिसे नियमित रूप से देखा जाता हो।",
+    noProjectDefaultDescription:
+      "जिन चर्चाओं का कोई प्रोजेक्ट नहीं है, उन पर यह सेटिंग लागू होती है। चर्चा के आयोजक इसे बदल सकते हैं।",
+    noProjectDescription:
+      "बिना सूचीबद्ध प्रोजेक्ट के बनाई गई चर्चाओं के लिए डिफ़ॉल्ट सेट करें।",
+    title: "ईमेल अपडेट",
+  },
   ar: {
     configurationUnavailable:
       "إعداد تحديثات البريد الإلكتروني غير متاح لهذا المشروع.",

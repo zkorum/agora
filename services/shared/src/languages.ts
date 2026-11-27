@@ -219,20 +219,22 @@ export const ZodAllLanguageCodes = z.enum([
 ]);
 export type AllLanguageCodes = z.infer<typeof ZodAllLanguageCodes>;
 
-// Languages that have UI translations available
+// Display order: English first, then alphabetical by English name.
 export const ZodSupportedDisplayLanguageCodes =
     ZodSupportedSpokenLanguageCodes.extract([
         "en",
-        "es",
-        "fr",
-        "zh-Hant",
-        "zh-Hans",
-        "ja",
         "ar",
-        "fa",
+        "zh-Hans",
+        "zh-Hant",
+        "fr",
+        "de",
         "he",
+        "hi",
+        "ja",
         "ky",
+        "fa",
         "ru",
+        "es",
     ]);
 export type SupportedDisplayLanguageCodes = z.infer<
     typeof ZodSupportedDisplayLanguageCodes
@@ -276,53 +278,35 @@ export function getDisplayLanguageFallbackChain({
     }
 }
 
+const displayLanguageNames = {
+    en: { name: "English", englishName: "English" },
+    ar: { name: "العربية", englishName: "Arabic" },
+    "zh-Hans": { name: "简体中文", englishName: "Chinese (Simplified)", script: "Hans" },
+    "zh-Hant": { name: "繁體中文", englishName: "Chinese (Traditional)", script: "Hant" },
+    fr: { name: "français", englishName: "French" },
+    de: { name: "Deutsch", englishName: "German" },
+    he: { name: "עברית", englishName: "Hebrew" },
+    hi: { name: "हिन्दी", englishName: "Hindi" },
+    ja: { name: "日本語", englishName: "Japanese" },
+    ky: { name: "кыргызча", englishName: "Kyrgyz" },
+    fa: { name: "فارسی", englishName: "Persian" },
+    ru: { name: "русский", englishName: "Russian" },
+    es: { name: "español", englishName: "Spanish" },
+} satisfies Record<
+    SupportedDisplayLanguageCodes,
+    Pick<LanguageMetadata, "name" | "englishName" | "script">
+>;
+
+export const SupportedDisplayLanguageMetadataList: DisplayLanguageMetadata[] =
+    ZodSupportedDisplayLanguageCodes.options.map((code) => ({
+        code,
+        ...displayLanguageNames[code],
+        displaySupported: true,
+    }));
+
 // Comprehensive language list for spoken languages
 export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
-    // Display-supported languages (UI translations available)
-    {
-        code: "en",
-        name: "English",
-        englishName: "English",
-        displaySupported: true,
-    },
-    {
-        code: "es",
-        name: "español",
-        englishName: "Spanish",
-        displaySupported: true,
-    },
-    {
-        code: "fr",
-        name: "français",
-        englishName: "French",
-        displaySupported: true,
-    },
-    {
-        code: "zh-Hans",
-        name: "简体中文",
-        englishName: "Simplified Chinese",
-        script: "Hans",
-        displaySupported: true,
-    },
-    {
-        code: "zh-Hant",
-        name: "繁體中文",
-        englishName: "Traditional Chinese",
-        script: "Hant",
-        displaySupported: true,
-    },
-    {
-        code: "ja",
-        name: "日本語",
-        englishName: "Japanese",
-        displaySupported: true,
-    },
-    {
-        code: "ar",
-        name: "العربية",
-        englishName: "Arabic",
-        displaySupported: true,
-    },
+    ...SupportedDisplayLanguageMetadataList,
     // Additional languages (for spoken languages only)
     {
         code: "bn",
@@ -391,12 +375,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "de",
-        name: "Deutsch",
-        englishName: "German",
-        displaySupported: false,
-    },
-    {
         code: "el",
         name: "Ελληνικά",
         englishName: "Greek",
@@ -406,18 +384,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         code: "gu",
         name: "ગુજરાતી",
         englishName: "Gujarati",
-        displaySupported: false,
-    },
-    {
-        code: "he",
-        name: "עברית",
-        englishName: "Hebrew",
-        displaySupported: true,
-    },
-    {
-        code: "hi",
-        name: "हिन्दी",
-        englishName: "Hindi",
         displaySupported: false,
     },
     {
@@ -457,12 +423,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "ky",
-        name: "кыргызча",
-        englishName: "Kyrgyz",
-        displaySupported: true,
-    },
-    {
         code: "ms",
         name: "Melayu",
         englishName: "Malay",
@@ -481,12 +441,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         displaySupported: false,
     },
     {
-        code: "fa",
-        name: "فارسی",
-        englishName: "Persian",
-        displaySupported: true,
-    },
-    {
         code: "pl",
         name: "polski",
         englishName: "Polish",
@@ -503,12 +457,6 @@ export const SupportedSpokenLanguageMetadataList: LanguageMetadata[] = [
         name: "română",
         englishName: "Romanian",
         displaySupported: false,
-    },
-    {
-        code: "ru",
-        name: "русский",
-        englishName: "Russian",
-        displaySupported: true,
     },
     {
         code: "sr",

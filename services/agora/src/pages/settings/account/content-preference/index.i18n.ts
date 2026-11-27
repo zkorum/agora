@@ -11,6 +11,12 @@ export const contentPreferenceTranslations: Record<
   en: {
     contentPreference: "Content Preference",
   },
+  de: {
+    contentPreference: "Inhaltspräferenz",
+  },
+  hi: {
+    contentPreference: "सामग्री प्राथमिकता",
+  },
   ar: {
     contentPreference: "تفضيلات المحتوى",
   },

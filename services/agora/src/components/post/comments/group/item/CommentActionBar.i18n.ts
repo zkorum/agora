@@ -39,6 +39,44 @@ export const commentActionBarTranslations: Record<
     assignedGroup: "You have been assigned a group!",
     viewAnalysis: "View analysis",
   },
+  de: {
+    disagree: "Stimme nicht zu",
+    pass: "Unsicher",
+    agree: "Stimme zu",
+    voteFailed:
+      "Die Stimmabgabe ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    conversationClosed:
+      "Sie können nicht abstimmen, da die Diskussion von der Moderationsleitung geschlossen wurde.",
+    closedConversationTooltip:
+      "Abstimmung ist deaktiviert – die Diskussion wurde geschlossen oder gesperrt",
+    disagreeAriaLabel: "Stimme der Aussage nicht zu. Aktuelle Ablehnungen:",
+    passAriaLabel: "Unsicher bezüglich dieser Aussage. Aktuelle Anzahl:",
+    agreeAriaLabel: "Stimme der Aussage zu. Aktuelle Zustimmungen:",
+    keepVotingToDiscoverGroup:
+      "Stimmen Sie mindestens {minVotes} Aussagen ab, um einer Gruppe zugeordnet zu werden",
+    keepVotingToRefineAnalysis:
+      "Jede weitere Stimme macht die Analyse genauer.",
+    assignedGroup: "Sie wurden einer Gruppe zugeordnet!",
+    viewAnalysis: "Analyse ansehen",
+  },
+  hi: {
+    disagree: "असहमत",
+    pass: "तय नहीं",
+    agree: "सहमत",
+    voteFailed: "मत जमा करने में विफल। कृपया पुनः प्रयास करें।",
+    conversationClosed:
+      "संचालक द्वारा चर्चा बंद कर दी गई है, इसलिए वोट नहीं किया जा सकता।",
+    closedConversationTooltip: "वोटिंग अक्षम है - चर्चा बंद या लॉक कर दी गई है",
+    disagreeAriaLabel: "कथन से असहमत। वर्तमान में असहमत:",
+    passAriaLabel: "इस कथन के बारे में निश्चित नहीं। वर्तमान गणना:",
+    agreeAriaLabel: "कथन से सहमत। वर्तमान में सहमत:",
+    keepVotingToDiscoverGroup:
+      "समूह में असाइन होने के लिए कम से कम {minVotes} कथनों पर वोट करें",
+    keepVotingToRefineAnalysis:
+      "आप जितने अधिक कथनों पर मत देंगे, विश्लेषण उतना ही सटीक होगा।",
+    assignedGroup: "आपको एक समूह सौंपा गया है!",
+    viewAnalysis: "विश्लेषण देखें",
+  },
   ar: {
     disagree: "أرفض",
     pass: "غير متأكد",

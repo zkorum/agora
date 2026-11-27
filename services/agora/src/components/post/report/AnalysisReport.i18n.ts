@@ -61,6 +61,70 @@ export const analysisReportTranslations: Record<
     noSurveyResultsMessage: "No survey results are available yet.",
     suppressed: "Suppressed",
   },
+  de: {
+    summary: "Zusammenfassung",
+    agreements: "Zustimmung",
+    disagreements: "Ablehnung",
+    divisive: "Umstritten",
+    allStatements: "Alle Aussagen",
+    surveyTitle: "Umfrage",
+    surveyOverallLabel: "Gesamtbewertung",
+    agreementsLong: "Welchen Aussagen stimmen alle Meinungsgruppen zu?",
+    disagreementsLong: "Welche Aussagen lehnen alle Meinungsgruppen ab?",
+    divisiveLong: "Bei welchen Aussagen gehen die Meinungen der Gruppen auseinander?",
+    allStatementsLong: "Alle Aussagen",
+    surveySubtitle:
+      "Sehen Sie, wie jede Umfragefrage insgesamt oder innerhalb jeder Meinungsgruppe beantwortet wird.",
+    surveyGroupSubtitle:
+      "Hier sind nur Antworten dieser Meinungsgruppe enthalten.",
+    agreementsSubtitle:
+      "Entscheidend ist die Übereinstimmung aller Meinungsgruppen. Eine einfache Mehrheit reicht nicht aus. Die statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    disagreementsSubtitle:
+      "Entscheidend ist die Übereinstimmung aller Meinungsgruppen. Eine einfache Mehrheit reicht nicht aus. Die statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    divisiveSubtitle:
+      "Bei diesen Aussagen gehen die Meinungsgruppen in ihrer Bewertung auseinander. Die statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    allStatementsSubtitle:
+      "Alle in der Analyse enthaltenen Aussagen, geordnet nach den ausgewählten Berichtseinstellungen.",
+    allStatementsOrderLabel: "Sortieren nach",
+    noAgreementsMessage: "Es ist noch kein Konsens entstanden.",
+    noDisagreementsMessage: "Es ist noch kein Konsens entstanden.",
+    noDivisiveMessage:
+      "Bisher zeigt keine Aussage statistisch signifikante Unterschiede zwischen den Meinungsgruppen.",
+    noAllStatementsMessage: "Es sind noch keine Aussagen verfügbar.",
+    noSurveyResultsMessage: "Noch keine Umfrageergebnisse verfügbar.",
+    suppressed: "Ausgeblendet",
+  },
+  hi: {
+    summary: "सारांश",
+    agreements: "समर्थन",
+    disagreements: "विरोध",
+    divisive: "मतभेद",
+    allStatements: "सभी कथन",
+    surveyTitle: "सर्वेक्षण",
+    surveyOverallLabel: "कुल",
+    agreementsLong: "किन कथनों से सभी मत समूह सहमत हैं?",
+    disagreementsLong: "किन कथनों से सभी मत समूह असहमत हैं?",
+    divisiveLong: "किन कथनों पर मत समूहों की राय बँटी है?",
+    allStatementsLong: "सभी कथन",
+    surveySubtitle:
+      "देखें कि प्रत्येक सर्वेक्षण प्रश्न का समग्र रूप से या प्रत्येक मत समूह के भीतर उत्तर कैसे दिया जाता है।",
+    surveyGroupSubtitle: "केवल इस मत समूह से प्रतिक्रियाएँ यहाँ शामिल हैं।",
+    agreementsSubtitle:
+      "यहाँ सभी मत समूहों की राय एक दिशा में जाती है। केवल कुल मतों का बहुमत काफ़ी नहीं है। जिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    disagreementsSubtitle:
+      "यहाँ सभी मत समूहों की राय एक दिशा में जाती है। केवल कुल मतों का बहुमत काफ़ी नहीं है। जिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    divisiveSubtitle:
+      "इन कथनों पर अलग-अलग मत समूहों की राय बँटी है। जिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    allStatementsSubtitle:
+      "विश्लेषण में शामिल सभी कथन, चयनित रिपोर्ट सेटिंग के अनुसार क्रमबद्ध।",
+    allStatementsOrderLabel: "क्रम के अनुसार",
+    noAgreementsMessage: "अभी तक कोई सहमति नहीं बनी है।",
+    noDisagreementsMessage: "अभी तक कोई सहमति नहीं बनी है।",
+    noDivisiveMessage: "अभी किसी कथन पर मत समूहों के बीच सांख्यिकीय रूप से स्पष्ट मतभेद नहीं दिखा है।",
+    noAllStatementsMessage: "अभी कोई कथन उपलब्ध नहीं है।",
+    noSurveyResultsMessage: "अभी कोई सर्वेक्षण परिणाम उपलब्ध नहीं है।",
+    suppressed: "छिपाया गया",
+  },
   ar: {
     summary: "ملخص",
     agreements: "معتمدة",

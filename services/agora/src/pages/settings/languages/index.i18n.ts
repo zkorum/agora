@@ -35,6 +35,38 @@ export const languagesSettingsTranslations: Record<
     other: "other",
     others: "others",
   },
+  de: {
+    pageTitle: "Sprache",
+    displayLanguageLabel: "Anzeigesprache",
+    spokenLanguagesLabel: "Gesprochene Sprachen",
+    displayLanguageTitle: "Anzeigesprache",
+    displayLanguageDescription:
+      "Ihre bevorzugte Sprache für die Kopfzeilen, Schaltflächen und andere Texte der Agora App",
+    additionalLanguagesTitle: "Zusätzliche Sprachen",
+    additionalLanguagesDescription:
+      "Für Inhalte, die Sie in Agora sehen möchten",
+    englishFallback: "Englisch",
+    noneSelected: "Keine ausgewählt",
+    and: "und",
+    other: "Andere",
+    others: "Andere",
+  },
+  hi: {
+    pageTitle: "भाषा",
+    displayLanguageLabel: "इंटरफ़ेस की भाषा",
+    spokenLanguagesLabel: "आपकी बोली जाने वाली भाषाएँ",
+    displayLanguageTitle: "इंटरफ़ेस की भाषा",
+    displayLanguageDescription:
+      "Agora ऐप के हेडर, बटन और अन्य पाठ के लिए आपकी पसंदीदा भाषा",
+    additionalLanguagesTitle: "अतिरिक्त भाषाएँ",
+    additionalLanguagesDescription:
+      "Agora पर आप जो सामग्री देखना चाहते हैं उसके लिए",
+    englishFallback: "अंग्रेज़ी",
+    noneSelected: "कोई नहीं चुना गया",
+    and: "और",
+    other: "अन्य",
+    others: "अन्य",
+  },
   ar: {
     pageTitle: "اللغة",
     displayLanguageLabel: "لغة العرض",

@@ -53,6 +53,62 @@ export const conversationUpdatePreferenceSettingsTranslations: Record<
     savePreferenceSuccess: "Your email update preference was saved.",
     savePreferenceError: "Couldn’t save your email update preference.",
   },
+  de: {
+    sectionDescription:
+      "Gelegentliche E-Mail-Updates von Moderationsleitern informieren Sie über ausgewählte Projekte und Diskussionen und laden Sie erneut zur Teilnahme ein. Keine Werbung, Spendenaufrufe, politische Kampagnen oder nicht verwandte Promotion.",
+    preferenceHierarchyDescription:
+      "Eine Projekteinstellung ist der Standard für deren Diskussionen. Einzelne Diskussionsauswahlen überschreiben dies.",
+    recommendationDescription:
+      "Wir empfehlen, diese aktiviert zu lassen, damit Sie keine wichtigen Entwicklungen verpassen. Dies können Sie jederzeit ändern.",
+    searchLabel: "Projekte und Diskussionen suchen",
+    tryAgain: "Erneut versuchen",
+    receiveEmailUpdates: "E-Mail-Updates erhalten",
+    updatesOnDescription:
+      "Sie erhalten Aktualisierungen Ihrer ausgewählten Projekte und Diskussionen.",
+    updatesPausedDescription:
+      "Alle E-Mail-Updates sind pausiert. Ihre Projekt- und Diskussionsauswahlen bleiben gespeichert.",
+    empty: "Keine E-Mail-Update-Präferenzen entsprechen dieser Suche.",
+    noProject: "Kein Projekt",
+    loadMore: "Mehr laden",
+    loadingMore: "Mehr Präferenzen laden",
+    showMore: "Mehr anzeigen",
+    verifiedEmailRequired:
+      "Bitte verifizieren Sie eine E-Mail-Adresse, bevor Sie die E-Mail-Update-Präferenzen ändern.",
+    preferencesUnavailable:
+      "Die E-Mail-Update-Präferenzen sind momentan nicht verfügbar.",
+    morePreferencesUnavailable:
+      "Weitere E-Mail-Update-Präferenzen konnten nicht geladen werden.",
+    savePreferenceSuccess: "Ihre E-Mail-Update-Präferenz wurde gespeichert.",
+    savePreferenceError:
+      "Die Speicherung Ihrer E-Mail-Update-Präferenz war nicht möglich.",
+  },
+  hi: {
+    sectionDescription:
+      "संचालकों से कभी-कभार ईमेल अपडेट आपको चुनी हुई परियोजनाओं और चर्चाओं के बारे में सूचित रखते हैं और आपको फिर से भाग लेने के लिए आमंत्रित करते हैं। कोई विज्ञापन, धन उगाही, राजनीतिक अभियान, या असंबंधित प्रचार नहीं।",
+    preferenceHierarchyDescription:
+      "एक परियोजना सेटिंग अपनी चर्चाओं के लिए डिफ़ॉल्ट होती है। व्यक्तिगत चर्चा विकल्प इसे ओवरराइड करते हैं।",
+    recommendationDescription:
+      "हम सलाह देते हैं कि आप इन्हें चालू रखें ताकि आप महत्वपूर्ण विकास न चूकें। आप इसे कभी भी बदल सकते हैं।",
+    searchLabel: "परियोजनाएं और चर्चाएं खोजें",
+    tryAgain: "फिर से प्रयास करें",
+    receiveEmailUpdates: "ईमेल अपडेट प्राप्त करें",
+    updatesOnDescription:
+      "आपको अपनी चुनी हुई परियोजनाओं और चर्चाओं से अपडेट प्राप्त होंगे।",
+    updatesPausedDescription:
+      "सभी ईमेल अपडेट रोक दिए गए हैं। आपकी परियोजना और चर्चा के विकल्प सहेजे रहेंगे।",
+    empty: "इस खोज से कोई ईमेल अपडेट प्राथमिकता मेल नहीं खाती।",
+    noProject: "कोई परियोजना नहीं",
+    loadMore: "और लोड करें",
+    loadingMore: "अधिक प्राथमिकताएं लोड हो रही हैं",
+    showMore: "और दिखाएं",
+    verifiedEmailRequired:
+      "ईमेल अपडेट प्राथमिकताएं बदलने से पहले एक ईमेल पता सत्यापित करें।",
+    preferencesUnavailable: "ईमेल अपडेट प्राथमिकताएं अभी उपलब्ध नहीं हैं।",
+    morePreferencesUnavailable:
+      "अधिक ईमेल अपडेट प्राथमिकताएं लोड नहीं हो सकीं।",
+    savePreferenceSuccess: "आपकी ईमेल अपडेट प्राथमिकता सहेज ली गई है।",
+    savePreferenceError: "आपकी ईमेल अपडेट प्राथमिकता सहेजी नहीं जा सकी।",
+  },
   es: {
     sectionDescription:
       "Las novedades ocasionales por correo de quienes facilitan los proyectos y las conversaciones le permiten mantenerse al día y le invitan a volver a participar. Sin publicidad, recaudación de fondos, campañas políticas ni promociones no relacionadas.",

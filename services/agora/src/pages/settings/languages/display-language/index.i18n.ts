@@ -11,6 +11,12 @@ export const displayLanguageSettingsTranslations: Record<
   en: {
     pageTitle: "Display Language",
   },
+  de: {
+    pageTitle: "Anzeigesprache",
+  },
+  hi: {
+    pageTitle: "इंटरफ़ेस की भाषा",
+  },
   ar: {
     pageTitle: "لغة العرض",
   },

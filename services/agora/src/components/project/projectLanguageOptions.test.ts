@@ -34,7 +34,7 @@ const languageOptions = [
 ] as const;
 
 describe("buildProjectLanguageDisplayOptions", () => {
-  it("marks and promotes languages configured by the conversation", () => {
+  it("marks supported languages without changing the display order", () => {
     const options = buildProjectLanguageDisplayOptions({
       languageOptions,
       conversationSupportedLanguageCodes: ["fr", "es"],
@@ -52,6 +52,12 @@ describe("buildProjectLanguageDisplayOptions", () => {
         shortLabel: "EN",
       },
       {
+        label: "繁體中文",
+        value: "zh-Hant",
+        caption: undefined,
+        searchText: "繁體中文",
+      },
+      {
         label: "français",
         value: "fr",
         caption: "Supported by this project",
@@ -64,16 +70,10 @@ describe("buildProjectLanguageDisplayOptions", () => {
         caption: "Supported by this conversation",
         searchText: "español",
       },
-      {
-        label: "繁體中文",
-        value: "zh-Hant",
-        caption: undefined,
-        searchText: "繁體中文",
-      },
     ]);
   });
 
-  it("deduplicates options without changing unsupported option order", () => {
+  it("deduplicates options in the shared display order", () => {
     const options = buildProjectLanguageDisplayOptions({
       languageOptions: [...languageOptions, languageOptions[3]],
       conversationSupportedLanguageCodes: [],
@@ -83,8 +83,8 @@ describe("buildProjectLanguageDisplayOptions", () => {
 
     expect(options.map((option) => option.value)).toEqual([
       "en",
-      "fr",
       "zh-Hant",
+      "fr",
       "es",
     ]);
   });

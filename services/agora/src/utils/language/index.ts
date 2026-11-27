@@ -1,5 +1,4 @@
 import {
-  type DisplayLanguageMetadata,
   type LanguageMetadata,
   parseDisplayLanguage,
   parseSpokenLanguage,
@@ -7,7 +6,6 @@ import {
   type SupportedDisplayLanguageCodes,
   type SupportedSpokenLanguageCodes,
   SupportedSpokenLanguageMetadataList,
-  ZodSupportedDisplayLanguageCodes,
   ZodSupportedSpokenLanguageCodes,
 } from "src/shared/languages";
 
@@ -26,6 +24,10 @@ interface SearchableLanguageMetadata {
  */
 export function toBcp47Locale(code: string): string {
   switch (code) {
+    case "de":
+      return "de-DE";
+    case "hi":
+      return "hi-IN";
     case "en":
       return "en-US";
     case "es":
@@ -64,14 +66,6 @@ export function getLanguageByCode(
   }
 
   return getSpokenLanguageByCode(spokenLanguageCode.data);
-}
-
-export function getDisplayLanguages(): DisplayLanguageMetadata[] {
-  return SupportedSpokenLanguageMetadataList.filter(
-    (lang): lang is DisplayLanguageMetadata =>
-      lang.displaySupported &&
-      ZodSupportedDisplayLanguageCodes.safeParse(lang.code).success
-  );
 }
 
 export function getSpokenLanguages(): SpokenLanguageMetadata[] {
@@ -218,12 +212,16 @@ export function detectInitialDisplayLanguage({
 }
 
 /**
- * Sort languages alphabetically by their English name
+ * Keep the default first, then use English names regardless of the device locale.
  */
 export function sortLanguagesByEnglishName<
   T extends SearchableLanguageMetadata,
 >({ langs }: { langs: T[] }): T[] {
-  return [...langs].sort((a, b) => a.englishName.localeCompare(b.englishName));
+  return [...langs].sort(
+    (a, b) =>
+      Number(b.code === "en") - Number(a.code === "en") ||
+      a.englishName.localeCompare(b.englishName, "en")
+  );
 }
 
 /**

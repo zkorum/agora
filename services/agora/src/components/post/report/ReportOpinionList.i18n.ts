@@ -15,6 +15,17 @@ export const reportOpinionListTranslations: Record<
     overall: "Overall",
     noItems: "No statistically significant items found for this section.",
   },
+  de: {
+    statement: "Aussage",
+    overall: "Gesamtbewertung",
+    noItems:
+      "Für diesen Abschnitt wurden keine statistisch signifikanten Punkte gefunden.",
+  },
+  hi: {
+    statement: "कथन",
+    overall: "कुल",
+    noItems: "इस खंड के लिए कोई सांख्यिकीय रूप से महत्वपूर्ण मद नहीं मिली।",
+  },
   ar: {
     statement: "البيان",
     overall: "الإجمالي",

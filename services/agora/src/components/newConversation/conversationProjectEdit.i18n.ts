@@ -32,6 +32,40 @@ export const conversationProjectEditTranslations: Record<
     detachLanguagesError:
       "Before choosing No project, switch to custom languages and choose up to two additional languages.",
   },
+  de: {
+    primaryLanguageOnly: "Nur Hauptsprache verwenden",
+    chooseCustomLanguagesDescription:
+      "Die vererbten Einstellungen überschreiten das Limit für benutzerdefinierte Sprachen. Wählen Sie bis zu zwei zusätzliche Sprachen oder verwenden Sie nur die Hauptsprache.",
+    emailUpdatesUnavailableError:
+      "E-Mail-Benachrichtigungen können hier nicht aktiviert werden. Deaktivieren Sie diese oder wählen Sie ein anderes Projekt.",
+    activeDeliveryError:
+      "Eine E-Mail-Benachrichtigung wird zugestellt. Versuchen Sie es bitte erneut, nachdem die Zustellung abgeschlossen ist.",
+    projectUnavailableError:
+      "Dieses Projekt ist nicht mehr verfügbar. Wählen Sie ein anderes Projekt.",
+    projectPermissionError:
+      "Sie benötigen die Berechtigung, Diskussionen im Zielprojekt zu erstellen und zu bearbeiten.",
+    projectChangedError:
+      "Ein anderer Moderator hat diese Diskussion verschoben. Öffnen Sie den Editor neu, um das aktuelle Projekt zu laden.",
+    detachLanguagesError:
+      "Bevor Sie 'Kein Projekt' auswählen, wechseln Sie zu benutzerdefinierten Sprachen und wählen Sie bis zu zwei zusätzliche Sprachen.",
+  },
+  hi: {
+    primaryLanguageOnly: "केवल मुख्य भाषा का उपयोग करें",
+    chooseCustomLanguagesDescription:
+      "विरासत में मिली सेटिंग्स कस्टम भाषा सीमा से अधिक हैं। दो अतिरिक्त भाषाओं तक चुनें, या केवल मुख्य भाषा का उपयोग करें।",
+    emailUpdatesUnavailableError:
+      "ईमेल अपडेट यहाँ सक्षम नहीं किए जा सकते। उन्हें बंद करें या कोई अन्य परियोजना चुनें।",
+    activeDeliveryError:
+      "एक ईमेल अपडेट डिलीवर किया जा रहा है। डिलीवरी पूरी होने के बाद फिर से सहेजने का प्रयास करें।",
+    projectUnavailableError:
+      "यह परियोजना अब उपलब्ध नहीं है। कोई अन्य परियोजना चुनें।",
+    projectPermissionError:
+      "आपके पास गंतव्य परियोजना में चर्चाएँ बनाने और संपादित करने की अनुमति नहीं है।",
+    projectChangedError:
+      "किसी अन्य संचालक ने इस चर्चा को स्थानांतरित किया है। वर्तमान परियोजना लोड करने के लिए संपादक खोलें।",
+    detachLanguagesError:
+      "कोई परियोजना चुनने से पहले, कस्टम भाषाओं पर स्विच करें और दो अतिरिक्त भाषाओं तक चुनें।",
+  },
   fr: {
     primaryLanguageOnly: "Utiliser uniquement la langue principale",
     chooseCustomLanguagesDescription:

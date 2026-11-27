@@ -49,6 +49,57 @@ export const rarimoVerificationFormTranslations: Record<
     couldNotCopy: "Could not copy to clipboard",
     qrCodeAlt: "QR code for identity verification",
   },
+  de: {
+    download: "Herunterladen",
+    claimAnonymousId: "Beanspruchen Sie Ihre anonyme ID",
+    comeBackAndVerify:
+      "Kommen Sie hier zurück und klicken Sie auf Verifizieren",
+    scanQrCode:
+      "Scannen Sie den QR-Code mit Rarimo, um Ihre Identität zu verifizieren",
+    failedToGenerateLink: "Fehler beim Generieren des Verifizierungslinks",
+    loadingVerificationLink: "Verifizierungslink wird geladen",
+    openLinkOnMobile:
+      "Oder öffnen Sie den untenstehenden Link in Ihrem mobilen Browser:",
+    copy: "Kopieren",
+    waitingForVerification: "Wartet auf Verifizierung...",
+    verify: "Verifizieren",
+    verificationSuccessful: "Verifizierung erfolgreich",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt",
+    verificationFailed:
+      "Verifizierungsversuch fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    passportAlreadyLinked:
+      "Dieser Reisepass ist bereits mit einem anderen Rarimo-Konto verknüpft. Bitte versuchen Sie es mit einem anderen.",
+    unexpectedError:
+      "Ups! Unerwarteter Fehler – versuchen Sie, die Seite neu zu laden",
+    credentialAlreadyLinked:
+      "Dieser Reisepass ist bereits mit einem anderen Konto verknüpft",
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+    couldNotCopy: "Konnte nicht in die Zwischenablage kopieren",
+    qrCodeAlt: "QR-Code zur Identitätsprüfung",
+  },
+  hi: {
+    download: "डाउनलोड करें",
+    claimAnonymousId: "अपनी गुमनाम आईडी का दावा करें",
+    comeBackAndVerify: "यहां वापस आएं और सत्यापित करें",
+    scanQrCode: "अपनी पहचान सत्यापित करने के लिए Rarimo से QR कोड स्कैन करें",
+    failedToGenerateLink: "सत्यापन लिंक बनाने में विफल",
+    loadingVerificationLink: "सत्यापन लिंक लोड हो रहा है",
+    openLinkOnMobile: "या नीचे दिए गए लिंक को अपने मोबाइल ब्राउज़र पर खोलें:",
+    copy: "कॉपी करें",
+    waitingForVerification: "सत्यापन की प्रतीक्षा है...",
+    verify: "सत्यापित करें",
+    verificationSuccessful: "सत्यापन सफल रहा",
+    accountMerged: "सफलता! आपके खाते मिला दिए गए हैं",
+    verificationFailed: "सत्यापन का प्रयास विफल रहा। कृपया पुनः प्रयास करें।",
+    passportAlreadyLinked:
+      "यह पासपोर्ट पहले से ही किसी अन्य Rarimo खाते से जुड़ा हुआ है। कृपया कोई अन्य प्रयास करें।",
+    unexpectedError: "ओह! अप्रत्याशित त्रुटि—कृपया पेज को रीफ़्रेश करें",
+    credentialAlreadyLinked:
+      "यह पासपोर्ट पहले से ही किसी अन्य खाते से जुड़ा हुआ है",
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी हो गया",
+    couldNotCopy: "क्लिपबोर्ड पर कॉपी नहीं किया जा सका",
+    qrCodeAlt: "पहचान सत्यापन के लिए QR कोड",
+  },
   ar: {
     download: "تحميل",
     claimAnonymousId: "احصل على هويتك المجهولة",

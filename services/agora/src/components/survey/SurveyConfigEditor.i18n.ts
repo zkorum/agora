@@ -56,6 +56,59 @@ export const surveyConfigEditorTranslations: Record<
     },
     publicAggregateSuppressionConfirmButtonLabel: "Enable",
   },
+  de: {
+    allowOptionalTextLabel: "Optionalen Text mit dieser Option zulassen",
+    publicAggregateSuppressionLabel: ({ maxHiddenResponses }) =>
+      `Öffentliche Ergebnisse ausblenden, wenn eine Option 1-${String(maxHiddenResponses)} Antworten hat`,
+    publicAggregateSuppressionSummary:
+      "Empfohlen für kleine Gemeinschaften, bei denen Antworten Rückschlüsse auf die Identität der Teilnehmenden zulassen könnten.",
+    publicAggregateSuppressionHintParagraphs: ({
+      maxHiddenResponses,
+      threshold,
+    }) => [
+      "Gilt separat für alle Teilnehmenden und jede Meinungsgruppe.",
+      `Wenn eine Option für diese Frage 1-${String(maxHiddenResponses)} Antworten hat, werden die öffentlichen Zahlen und Prozentsätze für die gesamte Frage in diesem Block ausgeblendet. Optionen mit 0 oder ${String(threshold)}+ Antworten lösen kein Ausblenden aus.`,
+      "Die Moderationsleitung kann die vollständigen aggregierten Ergebnisse weiterhin einsehen.",
+      "Schalten Sie dies für kleine Gemeinschaften ein, bei denen Antworten Rückschlüsse auf die Identität der Teilnehmenden zulassen könnten, wie beispielsweise nur wenige Frauen in einem Team oder nur wenige Personen aus einem bestimmten Team.",
+    ],
+    publicAggregateSuppressionLearnMoreTitle:
+      "Über ausgeblendete öffentliche Ergebnisse",
+    publicAggregateSuppressionConfirmTitle:
+      "Ausblendung öffentlicher Ergebnisse aktivieren?",
+    publicAggregateSuppressionConfirmMessage: {
+      beforeEmphasis:
+        "Nachdem Sie diese Umfrage mit aktivierter Ausblendung öffentlicher Ergebnisse gespeichert haben, ",
+      emphasis: "können Sie dies für diese Frage nicht mehr deaktivieren",
+      afterEmphasis: ". Die Teilnehmenden sehen dies als Datenschutzgarantie.",
+    },
+    publicAggregateSuppressionConfirmButtonLabel: "Aktivieren",
+  },
+  hi: {
+    allowOptionalTextLabel: "इस विकल्प के साथ वैकल्पिक पाठ की अनुमति दें",
+    publicAggregateSuppressionLabel: ({ maxHiddenResponses }) =>
+      `जब किसी विकल्प के 1-${String(maxHiddenResponses)} प्रतिक्रियाएँ हों तो सार्वजनिक परिणाम छिपाएँ`,
+    publicAggregateSuppressionSummary:
+      "छोटी समुदायों के लिए अनुशंसित जहाँ उत्तर यह बता सकते हैं कि कौन कौन है।",
+    publicAggregateSuppressionHintParagraphs: ({
+      maxHiddenResponses,
+      threshold,
+    }) => [
+      "सभी उत्तरदाताओं और प्रत्येक मत समूह पर अलग से लागू होता है।",
+      `यदि इस प्रश्न के किसी विकल्प के 1-${String(maxHiddenResponses)} प्रतिक्रियाएँ हैं, तो पूरे प्रश्न के लिए सार्वजनिक गणना और प्रतिशत उस ब्लॉक में छिपे रहेंगे। 0 या ${String(threshold)}+ प्रतिक्रियाओं वाले विकल्पों को छिपाने के लिए ट्रिगर नहीं किया जाता है।`,
+      "संचालक अभी भी पूर्ण एकत्रित परिणाम देख सकते हैं।",
+      "इसे उन छोटी समुदायों के लिए चालू करें जहाँ उत्तर यह बता सकते हैं कि कौन कौन है, जैसे टीम में केवल कुछ महिलाएँ या किसी विशिष्ट टीम के केवल कुछ लोग।",
+    ],
+    publicAggregateSuppressionLearnMoreTitle:
+      "छिपे सार्वजनिक परिणामों के बारे में",
+    publicAggregateSuppressionConfirmTitle: "छिपे सार्वजनिक परिणाम सक्षम करें?",
+    publicAggregateSuppressionConfirmMessage: {
+      beforeEmphasis:
+        "छिपे सार्वजनिक परिणाम सक्षम करके इस सर्वेक्षण को सहेजने के बाद, ",
+      emphasis: "आप इस प्रश्न के लिए इसे बंद नहीं कर पाएंगे",
+      afterEmphasis: ". प्रतिभागी इसे गोपनीयता गारंटी के रूप में देखेंगे।",
+    },
+    publicAggregateSuppressionConfirmButtonLabel: "सक्षम करें",
+  },
   ar: {
     allowOptionalTextLabel: "السماح بنص اختياري مع هذا الخيار",
     publicAggregateSuppressionLabel: ({ maxHiddenResponses }) =>

@@ -37,6 +37,41 @@ export const commentSortingSelectorTranslations: Record<
     myStatements: "My statements",
     myStatementsDescription: "Statements you've submitted in this conversation",
   },
+  de: {
+    filterTitle: "Aussagen filtern nach:",
+    discover: "Entdecken",
+    discoverDescription:
+      "Stimmen Sie über neue und unterschiedliche Aussagen ab. Ihre Stimmen helfen, Ihre Meinungsgruppe zu finden und die Analyse zu verfeinern.",
+    new: "Neu",
+    newDescription: "Neueste Aussagen",
+    moderationHistory: "Moderationsverlauf",
+    moderationHistoryDescription:
+      "Moderierte Aussagen bleiben zur Nachvollziehbarkeit sichtbar, fließen aber nicht in die Analyse ein",
+    hidden: "Versteckt",
+    hiddenDescription: "Vom Moderationsteam entfernte Aussagen",
+    myVotes: "Meine Stimmen",
+    myVotesDescription: "Aussagen, über die Sie abgestimmt haben",
+    myStatements: "Meine Aussagen",
+    myStatementsDescription:
+      "Aussagen, die Sie in dieser Diskussion eingereicht haben",
+  },
+  hi: {
+    filterTitle: "कथन छाँटें:",
+    discover: "खोजें",
+    discoverDescription:
+      "नए और अलग-अलग नज़रियों वाले कथनों पर मत दें। इससे आपका मत समूह पहचानने और विश्लेषण को बेहतर बनाने में मदद मिलती है।",
+    new: "नया",
+    newDescription: "सबसे हाल के कथन",
+    moderationHistory: "मॉडरेशन का इतिहास",
+    moderationHistoryDescription:
+      "जिन कथनों पर मॉडरेशन हुआ है, वे पारदर्शिता के लिए दिखाई देते हैं, लेकिन विश्लेषण में शामिल नहीं होते",
+    hidden: "छिपा हुआ",
+    hiddenDescription: "मॉडरेटरों ने ये कथन हटा दिए हैं",
+    myVotes: "मेरे मत",
+    myVotesDescription: "वे कथन जिन पर आपने मतदान किया है",
+    myStatements: "मेरे कथन",
+    myStatementsDescription: "इस चर्चा में आपके द्वारा प्रस्तुत किए गए कथन",
+  },
   ar: {
     filterTitle: "تصفية المقترحات حسب:",
     discover: "استكشف",

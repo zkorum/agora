@@ -32,6 +32,36 @@ export const authSetupTranslations: Record<
     navigationFailedMessage:
       "Local logout finished, but the home page could not be opened. Try navigating again.",
   },
+  de: {
+    loggedOut: "Abgemeldet",
+    logoutFailed: "Ups! Abmelden fehlgeschlagen. Bitte versuchen Sie es erneut",
+    localOnlyTitle: "Nur dieses Gerät löschen?",
+    localOnlyMessage:
+      "Die Abmeldung vom Server konnte nicht bestätigt werden. Lokale Kontodaten und Schlüssel können weiterhin gelöscht werden, aber Server-Sitzungen können aktiv bleiben, bis Sie diese nach erneuter Anmeldung widerrufen oder sie ablaufen.",
+    clearLocalData: "Dieses Gerät löschen",
+    retry: "Erneut versuchen",
+    localCleanupFailedTitle: "Dieses Gerät konnte nicht bereinigt werden",
+    localCleanupFailedMessage:
+      "Lokale Kontodaten oder Schlüssel können auf diesem Gerät verbleiben. Bleiben Sie hier und versuchen Sie es erneut, um die sichere Abmeldung abzuschließen.",
+    navigationFailedTitle: "Startseite konnte nicht geöffnet werden",
+    navigationFailedMessage:
+      "Die lokale Abmeldung wurde abgeschlossen, aber die Startseite konnte nicht geöffnet werden. Versuchen Sie es bitte erneut mit der Navigation.",
+  },
+  hi: {
+    loggedOut: "लॉग आउट हो गए",
+    logoutFailed: "क्षमा करें! लॉगआउट विफल रहा। कृपया पुनः प्रयास करें",
+    localOnlyTitle: "केवल इस डिवाइस को साफ़ करें?",
+    localOnlyMessage:
+      "सर्वर से लॉगआउट की पुष्टि नहीं हो सकी। स्थानीय खाता डेटा और कुंजियाँ अभी भी मिटाई जा सकती हैं, लेकिन सर्वर सत्र तब तक सक्रिय रह सकते हैं जब तक आप दोबारा लॉग इन करने के बाद उन्हें रद्द नहीं कर देते या वे समाप्त नहीं हो जाते।",
+    clearLocalData: "इस डिवाइस को साफ़ करें",
+    retry: "फिर कोशिश करें",
+    localCleanupFailedTitle: "इस डिवाइस को साफ़ नहीं किया जा सका",
+    localCleanupFailedMessage:
+      "स्थानीय खाता डेटा या कुंजियाँ इस डिवाइस पर रह सकती हैं। सुरक्षित रूप से लॉग आउट करने के लिए यहीं रुकें और पुनः प्रयास करें।",
+    navigationFailedTitle: "होम पेज नहीं खोला जा सका",
+    navigationFailedMessage:
+      "स्थानीय लॉगआउट पूरा हो गया, लेकिन होम पेज नहीं खोला जा सका। कृपया पुनः नेविगेट करने का प्रयास करें।",
+  },
   es: {
     loggedOut: "Sesión cerrada",
     logoutFailed: "¡Ups! No se pudo cerrar sesión. Inténtelo de nuevo",

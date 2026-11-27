@@ -11,6 +11,12 @@ export const userMetadataTranslations: Record<
   en: {
     idVerified: "ID verified",
   },
+  de: {
+    idVerified: "ID verifiziert",
+  },
+  hi: {
+    idVerified: "आईडी सत्यापित",
+  },
   ar: {
     idVerified: "تم التحقق من الهوية",
   },

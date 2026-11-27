@@ -11,6 +11,12 @@ export const requestExportButtonTranslations: Record<
   en: {
     requestNewExport: "Request New Export",
   },
+  de: {
+    requestNewExport: "Neuen Export anfordern",
+  },
+  hi: {
+    requestNewExport: "नए निर्यात का अनुरोध करें",
+  },
   ar: {
     requestNewExport: "طلب تصدير جديد",
   },

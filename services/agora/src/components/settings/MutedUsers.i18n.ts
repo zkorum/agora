@@ -10,6 +10,14 @@ export const mutedUsersTranslations: Record<SupportedDisplayLanguageCodes, Muted
     title: "Muted users",
     emptyMessage: "You have no muted users",
   },
+  de: {
+    title: "Stummschaltende Teilnehmende",
+    emptyMessage: "Sie haben keine stummschaltenden Teilnehmenden",
+  },
+  hi: {
+    title: "म्यूट किए गए उपयोगकर्ता",
+    emptyMessage: "आपके कोई म्यूट किए गए उपयोगकर्ता नहीं हैं",
+  },
   ar: {
     title: "المستخدمون المكتومون",
     emptyMessage: "ليس لديك مستخدمون مكتومون",

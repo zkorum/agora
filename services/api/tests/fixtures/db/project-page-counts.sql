@@ -9,7 +9,7 @@ CREATE TYPE "public"."conversation_view_snapshot_reason_enum" AS ENUM('analysis_
 
 CREATE TYPE "public"."directory_visibility" AS ENUM('listed', 'unlisted');
 
-CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru');
+CREATE TYPE "public"."display_language_code" AS ENUM('en', 'es', 'fr', 'zh-Hant', 'zh-Hans', 'ja', 'ar', 'fa', 'he', 'ky', 'ru', 'de', 'hi');
 
 CREATE TYPE "public"."event_slug" AS ENUM('devconnect-2025');
 

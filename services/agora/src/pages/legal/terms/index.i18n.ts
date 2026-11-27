@@ -843,6 +843,1630 @@ export const termsOfServiceContent: Record<
       },
     ],
   },
+  de: {
+    termsOfService: "Nutzungsbedingungen",
+    automatedTranslationNoticeTitle: "Hinweis zur automatischen Übersetzung",
+    automatedTranslationNotice:
+      "Diese Übersetzung wurde automatisch generiert. Sollte es zu Abweichungen, Inkonsistenzen oder Widersprüchen kommen, hat die englische Version Vorrang und ist die maßgebliche Version.",
+    viewAuthoritativeEnglishVersion: "Verbindliche englische Fassung ansehen",
+    returnToTranslatedVersion: "Zur Übersetzung zurückkehren",
+    lastUpdatedLabel: "Zuletzt aktualisiert am",
+    lastUpdatedDate: "14. Oktober 2026",
+    introduction: [
+      {
+        text: 'Willkommen im Agora Citizen Network ("Agora")! Diese Allgemeinen Geschäftsbedingungen ("AGB") regeln Ihren Zugang zu und die Nutzung der Agora-Plattform, einschließlich unserer Website, mobiler Anwendungen und anderer Dienste (gemeinsam die "Dienste"). Durch den Zugriff auf oder die Nutzung der Dienste erklären Sie sich mit diesen AGB einverstanden. Wenn Sie nicht einverstanden sind, dürfen Sie die Dienste nicht nutzen.',
+      },
+    ],
+    sections: [
+      {
+        heading: "1. Ihr Zugang zu den Diensten",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora steht nur Nutzern ab 16 Jahren zur Verfügung. Durch die Nutzung von Agora bestätigen Sie, dass Sie dieses Alterskriterium erfüllen und dass Sie das Mindestalter gemäß den Gesetzen Ihres Wohnsitzlandes erreicht haben, um die Dienste nutzen zu können.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'Sie können veröffentlichte Agora-Inhalte ohne Registrierung einsehen. Die Teilnahme an Diskussionen, Umfragen oder Priorisierungsaktivitäten ("Inhalte") kann ein gerätebasiertes Gastkonto oder eine bestimmte Verifizierungsmethode erfordern. Verfügbare Methoden umfassen:',
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "Gerätebasierte Gastteilnahme, sofern zulässig. Zugang und Wiederherstellung hängen vom Beibehalten der ursprünglichen Geräte-Schlüssel ab.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "E-Mail-Verifizierung mittels Einmalcode. Dies beweist die Kontrolle über die E-Mail-Adresse, nicht die reale Identität oder Einzigartigkeit.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Anmeldung per Telefonnummer (über einen Einmalcode verifiziert)",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Pass-basierte Berechtigungsprüfung über ",
+                  },
+                  {
+                    text: "Rarimo",
+                    kind: "link",
+                    href: "https://rarimo.com/general-terms.html",
+                    external: true,
+                  },
+                  {
+                    text: ", oder Nachweise für die Teilnahme an Veranstaltungen über Zupass. Agora erhält die offengelegten Nachweis-Signale und nicht den zugrunde liegenden Reisepass oder das Ticket über diese Durchläufe. Die Registrierung bei Rarimo unterliegt dessen zusätzlichem Altersanforderung: Sie müssen 18 Jahre oder älter sein. Auch die geltenden Bedingungen des Anbieters regeln seinen Verifizierungsdienst.",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [{ text: "Sie dürfen die Dienste nicht nutzen, wenn:" }],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  { text: "Sie von Agora gesperrt oder entfernt wurden." },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Ihnen in Ihrer Gerichtsbarkeit die Nutzung der Dienste gesetzlich untersagt ist.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Sie keinen rechtsverbindlichen Vertrag mit Agora schließen können oder wenn Sie in Ihrer Gerichtsbarkeit noch nicht das Volljährigkeitsalter erreicht haben, es sei denn, Ihr gesetzlicher Vormund hat diese Bedingungen geprüft und zugestimmt.",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "2. Datenschutzerklärung",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Die Datenschutzerklärung von Agora erklärt, wie wir Ihre persönlichen Daten erheben, verwenden und schützen. Durch den Zugriff auf oder die Nutzung der Dienste stimmen Sie diesen Bedingungen zu. Ihre persönlichen Daten werden wie in der Datenschutzerklärung beschrieben verarbeitet, und wir bitten um Ihre Zustimmung, wo dies für bestimmte Verarbeitungsaktivitäten erforderlich ist. Für weitere Details besuchen Sie die ",
+              },
+              {
+                text: "Datenschutzerklärung von Agora",
+                kind: "link",
+                href: "/legal/privacy",
+              },
+              { text: "." },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "3. Ihre Nutzung der Dienste",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Vorbehaltlich dieser Bedingungen gewährt Ihnen Agora eine nicht-exklusive, nicht übertragbare, widerrufbare Lizenz zur Nutzung der Dienste. Sie dürfen nicht:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "Agora nutzen, um Fehlinformationen, Hassrede oder Belästigung zu verbreiten.",
+                  },
+                ],
+              },
+              { content: [{ text: "Illegale Aktivitäten durchführen." }] },
+              {
+                content: [
+                  {
+                    text: "Betrügerische Aktivitäten, Scams oder irreführende Praktiken durchführen oder fördern.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Sexuell explizite, gewalttätige oder anderweitig unangemessene Inhalte verbreiten oder fördern.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Agora nutzen, um Einzelpersonen oder Gruppen zu verfolgen, einzuschüchtern oder zu bedrohen.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Versuchen, Agoras Plattform, Algorithmen oder Funktionen zu manipulieren oder auszunutzen, um persönlichen oder kommerziellen Gewinn zu erzielen.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Aktivitäten durchführen, die Selbstverletzung, Suizid oder jegliche Form der Gefährdung fördern.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Rechte an geistigem Eigentum verletzen, einschließlich der unbefugten Verbreitung urheberrechtlich geschützter Materialien.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Die Dienste oder Inhalte kommerziell zu nutzen, zu verkaufen, zu übertragen, zuzuweisen, zu verbreiten, zu hosten oder anderweitig auszubeuten",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Versuchen, die Infrastruktur von Agora zu hacken, zu stören oder zu reverse-engineeren.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Automatisierte Werkzeuge zu verwenden, um Zugangsbeschränkungen zu umgehen oder Inhalte missbräuchlich zu extrahieren. Dies schließt die autorisierte Nutzung von aktivierten Exporten nicht aus.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Sich als ein anderer Nutzer, eine andere Einheit oder Organisation auszugeben.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Schädliche Software, Phishing-Versuche oder betrügerische Schemata zu teilen oder zu verbreiten.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Die Privatsphäre anderer Nutzer zu verletzen, indem Sie persönliche oder sensible Informationen ohne Zustimmung offenlegen, einschließlich, aber nicht beschränkt auf das Teilen persönlicher Adressen, Telefonnummern, Finanzdaten oder jeglicher privater Mitteilungen ohne ausdrückliche Erlaubnis.",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora behält sich das Recht vor, Funktionen jederzeit ohne vorherige Ankündigung zu ändern oder zu entfernen. Alle zukünftigen Verbesserungen, Updates oder Ergänzungen der Dienste unterliegen diesen Bedingungen, die periodisch überarbeitet werden können. Sie erkennen an, dass Agora gegenüber Ihnen oder Dritten für Änderungen, Aussetzungen oder Einstellung der Dienste oder ihrer Komponenten keine Haftung übernimmt.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "4. Ihre Inhalte",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'Die Dienste können verschiedene Arten von Inhalten enthalten, darunter Text, Links, Bilder, Videos, Audio und andere Materialien, die von Nutzern eingereicht werden ("Inhalte"). Agora garantiert nicht die Richtigkeit, Vollständigkeit oder Zuverlässigkeit jeglicher Inhalte und übernimmt dafür keine Verantwortung.',
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Durch das Einreichen von Inhalten bestätigen Sie, dass Sie alle notwendigen Rechte zum Teilen besitzen und dass diese keine geltenden Gesetze oder Rechte Dritter verletzen. Sie sind allein für Ihre Inhalte und alle daraus entstehenden Konsequenzen verantwortlich, wenn Sie diese auf Agora teilen.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Durch die Nutzung der Dienste behalten Sie das Eigentum an Ihren Inhalten, gewähren Agora jedoch eine weltweite, nicht-exklusive, gebührenfreie, unbefristete und unterlizenzierbare Lizenz, Ihre Inhalte zur Speicherung, Nutzung, Änderung, Verbreitung und Anzeige für die Funktionsfähigkeit, die Einhaltung und die betrieblichen Zwecke der Plattform zu verwenden. Dies beinhaltet das Recht von Agora, Ihre Inhalte für die Syndikation, Verbreitung, Aggregation oder Veröffentlichung durch Dritte zugänglich zu machen.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora behält sich das Recht vor, Inhalte nach eigenem Ermessen zu entfernen oder einzuschränken, wenn diese gegen diese Nutzungsbedingungen, geltendes Recht oder die Richtlinien der Plattform verstoßen.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Die oben genannte Inhaltslizenz überschreibt keine geltenden Datenschutz- oder Löschrechte und berechtigt nicht zum Umgehen von Zugriffsbeschränkungen einer Funktion. Das Löschen einer Aussage oder Ihres Kontos entfernt die betroffenen persönlichen Aussagen aus aktuellen Ansichten und zukünftigen Analysen und ersetzt deren Text in unseren Analyseständen durch '[gelöscht]', ohne deren Übersetzungen, Benutzernamen oder Profil-Link. Wir zensieren oder ungültig machen betroffene Exporte und andere kontrollierte Darstellungen. Die Kontolöschung behält notwendige Wiederherstellungsdaten privat für 15 Tage vor der endgültigen Bereinigung; die explizite Löschung einer Aussage hat keinen Wiederherstellungszeitraum. Die Kontolöschung entfernt unnötige Konten-/Anmeldeinformationen-Zuordnungen und zieht nicht selbst rechtmäßig gespeicherte Zustimmungs-/Ablehnungs-/Pass-Stimmen zu anderen berechtigten Aussagen zurück. Sichere historische Kennzahlen früherer Analysestände können eingefroren bleiben; die Löschung führt keine historischen Berechnungen erneut aus oder generiert historische KI-Beschreibungen neu. Wenn die selbst gespeicherte KI-Ausgabe gelöscht werden muss, werden bestehende Ausgaben und betroffene Übersetzungen gemäß der Datenschutzerklärung entfernt oder zensiert, ohne Ersatzbeschreibungen zu generieren. Andere private Teilnahmeaufzeichnungen, gespeicherte Eingaben und persönliche Zuordnungen unterliegen den zweckbasierten Aufbewahrungs- und Rücknahme-/Löschregeln der Datenschutzerklärung. Allein das Entfernen von Kontolinks wird nicht als Anonymisierung behandelt. Die Offenlegung von Exporten und bereits heruntergeladene oder unabhängig neu veröffentlichte Kopien werden wie in dieser Richtlinie erläutert behandelt.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "5. Inhalts- und Moderationsrichtlinien",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [{ text: "Sie dürfen keinen Inhalt posten, der:" }],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  { text: "Gewalt oder illegale Aktivitäten fördert." },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Hassrede, Belästigung oder persönliche Angriffe enthält.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Falschinformationen oder manipulativen Inhalt verbreitet.",
+                  },
+                ],
+              },
+              { content: [{ text: "Rechte an geistigem Eigentum verletzt." }] },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora verwendet ein Inhaltsmoderationssystem, das auf Benutzerberichten, automatisierter Erkennung und ",
+              },
+              {
+                text: "Gemeinschaftsrichtlinien",
+                kind: "link",
+                href: "/legal/guidelines",
+              },
+              {
+                text: ". Inhalte, die gegen diese Nutzungsbedingungen verstoßen, können entfernt werden, und wiederholte Übeltäter können mit einer Sperrung oder einem Ausschluss rechnen.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Um illegale Inhalte zu melden oder Bedenken hinsichtlich Moderation und Recht zu äußern, wenden Sie sich bitte an uns unter ",
+              },
+              {
+                text: "legal@zkorum.com",
+                kind: "link",
+                href: "mailto:legal@zkorum.com",
+              },
+              { text: "." },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "6. Inhalte und Werbung von Drittanbietern",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'Agora kann Links zu Websites, Produkten oder Dienstleistungen von Drittanbietern enthalten, die von Werbetreibenden, Partnern, verbundenen Unternehmen oder anderen Teilnehmenden geteilt werden ("Drittanbieterinhalte"). Agora kontrolliert, befürwortet oder übernimmt keine Verantwortung für die Richtigkeit, Legalität oder Zuverlässigkeit solcher externen Quellen.',
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Der Zugriff auf oder die Interaktion mit Drittanbieterinhalten erfolgt auf eigenes Risiko, und wir empfehlen Ihnen, relevante Bedingungen, Richtlinien oder Konditionen zu prüfen, bevor Sie mit externen Quellen interagieren oder Transaktionen abschließen.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora kann Werbung oder gesponserte Inhalte anzeigen. Die Art, das Targeting und die Häufigkeit von Anzeigen können sich ändern, und wir behalten uns das Recht vor, Anzeigen in Verbindung mit allen auf Agora bereitgestellten Inhalten oder Dienstleistungen zu platzieren. Ihre Interaktionen mit gesponserten Inhalten oder Anzeigen erfolgen ausschließlich auf eigenes Risiko, und wir garantieren weder die Richtigkeit, Qualität noch die Legitimität irgendeiner beworbenen Produkte oder Dienstleistungen.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "7. Geistiges Eigentum",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Sämtliches geistiges Eigentum, das mit Agora verbunden ist, einschließlich, aber nicht beschränkt auf Patente, Marken, Handelsnamen, Urheberrechte, Geschäftsgeheimnisse, proprietäre Daten, Know-how, moralische Rechte, Datenbankrechte, Designrechte, Algorithmen, Software, Computercode, visuelle Schnittstellen und alle anderen proprietären Rechte – ob registriert oder nicht – werden von Agora besessen oder lizenziert. Dies umfasst auch alle Anwendungen oder Rechte zur Anmeldung eines solchen geistigen Eigentums gemäß den Gesetzen jeder Gerichtsbarkeit.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Die unbefugte Nutzung, Vervielfältigung, Änderung, Verbreitung oder Ausbeutung des geistigen Eigentums von Agora ist strengstens untersagt. Dies umfasst, ist aber nicht beschränkt auf, Reverse-Engineering von Software, den Verkauf proprietärer Materialien oder die Nutzung jeglicher proprietärer Inhalte ohne vorherige schriftliche Genehmigung von Agora.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Jede Verletzung dieser Rechte an geistigem Eigentum kann rechtliche Schritte nach sich ziehen. Agora behält sich alle Rechte vor, die in diesen Bedingungen nicht ausdrücklich eingeräumt wurden.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "8. Beendigung der Dienste",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Sie können diese Bedingungen jederzeit und aus jedem Grund beenden, indem Sie die Löschung Ihres Kontos beantragen und die Nutzung der Dienste einstellen. Der gewöhnliche Kontozugriff wird sofort eingestellt. Sie können einen Antrag auf Löschung eines gewöhnlichen Kontos während des unten beschriebenen 15-tägigen Wiederherstellungsfensters explizit stornieren; die endgültige Löschung und die Beibehaltung von Aufzeichnungen unterliegen der Datenschutzerklärung.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Die folgenden Abschnitte bleiben von einer Beendigung dieser Bedingungen oder Ihres Kontos unberührt:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              { content: [{ text: "3. Ihre Nutzung der Dienste," }] },
+              { content: [{ text: "4. Ihre Inhalte," }] },
+              { content: [{ text: "8. Beendigung der Dienste," }] },
+              {
+                content: [
+                  { text: "9. Haftungsausschluss und Haftungsbeschränkung," },
+                ],
+              },
+              { content: [{ text: "10. Freistellung" }] },
+              { content: [{ text: "14. Sonstiges." }] },
+            ],
+          },
+          {
+            type: "subheading",
+            content: [{ text: "Wie Sie Ihr Konto löschen:" }],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "Verwenden Sie die verfügbare authentifizierte Kontolöschkontrolle oder kontaktieren Sie legal@zkorum.com für Unterstützung. Wir überprüfen das Eigentum mithilfe unterstützter Anmeldeinformationen oder eines Geräte-Schlüsselnachweises, je nach Kontotyp; dies impliziert keine Anforderung, uns ein Passfoto oder eine unbegrenzte Sammlung von Unterschriftennachweise zuzusenden.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Das Konto wird für den normalen Gebrauch unzugänglich, bestehende Sitzungen werden widerrufen und persönliche Aussagen werden aus aktuellen Ansichten und Analysen ausgeschlossen. Ihr Text wird in unseren Analyseständen ohne Übersetzungen, Benutzername oder Profil-Link mit '[gelöscht]' ersetzt, und betroffene Exporte sowie andere kontrollierte Anzeigen werden ungültig oder zensiert. Die Kontoschließung allein entzieht nicht rechtmäßig gespeicherte Stimmen zu anderen wählbaren Aussagen. Notwendiger Quelltext, Übersetzungen und Kontoverbindungen werden privat für die Wiederherstellung aufbewahrt und bei der endgültigen Bereinigung gelöscht. Das Konto ist nur strikt vor Ablauf der gespeicherten Frist, 15 Tage nach der Anfrage, wiederherstellbar. Die Wiederherstellung erfordert verifizierten Besitz und explizite Bestätigung zur Stornierung der Löschung; eine erneute Verbindung stellt das Konto nicht stillschweigend wieder her. Eine erfolgreiche Wiederherstellung etabliert eine neue autorisierte Sitzung anstatt alle widerrufenen Sitzungen zu reaktivieren.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Nach Ablauf der 15-tägigen Frist endet die Wiederherstellung und die endgültige Kontolöschung wird fällig. Die Bereinigung beginnt mit dem nächsten geplanten stündlichen Durchlauf und erfolgt ohne unangemessene Verzögerung, normalerweise innerhalb von sieben Tagen nach dieser Frist. Wir überwachen Fehler, versuchen es erneut und eskalieren verzögerte oder blockierte Vorgänge. Verzögerte Durchläufe und Wiederholungen setzen diesen Zeitraum nicht fort oder verlängern die Wiederherstellungs- oder geltenden gesetzlichen Fristen. Beschränkte Notfall-Backups können gelöschte Daten maximal weitere 30 Tage nach der tatsächlichen harten Löschung speichern, und die Löschung wird vor der Freigabe einer Wiederherstellung erneut angewendet.",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            content: [
+              {
+                text: "Individueller Inhalt, Anmeldeinformationen und geteilte Projekte:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              {
+                content: [
+                  { text: "Individueller Inhalt:", kind: "strong" },
+                  {
+                    text: " Aussagen, Diskussionen, Dokumente und andere Inhalte, die durch eine autorisierte Steuerung explizit gelöscht werden, werden sofort ausgeblendet und sind für eine sofortige endgültige Bereinigung vorgesehen. Sie unterliegen nicht dem 15-tägigen Wiederherstellungsfenster des Kontos. Das Löschen einer Aussage oder Ihres Kontos verwendet dieselbe Anzeige im Analysestand '[gelöscht]' und die Textzensurregel; Sie müssen Aussagen nicht separat vor der Kontoschließung löschen. Sichere, eingefrorene numerische Ergebnisse unterliegen der Datenschutzerklärung. Verwenden Sie die Kontrollen zum Rückzug von Stimmen, wenn Sie auch möchten, dass Stimmen zurückgezogen werden. Nach der endgültigen Entkopplung ist die gewöhnliche kontobasierte Verwaltung der beibehaltenen Abstimmungsaufzeichnungen nicht mehr möglich, aber Anträge auf anwendbare Rechte auf personenbezogene Daten bleiben über den Kontaktweg der Datenschutzerklärung möglich.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  { text: "Wiederherumfang:", kind: "strong" },
+                  {
+                    text: " Die Kontowiederherstellung kann erlaubten Text, Übersetzungen, Zuschreibungen und die aktuelle Berechtigung von Aussagen wiederherstellen, die nur durch Kontolöschung ausgeblendet wurden, einschließlich in unseren Analyseständen. Sie stellt nicht unabhängig gelöschte Inhalte/Projekte/Dokumente, zurückgezogene Stimmen, irreversible Gast-Zusammenführungen, einzugreifende Moderation oder separat gelöschte Ergebnisse oder doppelte beibehaltene Stimmen wieder her. Teilnehmende müssen die ursprünglichen Geräteschlüssel zur Eigentumsnachweisführung behalten. Die Wiederherstellung ist nach Ablauf der genauen Frist oder sobald eine irreversible Bereinigung begonnen hat, nicht verfügbar.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  { text: "Organisationen und Projekte:", kind: "strong" },
+                  {
+                    text: " Löschaktionen erfordern die entsprechenden Berechtigungen und sind nicht rückgängig zu machende Archive. Die Löschung eines Projekts entfernt enthaltene Diskussionen, Dokumente und eigene historische Berichte. Bevor eine Organisation gelöscht wird, müssen alle verbleibenden ausschließlich eigenen Projekte einem anderen überlebenden Eigentümer übertragen werden. Miteigene Projekte verbleiben bei ihren überlebenden Eigentümern, wobei die Beziehungen der gelöschten Organisation entfernt werden. Die separat autorisierte Löschung eines Projekts wird als eigene Löschung dieses Projekts behandelt, nicht als Konto-Wiederherstellungsaktion.",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Ein separater Antrag auf Löschung personenbezogener Daten kann ohne die Produktwiederherstellungsfrist bearbeitet werden, einschließlich Anträgen bezüglich gespeicherter Aufzeichnungen nach der Kontolöschung. Nutzen Sie den Kontaktweg für Anträge in der Datenschutzerklärung; wir bearbeiten diesen unverzüglich, vorbehaltlich einer verhältnismäßigen Überprüfung, wo dies erforderlich ist, und eng anwendbarer gesetzlicher Ausnahmen.",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "Kurzlebige Replay-Schutz-Hashes und notwendiger Einschränkungs-/Unterdrétat für ihren Schutzzweck, anstatt eines unbegrenzten Archivs vollständiger Authentifizierungs- oder Löschnachweise.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Betriebs-/Sicherheitsereignisprotokolle gemäß der geltenden Aufbewahrungsrichtlinie, einschließlich der 180-tägigen CloudWatch-Protokollgruppenrichtlinie. Diese Protokolle sind auf ihren Zweck beschränkt und unterscheiden sich von gespeicherten Kontodaten oder der Backup-Periode.",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Minimale Löschungsanweisungen, die erforderlich sind, um die Wiederherstellung gelöschter Informationen aus Backups zu verhindern, und eng definierte Beweise für einen bestimmten Vorfall, eine gesetzliche Verpflichtung oder einen Anspruch, sofern dies gerechtfertigt ist.",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Diese eingeschränkten Aufzeichnungen begründen keine allgemeine Lizenz oder Rechtfertigung, gelöschte Inhalte, individuelle Teilnehmermuster oder Zugangsdaten auf unbestimmte Zeit aufzubewahren. Kopien, die heruntergeladen oder unabhängig aufbewahrt werden, sowie die Verarbeitung durch den Prozessor/Empfänger werden in der Datenschutzerklärung erläutert. Dieser Abschnitt schränkt keine anwendbaren gesetzlichen Datenschutzrechte ein.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora behält sich das Recht vor, Konten zu sperren oder zu kündigen, die gegen diese Nutzungsbedingungen verstoßen.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "9. Haftungsausschluss und Haftungsbeschränkung",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'Die Dienste werden "wie besehen" ohne jegliche Gewährleistung bereitgestellt. Agora übernimmt keine Zusicherungen oder Garantien jeglicher Art, weder ausdrücklich, stillschweigend, gesetzlich noch anderweitig, einschließlich, aber nicht beschränkt auf Gewährleistungen der Marktgängigkeit, der Eignung für einen bestimmten Zweck, der Nichtverletzung von Rechten oder der Verfügbarkeit der Dienste.',
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora garantiert nicht, dass die Dienste fehlerfrei, unterbrechungsfrei, sicher sind oder dass Mängel behoben werden. Die Teilnehmenden übernehmen alle Risiken, die mit der Nutzung der Dienste verbunden sind.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Soweit gesetzlich zulässig, haftet Agora nicht für indirekte, zufällige, Folgeschäden, Strafschäden oder Sonderschäden, die sich aus oder in Zusammenhang mit der Nutzung der Dienste ergeben, sei es auf Vertragsgrundlage, unerlaubter Handlung, verschuldensunabhängiger Haftung oder einer anderen Rechtsgrundlage, selbst wenn Agora auf die Möglichkeit solcher Schäden hingewiesen wurde. Dies umfasst, ist aber nicht beschränkt auf, Schäden für entgangenen Gewinn, Datenverlust, Personenschäden, Sachschäden oder Betriebsunterbrechung.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Einige Gerichtsbarkeiten erlauben nicht die Ausschluss- oder Beschränkung bestimmter Schäden, daher können einige dieser Beschränkungen für Sie nicht gelten.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Obwohl Agora die Zero-Knowledge Proof (ZKP)-Technologie implementiert, um Datenschutz und Sicherheit zu verbessern, erkennen die Teilnehmenden an, dass keine Technologie unfehlbar ist. Es können unvorhergesehene Schwachstellen oder Mängel in der ZKP-Implementierung bestehen, die potenziell zu unbefugter Datenoffenlegung oder Datenschutzverletzungen führen könnten. Agora übernimmt keine Garantien hinsichtlich der absoluten Sicherheit oder Zuverlässigkeit von ZKP und übernimmt keine Haftung für unbeabsichtigte Folgen, die sich aus deren Nutzung ergeben.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Den Teilnehmenden wird empfohlen, zusätzliche Vorsichtsmaßnahmen zu treffen, wie beispielsweise die Nutzung von Anonymisierungstools wie Tor, um ihre IP-Adresse zu verschleiern, die Vermeidung der Weitergabe übermäßiger persönlicher Informationen in ihren Beiträgen und die Berücksichtigung von Schreibstilen und geteilten Merkmalen, die unbeabsichtigt ihre Identität durch Korrelation mit ihrem Reisepass und anderen aufgezeichneten Handlungen offenbaren könnten.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "10. Freistellung",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Außer dort, wo es gesetzlich verboten ist, erklären Sie sich damit einverstanden, Agora, seinen verbundenen Unternehmen und deren jeweiligen Direktoren, leitenden Angestellten, Mitarbeitern, Agenten, Auftragnehmern, Drittanbietern und Lizenzgebern von jeglichen Ansprüchen, Forderungen, Haftungen, Schäden, Verlusten und Kosten (einschließlich Anwaltskosten und -aufwendungen) schadlos zu halten, zu verteidigen und freizustellen, die sich aus oder in Zusammenhang mit ergeben:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: true,
+            marker: "lower-alpha",
+            items: [
+              {
+                content: [
+                  { text: "Ihrer Nutzung von Agora und seinen Diensten;" },
+                ],
+              },
+              { content: [{ text: "Ihrer Verletzung dieser Bedingungen;" }] },
+              {
+                content: [
+                  {
+                    text: "Ihrer Verletzung geltender Gesetze oder Vorschriften; oder",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "jedem Inhalt, den Sie auf Agora einreichen, posten oder teilen.",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora behält sich das Recht vor, die Verteidigung eines Sachverhalts zu übernehmen, für den Sie uns schadlos halten müssen, und Sie erklären sich damit einverstanden, voll mit unserer Verteidigung dieser Ansprüche zusammenzuarbeiten. Ihre Freistellungsverpflichtungen bleiben nach jeder Beendigung oder Aussetzung Ihrer Nutzung von Agora und seinen Diensten bestehen.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "11. Salvatorische Klausel",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Soweit möglich, sind die Bestimmungen dieser Nutzungsbedingungen so auszulegen, dass sie nach dem anwendbaren Recht gültig und durchsetzbar sind. Sollten jedoch eine oder mehrere Bestimmungen dieser Nutzungsbedingungen als ungültig, illegal oder nicht durchsetzbar erachtet werden, ganz oder teilweise, so wird der Rest einer solchen Bestimmung und dieser Nutzungsbedingungen nicht berührt und bleibt in vollem Umfang wirksam, als ob diese ungültige, illegale oder nicht durchsetzbare Bestimmung nie enthalten gewesen wäre.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "12. Anwendbares Recht und Streitbeilegung",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Diese Nutzungsbedingungen, einschließlich aller Fragen bezüglich ihrer Gültigkeit, Auslegung, Durchsetzung, Erfüllung oder Beendigung, sowie aller Streitigkeiten, die sich aus unerlaubten Handlungen, vorvertraglichen Pflichten oder außervertraglicher Haftung ergeben, unterliegen und werden in Übereinstimmung mit dem Recht Frankreichs ausgelegt. Es wird kein anderer Rechtswahlgrundsatz oder Kollisionsrecht angewendet, der die Gesetze einer anderen Gerichtsbarkeit anwenden würde als Frankreich.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Wir möchten, dass Sie gute Erfahrungen mit Agora machen. Bei Problemen oder Streitigkeiten erklären Sie sich damit einverstanden, zunächst eine informelle Lösung mit uns zu suchen. Für Rückmeldungen oder Anliegen schreiben Sie uns an: ",
+              },
+              {
+                text: "legal@zkorum.com",
+                kind: "link",
+                href: "mailto:legal@zkorum.com",
+              },
+              { text: "." },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Streitigkeiten, die nicht informell beigelegt werden können, unterliegen der ausschließlichen Gerichtsbarkeit der Gerichte von Neuilly Sur Seine.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "13. Änderungen dieser Nutzungsbedingungen",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora kann diese Nutzungsbedingungen von Zeit zu Zeit aktualisieren, um Änderungen unserer Dienste, gesetzlichen Anforderungen oder anderer betrieblicher Bedürfnisse widerzuspiegeln. Wenn wir wesentliche Änderungen vornehmen, werden wir die Nutzer über In-App-Benachrichtigungen, Banner oder Aufforderungen zur Bestätigung informieren, bevor die Änderungen in Kraft treten.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Indem Sie weiterhin auf Agora zugreifen oder es nutzen, nachdem die überarbeiteten Nutzungsbedingungen in Kraft getreten sind, erklären Sie sich mit den aktualisierten Bedingungen einverstanden. Wenn Sie den Änderungen nicht zustimmen, müssen Sie die Nutzung von Agora einstellen, bevor die Änderungen wirksam werden.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Wir ermutigen die Teilnehmenden, diese Bedingungen regelmäßig zu überprüfen, um über ihre Rechte und Pflichten bei der Nutzung von Agora informiert zu bleiben.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "14. Sonstiges",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Diese Bedingungen stellen zusammen mit der Datenschutzerklärung die gesamte Vereinbarung über Ihren Zugang zu und die Nutzung von Agora dar. Unsere Nichterfüllung oder Durchsetzung eines Rechts oder einer Bestimmung in diesen Bedingungen gilt nicht als Verzicht auf dieses Recht oder diese Bestimmung.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Sollte eine Bestimmung dieser Bedingungen für ungültig oder nicht durchsetzbar befunden werden, wird sie in dem größtmöglichen Umfang durchgesetzt, und die übrigen Bestimmungen bleiben in vollem Umfang in Kraft.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Sie dürfen Ihre Rechte oder Pflichten aus diesen Bedingungen nicht ohne unsere vorherige Zustimmung übertragen oder abtreten. Wir behalten uns jedoch das Recht vor, unsere Rechte und Pflichten aus diesen Bedingungen ohne Einschränkung frei zu übertragen.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "15. Kontaktinformationen",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Bei Fragen oder Bedenken bezüglich dieser Bedingungen kontaktieren Sie uns unter: ",
+              },
+              {
+                text: "legal@zkorum.com",
+                kind: "link",
+                href: "mailto:legal@zkorum.com",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Durch die Nutzung von Agora bestätigen und stimmen Sie diesen Bedingungen und allen zukünftigen Änderungen zu.",
+              },
+            ],
+          },
+          {
+            type: "address",
+            lines: [
+              "ZKORUM SAS",
+              "99 AVENUE ACHILLE PERETTI",
+              "92200 NEUILLY-SUR-SEINE",
+              "FRANCE",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  hi: {
+    termsOfService: "सेवा की शर्तें",
+    automatedTranslationNoticeTitle: "स्वचालित अनुवाद सूचना",
+    automatedTranslationNotice:
+      "यह अनुवाद स्वचालित रूप से किया गया है। यदि कोई विसंगति, असंगति या टकराव है, तो अंग्रेजी संस्करण ही मान्य और आधिकारिक संस्करण होगा।",
+    viewAuthoritativeEnglishVersion: "प्रामाणिक अंग्रेज़ी संस्करण देखें",
+    returnToTranslatedVersion: "अनुवाद पर वापस जाएँ",
+    lastUpdatedLabel: "अंतिम बार अपडेट किया गया:",
+    lastUpdatedDate: "14 अक्टूबर 2026",
+    introduction: [
+      {
+        text: 'Agora Citizen Network ("Agora") में आपका स्वागत है! ये नियम और शर्तें ("नियम") Agora प्लेटफॉर्म तक आपकी पहुँच और उपयोग को नियंत्रित करते हैं, जिसमें हमारी वेबसाइट, मोबाइल एप्लिकेशन और अन्य सेवाएँ शामिल हैं (सामूहिक रूप से, "सेवाएँ")। सेवाओं तक पहुँचने या उनका उपयोग करने पर, आप इन नियमों से बंधे रहने के लिए सहमत होते हैं। यदि आप सहमत नहीं हैं, तो आप सेवाओं तक पहुँच या उनका उपयोग नहीं कर सकते।',
+      },
+    ],
+    sections: [
+      {
+        heading: "1. सेवाओं तक आपकी पहुँच",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora केवल 16 वर्ष या उससे अधिक आयु के उपयोगकर्ताओं के लिए उपलब्ध है। Agora का उपयोग करके, आप पुष्टि करते हैं कि आप इस आयु आवश्यकता को पूरा करते हैं और आप अपने निवास देश के कानूनों द्वारा सेवाओं तक पहुँचने और उपयोग करने के लिए आवश्यक न्यूनतम आयु से अधिक हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'आप बिना पंजीकरण के प्रकाशित Agora सामग्री ब्राउज़ कर सकते हैं। चर्चाओं, सर्वेक्षणों या प्राथमिकता गतिविधियों ("सामग्री") में भाग लेने के लिए डिवाइस-आधारित अतिथि खाते या किसी विशेष सत्यापन विधि की आवश्यकता हो सकती है। उपलब्ध विधियों में शामिल हैं:',
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "अनुमत होने पर डिवाइस-आधारित अतिथि भागीदारी। पहुँच और रिकवरी मूल डिवाइस कुंजियों को बनाए रखने पर निर्भर करती है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "एक बार के कोड का उपयोग करके ईमेल सत्यापन। यह वास्तविक दुनिया की पहचान या विशिष्टता के बजाय ईमेल पते पर नियंत्रण साबित करता है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "फोन नंबर के माध्यम से लॉग-इन (एक बार के कोड के माध्यम से सत्यापित)",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "के माध्यम से पासपोर्ट-आधारित पात्रता सत्यापन ",
+                  },
+                  {
+                    text: "Rarimo",
+                    kind: "link",
+                    href: "https://rarimo.com/general-terms.html",
+                    external: true,
+                  },
+                  {
+                    text: ", या Zupass के माध्यम से इवेंट-टिकट पात्रता प्रमाण। Agora को इन प्रवाहों के माध्यम से अंतर्निहित पासपोर्ट या टिकट के बजाय प्रकट प्रमाण संकेत प्राप्त होते हैं। Rarimo पंजीकरण इसकी अतिरिक्त आयु आवश्यकता के अधीन है: आपकी आयु 18 वर्ष या उससे अधिक होनी चाहिए। प्रदाता की लागू शर्तें भी इसकी सत्यापन सेवा को नियंत्रित करती हैं।",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [{ text: "आपको सेवाओं का उपयोग नहीं करना चाहिए यदि:" }],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [{ text: "आपको Agora से निलंबित या हटाया गया है।" }],
+              },
+              {
+                content: [
+                  {
+                    text: "आपके क्षेत्राधिकार में सेवाओं का उपयोग करना कानूनी रूप से प्रतिबंधित है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "आप Agora के साथ बाध्यकारी अनुबंध नहीं बना सकते हैं, या यदि आप अपने क्षेत्राधिकार में वयस्कता की आयु से कम हैं, जब तक कि आपके कानूनी अभिभावक ने इन शर्तों की समीक्षा नहीं की है और सहमत नहीं हुए हैं।",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "2. गोपनीयता नीति",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora की गोपनीयता नीति बताती है कि हम आपके व्यक्तिगत डेटा को कैसे एकत्र करते हैं, उपयोग करते हैं और सुरक्षित रखते हैं। सेवाओं तक पहुँचने या उपयोग करने पर, आप इन शर्तों से सहमत होते हैं। आपके व्यक्तिगत डेटा को गोपनीयता नीति में बताए अनुसार संसाधित किया जाता है, और हम विशिष्ट प्रसंस्करण गतिविधियों के लिए आवश्यक होने पर आपकी सहमति का अनुरोध करते हैं। अधिक विवरण के लिए, कृपया देखें ",
+              },
+              {
+                text: "Agora Privacy Policy",
+                kind: "link",
+                href: "/legal/privacy",
+              },
+              { text: "." },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "3. सेवाओं का आपका उपयोग",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "इन शर्तों के अधीन, Agora आपको सेवाओं का उपयोग करने के लिए एक गैर-अनन्य, गैर-हस्तांतरणीय, वापस लेने योग्य लाइसेंस प्रदान करता है। आप ऐसा नहीं कर सकते:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "गलत सूचना, घृणास्पद भाषण या उत्पीड़न फैलाने के लिए Agora का उपयोग करें।",
+                  },
+                ],
+              },
+              { content: [{ text: "अवैध गतिविधियों में शामिल हों।" }] },
+              {
+                content: [
+                  {
+                    text: "धोखाधड़ी वाली गतिविधियों, घोटालों या भ्रामक प्रथाओं में शामिल हों या उनका प्रचार करें।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "यौन रूप से स्पष्ट, हिंसक या अन्यथा अनुचित सामग्री वितरित करें या उसका प्रचार करें।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "व्यक्तियों या समूहों का पीछा करने, धमकाने या धमकी देने के लिए Agora का उपयोग करें।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "व्यक्तिगत या व्यावसायिक लाभ के लिए Agora के प्लेटफॉर्म, एल्गोरिदम या सुविधाओं में हेरफेर करने या उनका फायदा उठाने का प्रयास करें।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "आत्म-हानि, आत्महत्या या किसी भी प्रकार के खतरे को प्रोत्साहित करने वाली गतिविधियों में शामिल हों।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "बौद्धिक संपदा अधिकारों का उल्लंघन करें, जिसमें कॉपीराइट सामग्री का अनधिकृत वितरण शामिल है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "सेवाओं या सामग्री का लाइसेंस देना, बेचना, स्थानांतरित करना, सौंपना, वितरित करना, होस्ट करना या अन्यथा व्यावसायिक रूप से उपयोग करना",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Agora के बुनियादी ढांचे को हैक करने, बाधित करने या रिवर्स-इंजीनियर करने का प्रयास करना।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "पहुंच प्रतिबंधों को बायपास करने या सामग्री को दुरुपयोगपूर्वक निकालने के लिए स्वचालित उपकरणों का उपयोग करना। यह सक्षम निर्यात के अधिकृत उपयोग को प्रतिबंधित नहीं करता है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "किसी अन्य उपयोगकर्ता, इकाई या संगठन का प्रतिरूपण करना।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "दुर्भावनापूर्ण सॉफ़्टवेयर, फ़िशिंग प्रयासों या धोखाधड़ी वाली योजनाओं को साझा करना या वितरित करना।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "बिना सहमति के व्यक्तिगत या संवेदनशील जानकारी प्रकट करके अन्य उपयोगकर्ताओं की गोपनीयता का उल्लंघन करना, जिसमें व्यक्तिगत पते, फ़ोन नंबर, वित्तीय विवरण, या किसी भी निजी संचार को स्पष्ट अनुमति के बिना साझा करना शामिल है, लेकिन इन्हीं तक सीमित नहीं है।",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora को बिना पूर्व सूचना के किसी भी समय सुविधाओं को संशोधित करने या हटाने का अधिकार सुरक्षित है। सेवाओं में कोई भी भविष्य के संवर्द्धन, अपडेट या जोड़ इन नियमों द्वारा शासित होंगे, जिन्हें समय-समय पर संशोधित किया जा सकता है। आप स्वीकार करते हैं कि Agora सेवाओं या उनके किसी भी घटक के किसी भी संशोधन, निलंबन या समाप्ति के लिए आपके या किसी तीसरे पक्ष के प्रति उत्तरदायी नहीं है।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "4. आपकी सामग्री",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'सेवाओं में विभिन्न प्रकार की सामग्री हो सकती है, जिसमें पाठ, लिंक, चित्र, वीडियो, ऑडियो और उपयोगकर्ता द्वारा प्रस्तुत अन्य सामग्री ("सामग्री") शामिल है। Agora किसी भी सामग्री की सटीकता, पूर्णता या विश्वसनीयता की गारंटी नहीं देता है और इसके लिए कोई जिम्मेदारी नहीं लेता है।',
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "सामग्री प्रस्तुत करके, आप पुष्टि करते हैं कि आपके पास इसे साझा करने के लिए सभी आवश्यक अधिकार हैं और यह किसी भी लागू कानून या तीसरे पक्ष के अधिकारों का उल्लंघन नहीं करता है। आप अपनी सामग्री और Agora पर इसे साझा करने से उत्पन्न होने वाले किसी भी परिणाम के लिए अकेले जिम्मेदार हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "सेवाओं का उपयोग करके, आप अपनी सामग्री के स्वामित्व को बनाए रखते हैं लेकिन Agora को प्लेटफ़ॉर्म कार्यक्षमता, अनुपालन और परिचालन उद्देश्यों के लिए आपकी सामग्री को संग्रहीत करने, उपयोग करने, संशोधित करने, वितरित करने और प्रदर्शित करने का एक विश्वव्यापी, गैर-अनन्य, रॉयल्टी-मुक्त, स्थायी और उप-लाइसेंस योग्य लाइसेंस प्रदान करते हैं। इसमें तीसरे पक्ष के भागीदारों द्वारा आपकी सामग्री को सिंडिकेशन, वितरण, एकत्रीकरण या प्रकाशन के लिए उपलब्ध कराने का अधिकार शामिल है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "यदि सामग्री इन नियमों, लागू कानूनों या प्लेटफ़ॉर्म नीतियों का उल्लंघन करती है तो Agora अपने विवेक पर सामग्री को हटाने या प्रतिबंधित करने का अधिकार सुरक्षित रखता है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "ऊपर दिया गया सामग्री लाइसेंस लागू डेटा संरक्षण या मिटाने के अधिकारों को ओवरराइड नहीं करता है या किसी सुविधा की पहुँच प्रतिबंधों को बायपास करने का अधिकार नहीं देता है। किसी कथन या आपके खाते को हटाने से वर्तमान दृश्यों और भविष्य के विश्लेषण से प्रभावित व्यक्तिगत कथन हट जाते हैं और हमारे चेकपॉइंट में उनके पाठ को '[हटाया गया]' से बदल दिया जाता है, उनकी अनुवाद, उपयोगकर्ता नाम या प्रोफ़ाइल लिंक के बिना। हम प्रभावित निर्यात और अन्य नियंत्रित प्रदर्शनों को हटा देते हैं या अमान्य कर देते हैं। खाता हटाने पर 15 दिनों तक आवश्यक पुनर्प्राप्ति डेटा निजी तौर पर रखा जाता है इससे पहले कि स्थायी रूप से साफ किया जाए; स्पष्ट कथन हटाने की कोई पुनर्प्राप्ति अवधि नहीं होती है। खाता हटाने से अनावश्यक खाता/क्रेडेंशियल जुड़ाव हट जाते हैं और यह स्वयं अन्य योग्य कथनों पर कानूनी रूप से रखे गए सहमत/असहमत/पास मतों को वापस नहीं लेता है। सुरक्षित ऐतिहासिक चेकपॉइंट संख्याएँ जमी हुई रह सकती हैं; विलोपन ऐतिहासिक गणनाओं को फिर से नहीं चलाता है या ऐतिहासिक AI विवरण उत्पन्न नहीं करता है। जहाँ संग्रहीत AI आउटपुट को स्वयं मिटाने की आवश्यकता होती है, मौजूदा आउटपुट और प्रभावित अनुवाद गोपनीयता नीति के तहत हटा दिए जाते हैं या हटा दिए जाते हैं बिना प्रतिस्थापन विवरण उत्पन्न किए। अन्य निजी भागीदारी रिकॉर्ड, रखे गए इनपुट और व्यक्तिगत मैपिंग गोपनीयता नीति के उद्देश्य-आधारित प्रतिधारण और निकासी/मिटाने के नियमों का पालन करते हैं। केवल खाता लिंक हटाने को गुमनामीकरण के रूप में नहीं माना जाता है। निर्यात प्रकटीकरण और पहले से डाउनलोड की गई या स्वतंत्र रूप से पुनर्मुद्रित प्रतियां उस नीति में बताए अनुसार संभाली जाती हैं।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "5. सामग्री और संयम नीतियाँ",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [{ text: "आप ऐसी सामग्री पोस्ट नहीं कर सकते जो:" }],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  { text: "हिंसा या अवैध गतिविधियों को बढ़ावा देती हो।" },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "घृणास्पद भाषण, उत्पीड़न या व्यक्तिगत हमलों को समाहित करती हो।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  { text: "गलत सूचना या हेरफेर करने वाली सामग्री फैलाती हो।" },
+                ],
+              },
+              {
+                content: [
+                  { text: "बौद्धिक संपदा अधिकारों का उल्लंघन करती हो।" },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora उपयोगकर्ता रिपोर्टों, स्वचालित पहचान और ",
+              },
+              {
+                text: "समुदाय दिशानिर्देश",
+                kind: "link",
+                href: "/legal/guidelines",
+              },
+              {
+                text: ". इन नियमों का उल्लंघन करने वाली सामग्री को हटाया जा सकता है और बार-बार उल्लंघन करने वालों पर निलंबन या प्रतिबंध लग सकता है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "अवैध सामग्री की रिपोर्ट करने या मॉडरेशन और कानूनी चिंताओं को दूर करने के लिए, कृपया हमसे संपर्क करें: ",
+              },
+              {
+                text: "legal@zkorum.com",
+                kind: "link",
+                href: "mailto:legal@zkorum.com",
+              },
+              { text: "." },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "6. तीसरे पक्ष की सामग्री और विज्ञापन",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'Agora में तीसरे पक्ष की वेबसाइटों, उत्पादों या सेवाओं के लिंक हो सकते हैं, जिन्हें विज्ञापनदाताओं, भागीदारों, संबद्धों या अन्य उपयोगकर्ताओं द्वारा साझा किया जा सकता है ("तीसरे पक्ष की सामग्री"). Agora ऐसी बाहरी स्रोतों की सटीकता, वैधता या विश्वसनीयता को नियंत्रित नहीं करता है, इसका समर्थन नहीं करता है या किसी भी जिम्मेदारी नहीं लेता है।',
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "तीसरे पक्ष की सामग्री तक पहुँचना या उसमें शामिल होना आपके अपने जोखिम पर है और हम आपको बाहरी स्रोतों के साथ इंटरैक्ट करने या लेनदेन पूरा करने से पहले किसी भी प्रासंगिक नियम, नीति या शर्तों की समीक्षा करने के लिए प्रोत्साहित करते हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora विज्ञापन या प्रायोजित सामग्री प्रदर्शित कर सकता है। विज्ञापनों का प्रकार, लक्ष्यीकरण और आवृत्ति बदल सकती है, और हम Agora पर प्रदान की गई किसी भी सामग्री या सेवा से संबंधित विज्ञापन लगाने का अधिकार सुरक्षित रखते हैं। प्रायोजित सामग्री या विज्ञापनों के साथ आपकी बातचीत पूरी तरह से आपके अपने जोखिम पर है, और हम किसी भी विज्ञापित उत्पाद या सेवा की सटीकता, गुणवत्ता या वैधता की गारंटी नहीं देते हैं।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "7. बौद्धिक संपदा",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora से जुड़ी सभी बौद्धिक संपदा, जिसमें पेटेंट, ट्रेडमार्क, व्यापार नाम, कॉपीराइट, व्यापार रहस्य, मालिकाना डेटा, नो-हाउ, नैतिक अधिकार, डेटाबेस अधिकार, डिज़ाइन अधिकार, एल्गोरिदम, सॉफ्टवेयर, कंप्यूटर कोड, दृश्य इंटरफ़ेस और कोई अन्य मालिकाना अधिकार शामिल हैं—चाहे पंजीकृत हों या अपंजीकृत—का स्वामित्व या लाइसेंस Agora के पास है। इसमें किसी भी क्षेत्राधिकार के कानूनों के तहत ऐसी बौद्धिक संपदा के पंजीकरण के लिए आवेदन करने के किसी भी आवेदन या अधिकार भी शामिल हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora की बौद्धिक संपदा का अनधिकृत उपयोग, पुनरुत्पादन, संशोधन, वितरण या शोषण सख्त वर्जित है। इसमें, लेकिन इन्हीं तक सीमित नहीं है, सॉफ्टवेयर का रिवर्स-इंजीनियरिंग करना, मालिकाना सामग्री बेचना या Agora की पूर्व लिखित अनुमति के बिना किसी भी मालिकाना सामग्री का उपयोग करना शामिल है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "इन बौद्धिक संपदा अधिकारों का कोई भी उल्लंघन कानूनी कार्रवाई का कारण बन सकता है। Agora इन नियमों के तहत स्पष्ट रूप से प्रदान किए गए सभी अधिकारों को सुरक्षित रखता है।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "8. सेवाओं की समाप्ति",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "आप अपने खाते को हटाने का अनुरोध करके और सेवाओं का उपयोग बंद करके किसी भी समय और किसी भी कारण से इन नियमों को समाप्त कर सकते हैं। सामान्य खाता एक्सेस तुरंत बंद हो जाता है। आप नीचे वर्णित 15-दिन की रिकवरी विंडो के दौरान सामान्य खाता-हटाने के अनुरोध को स्पष्ट रूप से रद्द कर सकते हैं; स्थायी विलोपन और रिकॉर्ड गोपनीयता नीति का पालन करते हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "ये अनुभाग इन नियमों या आपके खाते की किसी भी समाप्ति के बाद भी लागू रहेंगे:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              { content: [{ text: "3. सेवाओं का आपका उपयोग," }] },
+              { content: [{ text: "4. आपकी सामग्री," }] },
+              { content: [{ text: "8. सेवाओं की समाप्ति," }] },
+              {
+                content: [{ text: "9. अस्वीकरण और देयता की सीमा," }],
+              },
+              { content: [{ text: "10. क्षतिपूर्ति" }] },
+              { content: [{ text: "14. विविध।" }] },
+            ],
+          },
+          {
+            type: "subheading",
+            content: [{ text: "अपना खाता कैसे हटाएं:" }],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "उपलब्ध प्रमाणित खाता-हटाने नियंत्रण का उपयोग करें या सहायता के लिए legal@zkorum.com से संपर्क करें। हम खाते के प्रकार के अनुसार समर्थित क्रेडेंशियल्स या डिवाइस-की प्रमाण का उपयोग करके स्वामित्व सत्यापित करते हैं; इसका मतलब यह नहीं है कि हमें पासपोर्ट की छवि या हस्ताक्षरित प्रमाणों का कोई अनिश्चित संग्रह भेजने की आवश्यकता है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "खाता सामान्य उपयोग के लिए दुर्गम हो जाता है, मौजूदा सत्र रद्द कर दिए जाते हैं और व्यक्तिगत कथन वर्तमान दृश्यों और विश्लेषण से बाहर हो जाते हैं। उनके पाठ को हमारे चेकपॉइंट में बिना अनुवाद, उपयोगकर्ता नाम या प्रोफ़ाइल लिंक के '[हटाया गया]' से बदल दिया जाता है, और प्रभावित निर्यात और अन्य नियंत्रित प्रदर्शन अमान्य या संपादित कर दिए जाते हैं। केवल खाता बंद करने से अन्य योग्य कथनों पर कानूनी रूप से रखे गए मत वापस नहीं होते हैं। पुनर्प्राप्ति के लिए आवश्यक स्रोत पाठ, अनुवाद और खाता जुड़ाव निजी तौर पर रखे जाते हैं और स्थायी सफाई पर मिटा दिए जाते हैं। खाता केवल संग्रहीत समय सीमा से ठीक पहले, अनुरोध के 15 दिनों के बाद ही पुनर्प्राप्त किया जा सकता है। पुनर्प्राप्ति के लिए सत्यापित स्वामित्व और विलोपन रद्द करने की स्पष्ट पुष्टि की आवश्यकता होती है; पुनः कनेक्ट करने से खाता चुपचाप बहाल नहीं होता है। सफल पुनर्प्राप्ति सभी रद्द किए गए सत्रों को सक्रिय करने के बजाय एक नया अधिकृत सत्र स्थापित करती है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "15-दिन की समय सीमा पर, पुनर्प्राप्ति समाप्त हो जाती है और स्थायी खाता विलोपन होना आवश्यक हो जाता है। सफाई अगले निर्धारित प्रति घंटा स्वीप के माध्यम से शुरू होती है और बिना किसी अनुचित देरी के आगे बढ़ती है, जो सामान्यतः उस समय सीमा के सात दिनों के भीतर पूरी हो जाती है। हम विफलताओं की निगरानी करते हैं और पुनः प्रयास करते हैं और विलंबित या अवरुद्ध कार्य को बढ़ाते हैं। विलंबित स्वीप और पुनः प्रयास उस अवधि को फिर से शुरू नहीं करते हैं या पुनर्प्राप्ति या लागू कानूनी समय सीमाओं का विस्तार नहीं करते हैं। प्रतिबंधित आपदा-पुनर्प्राप्ति बैकअप वास्तविक हार्ड विलोपन के बाद अधिकतम 30 दिनों तक मिटाए गए डेटा को बनाए रख सकते हैं, और पुनर्स्थापना से पहले विलोपन फिर से लागू किया जाता है।",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            content: [
+              {
+                text: "व्यक्तिगत सामग्री, क्रेडेंशियल और साझा परियोजनाएँ:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              {
+                content: [
+                  { text: "व्यक्तिगत सामग्री:", kind: "strong" },
+                  {
+                    text: " अधिकृत नियंत्रण के माध्यम से स्पष्ट रूप से हटाए गए कथन, चर्चाएँ, दस्तावेज़ और अन्य सामग्री तुरंत छिपा दिए जाते हैं और तत्काल स्थायी सफाई के लिए पात्र होते हैं। उन्हें खाते की 15-दिन की पुनर्प्राप्ति विंडो प्राप्त नहीं होती है। किसी कथन या आपके खाते को हटाने से समान '[हटाया गया]' चेकपॉइंट प्रदर्शन और पाठ-रेडैक्शन नियम का उपयोग होता है; आपको खाता बंद करने से पहले कथनों को अलग से हटाने की आवश्यकता नहीं है। सुरक्षित जमा किए गए संख्यात्मक परिणाम गोपनीयता नीति का पालन करते हैं। यदि आप मत वापस लेना चाहते हैं तो मत-वापसी नियंत्रणों का उपयोग करें। स्थायी रूप से अनलिंक होने के बाद, बरकरार मतदान रिकॉर्ड का सामान्य खाता-आधारित प्रबंधन अनुपलब्ध हो जाता है, लेकिन गोपनीयता नीति के संपर्क मार्ग के माध्यम से लागू व्यक्तिगत डेटा अधिकार अनुरोध संभव रहते हैं।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  { text: "पुनर्प्राप्ति का दायरा:", kind: "strong" },
+                  {
+                    text: " खाता पुनर्प्राप्ति अनुमत पाठ, अनुवाद, श्रेय और कथनों की वर्तमान पात्रता को बहाल कर सकती है जो केवल खाता हटाने से छिपे हैं, जिसमें हमारे चेकपॉइंट भी शामिल हैं। यह स्वतंत्र रूप से हटाए गए सामग्री/परियोजनाओं/दस्तावेज़ों, वापस लिए गए मतों, अपरिवर्तनीय अतिथि विलयों, मध्यवर्ती मॉडरेशन या अलग से मिटाए गए आउटपुट, या डुप्लिकेट बरकरार मतों को बहाल नहीं करता है। स्वामित्व साबित करने के लिए अतिथियों को मूल डिवाइस कुंजियाँ रखनी होंगी। सटीक समय सीमा के बाद या एक बार अपरिवर्तनीय शुद्धिकरण शुरू होने के बाद पुनर्प्राप्ति उपलब्ध नहीं है।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  { text: "संगठन और परियोजनाएँ:", kind: "strong" },
+                  {
+                    text: " डिलीट करने के लिए संबंधित अनुमतियाँ चाहिए और यह अपरिवर्तनीय संग्रह नहीं है। प्रोजेक्ट डिलीट करने से उसमें शामिल चर्चाएँ, दस्तावेज़ और स्वामित्व वाली ऐतिहासिक रिपोर्ट हट जाएँगी। किसी संगठन को डिलीट करने से पहले, किसी भी शेष स्वामित्व वाले प्रोजेक्ट को किसी अन्य बचे हुए मालिक को स्थानांतरित करना होगा। सह-स्वामित्व वाले प्रोजेक्ट अपने बचे हुए मालिकों के पास रहेंगे, जिसमें डिलीट किए गए संगठन के संबंध हटा दिए जाएँगे। प्रोजेक्ट का अलग से अधिकृत डिलीट करना उस प्रोजेक्ट के अपने डिलीट होने जैसा माना जाता है, न कि खाता-पुनर्प्राप्ति कार्रवाई।",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "एक अलग लागू व्यक्तिगत-डेटा मिटाने का अनुरोध उत्पाद पुनर्प्राप्ति अवधि के बिना संभाला जा सकता है, जिसमें खाता डिलीट होने के बाद रखे गए रिकॉर्ड के बारे में अनुरोध भी शामिल हैं। गोपनीयता नीति में अधिकार-अनुरोध संपर्क मार्ग का उपयोग करें; हम इसे बिना अनुचित देरी के संभालते हैं, जहाँ आवश्यक हो आनुपातिक सत्यापन और संकीर्ण रूप से लागू कानूनी अपवादों के अधीन। गोपनीयता नीति में वर्णित उद्देश्यों के लिए डिलीट होने के बाद सीमित रिकॉर्ड रह सकते हैं:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                content: [
+                  {
+                    text: "छोटी अवधि के रीप्ले-सुरक्षा हैश और उनके सुरक्षा उद्देश्य के लिए आवश्यक प्रतिबंध/दमन स्थिति, न कि पूर्ण प्रमाणीकरण या डिलीट होने के प्रमाण का अनिश्चित संग्रह।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "लागू प्रतिधारण नीति के तहत परिचालन/सुरक्षा घटना रिकॉर्ड, जिसमें 180-दिन का CloudWatch लॉग-समूह नीति शामिल है। ये रिकॉर्ड अपने उद्देश्य तक सीमित हैं और रखे गए खाता डेटा या बैकअप अवधि से अलग हैं।",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "बैकअप से डिलीट की गई जानकारी की बहाली को रोकने के लिए न्यूनतम मिटाने के निर्देश, और किसी विशिष्ट घटना, कानूनी दायित्व या दावे के लिए संकीर्ण रूप से सीमित साक्ष्य जहाँ उचित हो।",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "इन प्रतिबंधित रिकॉर्ड्स से किसी सामान्य लाइसेंस या डिलीट की गई सामग्री, व्यक्तिगत भागीदारी पैटर्न या क्रेडेंशियल्स को अनिश्चित काल तक रखने का औचित्य नहीं बनता है। डाउनलोड की गई या स्वतंत्र रूप से रखी गई प्रतियां और प्रोसेसर/प्राप्तकर्ता द्वारा हैंडलिंग गोपनीयता नीति में समझाई गई है। इस अनुभाग में कोई भी लागू वैधानिक डेटा-सुरक्षा अधिकारों को सीमित नहीं करता है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora को इन नियमों का उल्लंघन करने वाले खातों को निलंबित या समाप्त करने का अधिकार सुरक्षित है।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "9. अस्वीकरण और दायित्व की सीमा",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: 'सेवाएं "जैसी हैं" प्रदान की जाती हैं, किसी भी प्रकार की वारंटी के बिना। Agora किसी भी प्रकार के प्रतिनिधित्व या वारंटी नहीं देता है, चाहे वह व्यक्त हो, निहित हो, वैधानिक हो या अन्यथा, जिसमें व्यापारिकता, किसी विशेष उद्देश्य के लिए उपयुक्तता, गैर-उल्लंघन या सेवाओं की उपलब्धता की वारंटी शामिल है, लेकिन इन्हीं तक सीमित नहीं है।',
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora यह गारंटी नहीं देता है कि सेवाएं त्रुटि-मुक्त, निर्बाध, सुरक्षित होंगी या दोषों को ठीक किया जाएगा। उपयोगकर्ता सेवाओं के उपयोग से जुड़े सभी जोखिम उठाते हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "कानून द्वारा अनुमत अधिकतम सीमा तक, Agora आपके द्वारा सेवाओं के उपयोग से उत्पन्न होने वाले किसी भी अप्रत्यक्ष, आकस्मिक, परिणामी, दंडात्मक या विशेष नुकसान के लिए जिम्मेदार नहीं है, चाहे वह अनुबंध, अपकृत्य, सख्त दायित्व या किसी अन्य कानूनी सिद्धांत पर आधारित हो, भले ही Agora को ऐसे नुकसान की संभावना के बारे में सूचित किया गया हो। इसमें, लेकिन इन्हीं तक सीमित नहीं है, लाभ के नुकसान, डेटा के नुकसान, व्यक्तिगत चोट, संपत्ति के नुकसान या व्यवसाय में रुकावट के लिए नुकसान शामिल है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "कुछ क्षेत्राधिकार निश्चित नुकसानों को बाहर करने या सीमित करने की अनुमति नहीं देते हैं, इसलिए इन सीमाओं में से कुछ आप पर लागू नहीं हो सकती हैं।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "हालांकि Agora गोपनीयता और सुरक्षा बढ़ाने के लिए Zero-Knowledge Proof (ZKP) तकनीक लागू करता है, उपयोगकर्ता स्वीकार करते हैं कि कोई भी तकनीक अचूक नहीं है। ZKP के कार्यान्वयन में अप्रत्याशित कमजोरियाँ या खामियाँ हो सकती हैं जो संभावित रूप से अनधिकृत डेटा के खुलासे या गोपनीयता भंग का कारण बन सकती हैं। Agora ZKP की पूर्ण सुरक्षा या विश्वसनीयता के संबंध में कोई गारंटी नहीं देता है और इसके उपयोग से उत्पन्न किसी भी अनपेक्षित परिणाम के लिए कोई दायित्व नहीं लेता है।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "उपयोगकर्ताओं को अतिरिक्त सावधानियां बरतने के लिए प्रोत्साहित किया जाता है, जैसे कि अपने IP पते को छिपाने के लिए Tor जैसे गुमनामी उपकरणों का उपयोग करना, अपनी लेखन में अत्यधिक व्यक्तिगत जानकारी साझा करने से बचना, और लेखन शैलियों और साझा विशेषताओं के प्रति सचेत रहना जो गलती से उनके पासपोर्ट और अन्य दर्ज की गई कार्रवाइयों के साथ सहसंबंध के माध्यम से उनकी पहचान प्रकट कर सकती हैं।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "10. क्षतिपूर्ति",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "कानून द्वारा निषिद्ध होने के अलावा, आप Agora, इसकी सहयोगी कंपनियों, और उनके संबंधित निदेशकों, अधिकारियों, कर्मचारियों, एजेंटों, ठेकेदारों, तृतीय-पक्ष सेवा प्रदाताओं और लाइसेंसदाताओं को निम्नलिखित से किसी भी दावे, मांग, देनदारियों, नुकसान, हानियों और खर्चों (कानूनी शुल्क और लागत सहित) से बचाने, क्षतिपूर्ति करने और हानिरहित रखने के लिए सहमत हैं जो इससे उत्पन्न होते हैं या इससे संबंधित हैं:",
+              },
+            ],
+          },
+          {
+            type: "list",
+            ordered: true,
+            marker: "lower-alpha",
+            items: [
+              { content: [{ text: "Agora और इसकी सेवाओं का आपका उपयोग;" }] },
+              { content: [{ text: "इन नियमों का आपका उल्लंघन;" }] },
+              {
+                content: [
+                  {
+                    text: "किसी भी लागू कानून या विनियम का आपका उल्लंघन; या",
+                  },
+                ],
+              },
+              {
+                content: [
+                  {
+                    text: "Agora पर आपके द्वारा सबमिट की गई, पोस्ट की गई या साझा की गई कोई भी सामग्री।",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora के पास उस मामले की रक्षा का नियंत्रण लेने का अधिकार सुरक्षित है जिसके लिए आपको हमें क्षतिपूर्ति करने की आवश्यकता है, और आप ऐसे दावों की हमारी रक्षा में पूरी तरह से सहयोग करने के लिए सहमत हैं। आपकी क्षतिपूर्ति जिम्मेदारियां Agora और इसकी सेवाओं के आपके उपयोग की किसी भी समाप्ति या निलंबन के बाद भी बनी रहेंगी।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "11. विभाज्यता",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "जहाँ तक संभव हो, इन नियमों और शर्तों का अर्थ इस तरह से लिया जाएगा कि वे लागू कानून के तहत वैध और लागू करने योग्य हों। हालाँकि, यदि इन नियमों और शर्तों का कोई एक या अधिक प्रावधान अमान्य, अवैध या लागू करने योग्य नहीं पाया जाता है, तो ऐसे किसी भी प्रावधान और इन नियमों और शर्तों का शेष भाग अप्रभावित रहेगा और पूरी शक्ति और प्रभाव के साथ जारी रहेगा, मानो ऐसा अमान्य, अवैध या लागू करने योग्य प्रावधान कभी इसमें शामिल ही नहीं था।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "12. शासी कानून और विवाद समाधान",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "ये नियम और शर्तें, उनकी वैधता, व्याख्या, प्रवर्तन, प्रदर्शन या समाप्ति से संबंधित किसी भी मुद्दे सहित, साथ ही लापरवाही के दावों, पूर्व-अनुबंध दायित्वों या अतिरिक्त-अनुबंध दायित्व से उत्पन्न होने वाले किसी भी विवाद, फ्रांस के कानूनों के अनुसार शासित और व्याख्यायित होंगे। किसी भी अन्य कानून के विकल्प या संघर्ष-कानून नियमों को कोई प्रभाव नहीं दिया जाएगा जो फ्रांस के अलावा किसी क्षेत्राधिकार के कानूनों को लागू करते हों।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "हम चाहते हैं कि Agora पर आपका अनुभव अच्छा रहे। कोई समस्या या विवाद होने पर आप सहमत हैं कि पहले हमारे साथ मिलकर उसे अनौपचारिक रूप से सुलझाने की कोशिश करेंगे। सुझाव या चिंताएँ साझा करने के लिए हमें इस पते पर लिखें: ",
+              },
+              {
+                text: "legal@zkorum.com",
+                kind: "link",
+                href: "mailto:legal@zkorum.com",
+              },
+              { text: "." },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "कोई भी विवाद जिसे अनौपचारिक रूप से हल नहीं किया जा सकता है, Neuilly Sur Seine की अदालतों के विशेष क्षेत्राधिकार के अधीन होगा।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "13. इन नियमों और शर्तों में परिवर्तन",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora समय-समय पर इन नियमों और शर्तों को हमारे सेवाओं, कानूनी आवश्यकताओं या अन्य परिचालन आवश्यकताओं में परिवर्तनों को दर्शाने के लिए अद्यतन कर सकता है। यदि हम महत्वपूर्ण संशोधन करते हैं, तो हम उपयोगकर्ताओं को इन-ऐप सूचनाओं, बैनरों या प्रॉम्प्ट के माध्यम से सूचित करेंगे जिनके लिए परिवर्तन लागू होने से पहले स्वीकृति की आवश्यकता होगी।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "संशोधित नियमों के लागू होने के बाद Agora का उपयोग जारी रखकर, आप अद्यतन नियमों से बंधे रहने के लिए सहमत होते हैं। यदि आप संशोधनों से सहमत नहीं हैं, तो आपको परिवर्तनों के प्रभावी होने से पहले Agora का उपयोग बंद कर देना चाहिए।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "हम उपयोगकर्ताओं को Agora का उपयोग करते समय अपने अधिकारों और दायित्वों के बारे में सूचित रहने के लिए इन नियमों की नियमित रूप से समीक्षा करने के लिए प्रोत्साहित करते हैं।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "14. विविध",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "ये नियम, गोपनीयता नीति के साथ मिलकर, Agora तक आपकी पहुंच और उपयोग को नियंत्रित करने वाले संपूर्ण समझौते का गठन करते हैं। इन नियमों के तहत किसी भी अधिकार या प्रावधान का प्रयोग या प्रवर्तन न करने का हमारा विफल होना ऐसे अधिकार या प्रावधान के त्याग के रूप में नहीं माना जाएगा।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "यदि इन नियमों का कोई भी प्रावधान अमान्य या अप्रवर्तनीय पाया जाता है, तो इसे अधिकतम अनुमेय सीमा तक लागू किया जाएगा, और शेष प्रावधान पूर्ण बल और प्रभाव में बने रहेंगे।",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "आप हमारी पूर्व सहमति के बिना इन नियमों के तहत अपने किसी भी अधिकार या दायित्व को सौंप या स्थानांतरित नहीं कर सकते। हालांकि, हम बिना किसी प्रतिबंध के इन नियमों के तहत अपने अधिकारों और दायित्वों को स्वतंत्र रूप से सौंपने का अधिकार सुरक्षित रखते हैं।",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        heading: "15. संपर्क जानकारी",
+        blocks: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "इन नियमों के संबंध में प्रश्नों या चिंताओं के लिए, हमसे संपर्क करें: ",
+              },
+              {
+                text: "legal@zkorum.com",
+                kind: "link",
+                href: "mailto:legal@zkorum.com",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                text: "Agora का उपयोग करके, आप इन नियमों और किसी भी भविष्य के संशोधन से सहमत और स्वीकार करते हैं।",
+              },
+            ],
+          },
+          {
+            type: "address",
+            lines: [
+              "ZKORUM SAS",
+              "99 AVENUE ACHILLE PERETTI",
+              "92200 NEUILLY-SUR-SEINE",
+              "FRANCE",
+            ],
+          },
+        ],
+      },
+    ],
+  },
   ar: {
     termsOfService: "شروط الخدمة",
     automatedTranslationNoticeTitle: "إشعار بالترجمة الآلية",

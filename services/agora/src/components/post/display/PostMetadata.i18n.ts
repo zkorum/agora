@@ -54,6 +54,61 @@ export const postMetadataTranslations: Record<
     emailUpdatesPreferenceSaveError:
       "Couldn’t save your email update preference.",
   },
+  de: {
+    closeConfirmMessage:
+      "Sind Sie sicher, dass Sie diese Diskussion schließen möchten? Teilnehmende können keine neuen Aussagen oder Stimmen posten.",
+    closeConfirmButton: "Diskussion schließen",
+    reopenConfirmMessage:
+      "Diese Diskussion wieder öffnen? Teilnehmende können wieder Aussagen posten und abstimmen.",
+    reopenConfirmButton: "Diskussion wieder öffnen",
+    cancelButton: "Abbrechen",
+    closeSuccess: "Diskussion erfolgreich geschlossen",
+    openSuccess: "Diskussion erfolgreich geöffnet",
+    closeNotAllowed: "Sie sind nicht berechtigt, diese Diskussion zu schließen",
+    openNotAllowed: "Sie sind nicht berechtigt, diese Diskussion zu öffnen",
+    alreadyClosed: "Diese Diskussion ist bereits geschlossen",
+    alreadyOpen: "Diese Diskussion ist bereits geöffnet",
+    syncSuccess: "Erfolgreich von GitHub synchronisiert",
+    syncError: "Synchronisierung von GitHub fehlgeschlagen",
+    manageEmailUpdatesLabel:
+      "E-Mail-Benachrichtigungen senden und Verlauf einsehen",
+    viewEmailUpdateHistoryLabel: "E-Mail-Benachrichtigungsverlauf einsehen",
+    receiveEmailUpdatesLabel:
+      "E-Mail-Benachrichtigungen für diese Diskussion erhalten",
+    manageMyEmailUpdatesLabel:
+      "Meine E-Mail-Benachrichtigungen für diese Diskussion verwalten",
+    emailUpdatesPreferenceSaveEnabled:
+      "E-Mail-Benachrichtigungen für diese Diskussion sind aktiviert.",
+    emailUpdatesPreferenceSaveDisabled:
+      "E-Mail-Benachrichtigungen für diese Diskussion sind deaktiviert.",
+    emailUpdatesPreferenceSaveError:
+      "Die Speicherung Ihrer E-Mail-Update-Präferenz war nicht möglich.",
+  },
+  hi: {
+    closeConfirmMessage:
+      "क्या आप इस चर्चा को बंद करना चाहते हैं? उपयोगकर्ता नए कथन या मत पोस्ट नहीं कर पाएंगे।",
+    closeConfirmButton: "चर्चा बंद करें",
+    reopenConfirmMessage:
+      "क्या आप इस चर्चा को फिर से खोलना चाहते हैं? उपयोगकर्ता फिर से कथन पोस्ट और मत दे पाएंगे।",
+    reopenConfirmButton: "चर्चा फिर से खोलें",
+    cancelButton: "रद्द करें",
+    closeSuccess: "चर्चा सफलतापूर्वक बंद हो गई",
+    openSuccess: "चर्चा सफलतापूर्वक खोल दी गई",
+    closeNotAllowed: "आपको इस चर्चा को बंद करने की अनुमति नहीं है",
+    openNotAllowed: "आपको इस चर्चा को खोलने की अनुमति नहीं है",
+    alreadyClosed: "यह चर्चा पहले से ही बंद है",
+    alreadyOpen: "यह चर्चा पहले से ही खुली है",
+    syncSuccess: "GitHub से सफलतापूर्वक सिंक किया गया",
+    syncError: "GitHub से सिंक करने में विफल",
+    manageEmailUpdatesLabel: "ईमेल अपडेट भेजें और इतिहास देखें",
+    viewEmailUpdateHistoryLabel: "ईमेल अपडेट का इतिहास देखें",
+    receiveEmailUpdatesLabel: "इस चर्चा के लिए ईमेल अपडेट प्राप्त करें",
+    manageMyEmailUpdatesLabel: "इस चर्चा के लिए मेरे ईमेल अपडेट प्रबंधित करें",
+    emailUpdatesPreferenceSaveEnabled: "इस चर्चा के लिए ईमेल अपडेट चालू हैं।",
+    emailUpdatesPreferenceSaveDisabled: "इस चर्चा के लिए ईमेल अपडेट बंद हैं।",
+    emailUpdatesPreferenceSaveError:
+      "आपकी ईमेल अपडेट प्राथमिकता सहेजी नहीं जा सकी।",
+  },
   ar: {
     closeConfirmMessage:
       "هل أنت متأكد أنك تريد إغلاق هذه المحادثة؟ لن يتمكن المستخدمون من نشر مقترحات أو تصويتات جديدة.",

@@ -17,6 +17,19 @@ export const cooldownBannerTranslations: Record<
     cooldownEnded: "Cooldown ended. You can now request a new export.",
     viewLast: "View Last Export",
   },
+  de: {
+    cooldownSeconds: "Nächster Export in {seconds}s",
+    cooldownMinutes: "Nächster Export in {minutes}m",
+    cooldownEnded:
+      "Abklingzeit beendet. Sie können nun einen neuen Export anfordern.",
+    viewLast: "Letzten Export ansehen",
+  },
+  hi: {
+    cooldownSeconds: "अगला निर्यात {seconds}s में",
+    cooldownMinutes: "अगला निर्यात {minutes}m में",
+    cooldownEnded: "कूलडाउन समाप्त हो गया। अब आप नया निर्यात मांग सकते हैं।",
+    viewLast: "पिछला निर्यात देखें",
+  },
   ar: {
     cooldownSeconds: "يرجى الانتظار {seconds} ثانية قبل طلب تصدير آخر.",
     cooldownMinutes: "يرجى الانتظار {minutes} دقيقة قبل طلب تصدير آخر.",

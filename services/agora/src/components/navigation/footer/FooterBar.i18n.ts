@@ -19,6 +19,20 @@ export const footerBarTranslations: Record<
     footerNavigation: "Footer navigation",
     navigateTo: "Navigate to {destination}",
   },
+  de: {
+    home: "Startseite",
+    explore: "Entdecken",
+    dings: "Dings",
+    footerNavigation: "Fußzeilennavigation",
+    navigateTo: "Zu {destination} navigieren",
+  },
+  hi: {
+    home: "मुखपृष्ठ",
+    explore: "खोजें",
+    dings: "Dings",
+    footerNavigation: "फ़ुटर नेविगेशन",
+    navigateTo: "{destination} पर जाएँ",
+  },
   ar: {
     home: "الرئيسية",
     explore: "استكشاف",

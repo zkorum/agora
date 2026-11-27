@@ -62,6 +62,69 @@ export const conversationSurveyQuestionTranslations: Record<
     surveyChangedMessage:
       "This survey changed. Please review the updated question.",
   },
+  de: {
+    failedToLoadSurveyTitle: "Umfrage konnte nicht geladen werden",
+    tryAgainLabel: "Erneut versuchen",
+    questionProgress: "Frage {current} von {total}",
+    needsUpdateLabel: "Benötigt Aktualisierung",
+    requiredLabel: "Erforderlich",
+    optionalLabel: "Optional",
+    selectOptionLabel: "Option auswählen",
+    writeAnswerPlaceholder: "Ihre Antwort schreiben",
+    previousLabel: "Zurück",
+    finishLaterLabel: "Später beenden",
+    nextLabel: "Weiter",
+    reviewAnswersLabel: "Antworten überprüfen",
+    multiChoiceBetweenDescription:
+      "Wählen Sie zwischen den Optionen {min} und {max}.",
+    multiChoiceAtLeastDescription: "Wählen Sie mindestens {min} Optionen.",
+    optionalMultiChoiceBetweenDescription:
+      "Lassen Sie es leer oder wählen Sie zwischen den Optionen {min} und {max}.",
+    optionalMultiChoiceAtLeastDescription:
+      "Lassen Sie es leer oder wählen Sie mindestens {min} Optionen.",
+    chooseOneOptionDescription: "Wählen Sie eine Option.",
+    chooseZeroOrOneOptionDescription: "Wählen Sie null oder eine Option.",
+    publicAggregateSuppressionNotice:
+      "Öffentliche Ergebnisse können sehr kleine Gruppen aus Datenschutzgründen ausblenden.",
+    writeAnswerDescription: "Schreiben Sie Ihre Antwort unten.",
+    freeTextHelp: "{count} / {max} Zeichen. Mindestens {min} bei Beantwortung.",
+    conversationClosedMessage:
+      "Diese Diskussion ist nicht mehr für die Teilnehmenden offen.",
+    failedToSaveAnswerMessage:
+      "Es ist fehlgeschlagen, Ihre Antwort zu speichern.",
+    surveyChangedMessage:
+      "Diese Umfrage wurde geändert. Bitte überprüfen Sie die aktualisierte Frage.",
+  },
+  hi: {
+    failedToLoadSurveyTitle: "सर्वेक्षण लोड करने में विफल",
+    tryAgainLabel: "फिर से प्रयास करें",
+    questionProgress: "प्रश्न {current} में से {total}",
+    needsUpdateLabel: "अपडेट की आवश्यकता है",
+    requiredLabel: "आवश्यक",
+    optionalLabel: "वैकल्पिक",
+    selectOptionLabel: "एक विकल्प चुनें",
+    writeAnswerPlaceholder: "अपना उत्तर लिखें",
+    previousLabel: "पिछला",
+    finishLaterLabel: "बाद में समाप्त करें",
+    nextLabel: "आगे बढ़ें",
+    reviewAnswersLabel: "उत्तरों की समीक्षा करें",
+    multiChoiceBetweenDescription: "{min} और {max} विकल्पों के बीच चुनें।",
+    multiChoiceAtLeastDescription: "कम से कम {min} विकल्प चुनें।",
+    optionalMultiChoiceBetweenDescription:
+      "खाली छोड़ दें या {min} और {max} विकल्पों के बीच चुनें।",
+    optionalMultiChoiceAtLeastDescription:
+      "खाली छोड़ दें या कम से कम {min} विकल्प चुनें।",
+    chooseOneOptionDescription: "एक विकल्प चुनें।",
+    chooseZeroOrOneOptionDescription: "शून्य या एक विकल्प चुनें।",
+    publicAggregateSuppressionNotice:
+      "प्रतिभागियों की गोपनीयता की रक्षा के लिए सार्वजनिक परिणाम बहुत छोटे समूहों को छिपा सकते हैं।",
+    writeAnswerDescription: "अपना उत्तर नीचे लिखें।",
+    freeTextHelp: "{count} / {max} अक्षर। उत्तर देने पर न्यूनतम {min}।",
+    conversationClosedMessage: "यह चर्चा अब भागीदारी के लिए खुली नहीं है।",
+    failedToSaveAnswerMessage: "आपका उत्तर सहेजने में विफल रहा।",
+    surveyChangedMessage:
+      "इस सर्वेक्षण में बदलाव हुआ है। कृपया अद्यतन प्रश्न की समीक्षा करें।",
+  },
   ar: {
     failedToLoadSurveyTitle: "فشل تحميل الاستبيان",
     tryAgainLabel: "حاول مرة أخرى",

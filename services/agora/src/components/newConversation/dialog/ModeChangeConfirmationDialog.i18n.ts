@@ -24,6 +24,27 @@ export const modeChangeConfirmationDialogTranslations: Record<
     cancel: "Cancel",
     continue: "Continue",
   },
+  de: {
+    switchToImportMode: "In Importmodus wechseln?",
+    switchingWillClear:
+      "Der Wechsel in den Importmodus löscht die folgenden Felder aus dem Diskussionsentwurf:",
+    title: "Titel",
+    bodyText: "Textkörper",
+    settingsPreserved:
+      "Ihre anderen unterstützten Einstellungen werden beibehalten.",
+    cancel: "Abbrechen",
+    continue: "Weiter",
+  },
+  hi: {
+    switchToImportMode: "आयात मोड पर स्विच करें?",
+    switchingWillClear:
+      "आयात मोड पर स्विच करने से चर्चा ड्राफ्ट से निम्नलिखित फ़ील्ड साफ़ हो जाएंगे:",
+    title: "शीर्षक",
+    bodyText: "मुख्य पाठ",
+    settingsPreserved: "आपकी अन्य समर्थित सेटिंग्स संरक्षित रहेंगी।",
+    cancel: "रद्द करें",
+    continue: "जारी रखें",
+  },
   ar: {
     switchToImportMode: "التبديل إلى وضع الاستيراد؟",
     switchingWillClear:

@@ -52,6 +52,66 @@ export const surveyTabTranslations: Record<SupportedDisplayLanguageCodes, Survey
     surveyErrorMessage: "Unable to load the survey analysis. Please try again.",
     retrySurvey: "Retry loading",
   },
+  de: {
+    surveyTitle: "Umfrage",
+    myAnswersTitle: "Meine Antworten",
+    surveyResultsTitle: "Umfrageergebnisse",
+    surveySubtitle:
+      "Sehen Sie, wie jede Umfragefrage insgesamt oder innerhalb jeder Meinungsgruppe beantwortet wird.",
+    allGroups: "Alle Gruppen",
+    overall: "Gesamtbewertung",
+    suppressed: "Ausgeblendet",
+    myAnswersSavedMessage: "Ihre Antworten wurden gespeichert.",
+    myAnswersNeedUpdateMessage:
+      "Die Umfrage hat sich seit Ihrer Beantwortung geändert.",
+    myAnswersInProgressMessage: "Ihre Antworten sind noch nicht vollständig.",
+    myAnswersOptionalMessage:
+      "Sie können diese Umfrage beantworten, wenn Sie möchten.",
+    myAnswersRequiredMessage:
+      "Beantworten Sie die Umfrage, um an dieser Diskussion teilzunehmen.",
+    reviewMyAnswersLabel: "Überprüfen",
+    updateMyAnswersLabel: "Antworten aktualisieren",
+    continueSurveyLabel: "Weiter",
+    answerSurveyLabel: "Umfrage beantworten",
+    noSurveyResultsMessage: "Noch keine Umfrageergebnisse verfügbar.",
+    noGroupResultsMessage:
+      "Für diese Gruppe sind noch keine Umfrageergebnisse verfügbar.",
+    loadingSurvey: "Umfrage wird geladen...",
+    retryingSurvey: "Umfrage wird erneut geladen …",
+    surveyErrorTitle: "Umfrage konnte nicht geladen werden",
+    surveyErrorMessage:
+      "Die Analyse der Umfrage konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+    retrySurvey: "Neu laden",
+  },
+  hi: {
+    surveyTitle: "सर्वेक्षण",
+    myAnswersTitle: "मेरे उत्तर",
+    surveyResultsTitle: "सर्वेक्षण के नतीजे",
+    surveySubtitle:
+      "देखें कि प्रत्येक सर्वेक्षण प्रश्न का समग्र रूप से या प्रत्येक मत समूह के भीतर उत्तर कैसे दिया जाता है।",
+    allGroups: "सभी समूह",
+    overall: "कुल",
+    suppressed: "छिपाया गया",
+    myAnswersSavedMessage: "आपके उत्तर सहेजे गए हैं।",
+    myAnswersNeedUpdateMessage: "आपके उत्तर देने के बाद सर्वेक्षण बदल गया है।",
+    myAnswersInProgressMessage: "आपके उत्तर अभी पूरे नहीं हुए हैं।",
+    myAnswersOptionalMessage: "आप चाहें तो इस सर्वेक्षण का उत्तर दे सकते हैं।",
+    myAnswersRequiredMessage:
+      "इस चर्चा में भाग लेने के लिए सर्वेक्षण का उत्तर दें।",
+    reviewMyAnswersLabel: "समीक्षा करें",
+    updateMyAnswersLabel: "उत्तर अपडेट करें",
+    continueSurveyLabel: "जारी रखें",
+    answerSurveyLabel: "सर्वेक्षण का उत्तर दें",
+    noSurveyResultsMessage: "अभी कोई सर्वेक्षण परिणाम उपलब्ध नहीं है।",
+    noGroupResultsMessage:
+      "इस समूह के लिए कोई सर्वेक्षण परिणाम उपलब्ध नहीं है।",
+    loadingSurvey: "सर्वेक्षण लोड हो रहा है...",
+    retryingSurvey: "सर्वेक्षण फिर से लोड हो रहा है…",
+    surveyErrorTitle: "सर्वेक्षण लोड करने में विफल",
+    surveyErrorMessage:
+      "सर्वेक्षण विश्लेषण लोड नहीं किया जा सका। कृपया पुनः प्रयास करें।",
+    retrySurvey: "लोड करने का प्रयास करें",
+  },
   ar: {
     surveyTitle: "الاستبيان",
     myAnswersTitle: "إجاباتي",

@@ -52,6 +52,58 @@ const comparisonCopyByLocale: Record<Locale, ComparisonCopy> = {
     ],
     translationValues: ["✓ Built in, in the page", "Via Google Translate"],
   },
+  de: {
+    question: "Wie unterscheidet sich Agora von Pol.is?",
+    answer:
+      "Agora begleitet Gruppen vom ersten Konsens bis zur Entscheidung über gemeinsame Prioritäten. Pol.is war eine Inspiration; Agora ist aber keine Abspaltung der App. Im Diskussionsmodus macht die freie Python-Bibliothek [Red Dwarf](https://github.com/polis-community/red-dwarf) Gemeinsamkeiten und Unterschiede sichtbar. Im Priorisierungsmodus vergleichen die Teilnehmenden anschließend Vorschläge und entscheiden, was Vorrang hat. Die Tabelle zeigt die Standardversion von Pol.is. Andere Installationen oder Abspaltungen können davon abweichen.",
+    featureLabel: "Funktion",
+    features: {
+      openSource: "Open Source",
+      opinionMapping: "Meinungsbilder erstellen und Konsens finden",
+      llmLabels: "Benennung der Meinungsgruppen durch ein Sprachmodell",
+      wikiSurvey: "Jeweils eine Aussage anzeigen (Wiki-Umfrage)",
+      listView: "Listenansicht wie in einem Forum",
+      prioritization: "Nach dem Konsens Vorschläge priorisieren",
+      clusterCount:
+        "Die Moderationsleitung wählt die Anzahl der Meinungsgruppen",
+      clusterHistory: "Meinungsgruppen werden über die Zeit verfolgt",
+      login: "Teilnehmenden-Login",
+      projectPage: "Projektseite im eigenen Design",
+      translation: "Mehrsprachige Übersetzung",
+      community: "Community-Netzwerk",
+    },
+    loginValues: [
+      "✓ Anonym und/oder verifiziert (E-Mail, Telefon oder Zero-Knowledge-Proof)",
+      "Standardmäßig anonym",
+    ],
+    translationValues: ["✓ Direkt auf der Seite", "Über Google Übersetzer"],
+  },
+  hi: {
+    question: "Agora, Pol.is से किस प्रकार भिन्न है?",
+    answer:
+      "Agora की मदद से समूह पहले सहमति के बिंदु खोजते हैं और फिर मिलकर तय करते हैं कि किस काम को प्राथमिकता दी जाए। Pol.is से प्रेरणा ज़रूर मिली है, लेकिन Agora उसके कोड की अलग शाखा नहीं है। चर्चा मोड में [Red Dwarf](https://github.com/polis-community/red-dwarf) नाम की ओपन-सोर्स Python लाइब्रेरी राय का मानचित्र बनाती है। फिर प्राथमिकता निर्धारण मोड में प्रतिभागी प्रस्तावों की तुलना करते हैं। तालिका में Pol.is के मानक संस्करण से तुलना की गई है; दूसरे संस्करणों में सुविधाएँ अलग हो सकती हैं।",
+    featureLabel: "विशेषता",
+    features: {
+      openSource: "ओपन सोर्स",
+      opinionMapping: "मतों का मानचित्रण और आम सहमति का निर्माण",
+      llmLabels: "भाषा मॉडल से मत समूहों का नामकरण",
+      wikiSurvey: "एक बार में एक कथन देखना (विकी सर्वेक्षण)",
+      listView: "फ़ोरम की तरह सूची में सभी कथन देखना",
+      prioritization:
+        "प्राथमिकता निर्धारण: आम सहमति के बाद प्रस्तावों को रैंक करें",
+      clusterCount: "संचालक मत समूहों की संख्या चुनता है",
+      clusterHistory: "समय के साथ मत समूहों को ट्रैक किया जाता है",
+      login: "प्रतिभागी लॉगिन",
+      projectPage: "ब्रांडेड परियोजना पृष्ठ",
+      translation: "बहुभाषी अनुवाद",
+      community: "समुदाय नेटवर्क",
+    },
+    loginValues: [
+      "✓ गुमनाम और/या सत्यापित (ईमेल, फ़ोन या शून्य-ज्ञान प्रमाण)",
+      "डिफ़ॉल्ट रूप से गुमनाम",
+    ],
+    translationValues: ["✓ पेज में निर्मित", "Google Translate के माध्यम से"],
+  },
   fr: {
     question: "En quoi Agora diffère-t-il de Pol.is ?",
     answer:

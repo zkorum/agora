@@ -13,6 +13,14 @@ export const analysisOpinionTextTranslations: Record<
     deletedStatement: "[deleted]",
     moderatedStatement: "[moderated]",
   },
+  de: {
+    deletedStatement: "[gelöscht]",
+    moderatedStatement: "[moderiert]",
+  },
+  hi: {
+    deletedStatement: "[हटाया गया]",
+    moderatedStatement: "[मॉडरेशन हुआ]",
+  },
   ar: {
     deletedStatement: "[محذوفة]",
     moderatedStatement: "[خاضعة للإشراف]",

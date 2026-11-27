@@ -17,6 +17,18 @@ export const verifyIdentityTranslations: Record<
     verifyWithRarimo: "Verify with Rarimo",
     verifyWithPhone: "Verify with phone number",
   },
+  de: {
+    title: "Ihre Identität verifizieren",
+    description: "Wählen Sie eine Verifizierungsmethode",
+    verifyWithRarimo: "Mit Rarimo verifizieren",
+    verifyWithPhone: "Mit Telefonnummer verifizieren",
+  },
+  hi: {
+    title: "अपनी पहचान सत्यापित करें",
+    description: "एक सत्यापन विधि चुनें",
+    verifyWithRarimo: "Rarimo से सत्यापित करें",
+    verifyWithPhone: "फ़ोन नंबर से सत्यापित करें",
+  },
   ar: {
     title: "تحقق من هويتك",
     description: "اختر طريقة التحقق",

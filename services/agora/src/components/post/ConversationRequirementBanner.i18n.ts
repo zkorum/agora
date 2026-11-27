@@ -81,6 +81,90 @@ export const conversationRequirementBannerTranslations: Record<
     openSurveyLabel: "Open survey",
     startSurveyLabel: "Start survey",
   },
+  de: {
+    requiredAccessTitle: "Erforderliche Schritte abschließen",
+    requiredAccessMessage:
+      "Schließen Sie die erforderlichen Zugriffs-Schritte ab und fahren Sie dann mit der Umfrage fort.",
+    surveyAvailableTitle: "Umfrage verfügbar",
+    surveyCompleteTitle: "Umfrage abgeschlossen",
+    surveyUpdateTitle: "Umfrage-Update erforderlich",
+    surveyWithdrawnTitle: "Antworten auf die Umfrage zurückgezogen",
+    surveyInProgressTitle: "Umfrage läuft",
+    optionalSurveyTitle: "Optionale Umfrage",
+    requiredSurveyTitle: "Umfrage erforderlich",
+    surveyUnavailableTitle: "Umfrage nicht verfügbar",
+    ticketRequiredTitle: "Ticketprüfung erforderlich",
+    ticketVerifiedTitle: "Ticket verifiziert",
+    openViaOnboardingMessage:
+      "Schließen Sie die Einführung ab, um die Umfrage zu dieser Diskussion zu öffnen.",
+    verifyTicketMessage:
+      "Bitte verifizieren Sie zuerst Ihr Eventticket und fahren Sie dann mit der Umfrage fort.",
+    ticketRequiredMessage:
+      "Bitte verifizieren Sie Ihr Eventticket, bevor Sie an dieser Diskussion teilnehmen.",
+    ticketVerifiedMessage:
+      "Ihr Eventticket ist für diese Diskussion verifiziert.",
+    surveyUpToDateMessage: "Ihre Antworten sind für diese Diskussion aktuell.",
+    surveyChangedMessage:
+      "Diese Umfrage wurde geändert. Aktualisieren Sie Ihre Antworten, um weiterhin teilzunehmen.",
+    surveyWithdrawnMessage:
+      "Setzen Sie die Umfrage fort, wenn Sie erneut teilnehmen möchten.",
+    surveyInProgressAvailableMessage:
+      "Sie können jederzeit fortfahren oder Ihre gespeicherten Antworten überprüfen.",
+    surveyInProgressRequiredMessage:
+      "Fahren Sie mit der Umfrage fort, um die Teilnahme an dieser Diskussion zu ermöglichen.",
+    optionalSurveyMessage:
+      "Diese Diskussion hat eine Umfrage, die Sie jederzeit ausfüllen können.",
+    requiredSurveyMessage:
+      "Bitte schließen Sie die Umfrage ab, bevor Sie an dieser Diskussion teilnehmen.",
+    continueLabel: "Weiter",
+    reviewAnswersLabel: "Antworten überprüfen",
+    updateAnswersLabel: "Antworten aktualisieren",
+    resumeSurveyLabel: "Umfrage fortsetzen",
+    continueSurveyLabel: "Umfrage fortsetzen",
+    openSurveyLabel: "Umfrage öffnen",
+    startSurveyLabel: "Umfrage starten",
+  },
+  hi: {
+    requiredAccessTitle: "आवश्यक चरण पूरे करें",
+    requiredAccessMessage:
+      "आवश्यक पहुँच चरण पूरे करें, फिर सर्वेक्षण पर आगे बढ़ें।",
+    surveyAvailableTitle: "सर्वेक्षण उपलब्ध",
+    surveyCompleteTitle: "सर्वेक्षण पूरा हुआ",
+    surveyUpdateTitle: "सर्वेक्षण अपडेट की आवश्यकता है",
+    surveyWithdrawnTitle: "सर्वेक्षण के जवाब वापस ले लिए गए हैं",
+    surveyInProgressTitle: "सर्वेक्षण प्रगति पर है",
+    optionalSurveyTitle: "वैकल्पिक सर्वेक्षण",
+    requiredSurveyTitle: "सर्वेक्षण आवश्यक है",
+    surveyUnavailableTitle: "सर्वेक्षण उपलब्ध नहीं है",
+    ticketRequiredTitle: "टिकट सत्यापन आवश्यक है",
+    ticketVerifiedTitle: "टिकट सत्यापित है",
+    openViaOnboardingMessage:
+      "इस चर्चा सर्वेक्षण को खोलने के लिए ऑनबोर्डिंग के माध्यम से जारी रखें।",
+    verifyTicketMessage:
+      "पहले अपने इवेंट टिकट का सत्यापन करें, फिर सर्वेक्षण पर आगे बढ़ें।",
+    ticketRequiredMessage:
+      "इस चर्चा में भाग लेने से पहले अपने इवेंट टिकट का सत्यापन करें।",
+    ticketVerifiedMessage: "इस चर्चा के लिए आपका इवेंट टिकट सत्यापित है।",
+    surveyUpToDateMessage: "इस चर्चा के लिए आपके उत्तर अद्यतन हैं।",
+    surveyChangedMessage:
+      "इस सर्वेक्षण में बदलाव हुआ है। भाग लेने के लिए अपने उत्तर अपडेट करें।",
+    surveyWithdrawnMessage:
+      "यदि आप फिर से भाग लेना चाहते हैं तो सर्वेक्षण फिर से शुरू करें।",
+    surveyInProgressAvailableMessage:
+      "आप किसी भी समय जारी रख सकते हैं या अपने सहेजे गए उत्तरों की समीक्षा कर सकते हैं।",
+    surveyInProgressRequiredMessage:
+      "इस चर्चा में भाग लेने के लिए सर्वेक्षण जारी रखें।",
+    optionalSurveyMessage:
+      "इस चर्चा में एक सर्वेक्षण है जिसे आप किसी भी समय भर सकते हैं।",
+    requiredSurveyMessage: "इस चर्चा में भाग लेने से पहले सर्वेक्षण पूरा करें।",
+    continueLabel: "जारी रखें",
+    reviewAnswersLabel: "उत्तरों की समीक्षा करें",
+    updateAnswersLabel: "उत्तर अपडेट करें",
+    resumeSurveyLabel: "सर्वेक्षण फिर से शुरू करें",
+    continueSurveyLabel: "सर्वेक्षण जारी रखें",
+    openSurveyLabel: "सर्वेक्षण खोलें",
+    startSurveyLabel: "सर्वेक्षण शुरू करें",
+  },
   ar: {
     requiredAccessTitle: "أكمل الخطوات المطلوبة",
     requiredAccessMessage:

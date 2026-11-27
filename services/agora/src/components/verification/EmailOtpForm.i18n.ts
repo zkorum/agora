@@ -44,6 +44,47 @@ export const emailOtpFormTranslations: Record<
       "This email address doesn't seem to exist—please use a different one",
     disposable: "Temporary or disposable email addresses are not allowed",
   },
+  de: {
+    instructions:
+      "Geben Sie den 6-stelligen Code ein, den wir an Sie gesendet haben",
+    expiresIn: "Gültig in",
+    codeExpired: "Code abgelaufen",
+    changeEmail: "E-Mail ändern",
+    resendCodeIn: "Code in",
+    resendCode: "Code erneut senden",
+    pleaseEnterValidCode: "Bitte geben Sie einen gültigen 6-stelligen Code ein",
+    verificationSuccessful: "Anmeldung erfolgreich!",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt",
+    codeExpiredResend: "Code abgelaufen – senden Sie einen neuen Code an",
+    wrongCodeTryAgain: "Falscher Code – bitte erneut versuchen",
+    somethingWrong: "Hoppla! Etwas ist nicht in Ordnung",
+    tooManyAttempts:
+      "Zu viele Versuche – bitte warten Sie, bevor Sie einen neuen Code anfordern",
+    alreadyHasCredential:
+      "Sie haben bereits eine E-Mail-Adresse mit Ihrem Konto verknüpft",
+    unreachable:
+      "Diese E-Mail-Adresse scheint nicht zu existieren – bitte verwenden Sie eine andere",
+    disposable: "Temporäre oder Einweg-E-Mail-Adressen sind nicht gestattet",
+  },
+  hi: {
+    instructions: "कृपया वह 6-अंकीय कोड दर्ज करें जो हमने आपको भेजा है",
+    expiresIn: "समाप्त होने में",
+    codeExpired: "कोड समाप्त हो गया",
+    changeEmail: "ईमेल बदलें",
+    resendCodeIn: "कोड पुनः भेजें",
+    resendCode: "कोड पुनः भेजें",
+    pleaseEnterValidCode: "कृपया एक वैध 6-अंकीय कोड दर्ज करें",
+    verificationSuccessful: "लॉगिन सफल हुआ!",
+    accountMerged: "सफलता! आपके खाते मिला दिए गए हैं",
+    codeExpiredResend: "कोड समाप्त हो गया—एक नया कोड भेजें",
+    wrongCodeTryAgain: "गलत कोड—फिर से प्रयास करें",
+    somethingWrong: "ओह! कुछ गड़बड़ है",
+    tooManyAttempts:
+      "बहुत अधिक प्रयास—कृपया नया कोड मांगने से पहले प्रतीक्षा करें",
+    alreadyHasCredential: "आपके खाते से पहले से ही एक ईमेल पता जुड़ा हुआ है",
+    unreachable: "यह ईमेल पता मौजूद नहीं लगता—कृपया कोई दूसरा उपयोग करें",
+    disposable: "अस्थायी या डिस्पोजेबल ईमेल पते की अनुमति नहीं है",
+  },
   ar: {
     instructions: "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى",
     expiresIn: "ينتهي في",

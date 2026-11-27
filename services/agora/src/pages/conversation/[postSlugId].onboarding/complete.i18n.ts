@@ -25,6 +25,29 @@ export const conversationEmailUpdateOnboardingTranslations: Record<
     continueWithoutSavingLabel:
       "Continue without saving an Email Update choice",
   },
+  de: {
+    emailUpdateTitle: "Bleiben Sie auf dem Laufenden",
+    emailUpdateDescription:
+      "Erhalten Sie Updates zu neuen Aussagen, dem Fortschritt und den Ergebnissen der Konsultation.",
+    emailUpdateSummaryLoadError:
+      "Die Auswahlmöglichkeiten für den E-Mail-Update konnten nicht geladen werden. Sie können es erneut versuchen oder ohne Speichern einer Auswahl fortfahren.",
+    retryLabel: "Erneut versuchen",
+    emailUpdatePreferenceSaveError:
+      "Ihre Auswahl für den E-Mail-Update konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    continueWithoutSavingLabel:
+      "Ohne Speichern der E-Mail-Update-Auswahl fortfahren",
+  },
+  hi: {
+    emailUpdateTitle: "अपडेट से जुड़े रहें",
+    emailUpdateDescription:
+      "नए कथनों, प्रगति और परामर्श परिणामों पर अपडेट प्राप्त करें।",
+    emailUpdateSummaryLoadError:
+      "ईमेल अपडेट विकल्प लोड नहीं हो सके। आप पुनः प्रयास कर सकते हैं या विकल्प सहेजे बिना जारी रख सकते हैं।",
+    retryLabel: "फिर से प्रयास करें",
+    emailUpdatePreferenceSaveError:
+      "आपके ईमेल अपडेट विकल्प को सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।",
+    continueWithoutSavingLabel: "ईमेल अपडेट विकल्प सहेजे बिना जारी रखें",
+  },
   ar: {
     emailUpdateTitle: "مرحبًا بك في المحادثة",
     emailUpdateDescription:

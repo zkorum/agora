@@ -13,6 +13,14 @@ export const surveyOptionTextInputTranslations: Record<
     pleaseSpecifyOptional: "Please specify (optional)",
     textTooLong: "Please shorten your text.",
   },
+  de: {
+    pleaseSpecifyOptional: "Bitte spezifizieren (optional)",
+    textTooLong: "Bitte kürzen Sie Ihren Text.",
+  },
+  hi: {
+    pleaseSpecifyOptional: "कृपया निर्दिष्ट करें (वैकल्पिक)",
+    textTooLong: "कृपया अपना पाठ छोटा करें।",
+  },
   ar: {
     pleaseSpecifyOptional: "يرجى التوضيح (اختياري)",
     textTooLong: "يرجى تقصير النص.",

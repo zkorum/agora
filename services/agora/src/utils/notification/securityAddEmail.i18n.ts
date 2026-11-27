@@ -20,6 +20,22 @@ export const securityAddEmailTranslations: Record<
     action: "Add email address",
     addNow: "Add now",
   },
+  de: {
+    category: "Sicherheit",
+    title: "Weitere Anmeldemethode hinzufügen",
+    description:
+      "Die Rarimo-Anmeldung kann vorübergehend nicht verfügbar sein und die Telefonanmeldung kann gestört sein. Verifizieren Sie eine E-Mail-Adresse, damit Sie eine weitere Möglichkeit haben, auf Ihr Konto zuzugreifen.",
+    action: "E-Mail-Adresse hinzufügen",
+    addNow: "Jetzt hinzufügen",
+  },
+  hi: {
+    category: "सुरक्षा",
+    title: "साइन इन करने का कोई और तरीका जोड़ें",
+    description:
+      "Rarimo साइन-इन कुछ समय के लिए अनुपलब्ध हो सकता है, और फ़ोन साइन-इन बाधित हो सकता है। अपना खाता एक्सेस करने का कोई अन्य तरीका रखने के लिए एक ईमेल पता सत्यापित करें।",
+    action: "ईमेल पता जोड़ें",
+    addNow: "अभी जोड़ें",
+  },
   fr: {
     category: "Sécurité",
     title: "Ajoutez un autre moyen de connexion",

@@ -13,6 +13,14 @@ export const commentActionOptionsTranslations: Record<
     agoraOpinion: "Agora Statement",
     copiedToClipboard: "Link copied to clipboard",
   },
+  de: {
+    agoraOpinion: "Agora-Aussage",
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+  },
+  hi: {
+    agoraOpinion: "Agora कथन",
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी किया गया",
+  },
   ar: {
     agoraOpinion: "مقترح أجورا",
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",

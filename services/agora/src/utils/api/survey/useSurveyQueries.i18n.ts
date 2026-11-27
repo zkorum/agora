@@ -9,6 +9,8 @@ export const useSurveyQueriesTranslations: Record<
   UseSurveyQueriesTranslations
 > = {
   en: { originalContentNotFound: "Original content not found" },
+  de: { originalContentNotFound: "Ursprünglicher Inhalt nicht gefunden" },
+  hi: { originalContentNotFound: "मूल सामग्री नहीं मिली" },
   ar: { originalContentNotFound: "لم يتم العثور على المحتوى الأصلي" },
   es: { originalContentNotFound: "No se encontró el contenido original" },
   fa: { originalContentNotFound: "محتوای اصلی یافت نشد" },

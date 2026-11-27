@@ -37,6 +37,38 @@ export const consensusTabTranslations: Record<
     noDisagreementsMessage: "No consensus has emerged yet.",
     lowerRankedDivider: "Less statistically significant",
   },
+  de: {
+    agreementsTitle: "Zustimmung",
+    disagreementsTitle: "Ablehnung",
+    agreementsLongTitle: "Welche Aussagen finden in allen Meinungsgruppen {keyword}?",
+    disagreementsLongTitle: "Welche Aussagen stoßen in allen Meinungsgruppen auf {keyword}?",
+    agreementsKeyword: "Zustimmung",
+    disagreementsKeyword: "Ablehnung",
+    subtitleAgree:
+      "Diese Aussagen finden in allen Meinungsgruppen Zustimmung. Eine einfache Mehrheit über alle Stimmen hinweg reicht dafür nicht aus. Die statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    subtitleDisagree:
+      "Diese Aussagen stoßen in allen Meinungsgruppen auf Ablehnung. Eine einfache Mehrheit über alle Stimmen hinweg reicht dafür nicht aus. Die statistisch aussagekräftigsten Ergebnisse erscheinen zuerst.",
+    loadMore: "Alle laden",
+    noAgreementsMessage: "Es ist noch kein Konsens entstanden.",
+    noDisagreementsMessage: "Es ist noch kein Konsens entstanden.",
+    lowerRankedDivider: "Geringere statistische Aussagekraft",
+  },
+  hi: {
+    agreementsTitle: "समर्थन",
+    disagreementsTitle: "विरोध",
+    agreementsLongTitle: "किन कथनों से सभी मत समूह {keyword} हैं?",
+    disagreementsLongTitle: "किन कथनों से सभी मत समूह {keyword} हैं?",
+    agreementsKeyword: "सहमत",
+    disagreementsKeyword: "असहमत",
+    subtitleAgree:
+      "इन कथनों को हर मत समूह में समर्थन मिला है। केवल कुल मतों का बहुमत इसके लिए काफ़ी नहीं है। जिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    subtitleDisagree:
+      "इन कथनों का हर मत समूह में विरोध हुआ है। केवल कुल मतों का बहुमत इसके लिए काफ़ी नहीं है। जिन कथनों के लिए सांख्यिकीय प्रमाण सबसे मज़बूत हैं, वे पहले दिखते हैं।",
+    loadMore: "सभी लोड करें",
+    noAgreementsMessage: "अभी तक कोई सहमति नहीं बनी है।",
+    noDisagreementsMessage: "अभी तक कोई सहमति नहीं बनी है।",
+    lowerRankedDivider: "कमज़ोर सांख्यिकीय प्रमाण",
+  },
   ar: {
     agreementsTitle: "معتمدة",
     disagreementsTitle: "مرفوضة",

@@ -29,6 +29,32 @@ export const postTypeDialogTranslations: Record<
     importFromCsvDescription:
       "Import a Polis conversation from exported CSV files.",
   },
+  de: {
+    newConversation: "Neue Diskussion",
+    newConversationDescription:
+      "Erstellen Sie ein neues Diskussionsthema für Teilnehmende.",
+    newPrioritization: "Neue Priorisierung",
+    newPrioritizationDescription:
+      "Erstellen Sie eine Diskussion, in der Teilnehmende Aussagen nach Wichtigkeit mithilfe von Best-Worst Scaling ordnen.",
+    importFromPolis: "Von Polis URL importieren",
+    importFromPolisDescription:
+      "Importieren Sie eine bestehende Polis-Diskussion und führen Sie sie hier fort.",
+    importFromCsv: "Von CSV importieren",
+    importFromCsvDescription:
+      "Importieren einer Polis-Diskussion aus exportierten CSV-Dateien.",
+  },
+  hi: {
+    newConversation: "नई चर्चा",
+    newConversationDescription: "चर्चा के लिए एक नया विषय बनाएँ।",
+    newPrioritization: "प्राथमिकता निर्धारण शुरू करें",
+    newPrioritizationDescription:
+      "एक ऐसी चर्चा बनाएँ जहाँ प्रतिभागी सर्वश्रेष्ठ-सबसे खराब स्केलिंग का उपयोग करके कथनों को महत्व के अनुसार क्रम दें।",
+    importFromPolis: "Polis URL से आयात करें",
+    importFromPolisDescription: "Polis से मौजूदा चर्चा को आयात करें और यहाँ जारी रखें।",
+    importFromCsv: "CSV से आयात करें",
+    importFromCsvDescription:
+      "निर्यातित CSV फ़ाइलों से एक Polis चर्चा आयात करें।",
+  },
   ar: {
     newConversation: "محادثة جديدة",
     newConversationDescription: "إنشاء موضوع محادثة جديد للنقاش.",

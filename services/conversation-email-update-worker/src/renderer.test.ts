@@ -38,6 +38,8 @@ const actions = {
 
 const adminLabels: Record<SupportedDisplayLanguageCodes, string> = {
     en: "Admin Copy",
+    de: "Kopie für die Administration",
+    hi: "प्रशासक की प्रति",
     fr: "Copie admin",
     es: "Copia de administración",
     "zh-Hans": "管理员副本",

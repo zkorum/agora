@@ -7,6 +7,16 @@ export const projectAttributionTranslations = {
         projectOwnersTitle: "Project Owners",
         partnersTitle: "Partners",
     },
+    de: {
+        sponsorsTitle: "Sponsoren",
+        projectOwnersTitle: "Projektverantwortliche",
+        partnersTitle: "Partner",
+    },
+    hi: {
+        sponsorsTitle: "प्रायोजक",
+        projectOwnersTitle: "परियोजना के ज़िम्मेदार संगठन",
+        partnersTitle: "साझेदार",
+    },
     es: {
         sponsorsTitle: "Patrocinadores",
         projectOwnersTitle: "Responsables del proyecto",

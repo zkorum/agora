@@ -15,6 +15,16 @@ export const useZupassVerificationTranslations: Record<
     dialogClosedWithoutApproval: "Dialog closed without approving permissions",
     failedToConnect: "Failed to connect",
   },
+  de: {
+    connectionCancelled: "Verbindung vom Teilnehmenden abgebrochen",
+    dialogClosedWithoutApproval: "Dialog ohne Genehmigung geschlossen",
+    failedToConnect: "Verbindung fehlgeschlagen",
+  },
+  hi: {
+    connectionCancelled: "उपयोगकर्ता द्वारा कनेक्शन रद्द किया गया",
+    dialogClosedWithoutApproval: "अनुमति स्वीकृत किए बिना संवाद बंद हो गया",
+    failedToConnect: "कनेक्ट करने में विफल",
+  },
   ar: {
     connectionCancelled: "ألغى المستخدم الاتصال",
     dialogClosedWithoutApproval: "أُغلق مربع الحوار دون الموافقة على الأذونات",

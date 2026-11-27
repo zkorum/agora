@@ -87,6 +87,23 @@ export const administratorPremiumEntitlementApiTranslations: Record<
   AdministratorPremiumEntitlementApiTranslations
 > = {
   en,
+  de: {
+    failedToFetchEntitlements:
+      "Es ist fehlgeschlagen, die Premium-Berechtigungen abzurufen",
+    createdEntitlement: "Premium-Berechtigung erstellt",
+    failedToCreateEntitlement:
+      "Es ist fehlgeschlagen, die Premium-Berechtigung zu erstellen",
+    revokedEntitlement: "Premium-Berechtigung widerrufen",
+    failedToRevokeEntitlement:
+      "Es ist fehlgeschlagen, die Premium-Berechtigung zu widerrufen",
+  },
+  hi: {
+    failedToFetchEntitlements: "प्रीमियम सुविधाओं को प्राप्त करने में विफल",
+    createdEntitlement: "प्रीमियम सुविधा बनाई गई",
+    failedToCreateEntitlement: "प्रीमियम सुविधा बनाने में विफल",
+    revokedEntitlement: "प्रीमियम सुविधा रद्द कर दी गई",
+    failedToRevokeEntitlement: "प्रीमियम सुविधा रद्द करने में विफल",
+  },
   ar,
   es,
   fa,

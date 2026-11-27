@@ -1811,6 +1811,3580 @@ export const privacyPolicyContent = {
       },
     ],
   },
+  de: {
+    title: "Datenschutzerklärung",
+    automatedTranslationNotice: {
+      title: "Automatische Übersetzung",
+      statement:
+        "Diese Datenschutzerklärung wurde automatisch übersetzt. Die englische Version ist die einzige maßgebliche Version und hat im Falle von Unstimmigkeiten Vorrang.",
+      viewEnglish: "Verbindliche englische Fassung ansehen",
+      returnToTranslation: "Zur Übersetzung zurückkehren",
+    },
+    nodes: [
+      {
+        tag: "p",
+        children: [
+          {
+            tag: "strong",
+            children: ["Zuletzt aktualisiert am"],
+          },
+          ": 14. Oktober 2026",
+        ],
+      },
+      {
+        tag: "p",
+        children: [
+          " Das Agora Citizen Network wurde entwickelt von ",
+          {
+            tag: "a",
+            children: ["ZKorum SAS"],
+            href: "https://www.societe.com/societe/zkorum-984736173.html",
+            external: true,
+          },
+          ". Bei ZKorum glauben wir, dass Privatsphäre ein fundamentales Recht ist. Unsere Mission ist es, Teilnehmende zu befähigen, an politischer und sozialer Debatte teilzunehmen und gleichzeitig die Kontrolle über ihre Identität und persönlichen Daten zu behalten. ",
+        ],
+      },
+      {
+        tag: "p",
+        children: [
+          ' Diese Datenschutzerklärung erklärt, wie und warum Agora Citizen Network ("Agora", "wir", "uns" oder "ZKorum") Informationen über Sie sammelt, verwendet und teilt, wenn Sie unsere Website und mobilen Anwendungen nutzen (gemeinsam "Dienste") oder wenn Sie mit uns interagieren. Wir sind für die Erhebung und Nutzung Ihrer personenbezogenen Daten im Sinne dieser Datenschutzerklärung verantwortlich. ',
+        ],
+      },
+      {
+        tag: "p",
+        children: [
+          " Wenn Sie Fragen dazu haben, kontaktieren Sie uns bitte per E-Mail: ",
+          {
+            tag: "a",
+            children: ["legal@zkorum.com"],
+            href: "mailto:legal@zkorum.com",
+          },
+          ". Wenn Sie Einwohner Kaliforniens sind, möchten wir Sie auf Artikel 7 aufmerksam machen. ",
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["Sichtbarkeit von Inhalten und Teilnahmeaufzeichnungen"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Veröffentlichte Diskussionen, Aussagen, Ranglistenpunkte, Projektseiten und öffentliche Ergebnisse können grundsätzlich ohne Konto eingesehen werden, vorbehaltlich etwaiger implementierter Zugangsbeschränkungen. Teilnahmeinformationen können auch über die unten beschriebenen erlaubten Exporte offengelegt werden. Authentifizierungsdaten, private Schlüssel und private Kontoeinstellungen werden nicht als Teil dieser Exporte veröffentlicht. Teilnehmeridentifikatoren, Inhalte und anderer Kontext können es ermöglichen, Aufzeichnungen einer Person zuzuordnen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Sie sind nicht verpflichtet, ein Konto zu erstellen, um Agora zu durchsuchen. Um an Diskussionen teilzunehmen und mit Inhalten zu interagieren, können Sie: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Als Gast durchsuchen:"],
+                  },
+                  " Sie können ohne Registrierung durchsuchen und teilnehmen, wenn die Diskussion dies zulässt. Die Teilnahme erstellt ein gerätebasiertes Konto, das mit einem kryptografischen öffentlichen Schlüssel-Identifikator (DID) verknüpft ist; die entsprechenden Schlüssel werden auf Ihrem Gerät gespeichert. Der Gastzugriff und die Wiederherstellung hängen davon ab, dass Sie die ursprünglichen Geräteschlüssel behalten. Das Löschen des Browser-Speichers oder der Verlust des Geräts kann verhindern, dass Sie den Besitz dieses Gastkontos nachweisen können. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Soft Login (sitzungsbasierte Verifizierung):"],
+                  },
+                  " Verifizieren Sie mithilfe von ",
+                  {
+                    tag: "a",
+                    children: ["Zupass"],
+                    href: "https://zupass.org",
+                    external: true,
+                  },
+                  " zur Verifizierung von Veranstaltungstickets mittels Group Proof of Credentials (GPC). Wir erhalten einen Nachweis und einen ereignisspezifischen Identifikator, nicht das zugrunde liegende Ticket. Die Event-Verifizierung kann die Berechtigung für eine Diskussion feststellen, ist aber von der Registrierung mit einer E-Mail-, Telefon- oder Reisepass-Anmeldeinformation getrennt. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Registrierte Konten:"],
+                  },
+                  " Registrieren oder greifen Sie, wenn verfügbar, über eine der folgenden Methoden auf ein Konto zu. Diskussionen können eine bestimmte Verifizierungsmethode erfordern: ",
+                  {
+                    tag: "ul",
+                    children: [
+                      {
+                        tag: "li",
+                        children: [
+                          { tag: "strong", children: ["E-Mail-Adresse:"] },
+                          " Verifiziert mittels eines einmaligen Codes, der per E-Mail gesendet wird. Dies beweist die Kontrolle über die Adresse, nicht die reale Identität oder Einzigartigkeit einer Person. ",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["Telefonnummer:"],
+                          },
+                          " Verifiziert mittels eines einmaligen Codes, der per SMS gesendet wird ",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          {
+                            tag: "a",
+                            children: ["Rarimo"],
+                            href: "https://rarimo.com/privacy-notice.html",
+                            external: true,
+                          },
+                          ": Reisepass-basierte Zero-Knowledge Proof (ZKP) Verifizierung ",
+                        ],
+                      },
+                    ],
+                  },
+                  " E-Mail- und Telefonverifizierung erfordern, dass Agora die von Ihnen angegebene Adresse oder Nummer erhält und die Zustellung eines Verifizierungscodes arrangiert. Die Reisepassverifizierung verwendet einen Zero-Knowledge Proof; Agora erhält durch diese Verifizierung weder Ihr Reisepassbild, Reisepassnummer, Namen noch Foto. Wir erhalten die offengelegte Berechtigungsinformation des Nachweises gemäß Abschnitt 2. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              {
+                tag: "strong",
+                children: ["Kontoverbesserungen:"],
+              },
+              " Das Hinzufügen eines Nachweises kann Ihr gerätebasiertes Konto registrieren oder eine berechtigte Gastteilnahme in ein bestehendes registriertes Konto integrieren. Dies verknüpft die übertragene Aktivität mit diesem Konto auf unseren Servern. Widersprüchliche Datensätze werden gemäß den Kontomerger-Regeln behandelt; zwei registrierte Konten können über diesen Vorgang nicht zusammengeführt werden. Eine abgeschlossene Gastfusion ist nicht rückgängig zu machen, und die fusionierte Identität kann nicht als zweites Konto wiederhergestellt werden. Sie erhält nicht das 15-tägige Wiederherstellungsfenster für Kontolöschungen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Ihr Konto verfügt über einen gewählten oder automatisch generierten Benutzernamen. Ein Benutzername kann zusammen mit Ihren veröffentlichten Aussagen oder anderen öffentlichen Zuordnungen angezeigt werden und muss nicht Ihr echter Name sein. Wir speichern auch Ihre Spracheinstellungen, Präferenzen und autorisierte Organisations-/Projektrollen, um die Dienste bereitzustellen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Veröffentlichte Inhalte können von Suchmaschinen kopiert oder indiziert werden. Nicht gelistete oder nicht indizierte Diskussionen und Projekte sind von der normalen Entdeckung ausgeschlossen, können aber für Personen mit ihrem Link zugänglich bleiben; die Deaktivierung der Indizierung macht sie allein nicht vertraulich. Ob Ihre Aussagen oder Stimmen offengelegt werden, hängt von den unten beschriebenen Sichtbarkeits-, Zugriffs- und Exportregeln ab. ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["Wer kann Ihre Informationen sehen?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Die Sichtbarkeit hängt von der Kategorie der Informationen ab: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  "Veröffentlichte Aussagen, Inhalte von Diskussionen/Projekten, öffentliche Ergebnisse, angezeigte Benutzernamen und veröffentlichte Kontaktinformationen von Organisationen/Projekten können anderen Besuchern sichtbar sein.",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "E-Mail-Adressen, die zur Authentifizierung verwendet werden, Telefonmetadaten, aus Reisepässen abgeleitete Anmeldeinformationen, private Geräteschlüssel, private Einstellungen und Kontoverwaltungsinformationen werden nicht automatisch veröffentlicht.",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Einzelne Stimmen, Umfrageantworten und Rangfolgeentscheidungen werden mit Ihrem Konto auf unseren Servern verknüpft, wobei diese Verknüpfung beibehalten wird. Ihre Offenlegung hängt von den Aktivitäts- und Exportregeln ab; sie sind nicht alle vertraulich garantiert. Berechtigte Organisatoren können auf einzelne Umfrageantworten und vollständige Ergebnisse zugreifen, auch über Exporte hinweg. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Öffentliche Umfrage-Aggregierte können unterdrückt werden, um die Offenlegung kleiner Gruppen zu reduzieren. Der Zugriff des Organisators kann unterdrückte Aggregierte umfassen. Die Aggregation oder der Ersatz einer Konten-ID macht die Informationen nicht automatisch anonym.",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Wenn Exporte aktiviert sind, können registrierte Nutzer und gerätebasierte Gäste mit Zugriff auf eine Diskussion deren Standardexporte anfordern und herunterladen, auch wenn sie weder Organisator noch Teilnehmende sind. Standard-Aussagenexporte, wie comments.csv, enthalten den Text der Aussage, neu zugeordneten Autoren-IDs, Zeitstempel und die Gesamtzahlen zu Stimme zu/Stimme nicht zu/Unsicher; öffentliche Umfrage-Dateien können Fragen, Antwortoptionen und zulässige aggregierte Ergebnisse enthalten. Einzelne Umfrage-Antwort- und vollständige Umfrage-Ergebnisdateien erfordern Berechtigungen auf Eigentümerebene. Ein Link zu einer Diskussion ist keine Vertraulichkeitsgarantie, auch nicht für nicht gelistete Diskussionen.",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Wenn votes.csv oder ein anderer Export individueller Stimmen angeboten wird, können dessen Aufzeichnungen individuelle Werte für Stimme zu/Stimme nicht zu/Unsicher, IDs von Wähler/Teilnehmenden, Referenzen zu Aussagen und Zeitstempel enthalten. Eigentümer-Ebene Umfrage-Antwort-Exporte können Teilnehmer-IDs, ausgewählte Optionen, Antworten im Freitext, den Antwortstatus sowie Erstellungs-/Aktualisierungs-/Abschlusszeiten enthalten; vollständige Umfrage-Ergebnis-Exporte können Aggregierte ohne öffentliche Unterdrückung kleiner Gruppen enthalten. Der Inhalt und die zulässige Zielgruppe eines individuellen Teilnahme-Exports werden vor der Teilnahme für dieses Feature offengelegt. Das Dateiformat eines Exports macht dessen Aufzeichnungen nicht anonym und erweitert nicht, wer sie empfangen darf.",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Berichte, Moderationserklärungen und relevante Reporter-/Administrator-Identitäten stehen autorisiertem Personal oder Organisatoren zur Verfügung, die für deren Bearbeitung zuständig sind, anstatt eine öffentliche Aktivitätsgeschichte zu bilden. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Exportierte Teilnehmer-, Autoren- oder Wähler-IDs sind Bezeichnungen für Datensätze; eine neu zugeordnete participantId ist nicht Ihr Agora-Benutzername. Aktuelle Aussagenexporte verwenden neu zugeordnete Autoren-IDs. Ein Empfänger kann den exportierten Aussagetext, Zeitstempel oder anderen Kontext mit Aussagen vergleichen, die zusammen mit Benutzernamen in Agora angezeigt werden, eine exportierte ID manuell mit einem Benutzernamen oder einer Person verknüpfen und andere Datensätze verknüpfen, die dieselbe ID teilen. Geteilte IDs können Aussagen, alle enthaltenen Einzelstimmen und Umfrageantworten über Dateien innerhalb derselben Exportgenerierung verknüpfen. Das Entfernen eines Benutzernamensfeldes garantiert daher keine Anonymität. Freitextantworten, charakteristische Stimmungsverhalten und Ergebnisse kleiner Gruppen können ebenfalls jemanden identifizieren. Authentifizierungs-E-Mail-Adressen sind nicht in der Standard-Einzelumfrageantwort-CSV enthalten; eine Antwort kann jedoch Kontaktdaten enthalten, die Sie anzugeben wählen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Exportierbare Daten können als CSV-Dateien, ZIP-Archive mit mehreren Dateien oder in anderen unterstützten Tabellenkarten-, strukturierte Daten- oder Berichtsformaten bereitgestellt werden. Zukünftige Exporttypen könnten öffentlich angezeigte Benutzernamen als Urheberangabe sowie Teilnehmerbezeichnungen, veröffentlichten Inhalt und die für diesen Export genehmigte Teilnahme/Ergebnisse umfassen. Wir identifizieren zusätzliche Angaben zur Urheberschaft oder Teilnahme und deren Zielgruppe, bevor diese gelten, wobei jede gesetzlich vorgeschriebene Mitteilung oder Zustimmung eingeholt wird. Dies berechtigt nicht zum Export privater Authentifizierungsdaten oder zur Erweiterung des Zugriffs auf eingeschränkte Antworten. Die gleichen Zugriffs-, Aufbewahrungs- und Löschregeln gelten unabhängig vom Dateiformat. Empfänger können heruntergeladene Dateien aufbewahren und kombinieren und diese unabhängig erneut veröffentlichen; die erneute Veröffentlichung unterliegt dem geltenden Recht und allen relevanten Beschränkungen. Unser Löschprozess kann nicht jede unabhängig aufbewahrte Kopie aus der Ferne löschen, wie in Abschnitt 3.6 erläutert. ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["Geplante AT-Protokoll-Migration"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Wir planen, einige Agora-Funktionen auf das AT-Protokoll zu migrieren, die offene Netzwerktechnologie, die auch von Bluesky verwendet wird. Der Umfang und die Implementierung werden noch spezifiziert. Die Veröffentlichung des öffentlichen Protokolls könnte Aussagen, individuelle Stimmen und die damit verbundenen öffentlichen Identifikatoren unabhängigen Hosting-, Indexierungs- und Anwendungsdiensten zugänglich machen, einschließlich außerhalb des EWR. Persistente Identifikatoren und andere öffentliche Informationen könnten die Teilnahme über Dienste hinweg verknüpfen. Die Löschung aus Agora garantiert nicht die Entfernung von Kopien, die von diesen Diensten unabhängig aufbewahrt werden. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Für nicht indizierte Diskussionen, die einen eingeschränkten Zugriff ('privat' in der App) haben sollen, prüfen wir, ob wir deren Daten vom öffentlichen Protokoll ausschließen oder, sobald dies für den Einsatz geeignet ist, AT Protocol Spaces verwenden. Spaces ist ein sich entwickelndes Zugriffskontrollsystem, kein Ende-zu-Ende-Verschlüsselung: Autorisierte Leser, Hosting-Dienste und Anwendungen können die empfangenen Daten lesen und potenziell kopieren. Die Deaktivierung des Indexierens allein stellt keine Zugriffsbeschränkung dar. Die endgültigen Speichervorschriften, Leseberechtigungen, Identität und Löschregeln wurden noch nicht festgelegt. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Bevor wir eine Migration aktivieren, die die Verarbeitung oder Offenlegung Ihrer personenbezogenen Daten ändert, werden wir diese Richtlinie aktualisieren und Ihnen die relevanten Informationen zu Datenkategorien, Empfängern, Standorten und Übertragungsgarantien, öffentlichem oder eingeschränktem Zugriff, Speicherung, Löschung und verfügbaren Optionen zur Verfügung stellen. Wir werden, wo erforderlich, die Zustimmung einholen. Dieses Planungsbenachrichtigung autorisiert nicht, bestehende eingeschränkte Teilnahmen öffentlich zu machen oder die Rechtsgrundlage für deren Verarbeitung zu ändern. Die aktuellen Agora-Verarbeitungsregeln sind in den anderen Abschnitten dieser Richtlinie beschrieben. ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["Dienstleister Dritter"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Agora nutzt Dienstleister Dritter, die IP-Adressen und andere personenbezogene Daten verarbeiten können. Soweit möglich, konfiguriert Agora die Dienste so, dass sie EU-regionale Endpunkte verwenden oder EU-basierte Anbieter nutzen. Diese Dienste haben eigene Datenschutzerklärungen, und wir empfehlen den Teilnehmenden, diese zu überprüfen. ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Rarimo"],
+                    href: "https://rarimo.com/privacy-notice.html",
+                    external: true,
+                  },
+                  " (global) für Zero-Knowledge-Identitätsnachweise. Kann IP-Adressen für Sicherheits- und Dienstbetrieb verarbeiten. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Zupass"],
+                    href: "https://zupass.org",
+                    external: true,
+                  },
+                  " (global, Open-Source) für die Verifizierung von Veranstaltungstickets und Identitäten mittels Group Proof of Credentials (GPC). Kann IP-Adressen für den Dienstbetrieb verarbeiten. Zupass verwendet Simple Analytics für datenschutzfreundliche Web-Analysen. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Twilio"],
+                    href: "https://www.twilio.com/en-us/legal/privacy",
+                    external: true,
+                  },
+                  " Zur SMS-Verifizierung und Betrugsprävention. Twilio erhält die angegebene vollständige Telefonnummer und kann die Verifizierung und Netzwerkmetadaten verarbeiten. Agora speichert einen gepufferten kryptografischen Hash der vollständigen Nummer sowie teilweise Nummer-/Landesmetadaten und den Verifizierungsstatus, anstatt die vollständige Nummer in seiner Kontodatenbank zu speichern. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Cloudflare"],
+                    href: "https://www.cloudflare.com/privacypolicy/",
+                    external: true,
+                  },
+                  " Turnstile prüft Netzwerk-/Browser-Signale, einschließlich IP-Adressen, TLS-Fingerabdrücken, User-Agent-Informationen und der Website/Herkunft, um Menschen von Bots zu unterscheiden. Es verarbeitet diese Signale in unserem Namen, um Agora zu schützen und, wie in seinen eigenen Hinweisen beschrieben, um seinen Erkennungsdienst zu verbessern. Wenn Cloudflare Proxy-/CDN-/Sicherheitsdienste aktiviert sind, verarbeiten diese auch den Verkehr und Inhalt, der sie durchläuft, mit separater Anforderungs-/Sicherheitsprotokollierung. Diese Vorgänge werden nicht vom TypeScript-Logger von Agora gefiltert. Siehe auch das ",
+                  {
+                    tag: "a",
+                    children: ["Turnstile Privacy Addendum"],
+                    href: "https://www.cloudflare.com/turnstile-privacy-policy/",
+                    external: true,
+                  },
+                  ". ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Amazon Web Services"],
+                    href: "https://aws.amazon.com/privacy/",
+                    external: true,
+                  },
+                  " für die Infrastruktur und den Betrieb unten. Regionenwählbarer Hosting-, Speicher- und Betriebsdienste sind generell in eu-west-1 (Dublin) konfiguriert; die Bedrock-/Mistral AI-Verarbeitung nutzt us-east-1. IAM- und automatisierte KMS-gestützte Schutzmaßnahmen schützen autorisierten Dienstzugriff/Speicher und machen gespeicherte Daten nicht anonym. ",
+                  {
+                    tag: "ul",
+                    children: [
+                      {
+                        tag: "li",
+                        children: [
+                          "EC2 führt die Anwendung und unterstützende Dienste aus; Host-, Container- und Reverse-Proxy-Protokolle können Netzwerk-/Anforderungsmetadaten und Betriebsfehler unabhängig von Anwendungswerkzeugen protokollieren.",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "RDS/Aurora PostgreSQL speichert Konten-, Inhalts- und Teilnahme-Daten. Das Datenbank-Logging kann Verbindungs-, Abfrage- und Fehlerinformationen gemäß seiner Konfiguration protokollieren, getrennt vom SQL-Log-Filter der Anwendung. Automatische RDS-Backups haben derzeit eine Aufbewahrungsfrist von 8 Tagen; die Lösch-/Wiederherstellungsregeln und die maximale Backup-Obergrenze in Abschnitt 4 gelten für alle aufbewahrten Kopien.",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "S3 speichert statische Assets und dynamische Objekte wie Diskussionsexporte und hochgeladene Dateien. Aktive Assets/Dateien werden nicht gelöscht, nur weil eine Protokoll-Aufbewahrungsfrist oder eine Datenbank-Backup-Periode endet; der Lebenszyklus jedes Objekts wird durch seinen Zweck, die Löschanfrage und das Ablaufdatum des Exports bestimmt.",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "CloudWatch sammelt und speichert die an es gesendeten Protokolle, einschließlich relevanter Anwendung-/Worker-, Container-, Host- und Datenbankdiagnosen, sofern die Erfassung konfiguriert ist. Es wendet nicht automatisch die Redaktionsregeln der TypeScript-Anwendung auf Datensätze an, die von anderen Systemen generiert wurden.",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "SES empfängt die Empfängeradresse und den E-Mail-Inhalt, die zur Zustellung von Verifizierungscodes oder opt-in E-Mail-Benachrichtigungen zu Diskussionen benötigt werden. SNS verwaltet konfigurierte Zustellungs-/Rücklauf-/Beschwertereignisse, die Adressen, Anbieter-Identifikatoren und den Zustellkontext enthalten können.",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "Bedrock führt das Mistral-Modell für angeforderte Vorschläge, Beschreibungen/Korrekturen von Meinungsgruppen und die Übersetzung von Beschreibungen aus. Wir senden den relevanten Titel/Text, Aussagen oder Zusammenfassungen als Rohtext ohne begleitende Agora-Konten-UUIDs, Benutzernamen, E-Mail-Adressen, Telefonnummern oder Geräte-/Authentifizierungsbezeichner. Einige Operationen beinhalten Sprach-/Gruppenkontext und Inhalts-/Beschreibungs-IDs, um die Ausgaben ihren Quellen zuzuordnen. Identifizierende Informationen, die im Text enthalten sind, werden nicht automatisch entfernt. Die vom Kunden konfigurierte Bedrock-Aufrufloggung vollständiger Modell-Eingaben/Ausgaben in CloudWatch oder S3 ist deaktiviert; gewöhnliche Dienstbetriebsmetadaten und anwendbare Anbieterverarbeitung bleiben getrennt.",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Google Cloud Platform"],
+                    href: "https://cloud.google.com/terms/cloud-privacy-notice",
+                    external: true,
+                  },
+                  " Die Spracheerkennung ist ein automatischer Teil der Inhaltsverarbeitung und kann von Teilnehmenden nicht deaktiviert werden. Normalerweise läuft sie auf unserem Backend mit Lingua, einem statistischen Spracherkennungstool, ohne den Text an einen externen Detektor zu senden. In einigen Fällen verwendet das Backend stattdessen die Google Cloud-Erkennung und sendet den relevanten Text an us-central1 in den Vereinigten Staaten. Die optionale dynamische Übersetzung sendet ebenfalls den für die Übersetzung ausgewählten Text und Sprachanweisungen an diesen Dienst. Wir fügen keine Agora-Konten-/Kontakt-/Authentifizierungsbezeichner hinzu, aber identifizierende Informationen innerhalb des Textes können weiterhin verarbeitet werden. Die Deaktivierung der dynamischen Übersetzung deaktiviert nicht die Spracheerkennung oder deren Google-Fallback. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Plausible Analytics"],
+                    href: "https://plausible.io/data-policy",
+                    external: true,
+                  },
+                  " für cookielose Seitenaufrufs-/Nutzungsanalysen. Es verarbeitet die Seite und technische Informationen, die für die Zählung von Besuchen ohne eine persistente Werbeidentität notwendig sind; seine Datenrichtlinie erklärt, wie Netzwerk-/Browserinformationen zur Erstellung aggregierter Statistiken verwendet werden. Wir senden keine Kontodaten oder Diskussionsentwürfe als Analysewerte. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Sentry"],
+                    href: "https://sentry.io/privacy/",
+                    external: true,
+                  },
+                  " empfängt ausgewählte Frontend-Fehler-/Leistungsdiagnosen und maskierte, ereignisgesteuerte Wiedergabedaten, die über unsere EU-Ingestionskonfiguration gehostet werden. Diese können Browser-/OS-Details, technische Kontexte, Zeit-/Interaktionsinformationen, strukturelle Seitendaten und pseudonyme Pfade umfassen. Sentry verarbeitet auch die für die Ingestion verwendete Netzwerkverbindung. Die Speicherdauer variiert je nach Datenkategorie und Abonnement; ein ungelöstes Problem bedeutet nicht, dass jedes alte Ereignis unbegrenzt gespeichert wird. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Unser selbst gehosteter Reacher-Dienst empfängt die vollständige E-Mail-Adresse, die zur Beurteilung der Erreichbarkeit/des Status als Wegwerfadresse benötigt wird, und kann die Mailserver des Empfängers oder konfigurierte Anbieterprüfungen kontaktieren. Er hat seinen eigenen betrieblichen Protokollpfad in unserer Infrastruktur. Rarimo und Zupass behandeln ihre jeweiligen Nachweis-/Verifizierungsinteraktionen; Agora empfängt offengelegte Nachweis-Signale und Berechtigungsinformationen, nicht den zugrunde liegenden Reisepass oder Veranstaltungsticket über diese Nachweisflüsse. Auftragsverarbeitungsvereinbarungen und internationale Transfergarantien sind in Abschnitt 3 beschrieben. Die Nutzung von Tor kann die Offenlegung Ihrer Netzwerkadresse reduzieren, anonymisiert jedoch nicht den eingereichten Text oder die Kontobetätigkeit. ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["Cookies und Analysen"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Agora verwendet keine Werbung oder Cookies für das Cross-Site-Tracking und verkauft auch keine Daten für Werbung. Wir nutzen Plausible Analytics, einen in der EU ansässigen Analyse-Dienst, der keine Cookies verwendet, und Sentry für begrenzte Fehler- und Leistungsmessungen. Weitere Details finden Sie unter ",
+              {
+                tag: "a",
+                children: ["Plausible Analytics"],
+                href: "https://plausible.io/about",
+                external: true,
+              },
+              ". ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Notwendige Gerätespeicherung umfasst kryptografische Schlüssel und zustandsbezogene Daten in der Browser-Speicherung sowie gespeicherte Sprachen/Präferenzen und unveröffentlichte Entwürfe von Diskussionen/Aussagen. Lokale Entwürfe werden nicht routinemäßig hochgeladen, nur weil sie auf Ihrem Gerät gespeichert sind. Das Einreichen eines Entwurfs, die Anforderung eines Imports oder die Nutzung einer optionalen KI-Vorschlagsfunktion sendet die entsprechenden Eingaben an unsere Server und, falls erforderlich, an den Dienstleister. Sie können lokale Daten über die Browsereinstellungen löschen, aber das Löschen von Gastschlüsseln kann Ihre Möglichkeit, auf dieses Konto zuzugreifen oder es wiederherzustellen, entfernen. ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["1. Wann gilt diese Datenschutzerklärung?"],
+          },
+          {
+            tag: "p",
+            children: [
+              "1.1. Wir erfassen und verwenden Ihre personenbezogenen Daten, wenn Sie:",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  "unsere Website nutzen (https://agoracitizen.network/);",
+                ],
+              },
+              {
+                tag: "li",
+                children: ["unsere mobile App nutzen; und"],
+              },
+              {
+                tag: "li",
+                children: [
+                  " mit uns per E-Mail oder über einen anderen digitalen Kommunikationskanal kommunizieren. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 1.2. Diese Datenschutzerklärung kann wie in Artikel 8 dargelegt geändert werden. ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: [
+              "2. Welche personenbezogenen Daten verarbeiten wir und warum?",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Wir verarbeiten Ihre personenbezogenen Daten nur für einen bestimmten Zweck und soweit dies gesetzlich zulässig ist. Wir erklären unten, welche Daten wir verarbeiten, warum und welche Rechtsgrundlage dies hat. Wo eine Einwilligung erforderlich ist, bezieht sie sich auf die beschriebene Verarbeitung, und Ihre Widerrufsrechte sind in Abschnitt 6 erläutert. Informationen, die indirekt empfangen werden, einschließlich importierter Teilnahme- oder Projektkontaktdaten, sind unten aufgeführt. ",
+            ],
+          },
+          {
+            tag: "table",
+            children: [
+              {
+                tag: "thead",
+                children: [
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "th",
+                        children: ["Welche personenbezogenen Daten?"],
+                      },
+                      {
+                        tag: "th",
+                        children: ["Warum?"],
+                      },
+                      {
+                        tag: "th",
+                        children: ["Rechtsgrundlage?"],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                tag: "tbody",
+                children: [
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Gerätebezeichner (DID - Dezentraler Bezeichner)",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Geräte-öffentliche Schlüsselbezeichner, die mit Ihrem Konto, Geräte-/User-Agent-Informationen und dem Erstellungs-, Ablauf- und Widerrufsstatus der Sitzung verknüpft sind. Diese authentifizieren Anfragen, verwalten Sitzungen, verhindern die Wiederverwendung abgelaufener Anmeldeinformationen und unterstützen die verifizierte Wiederherstellung. Ein DID ist keine unbegrenzt wiederverwendbare Sitzung: Registrierte Gerätebezeichner können widerrufen werden, wenn eine Sitzung abläuft oder widerrufen wird. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Berechtigtes Interesse"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Soft Login – Event-Ticket-Verifizierung (Zupass)",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Wir speichern einen ereignisspezifischen Nullifikator, Ereignis-/Anbieterbezeichner und Verifizierungszeitstempel, um die Teilnahmeberechtigung zu prüfen und doppelte Nutzung zu verhindern. Wir erhalten das zugrunde liegende Ticket nicht über den Nachweis. Wenn ein optionaler Nachweis zusätzliche Ticketattribute offenlegt, werden diese nur für die relevante Berechtigungsprüfung verarbeitet. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Berechtigtes Interesse"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Authentifizierungsdaten – Telefonnummer",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Wir erhalten die von Ihnen zur Verifizierung und SMS-Zustellung angegebene Nummer. Die Kontos-/Authentifizierungsspeicherung enthält einen gepufferten Hash der vollständigen Nummer, der letzten beiden Ziffern, der anrufenden/telefonischen Ländercodes, der Pepper-Version, Zeitstempel, Code-/Herausforderungsstatus und Missbrauchszähler. Twilio erhält die vollständige Nummer. Wir führen auch einen minimalen Zustand für blockierte Nummern und SMS-Budget, um Missbrauch zu verhindern und Sendekontrollen durchzusetzen. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Berechtigtes Interesse"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Authentifizierungsdaten – Reisepass Null-Wissen-Nachweis (Rarimo)",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Zur Verifizierung der Einzigartigkeit und Berechtigung unter Verwendung eines vom Reisepass abgeleiteten Nullifikators, des Staatsbürgerschafts-Ländercodes und des Geschlechts, das durch den Nachweis offengelegt wird. Die Verifizierung kann einen Altersgrenzwert prüfen, ohne ein vollständiges Geburtsdatum anzugeben. Wir erhalten die zugrunde liegende Passnummer, den Namen, das Foto oder das Dokumentbild nicht über diesen Ablauf. Diese Anmeldeinformationen können auch die Eigentumsüberprüfung für die Wiederherstellung oder eine Löschungsanfrage unterstützen. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Berechtigtes Interesse"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["Kontoinformationen"],
+                          },
+                          " (Benutzername, angezeigte/gesprochene Sprachen, Präferenzen, Themen/Stummschalt-Einstellungen, Kontostatus und Organisations-/Projektberechtigungen) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Zur Bereitstellung und Verwaltung des Kontos, Anwendung Ihrer Präferenzen und Berechtigungen, Verwaltung von Benachrichtigungen und Unterstützung der Kontowiederherstellung/Löschung. Attribute, die aus dem Reisepass abgeleitet werden, sind oben separat aufgeführt. Wir veröffentlichen nicht alle Kontoeinstellungen oder verkaufen Authentifizierungs-Kontaktdaten für Werbung. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Ihre Zustimmung"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["Ihre Handlungen"],
+                          },
+                          " (Diskussionen, Aussagen, Zustimmungs-/Ablehnungs-/Pass-Stimmen, Umfrageauswahlen/Freitextantworten und beste/schlechteste Ranglistenvergleiche) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Um den von Ihnen eingereichten Inhalt zu veröffentlichen, Ihre Teilnahme zu protokollieren, Ranglisten-Sitzungen fortzusetzen und aktuelle sowie historische Ergebnisse bereitzustellen. Teilnahmeaufzeichnungen umfassen die Kontozugehörigkeit, Zeitstempel, Kandidatensätze/Vergleichsreihenfolge und den Zustand der Umfrageantwort/Abschluss. Die Löschung einer Aussage oder Ihres Kontos entfernt die betroffenen persönlichen Aussagen aus aktuellen Ansichten und Analysen und ersetzt ihren Text durch '[gelöscht]' in unseren Analyseständen, ohne deren Übersetzungen, Benutzernamen oder Profillinks anzuzeigen. Die Kontowiederherstellung und endgültige Bereinigung folgen Abschnitt 6.7. Rechtmäßig aufbewahrte Zustimmungs-/Ablehnungs-/Pass-Stimmen können weiterhin an anderen berechtigten Aussagen gemäß den Abschnitten 4 und 6.7 teilnehmen. Autorisierte Organisatoren können auf die in Abschnitt 3 beschriebenen Umfrageantworten/Ergebnisse zugreifen. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Ihre Zustimmung"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["IP-Adresse"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Zum Schutz der Plattforminfrastruktur, zur Verhinderung böswilliger Aktivitäten und zur Gewährleistung der Betriebssicherheit (z. B. Schutz vor Distributed Denial-of-Service (DDoS)-Angriffen). ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Berechtigtes Interesse"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["Pseudonyme technische Daten"],
+                          },
+                          " (Ausgewählte pseudonyme Kontos-/Diskussions-/Anfrage-Identifikatoren, technische Kontexte, Fehlerkategorien, Zählungen, Zeitangaben und Zeitstempel) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Für Zuverlässigkeit, Sicherheit und Leistungsüberwachung. Konfigurierte TypeScript-Anwendungswerkzeuge verwenden genehmigte Metadaten und lassen Rohdaten, Anmeldeinformationen, Anbieterantworten, SQL- und Anfragen-URLs weg. Separat können Cloudflare, EC2 Host/Reverse-Proxy, CloudWatch, RDS-Datenbank, unterstützende Dienste und Sentry-Aufzeichnungen Netzwerk-/Anfrage-/Browserinformationen sowie betrieblichen/Fehlerkontext gemäß ihrer Konfiguration verarbeiten. Datenbankdiagnosen können Abfragekontext oder Werte enthalten. Diese Pfade sind nicht alle durch den Anwendungs-Sanitizer abgedeckt und werden nicht als anonym angenommen. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Berechtigtes Interesse"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["Kommunikation"],
+                          },
+                          " (Kontaktdaten, Inhalt der Nachricht/Meldung und relevante Daten, die bei uns kontaktiert werden) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Um die Kommunikation zwischen Ihnen und uns zu ermöglichen (z. B. wenn Sie uns über soziale Medien, Telefon oder E-Mail kontaktieren). ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Unser berechtigtes Interesse daran, Anfragen, Fragen oder Kommentare beantworten zu können oder Sie proaktiv bezüglich jeglicher Fragen zu kontaktieren. ",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Die oben genannten personenbezogenen Daten.",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Um unseren gesetzlichen Verpflichtungen nachzukommen oder auf angemessene Anfragen kompetenter Polizeibehörden, Justizbehörden, Regierungseinrichtungen oder -organen, einschließlich kompetenter Datenschutzbehörden, zu reagieren. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Unsere gesetzliche Verpflichtung."],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Die oben genannten personenbezogenen Daten.",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Um Betrug, unerwünschte Nachrichten und unbefugte Aktivitäten durch proportionierte Verifizierungs-, Beschränkungs- und Unterdrückungsaufzeichnungen zu verhindern, zu erkennen und zu beheben. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Unsere gesetzliche Verpflichtung."],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Die oben genannten personenbezogenen Daten.",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["Um uns in Rechtsverfahren zu verteidigen."],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Unser berechtigtes Interesse daran, Ihre personenbezogenen Daten in diesen Verfahren zu verwenden. ",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Die oben genannten personenbezogenen Daten.",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Um eine dritte Partei im Zusammenhang mit einer möglichen Fusion, Übernahme/durch Übernahme oder Spaltung durch diese dritte Partei zu informieren, auch wenn sich diese dritte Partei außerhalb der EU befindet. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Unser berechtigtes Interesse an Geschäftsabschlüssen. ",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["Konten-Upgrade/Datenzusammenführung"],
+                          },
+                          " (Benutzerinhalte, Geräte, Event-Tickets, Präferenzen) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " Die Zuordnung der teilnehmenden Gästeaktivität zu einem registrierten Konto und die Bereinigung von Duplikaten/Konflikten. Die Quellidentität wird entfernt, sobald der Transfer sicher abgeschlossen ist; ein irreversibler Identitätsmerge unterscheidet sich von einer wiederherstellbaren Anforderungslöschung des Kontos. ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Ihre Einwilligung und unser berechtigtes Interesse.",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["E-Mail-Authentifizierung"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Vollständige kanonische E-Mail-Adresse, Kontozugehörigkeit, Zustellbarkeitsklassifizierung, Geräte-Identifikator, temporäre Verifizierungscodes/Verfallsdatum, Sende-/Schätzzähler und Backoff-Status. Wir verwenden diese für Registrierung, Anmeldung, Wiederherstellung und Adressvalidierung; AWS SES liefert den Code und konfigurierte Validierungswerkzeuge bewerten die Erreichbarkeit.",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Berechtigtes Interesse an der Kontoverifizierung und der Verhinderung von Missbrauch.",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Abgeleitete Analyse- und Rangordnungsinformationen",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Mitgliedschaft in der Meinungsgruppe, Schätzungen individueller Präferenzen und Unsicherheit, aktuelle Analyse-Inputs und historische aggregierte Analysestände. Wir leiten diese aus der Teilnahme ab, um Muster, Gemeinsamkeiten und Prioritäten der Gemeinschaft zu identifizieren. Eine fortlaufende Analyse der Meinungsgruppe erfordert das Abstimmungsmuster jedes Teilnehmers, nicht nur die Gesamtzahlen der Aussagen. Behaltene Abstimmungsmuster verwenden teilnahmebezogene Identifikatoren statt eines fortlaufenden Kontoprofils nach dauerhafter Entkopplung. Exakte Vektoren, Mitgliedschaften und Werte können auch nach Entfernung der Kontoverknüpfungen noch personenbezogene oder pseudonyme Daten sein; veröffentlichte Aggregaten erfordern eine separate Risikobewertung der Offenlegung.",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Ihre Einwilligung zur zugrunde liegenden Teilnahme und deren offengelegten Analysezwecken, vorbehaltlich des Widerrufsrechts; eine anwendbare zusätzliche Bedingung, wenn sensible personenbezogene Daten beteiligt sind. Jeder unabhängig anwendbare Speichergrund muss die betreffenden Daten und den Zweck abdecken; die Kontolöschung oder das Entfernen von Identifikatoren schafft keinen solchen.",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Projekte, Organisationen, Dokumente und Importe",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Mitgliedschaften/Fähigkeiten, Projektkontakte und deren Namen/Rollen/Kontaktdaten/Bilder, hochgeladene Dateien und Metadaten der Dateien sowie Inhalts-/Versionsinformationen. Organisatoren können auch externe Diskussionen aus URLs oder CSV-Dateien importieren, einschließlich Aussagen, Stimmen, Identifikatoren der teilnehmenden Personen und Zeitstempel. Dies ist eine indirekte Datenquelle über Personen, die Agora möglicherweise nicht genutzt haben; wir erstellen importierte Teilnehmerdatensätze, um die Struktur der Diskussion zu erhalten.",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Erbringung der angeforderten Dienste; berechtigte Interessen bei der Durchführung autorisierter Projekte/Importe, vorbehaltlich der Rechte der betroffenen Teilnehmenden und aller weiteren erforderlichen rechtlichen Bedingungen.",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Automatische Sprachdetektion, optionale KI-Unterstützung und dynamische Übersetzung",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Automatische Erkennung der Sprache relevanter eingereichter/importierter Titel, Beschreibungen, Aussagen und anderer Inhalte. Dies kann nicht deaktiviert werden: Lingua läuft normalerweise statistisch auf unserem Backend, aber Google Cloud in us-central1 kann den Text in manchen Fällen empfangen. Wir speichern die erkannten Sprach-/Anbieter-/Konfidenzinformationen zur Inhaltsbehandlung. Dies ist getrennt von der optionalen dynamischen Übersetzung. Wenn Sie KI-Startvorschläge anfordern, kann relevanter unveröffentlichter Entwurfstext über Bedrock an Mistral gesendet werden; Gruppenbeschreibungen verwenden repräsentative Aussagen und Korrekturen können Entwurfszusammenfassungen enthalten. Diese Anfragen lassen Begleit-Kontenidentifikatoren weg, entfernen jedoch nicht automatisch persönliche Informationen innerhalb des Textes.",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Die anwendbare Rechtsgrundlage für die Verarbeitung des zugrunde liegenden Inhalts; spezifische Einwilligung, wenn für die optionale Verarbeitung erforderlich.",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "E-Mail-Benachrichtigungen zur Diskussion, wenn aktiviert",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Abonnementauswahl und deren Quelle/Datum, Schnappschüsse der Empfängeradresse, Sprache, Zustellversuche/Anbieter-IDs, Bounce-/Beschwerdeunterdrückung, Abmelde-/Präferenz-/Meldetoken-Hashes und Nutzungszeiten sowie Missbrauchsberichte. Wir verwenden diese, um Ihnen organisatorisch erstellte Aktualisierungen zu senden, die Sie erhalten möchten, Opt-outs zu respektieren, Zustellfehler zu beheben und Missbrauch zu verhindern. SES/SNS übernimmt die Zustellereignisse; die abgeschlossene Ereignisverarbeitung entfernt die rohe Anbieter-Nutzlast, behält jedoch den notwendigen Deduplizierungs-/Unterdrückungsstatus.",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Einwilligung, wenn für optionale Aktualisierungen erforderlich; Leistung der angeforderten Präferenzaktionen; berechtigte Interessen an der Zustellintegrität und der Verhinderung unerwünschter oder missbräuchlicher Nachrichten.",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "Löschung, Wiederherstellung und eingeschränkte Fallaufzeichnungen",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Löschanträge, Ergebnisse der Eigentumsüberprüfung, Wiederherstellungsfristen, Bereinigungsfortschritt und minimaler Löschbeweis, der zur Verhinderung der Wiederherstellung aus Backups erforderlich ist. Eingeschränkte Sicherheits-/Moderations-/Rechtsaufzeichnungen können notwendige Ereignisidentifikatoren, Gründe, Daten und eng definierte Beweise enthalten. Sie sind kein allgemeines Archiv Ihres gelöschten Kontos, Ihrer Anmeldeinformationen oder Ihrer Teilnahme.",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "Ihr Konto-Lebenszyklusantrag, anwendbare rechtliche Verpflichtungen bezüglich Datenrechten und eng begründete Sicherheits- oder Rechtsansprüche.",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Aussagen, freie Antworten und abgeleitete Teilnahme-Muster können politische Meinungen oder andere sensible Informationen offenbaren. Wir verarbeiten solche Informationen nur unter einer anwendbaren Bedingung, die durch das Gesetz gestattet ist, einschließlich expliziter Einwilligung, wenn dies erforderlich ist. Die öffentliche Verfügbarkeit, ein Pseudonym oder ein aggregierter Bezeichner beseitigt diese Verpflichtungen nicht. Vermeiden Sie die Angabe unnötiger persönlicher Informationen über sich selbst oder andere Personen.",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["3. Mit wem teilen wir Ihre persönlichen Daten?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.1. Die Empfänger hängen von dem Feature, der Veröffentlichungsart und den geltenden Berechtigungen ab. Private Informationen sind auf Personen und Dienstleister beschränkt, die sie für einen autorisierten Zweck benötigen, während Informationen, die Sie veröffentlichen, von anderen Teilnehmenden eingesehen werden können. Zu den Empfängern gehören: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  "Sie selbst, für das Kontomanagement, Ihre Teilnahmehistorie und Ihre Datenrechtsanfragen;",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Andere Teilnehmende, für veröffentlichte Inhalte, öffentliche Zuschreibungen, Kontaktdaten und öffentliche Ergebnisse, einschließlich Teilnehmeridentifikatoren, aller als öffentlich angegebenen Benutzernamen und aller einzelnen Stimmen, die in den von registrierten Nutzern oder gerätebasierten Gästen mit Zugriff auf die Diskussion angeforderten erlaubten Exporten enthalten sind;",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Autorisierte Organisatoren und Organisation-/Projektmitarbeiter, für die Verwaltung von Diskussionen, individuelle Umfrageantworten, private/vollständige Ergebnisse, erlaubte Exporte und Moderation. Geteilte Teilnehmer-IDs können Antworten, Aussagen und alle enthaltenen einzelnen Stimmen über exportierte Dateien hinweg verknüpfen. Empfänger können diese IDs mit Benutzernamen oder Personen verknüpfen, indem sie öffentlichen Aussagetext, Zeitstempel oder andere Informationen vergleichen. Organisatoren sind für ihre eigene autorisierte weitere Nutzung und alle zusätzlichen Informationen, die sie sammeln, verantwortlich;",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Unser autorisiertes Personal und unsere Lieferanten, einschließlich der oben beschriebenen Infrastruktur, Verifizierung, E-Mail-, KI-, Übersetzungs-, Analyse- und Absturzberichtsdienste, vorbehaltlich angemessener Zugriffsbeschränkungen und Auftragsverarbeitungsvereinbarungen, sofern zutreffend; und",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Behörden oder Gerichte, soweit wir verpflichtet sind, Ihre personenbezogenen Daten mit ihnen zu teilen (z. B. Steuerbehörden, Polizei oder Gerichte). ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.2. Ein Teil der Verarbeitung findet außerhalb des Europäischen Wirtschaftsraums (EWR) statt, einschließlich US-KI- und Übersetzungs-Endpunkten sowie weltweit betriebener Verifizierungs-/Sicherheitsdienste. Es werden nur die für den jeweiligen Vorgang notwendigen Informationen gesendet. Text, der an einen KI- oder Übersetzungsdienst gesendet wird, kann selbst personenbezogene Informationen enthalten, auch wenn Kontenbezeichner weggelassen werden. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.3. Wo das Datenschutzrecht einen Übermittlungsmechanismus erfordert, verwenden wir eine anwendbare Angemessenheitsentscheidung der Europäischen Kommission, einen genehmigten Rahmen, der den Empfänger und die Verarbeitung abdeckt, oder angemessene Garantien wie Standardvertragsklauseln mit relevanten Sicherheitsmaßnahmen. Der allgemeine Standort oder der Link zur Datenschutzerklärung eines Anbieters stellt nicht allein eine Übermittlungsgarantie dar. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.4. Sie können sich unter legal@zkorum.com für Informationen zu den Empfängern, den relevanten Verarbeitungsorten und den anwendbaren Garantien für Ihre Daten kontaktieren, einschließlich der Art und Weise, wie Sie Informationen zu den für eine Übermittlung verwendeten vertraglichen Garantien erhalten können. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.5. Echte anonyme aggregierte Berichte können aufbewahrt oder geteilt werden, ohne die zugrunde liegenden personenbezogenen Eingaben zu speichern. Pseudonymisierte Aufzeichnungen, verknüpfte Exporte, Statistiken kleiner Gruppen und identifizierender Text werden weiterhin als personenbezogene Daten behandelt, wenn jemand nach vernünftigem Ermessen identifiziert, isoliert oder mit anderen Informationen verknüpft werden kann. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "3.6. Sofern erforderlich, benachrichtigen wir die zuständigen Empfänger über eine anwendbare Löschung, Korrektur oder Einschränkung und weisen unsere Auftragsverarbeiter entsprechend an. Die Löschung von Informationen aus Agora entfernt nicht automatisch Kopien, die von anderen heruntergeladen, unabhängig veröffentlicht oder indiziert wurden. Wir wenden die Löschung auf unsere kontrollierten Speicher und Anzeigen an und ergreifen die Benachrichtigung des Empfängers sowie andere gesetzlich vorgeschriebene Schritte. Dies kann nicht die Entfernung unabhängig aufbewahrter Kopien garantieren. Bleibt identifizierender Inhalt verfügbar, nutzen Sie den Rechtsantragsweg in Abschnitt 6. Wenn Sie direkt an die E-Mail-Adresse eines Organisators antworten, erhält dieser die Adresse und den Inhalt Ihrer Antwort.",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: [
+              "4. Wie lange speichern wir Ihre personenbezogenen Daten?",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.1. Daten des aktiven Kontos, der Anmeldeinformationen und der Präferenzen werden so lange gespeichert, wie es zur Bereitstellung Ihres Kontos und der Zwecke in Abschnitt 2 erforderlich ist. Ein Antrag auf Kontolöschung leitet den 15-tägigen Wiederherstellungszeitraum gemäß Abschnitt 6.7 ein; der normale Kontozugriff ist während dieser Zeit deaktiviert. Anwendbare Löschanträge ohne Wiederherstellungszeitraum werden separat und ohne unangemessene Verzögerung bearbeitet. Der Widerruf der Einwilligung beendet die entsprechende einwilligungsbasierte Verarbeitung, vorbehaltlich eines unabhängig anwendbaren gesetzlichen Aufbewahrungsgrundes. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.2. Das Löschen einer Aussage und das Löschen Ihres Kontos unterliegen derselben Regelung zur Ausschlussbearbeitung: Betroffene persönliche Aussagen werden aus aktuellen Ansichten und zukünftigen Analysen entfernt, und ihr Text wird in unseren Analyseständen ohne Übersetzungen, Benutzernamen oder Profil-Link durch '[gelöscht]' ersetzt. Die Kontolöschung wendet diese Regelung auf Aussagen an, die über Ihre persönliche Teilnahme eingereicht wurden. Während des 15-tägigen Wiederherstellungsfensters des Kontos werden die Quelldaten, Übersetzungen und Zuordnungen, die für die Wiederherstellung benötigt werden, privat aufbewahrt; sie werden nach Ablauf dieses Fensters gemäß Abschnitt 6.7 dauerhaft gelöscht. Die explizite Löschung einer Aussage hat kein Wiederherstellungsfenster. Die Kontolöschung zieht nicht automatisch Ihre Zustimmungs-/Ablehnungs-/Unsicherheitsstimmungen zu anderen berechtigten Aussagen zurück. Arbeitsmuster der Abstimmung können als eigenständige, kontextspezifische Teilnahme erhalten bleiben, wenn dies für die notwendige und rechtmäßige Fortsetzung der Analyse der verbleibenden Diskussion, einschließlich eines begründeten Zwecks der erneuten Öffnung, erforderlich ist, ohne dass deren Kontoverbindung, E-Mail- oder Telefonverbindung beibehalten wird, nachdem die endgültige Bereinigung erfolgt ist. Einzelne Abstimmungsmuster sind nicht automatisch anonym, nur weil diese Zuordnung entfernt wird. Ihre Rechte auf Widerruf und Löschung bleiben bestehen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Historische Eingabematrizen werden nur so lange aufbewahrt, wie es für eine begründete Reproduzierbarkeit oder einen anderen angegebenen Zweck notwendig ist, getrennt von den Arbeitsinputs, die für die fortlaufende Analyse benötigt werden. Die Sichtbarkeit eines Analysestands erfordert nicht, dass jede Zwischenmatrix für immer aufbewahrt oder gelöschter Aussagetext erhalten bleibt. Die Aufbewahrung persönlicher oder sensibler Eingaben erfordert eine anwendbare Rechtsgrundlage und alle zusätzlichen erforderlichen Bedingungen; die auf Einwilligung basierende Verarbeitung unterliegt dem Widerruf, und wir wechseln sie nicht automatisch zu einer anderen Grundlage, wenn die Einwilligung widerrufen wird. Unnötige Kontoverknüpfungen, private Umfrageantworten, Ranglistenaufzeichnungen, veraltete Versionen und andere private Daten werden entfernt oder minimiert, sobald ihr Wiederherstellungs-, Betriebs- oder anderer begründeter Zweck endet. Die beibehaltene Abstimmungsstruktur ist kein allgemeines Archiv des gelöschten Kontos.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Explizit gelöschte Inhalte werden sofort verborgen und sind für eine endgültige Bereinigung ohne die Verzögerung der Kontowiederherstellung zugänglich. Die Bereinigung läuft stündlich und erfolgt ohne unangemessene Verzögerung, normalerweise innerhalb von sieben Tagen nach Erreichbarkeit für die endgültige Löschung aus den Live-Systemen. Wir überwachen Fehler und versuchen es erneut und eskalieren verzögerte oder blockierte Vorgänge. Technische Fehler und Wiederholungen starten diesen Zeitraum nicht neu oder verlängern die Wiederherstellungsfrist oder die anwendbaren gesetzlichen Fristen.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.3. Historische Analysestände speichern Ergebnisse zu einem bestimmten Zeitpunkt. Ihre Zahlen, Gruppengrößen und Ränge werden nicht nachträglich neu berechnet, nur weil jemand später eine Teilnahme löscht. Wir können ein datenschutzkonformes historisches Ergebnis beibehalten, auch wenn die übergeordnete Diskussion/das Projekt bestehen bleibt. Das Löschen einer Aussage oder des Kontos des Autors ersetzt den Text der betroffenen persönlichen Aussage in unseren Analyseständen durch '[gelöscht]' und entfernt deren Übersetzungen sowie die öffentliche Autorenzuordnung aus diesen Ansichten. Wir wenden dieselbe Redaktion auf betroffene Exporte und andere kontrollierte Kopien an; private Daten zur Kontowiederherstellung unterliegen Abschnitt 4.2. Sichere historische Zählungen von Zustimmung/Ablehnung/Unsicherheit und andere numerische Ergebnisse können eingefroren bleiben, ohne den Link zum Konto des Autors oder den ursprünglichen Text zu behalten. Dieses Löschen führt nicht zu einer erneuten numerischen Berechnung oder zur Neuerzeugung historischer KI-Bezeichnungen, Zusammenfassungen oder deren Übersetzungen. Gespeicherte KI-Beschreibungen sind ein separates historisches Ergebnis und unterliegen den geltenden Löschrechten und gesetzlichen Aufbewahrungsfristen. Wenn eine KI-Beschreibung selbst gelöscht werden muss, entfernen oder redigieren wir das vorhandene gespeicherte Ergebnis und betroffene Übersetzungen, ohne einen Ersatz für den historischen Analysestand zu generieren. Anwendbare Eingabedatenlöschung kann eine historische Matrix entfernen, während sichere gespeicherte Ergebnisse verbleiben. Kleine Aggregaten und individuelle Abstimmungsmuster sind nicht automatisch anonym; identifizierende Ergebnisse unterliegen den geltenden Rechten und gesetzlichen Aufbewahrungsfristen. Das Löschen einer Diskussion oder eines Projekts entfernt auch dessen zugehörigen historischen Bericht und Teilnahme-Graph. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.4. Statische Assets und hochgeladene Dateien, die mit einer Organisation/einem Projekt verbunden sind, bleiben erhalten, solange diese Einheit oder eine andere gültige gemeinsame Referenz sie benötigt. Die Löschung oder Entfernung eines ausschließlich besessenen Assets löst eine Bereinigung aus; aktive Assets unterliegen nicht der Protokoll-/Sicherungsfrist. Generierte Diskussionsexporte haben eine angezeigte Anforderungsfrist, normalerweise 30 Tage bei der Standardkonfiguration, die sich auf ihre einzelnen Dateien und herunterladbaren Pakete bezieht. Löschung oder anwendbare Entfernung kann eine frühere Ungültigkeitserklärung, Entfernung oder Neuerstellung betroffener CSVs, ZIP-Pakete und anderer Exportformate erfordern; die normale Frist ist kein Recht, gelöschte Informationen weiter zu verbreiten. Gemeinsam genutzte Artefakte werden zurückgeholt, wenn kein berechtigter Anforderung mehr darauf angewiesen ist, und die Bereinigung wird bei Fehlschlag erneut versucht. Das Verfallsdatum/die Löschung unseres Objekts löscht nicht die heruntergeladene Kopie eines Empfängers. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.5. Verifizierungscodes, Herausforderungen, Replay-Schutz-Hashes und Wiederherstellungs-/Aktions-Tokens unterliegen ihrem Verfallsdatum und ihrem kurzlebigen Zweck. Abgelaufene Geheimnisse und unnötiger technischer Zustand werden bereinigt und nicht in der allgemeinen Prüfprotokollierung aufbewahrt. Anti-Missbrauchs-Backoff, Credential-Rückzug und SMS-Budgetkontrollen bleiben nur so lange bestehen, wie sie für ihren Schutzzweck benötigt werden; die Bereinigung setzt keine aktive Beschränkung oder Sendeobergrenze zurück.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.6. Das E-Mail-Abonnement/Opt-out und der Unterdrückungsstatus bleiben erhalten, solange dies notwendig ist, um Ihre Entscheidungen zu respektieren oder unerwünschte Zusendungen zu verhindern. Die Zustellhistorie und der Kontext der Aktionslinks sind auf gültige Links, Abstimmung, nützliche Kontohistorie oder einen unabhängig begründeten Zweck beschränkt. Die Löschung Ihres Kontos ungültigt Ihre eigenen Links und entfernt unnötige Empfängeridentitäts-/Zustelldetails; ein gültiger Link eines anderen Empfängers erfordert nicht die Beibehaltung Ihres gesamten Kontos. Die Verarbeitung abgeschlossener Zustellereignisse löscht Rohdaten-Payloads; ungelöste Fehler werden nur für notwendige Überprüfung und Behebung aufbewahrt.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.7. Unsere CloudWatch-Anwendung/Container und PostgreSQL-Loggruppen verwenden eine rollierende Aufbewahrungsfrist von 180 Tagen für den operativen/sicherheitsrelevanten Untersuchungs- und Nachverfolgungszweck. Das Ablaufdatum der Protokolle folgt dem Löschzyklus des Dienstes und tritt nicht zu einem exakten Zeitpunkt ein. Die Erfassung ist auf den relevanten Zweck beschränkt; ein spezifischer Vorfall oder ein Rechtsanspruch kann die längere Aufbewahrung eng gefasster Beweise mit eingeschränktem Zugriff rechtfertigen. Die Kontolöschung entfernt nicht automatisch jedes bestehende Protokolleintrag. Cloudflare, Sentry und andere unabhängige Anbieterverarbeitung können unterschiedliche Kriterien für die Aufbewahrung von Kategorien/Diensten haben. Die Sentry-Aufbewahrung hängt vom Abonnement und der Datenkategorie ab, nicht nur davon, ob ein Problem noch offen ist. Support-/Moderationsfälle und minimale Durchsetzungs-/Unterdrückungsaufzeichnungen bleiben nur so lange bestehen, wie es ihr eigener Zweck rechtfertigt. Diese Zeiträume unterscheiden sich vom Kontowiederherstellungsfenster und der Backup-Obergrenze.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.8. Nach tatsächlicher endgültiger Löschung aus den Live-Systemen können gelöschte Daten bis zu 30 zusätzliche Tage in eingeschränkten Disaster-Recovery-Backups verbleiben. Diese sind für den normalen Produktgebrauch nicht verfügbar. Die Erstellung einer weiteren Kopie oder die Wiederherstellung eines Backups setzt diese Obergrenze nicht zurück. Wir behalten minimale Löschhinweise für den relevanten Backup-/Wiederherstellungszeitraum und wenden diese an, bevor gelöschte Daten Nutzern zugänglich gemacht werden.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.9. Browser-lokale Entwürfe, Schlüssel und Präferenzen folgen den Speichereinstellungen Ihres Geräts und können bestehen bleiben, bis sie entfernt oder gelöscht werden. Die Löschung des Kontos von unseren Servern kann nicht jede lokale oder unabhängig gehaltene Kopie entfernen. Optionale KI-Unterstützung kann unveröffentlichte Eingaben verarbeiten, wenn Sie sie aufrufen; notwendige Ratenbegrenzungs-/Nutzungsidentifikatoren sind temporär und stellen keine permanente öffentliche Historie Ihrer Entwürfe dar.",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: [
+              "5. Wie stellen wir die Sicherheit Ihrer persönlichen Daten sicher?",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 5.1. Bei Agora hat der Schutz Ihrer persönlichen Daten oberste Priorität. Wir haben eine Reihe technischer und organisatorischer Maßnahmen implementiert, um sicherzustellen, dass alle verarbeiteten personenbezogenen Daten sicher bleiben. Zu diesen Maßnahmen gehören: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "Datenminimierung und Datenschutz durch Technikgestaltung:",
+                    ],
+                  },
+                  " Wir beschränken die Erfassung und den Zugriff auf den Zweck des Features. Private Teilnahme und identifizierendes Quellmaterial werden von historischen Ausgaben getrennt; die anonyme Aggregataufbewahrung ist kein Grund, Rohdaten personenbezogener Eingaben auf unbestimmte Zeit zu speichern. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Verschlüsselung und Pseudonymisierung:"],
+                  },
+                  " Wir schützen Übertragungen und gespeicherte Daten mit angemessenen Zugriffsschutz- und Verschlüsselungsmaßnahmen, einschließlich eingeschränkter verschlüsselter Backups. Die vollständige Telefonnummer wird in der Kontospeicherung 'gepappert' und gehasht, während teilweise Metadaten zur Verifizierung/Kontofunktionen aufbewahrt werden. E-Mails und Texte, die für die Dienste benötigt werden, werden nicht zu anonymen Daten umgewandelt, nur weil die Speicherung geschützt ist. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "Authentifizierung mittels Zero-Knowledge-Proofs:",
+                    ],
+                  },
+                  " Agora nutzt Zero-Knowledge-Proofs (ZKP) zur Passprüfung, um sicherzustellen, dass Teilnehmende ihre Berechtigung nachweisen können, ohne sensible persönliche Informationen preiszugeben. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Kryptografische Anforderungsprüfung:"],
+                  },
+                  " Signierte Anfragen und Berechtigungsnachweise helfen, autorisierte Aktionen zu authentifizieren und Missbrauch zu verhindern. Wir speichern keine unbegrenzte öffentliche Sammlung von Konto-Aktions- oder Löschbeweisen bloß zur Rechenschaftslegung. Minimale Wiederholungsprävention und begründete Lösch-/Sicherheitsnachweise folgen den oben genannten Aufbewahrungsregeln. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Sichere Authentifizierung:"],
+                  },
+                  " Wir speichern keine Passwörter. Stattdessen erfolgt die Authentifizierung über Einmal-Verifizierungscodes oder kryptografische Schlüssel, wodurch das Risiko von Anmeldeinformationenlecks reduziert wird. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Infrastrukturschutz:"],
+                  },
+                  " Unsere Plattform ist durch DDoS-Schutz, Zugriffskontrollen und Netzwerküberwachung gegen Cyberbedrohungen gesichert, um Angriffe zu erkennen und abzumildern. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Transparenz und Nutzerkontrolle:"],
+                  },
+                  " Teilnehmende haben die Möglichkeit, ihre persönlichen Daten zu verwalten, ihr Konto zu löschen und zu kontrollieren, wie ihre Informationen verarbeitet werden. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Regelmäßige Sicherheitsbewertungen:"],
+                  },
+                  " Unsere Sicherheitsmaßnahmen werden regelmäßig überprüft und aktualisiert, um aufkommende Bedrohungen zu adressieren und den Datenschutz zu verbessern. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "Kontrollierter Zugriff auf Protokolle und Analysen:",
+                    ],
+                  },
+                  " Wir verwenden aggregierte Analysen, wo dies möglich ist, und datenschutzminimierte technische Diagnosen, wo sie erforderlich sind. Einige Diagnosen behalten notwendige pseudonyme Identifikatoren und technische Kontexte bei, weshalb sie nicht als universell anonym beschrieben werden können. Der Zugriff und die Aufbewahrung sind auf den relevanten operativen Zweck beschränkt. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Datenredundanz und Backups:"],
+                  },
+                  " Der Zugriff auf Live-Speicher und Disaster-Recovery-Backups ist eingeschränkt. Die Löschung von Backups erfolgt nach maximal 30 Tagen nach der harten Löschung gemäß Abschnitt 4.8, einschließlich Backup-Kopien/Versionen und der Wiederherstellung der Löschung. Die Infrastrukturresilienz erstellt kein separates permanentes Archiv gelöschter Informationen. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Eingeschränkte Metadaten-Erfassung:"],
+                  },
+                  " Die konfigurierten TypeScript-Anwendungsprotokolle lassen IP-Adressen von Anfragen, Roh-URLs/Abfragen, Header, Körper und nicht genehmigte Daten weg. Cloudflare-Signale und alle aktivierten Edge-/Sicherheitsprotokolle, EC2-/Nginx-Host-/Zugriffs-/Fehlerprotokolle, CloudWatch-Erfassung, RDS-Diagnostik, Protokolle unterstützender Dienste und Sentry-Ingestion sind separate Pfade. Sie können Netzwerkadressen, Zeitstempel, Anfragen-URLs/Browserinformationen oder Abfrage-/Fehlerkontext verarbeiten. Die Filterung eines Protokolls filtert nicht automatisch alle anderen Systeme. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "Datensparsame KI-Unterstützung und Übersetzung:",
+                    ],
+                  },
+                  " Mistral wird über AWS Bedrock verwendet. Ausgewählter Text wird roh gesendet, ohne begleitende Konten-/Kontakt-/Authentifizierungsbezeichner; funktionale Inhalts-/Beschreibungsreferenzen oder Gruppen-/Sprachkontexte können enthalten sein. Bedrock verwendet us-east-1, und die Google-Spracherkennung/Übersetzung verwendet us-central1. Die Protokollierung von Bedrock-Eingabe-/Ausgabeaufrufen ist deaktiviert. Lingua erkennt die Sprache normalerweise statistisch auf unserem Backend; die Erkennung bleibt automatisch und kann Google nutzen, auch wenn die optionale dynamische Übersetzung deaktiviert ist. Das Weglassen von Kontenbezeichnern ist nicht dasselbe wie die Anonymisierung von Text. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "Verwendung von ",
+                      {
+                        tag: "a",
+                        children: ["Sentry.io"],
+                        href: "https://sentry.io/privacy/",
+                        external: true,
+                      },
+                      " für privatitätsschonende Absturzberichte:",
+                    ],
+                  },
+                  " Agora nutzt Sentry (gehostet auf EU-Servern) zur Fehlerverfolgung und zum Absturzbericht. Routine-Sitzungen werden nicht für Session Replay hochgeladen; wenn ein Fehler auftritt, können zwischengespeicherte jüngste Interaktionsdaten hochgeladen werden, um die Fehlerbehebung zu unterstützen. Replay maskiert Text und Eingaben, blockiert Medien, deaktiviert die Erfassung des Netzwerk-Bodies und maskiert konfigurierte Text- und Formularattribute vor der Aufnahme. Navigations- und benutzerdefinierte Netzwerkaufzeichnungsereignisse werden bereinigt, und die Liste der besuchten URLs des Replay-Ereignisses wird vor dem Hochladen bereinigt. Erstpartei-Agora- und ZKorum-URLs können Pfade und pseudonyme Routenidentifikatoren beibehalten, aber Anmeldeinformationen, Abfragezeichenfolgen und Fragmente werden entfernt. Externe URLs werden auf ihre Ursprünge reduziert, während unsichere URL-Schemata zensiert werden. Fehlerereignisse entfernen auch Request-URLs und beliebige Zusatzdaten, behalten nur eine explizite Whitelist technischer Kontexte bei und lassen Konsolen- und Benutzeroberflächen-Breadcrumbs weg. Für einen spezifischen Stack-Overflow-Diagnosefall kann ein eng begrenzter Anhang strukturelle Seitenlayout-Flags enthalten, aber keinen OTP-Status, Entwürfe, Onboarding-Status, Identifikatoren oder nutzergenerierte Inhalte. Replay- und Fehlerberichte können immer noch strukturelle DOM, pseudonyme Pfade, Ressourcenursprünge, technische und Interaktionsmetadaten enthalten, und Sentry kann IP-Adressen wie in seiner Datenschutzerklärung verarbeiten. Sentry verwendet keine Tracking-Cookies. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Anwendungs- und Infrastrukturdiagnostik:"],
+                  },
+                  " Wir verwenden Protokolle, um die Verfügbarkeit zu gewährleisten, Fehler zu diagnostizieren und Missbrauch zu verhindern oder zu untersuchen. Anwendungsdiagnosen beschränken sich auf genehmigte Metadaten; Infrastruktur, Datenbanken und Anbieter haben separate Sammel- und Aufbewahrungsrichtlinien. CloudWatch speichert die ihr bereitgestellten Aufzeichnungen und filtert nicht automatisch alle Quellen heraus. Wenn Anbieter Informationen in unserem Auftrag verarbeiten, gelten unsere anwendbaren Bearbeitungsvereinbarungen; deren Mitteilungen erklären auch die unabhängige Verarbeitung. Protokolle können nach der Kontolöschung nur für ihren anwendbaren betrieblichen, sicherheitstechnischen oder rechtlichen Zweck aufbewahrt werden, unter Anwendung der entsprechenden Zugriff-/Aufbewahrungsrichtlinien. Das 15-tägige Wiederherstellungsfenster und die 30-tägliche Backup-Obergrenze sind keine universellen Protokollaufbewahrungsfristen. ",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: [
+              "6. Ihre Rechte bezüglich Ihrer personenbezogenen Daten",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.1. Sie können die unten aufgeführten Rechte über die verfügbaren Kontensteuerungen oder durch Kontaktaufnahme mit legal@zkorum.com wahrnehmen, auch wenn Ihre Informationen importiert wurden und Sie kein Agora-Konto besitzen. Wir überprüfen das Eigentum oder die Identität nur in dem Umfang, der zur Vermeidung unbefugter Offenlegung, Wiederherstellung oder Löschung erforderlich ist; unterstützte Anmeldeinformationen oder Geräte-Schlüsselnachweis können ausreichen, ohne ein Ausweisdokument einzuholen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.2. Abhängig von der Verarbeitung und der Rechtsgrundlage haben Sie als betroffene Person eine Reihe von Möglichkeiten, die Kontrolle über Ihre personenbezogenen Daten zu behalten: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: ["Recht auf Auskunft über Ihre Daten"],
+              },
+              {
+                tag: "li",
+                children: ["Recht auf Berichtigung Ihrer Daten"],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Recht auf Widerspruch gegen die Verarbeitung Ihrer personenbezogenen Daten",
+                ],
+              },
+              {
+                tag: "li",
+                children: ["Recht auf Einschränkung der Datenverarbeitung"],
+              },
+              {
+                tag: "li",
+                children: ["Recht auf Löschung Ihrer Daten"],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Recht auf Widerruf Ihrer zuvor erteilten Einwilligung",
+                ],
+              },
+              {
+                tag: "li",
+                children: ["Recht auf Datenübertragbarkeit"],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Recht, Beschwerden bei der zuständigen Datenschutzbehörde einzureichen. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.3. Wir möchten Sie darauf hinweisen, dass diese Rechte nicht immer absolut sind. In bestimmten Umständen sind wir gesetzlich berechtigt oder sogar verpflichtet, Ihre personenbezogenen Daten weiterzuverarbeiten, und wir können Ihrem Antrag daher möglicherweise nicht (vollumfänglich) nachkommen. In solchen Fällen werden wir Sie entsprechend informieren. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.4. Sie können diese Rechte kostenlos wahrnehmen. Wenn ein Antrag offensichtlich unbegründet oder unangemessen ist, können wir eine angemessene Gebühr erheben, die die Verwaltungskosten widerspiegelt, oder ihn ablehnen, soweit dies gesetzlich zulässig ist; wir müssen darlegen, warum diese Ausnahme gilt. Wir antworten ohne unangemessene Verzögerung und normalerweise innerhalb eines Monats nach Eingang des Antrags. Wenn Komplexität oder die Anzahl der Anträge eine Verlängerung erforderlich machen, benachrichtigen wir Sie innerhalb dieses Monats über die Gründe und etwaige Verlängerung von bis zu zwei weiteren Monaten. Diese Antwortfrist berechtigt nicht zur Verzögerung der Löschung, die ohne unangemessene Verzögerung erfolgen muss. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.5. Die verfügbaren Steuerelemente ermöglichen es Ihnen, Ihre eigenen Aussagen/Diskussionen zu löschen, Stimmen oder Umfrageantworten zurückzuziehen, die Ranglistenbeteiligung zu ändern, sofern unterstützt, und Präferenzen/Sprachen zu verwalten. Autorisierte Eigentümer können Projektunterlagen, Ranglisteneinträge, Diskussionen oder Projekte innerhalb ihrer Berechtigungen löschen. Das Löschen einer Aussage oder Ihres Kontos ersetzt den betroffenen persönlichen Aussagetext durch '[gelöscht]' in unseren Analyseständen und entfernt dessen Übersetzungen und die öffentliche Urheberschaft aus diesen Ansichten. Sie müssen nicht jede Aussage einzeln löschen, bevor Sie Ihr Konto löschen, um diese Redaktion zu erreichen. Die explizite Löschung einzelner Inhalte wird sofort verborgen und unterliegt nicht dem 15-tägigen Wiederherstellungsfenster des Kontos; die Kontowiederherstellung stellt unabhängig gelöschte Inhalte oder zurückgezogene Stimmen nicht wieder her. Historische numerische Ergebnisse können nur unter den datenschutzkonformen Regeln für Analysestände in Abschnitt 4.3 verbleiben. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Verwenden Sie die Steuerelemente zum Zurückziehen von Stimmen, wenn Sie auch möchten, dass Ihre Stimmen zurückgezogen werden. Sobald die endgültige Bereinigung die Kontoverbindung entfernt, ist die gewöhnliche kontobasierte Verwaltung der beibehaltenen Abstimmungsergebnisse nicht mehr verfügbar; ein späteres Konto mit denselben Anmeldeinformationen übernimmt diese nicht automatisch. Anwendbare Datenschutzrechte bleiben über den Kontaktweg in Abschnitt 6.1 verfügbar, auch für personenbezogene Informationen in den Inhalten anderer oder beibehaltenen Ergebnissen. Geben Sie bei Bedarf Links oder andere Informationen an, die es uns ermöglichen, die relevanten Datensätze zu identifizieren. Wir verwenden eine verhältnismäßige Überprüfung und speichern keine permanente Identitätsabfrage allein für mögliche zukünftige Anfragen.",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "Das Löschen eines Projekts entfernt die darin enthaltenen Diskussionen, Dokumente und die von Ihnen erstellten historischen Berichte. Bevor Sie eine Organisation löschen, müssen deren ausschließlich zugehörige Projekte an einen anderen verbleibenden Eigentümer übertragen werden; alternativ können autorisierte Eigentümer diese Projekte zuerst separat löschen. Projekte, die gemeinsam besessen werden, verbleiben bei den verbleibenden Eigentümern, und nur die Beziehungen/Daten der gelöschten Organisation werden entfernt. Diese Produktaktionen sind Löschung, nicht umkehrbares Archivieren.",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["6.6. Sicherheitsaufzeichnungen:"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Das Löschen erfordert nicht die Aufbewahrung vollständiger unterschriebener Anfragen oder einer unbegrenzten kryptografischen Kontogeschichte. Einige eng definierte Aufzeichnungen können aus notwendigen Schutz-, Löschkonformitäts- oder rechtlichen Gründen verbleiben: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  " Kurzlebige UCAN-Wiederwiederholungsschutz-Hashes und notwendiger Zustand für die Berechtigungseinstellung/Rückzug, nur für deren Schutzlebensdauer; ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Minimaler blockierter Berechtigungs-, Opt-out- oder Beschwerde-/Unterdrückungsstatus, wo dies zur Verhinderung von Umgehung oder unerwünschtem Kontakt erforderlich ist; und",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Eingeschränkte Löschbeweise und spezifische Sicherheits-/Moderations-/Rechtsfallaufzeichnungen, begrenzt auf die notwendigen Identifikatoren, Daten, Gründe und begründete Beweise. Roh-OTPs, vollständige Beweis-Payloads und eine allgemeine Kopie der gelöschten Teilnahme werden nicht nur zur Rechenschaftspflicht aufbewahrt.",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Jede Kategorie folgt ihrem eigenen Zweck-, Ablauf- oder dokumentierten Notwendigkeitskriterium in Abschnitt 4, mit eingeschränktem Zugriff und Überprüfung. Ein rechtlicher Vorbehalt oder eine Schutzausnahme ist auf den relevanten Fall beschränkt; er verlängert nicht stillschweigend die Aufbewahrung des gesamten gelöschten Kontos. ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["6.7. Wie Sie Ihr Konto löschen:"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Bitten Sie um die Kontolöschung über die verfügbaren Kontensteuerungen oder kontaktieren Sie uns für Unterstützung. Nach einer autorisierten Anfrage ist das Konto ",
+              {
+                tag: "strong",
+                children: ["sofort nicht zugänglich"],
+              },
+              " für den normalen Gebrauch, kann aber während eines 15-tägigen Stornierungsfensters wiederhergestellt werden. Der Zeitrahmen ist: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Sofort:"],
+                  },
+                  " Der Kontozugriff und die normale Authentifizierung sind deaktiviert und bestehende Sitzungen werden widerrufen. Aussagen, die über Ihre persönliche Teilhabe eingereicht wurden, werden von aktuellen Ansichten und Analysen ausgeschlossen. Ihr Text wird in unseren Analyseständen durch '[gelöscht]' ersetzt, ohne deren Übersetzungen, Benutzernamen oder Profil-Link; betroffene Exporte und andere kontrollierte Darstellungen werden ebenfalls ungültig oder zensiert. Ihre rechtmäßig gespeicherten Zustimmungs-/Ablehnungs-/Unsicherheits-Stimmen zu anderen berechtigten Aussagen können weiterhin berücksichtigt werden; die Kontoschließung zieht sie nicht zurück. Die zugehörige E-Mail-Zustellung wird entsprechend gestoppt. Kopien, die bereits über unabhängige Dienste heruntergeladen oder veröffentlicht wurden, werden gemäß Abschnitt 3.6 behandelt. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["In den nächsten 15 Tagen:"],
+                  },
+                  " Wir behalten die Daten und Zuordnungen, die für die Kontowiederherstellung erforderlich sind, privat, einschließlich des Quelltextes und der Übersetzungen persönlicher Aussagen, die durch die Kontolöschung verborgen wurden, und reservieren die relevanten Anmeldeinformationen, um widersprüchliche Wiederverwendung zu vermeiden. Diese Wiederherstellungsdaten werden nicht in Analyseständen oder Exporten bereitgestellt. Die Wiederherstellung erfordert die Verifizierung des Eigentums und eine ausdrückliche Bestätigung, die die Löschung annulliert. Ein einfaches erneutes Verbinden oder das Erhalten eines Verifizierungscodes stellt das Konto nicht automatisch wieder her. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Nach Ablauf der 15-tägigen Frist:"],
+                  },
+                  " Die Wiederherstellung endet und die endgültige Löschung wird fällig. Die Bereinigung beginnt mit dem nächsten geplanten stündlichen Durchlauf und erfolgt ohne unangemessene Verzögerung, normalerweise innerhalb von sieben Tagen nach dieser Frist. Wir überwachen Fehler und versuchen es erneut und eskalieren verzögerte oder blockierte Vorgänge. Verzögerte Durchläufe und Wiederholungen setzen diesen Zeitraum oder verlängern die Wiederherstellungs- oder geltenden gesetzlichen Fristen nicht; notwendige Aufbewahrungsausnahmen bleiben wie oben beschrieben begrenzt. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "Nach tatsächlicher harter Löschung: bis zu weiteren 30 Tagen in Backups:",
+                    ],
+                  },
+                  " Gelöschte Daten können bis zu 30 Tage nach der tatsächlichen Löschung aus dem Live-System in eingeschränkten, verschlüsselten Disaster-Recovery-Backups verbleiben, nicht 30 Tage nach einer späteren Kopie oder Wiederherstellung. Die Löschungsanweisungen werden angewendet, bevor wiederhergestellte Informationen verfügbar gemacht werden. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "h4",
+            children: ["Wiederherstellung und endgültiges Löschen:"],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  " Die Wiederherstellung ist nur strikt vor Ablauf der 15-tägigen Frist und vor Beginn des irreversiblen Löschvorgangs gestattet. Wir überprüfen die unterstützten Kontobestätigungen oder die ursprünglichen Gastgeräteschlüssel, abhängig vom Kontotyp. Verlorene Gastschlüssel können die Eigentumsüberprüfung und die Wiederherstellung unmöglich machen. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "Eine erfolgreiche Wiederherstellung erstellt eine neue autorisierte Sitzung; sie reaktiviert nicht alle zuvor widerrufenen Sitzungen oder dupliziert gespeicherte Stimmen. Sie stellt nur den erlaubten Aussagetext, Übersetzungen, die Kontozuordnung und die aktuelle Berechtigung wieder her, sofern diese ausschließlich durch die Kontolöschung verborgen waren, einschließlich in unseren bestehenden Analyseständen. Unabhängiges Löschen von Inhalten/Projekten/Dokumenten, zurückgezogene Stimmen, irreversible Gastfusionen, einleitende Moderatorenentscheidungen und separat gelöschte Ausgaben werden nicht rückgängig gemacht.",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Die endgültige Bereinigung entfernt die Kontobestätigungen, Geräteeinrichtungen, private Einstellungen, unnötige Authentifizierungs-/Lieferdetails und private Teilnahmeaufzeichnungen, vorbehaltlich der oben beschriebenen spezifischen eingeschränkten Ausnahmen. Sie löscht dauerhaft den Quelltext, die Versionen und die Übersetzungen der betroffenen persönlichen Aussagen aus unseren kontrollierten Live-Systemkopien, einschließlich privater Wiederherstellungsdaten. Ihre Einträge in den Analyseständen bleiben dort '[gelöscht]', wo eine sicher eingefrorene numerische Ausgabe beibehalten wird. Die Bereinigung entfernt unnötige Kontozuordnungen/Bestätigungen und kontoverbundene Gruppenpersonalisierung. Die notwendige kontextspezifische Abstimmungsstruktur kann unter Abschnitt 4.2 bestehen bleiben; sie ist kein zugängliches Kontoprofil. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Die Löschung eines Kontos und die Löschung einer expliziten Aussage verwenden dieselbe Anzeige im Analysestand '[gelöscht]' und die Textzensurregel. Der Unterschied liegt in der Wiederherstellungszeit: Die Kontolöschung behält privat für 15 Tage wiederherstellbare Quellen, während unabhängig gelöschte Aussagen keinen Wiederherstellungszeitraum haben. Historische Kennzahlen früherer Analysestände können eingefroren bleiben, und historische KI-Beschreibungen werden bei der Löschung nicht neu generiert. Die anwendbare Löschung von Informationen in einer gespeicherten KI-Beschreibung wird durch das Entfernen oder Zensieren bestehender Ausgaben unter Abschnitt 4.3 gehandhabt, ohne einen Ersatz zu generieren. Einzelne Abstimmungsmuster und kleine Aggregationen können jemanden aufgrund seines Kontextes weiterhin identifizieren; das alleinige Entfernen von Kontoverknüpfungen wird nicht als Anonymisierung oder Erlaubnis für unbegrenzte Speicherung behandelt. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Der Ausschluss der Aussagen eines Kontos aus der aktuellen Eingabe oder die Wiederherstellung seiner Berechtigung während der Wiederherstellung kann eine aktualisierte Analyse der betroffenen offenen Diskussionen erfordern. Das alleinige Entfernen der Kontozuordnung oder das spätere Löschen bereits ausgeschlossener Quelldaten erfordert keine weitere numerische Berechnung. Das Schließen wiederverwendet aktuelle Ergebnisse oder schließt notwendige ausstehende Berechnungen ab und sperrt die mathematische Veröffentlichung. Die aktuelle Ausschließung und die anwendbare Zensur bleiben während des Geschlossenen ohne ordentliche Neuberechnung bestehen; das erneute Öffnen fordert frische Ergebnisse aus berechtigter Daten, einschließlich rechtmäßig gespeicherter, kontounabhängiger Stimmen zu berechtigten Aussagen. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " Geteilte Organisations-/Projekt-Daten und Beiträge anderer Teilnehmender werden nicht automatisch gelöscht, nur weil Sie diese verwaltet oder daran teilgenommen haben. Übertragen Sie notwendige Verantwortlichkeiten oder nutzen Sie separat autorisierte Löschkontrollen; kontaktieren Sie uns, falls ein Übergang zur Ausübung Ihrer Kontolöschrechte erforderlich ist. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "h4",
+            children: ["Backups, Empfänger und separate Löschanträge:"],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Datenbank-Backups:"],
+                  },
+                  " Unser Backup-Zeitraum beträgt 30 Tage nach tatsächlicher Löschung. Backups werden nicht verwendet, um gelöschte Konten oder Inhalte wiederherzustellen. Minimale Anweisungen zur Wiederherstellungsunterdrückung werden für den notwendigen Backup-Horizont aufbewahrt, ohne die gelöschten Inhalte in diesen Anweisungen zu speichern. ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Twilio:"],
+                  },
+                  " Wir weisen die Verarbeiter auf anwendbare Löschvorgaben hin und können bei relevanten Anfragen von Empfängern behilflich sein. Twilio kann auch notwendige Verifizierungs-/Sicherheitsaufzeichnungen für seine eigenen anwendbaren Zwecke aufbewahren; Details finden Sie in ",
+                  {
+                    tag: "a",
+                    children: ["Datenschutzerklärung von Twilio"],
+                    href: "https://www.twilio.com/en-us/legal/privacy",
+                    external: true,
+                  },
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Drittanbieterdienste:"],
+                  },
+                  " Die Verarbeiteraufzeichnungen werden gemäß den anwendbaren Anweisungen/Vereinbarungen behandelt, und die unabhängige Anbieterverarbeitung hat ihren eigenen rechtmäßigen Zweck und Speicherungszeitraum. Wir können nicht jeden unabhängig heruntergeladenen Export, E-Mail, browserlokalen Entwurf oder Suchmaschinen-Kopie aus der Ferne löschen, aber wir treffen die Benachrichtigung des Empfängers und andere gesetzlich vorgeschriebene Schritte. ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              {
+                tag: "strong",
+                children: ["Wichtig:"],
+              },
+              " Die Wiederherstellung des Kontos endet exakt nach Ablauf der 15-tägigen Frist, auch wenn die physische Bereinigung verzögert wird. Eine explizite Löschung individueller Inhalte hat keine entsprechende Wiederherstellungsfrist. Anwendbare Anträge auf Löschung personenbezogener Daten, einschließlich Anträge ohne die Produktwiederherstellungsfrist oder bezüglich gespeicherter Aufzeichnungen nach der Kontolöschung, bleiben über den Kontaktweg in Abschnitt 6.1 verfügbar. Wir bearbeiten diese ohne unangemessene Verzögerung, vorbehaltlich proportionaler Überprüfung, wo dies erforderlich ist, und eng gerechtfertigter rechtlicher Ausnahmen. Die Kontolöschung verzichtet nicht auf Ihre Datenschutzrechte. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.8. Sollten Sie eine Beschwerde bezüglich der Verarbeitung Ihrer personenbezogenen Daten durch uns haben, können Sie uns jederzeit unter ",
+              {
+                tag: "a",
+                children: ["legal@zkorum.com"],
+                href: "mailto:legal@zkorum.com",
+              },
+              ". Sie können auch direkt bei einer zuständigen Datenschutzbehörde Beschwerde einlegen, einschließlich der französischen Commission nationale de l'informatique et des libertés (",
+              {
+                tag: "a",
+                children: ["www.cnil.fr"],
+                href: "http://www.cnil.fr/",
+                external: true,
+              },
+              "). ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: [
+              "7. Wichtige Informationen für Teilnehmende in Kalifornien",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              ' 7.1. Gemäß dem California Consumer Privacy Act von 2018 ("CCPA") stellen wir den Teilnehmenden in Kalifornien die folgenden zusätzlichen Details zur Verfügung. In den vorangegangenen 12 Monaten haben wir die Kategorien Ihrer personenbezogenen Daten, die in dieser Datenschutzerklärung beschrieben sind, für unsere betrieblichen Geschäftszwecke erhoben, verwendet und weitergegeben. ',
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 7.2. Wir haben Ihre personenbezogenen Daten nicht verkauft, was bedeutet, dass wir Ihre personenbezogenen Daten nicht gegen monetäre oder andere wertvolle Gegenleistungen offengelegt haben. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 7.3. Sie haben das Recht, Zugang zu Ihren personenbezogenen Daten zu verlangen oder deren Löschung zu beantragen und Transparenz über unsere Datenschutzpraktiken zu fordern. Wenn Sie Ihre Rechte gemäß CCPA geltend machen möchten, siehe Artikel 6. Sobald wir Ihren Antrag erhalten, werden wir diesen durch die Anforderung von Informationen zur Bestätigung Ihrer Identität überprüfen, einschließlich der Aufforderung um zusätzliche Informationen. Wenn Sie einen bei der California Secretary of State registrierten Vertreter nutzen möchten, um Ihre Rechte geltend zu machen, können wir einen Nachweis verlangen, dass Sie diesem Vertreter eine Vollmacht erteilt haben oder dass der Vertreter andernfalls eine gültige schriftliche Berechtigung hat, Anträge in Ihrem Namen zu stellen. ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 7.4. Wenn Sie Ihre Rechte geltend machen, werden wir Ihnen keine unterschiedlichen Preise berechnen oder eine andere Qualität der Dienstleistungen für die Ausübung Ihrer Rechte anbieten, es sei denn, dies ist gesetzlich zulässig. ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["8. Änderungen dieser Datenschutzerklärung"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 8.1. Wir können diese Datenschutzerklärung jederzeit auf eigene Initiative ändern. Wenn wesentliche Änderungen dieser Datenschutzerklärung die Verarbeitung Ihrer personenbezogenen Daten beeinflussen können, werden wir Sie über diese Änderungen auf die Weise informieren, wie wir Sie normalerweise informieren (z. B. per E-Mail oder über eine Nachricht auf der Plattform). ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 8.2. Wir laden Sie ein, die neueste Version dieser Datenschutzerklärung auf unserer Website zu lesen (https://agoracitizen.network/). Die Datenschutzerklärung gibt das Datum an, wann unsere Datenschutzerklärung zuletzt geändert wurde. ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["9. Haben Sie Fragen?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 9.1. Sollten Sie weitere Fragen zur Verarbeitung Ihrer personenbezogenen Daten haben, zögern Sie bitte nicht, unseren Datenschutzbeauftragten zu kontaktieren. Sie können unseren Datenschutzbeauftragten per E-Mail kontaktieren: ",
+              {
+                tag: "a",
+                children: ["legal@zkorum.com"],
+                href: "mailto:legal@zkorum.com",
+              },
+              ". ",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  hi: {
+    title: "गोपनीयता नीति",
+    automatedTranslationNotice: {
+      title: "स्वचालित अनुवाद",
+      statement:
+        "इस गोपनीयता नीति का स्वचालित रूप से अनुवाद किया गया है। अंग्रेजी संस्करण ही एकमात्र आधिकारिक संस्करण है और किसी भी विसंगति की स्थिति में मान्य होगा।",
+      viewEnglish: "प्रामाणिक अंग्रेज़ी संस्करण देखें",
+      returnToTranslation: "अनुवाद पर वापस जाएँ",
+    },
+    nodes: [
+      {
+        tag: "p",
+        children: [
+          {
+            tag: "strong",
+            children: ["अंतिम बार अपडेट किया गया:"],
+          },
+          ": 14 अक्टूबर 2026",
+        ],
+      },
+      {
+        tag: "p",
+        children: [
+          " Agora Citizen Network विकसित किया गया है: ",
+          {
+            tag: "a",
+            children: ["ZKorum SAS"],
+            href: "https://www.societe.com/societe/zkorum-984736173.html",
+            external: true,
+          },
+          ". ZKorum में, हम मानते हैं कि गोपनीयता एक मौलिक अधिकार है। हमारा मिशन उपयोगकर्ताओं को उनकी पहचान और व्यक्तिगत जानकारी पर नियंत्रण बनाए रखते हुए राजनीतिक और सामाजिक विमर्श में भाग लेने के लिए सशक्त बनाना है। ",
+        ],
+      },
+      {
+        tag: "p",
+        children: [
+          ' यह गोपनीयता नीति बताती है कि और क्यों Agora Citizen Network ("Agora", "हम", "हमें" या "ZKorum") हमारे वेबसाइट और मोबाइल एप्लिकेशन (सामूहिक रूप से, "सेवाएं") का उपयोग करते समय या अन्यथा हमारे साथ बातचीत करते समय आपके बारे में जानकारी कैसे और क्यों एकत्र, उपयोग और साझा करता है। हम इस गोपनीयता नीति में बताए गए तरीके से आपके व्यक्तिगत डेटा के संग्रह और उपयोग के लिए जिम्मेदार हैं। ',
+        ],
+      },
+      {
+        tag: "p",
+        children: [
+          " यदि आपके कोई प्रश्न हैं, तो कृपया हमें ईमेल द्वारा संपर्क करें: ",
+          {
+            tag: "a",
+            children: ["legal@zkorum.com"],
+            href: "mailto:legal@zkorum.com",
+          },
+          ". यदि आप कैलिफ़ोर्निया के निवासी हैं, तो हम आपका ध्यान अनुच्छेद 7 की ओर आकर्षित करना चाहेंगे। ",
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["सामग्री की दृश्यता और भागीदारी रिकॉर्ड"],
+          },
+          {
+            tag: "p",
+            children: [
+              " सामान्य तौर पर, किसी खाते के बिना प्रकाशित चर्चाओं, कथनों, रैंकिंग मदों, परियोजना पृष्ठों और सार्वजनिक परिणामों को देखा जा सकता है, लागू पहुंच प्रतिबंधों के अधीन। भागीदारी की जानकारी नीचे वर्णित अनुमत निर्यात के माध्यम से भी प्रकट की जा सकती है। प्रमाणीकरण क्रेडेंशियल, निजी कुंजियाँ और निजी खाता सेटिंग्स उन निर्यातों का हिस्सा के रूप में प्रकाशित नहीं की जाती हैं। प्रतिभागी पहचानकर्ता, सामग्री और अन्य संदर्भ रिकॉर्ड को किसी व्यक्ति से जोड़ सकते हैं। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " Agora ब्राउज़ करने के लिए आपको खाता बनाने की आवश्यकता नहीं है। चर्चाओं में भाग लेने और सामग्री के साथ इंटरैक्ट करने के लिए, आप कर सकते हैं: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["अतिथि के रूप में ब्राउज़ करें:"],
+                  },
+                  " आप बिना पंजीकरण के ब्राउज़ कर सकते हैं और उन जगहों पर भाग ले सकते हैं जहाँ चर्चा अतिथि को अनुमति देती है। भागीदारी एक डिवाइस-आधारित खाते का निर्माण करती है जो एक क्रिप्टोग्राफ़िक सार्वजनिक-कुंजी पहचानकर्ता (DID) से जुड़ा होता है; संबंधित कुंजियाँ आपके डिवाइस पर संग्रहीत होती हैं। अतिथि पहुंच और रिकवरी मूल डिवाइस कुंजियों को बनाए रखने पर निर्भर करती है। ब्राउज़र स्टोरेज को साफ़ करने या डिवाइस खोने से उस अतिथि खाते के स्वामित्व को साबित करने में बाधा आ सकती है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["सॉफ्ट लॉगिन (सत्र-आधारित सत्यापन):"],
+                  },
+                  " उपयोग करके सत्यापित करें ",
+                  {
+                    tag: "a",
+                    children: ["Zupass"],
+                    href: "https://zupass.org",
+                    external: true,
+                  },
+                  " ग्रुप प्रूफ ऑफ क्रेडेंशियल्स (GPC) का उपयोग करके इवेंट टिकट सत्यापन के लिए। हमें अंतर्निहित टिकट के बजाय एक प्रमाण और एक इवेंट-विशिष्ट पहचानकर्ता प्राप्त होता है। इवेंट सत्यापन एक चर्चा के लिए पात्रता स्थापित कर सकता है, लेकिन यह ईमेल, फ़ोन या पासपोर्ट क्रेडेंशियल के साथ पंजीकरण करने से अलग है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["पंजीकृत खाते:"],
+                  },
+                  " जहाँ उपलब्ध हो, निम्नलिखित तरीकों में से किसी एक का उपयोग करके पंजीकरण करें या खाता एक्सेस करें। चर्चाओं के लिए एक विशेष सत्यापन विधि की आवश्यकता हो सकती है: ",
+                  {
+                    tag: "ul",
+                    children: [
+                      {
+                        tag: "li",
+                        children: [
+                          { tag: "strong", children: ["ईमेल पता:"] },
+                          " ईमेल द्वारा भेजे गए एक बार के कोड से सत्यापित। यह पते पर नियंत्रण साबित करता है, व्यक्ति की वास्तविक पहचान या विशिष्टता नहीं। ",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["फ़ोन नंबर:"],
+                          },
+                          " एसएमएस के माध्यम से भेजे गए एक बार के कोड से सत्यापित ",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          {
+                            tag: "a",
+                            children: ["Rarimo"],
+                            href: "https://rarimo.com/privacy-notice.html",
+                            external: true,
+                          },
+                          ": पासपोर्ट-आधारित ज़ीरो-नॉलेज प्रूफ (ZKP) सत्यापन ",
+                        ],
+                      },
+                    ],
+                  },
+                  " ईमेल और फ़ोन सत्यापन के लिए Agora को आपके द्वारा दिए गए पते या नंबर प्राप्त करने और सत्यापन कोड पहुंचाने की व्यवस्था करने की आवश्यकता होती है। पासपोर्ट सत्यापन में ज़ीरो-नॉलेज प्रूफ का उपयोग होता है; Agora उस सत्यापन के माध्यम से आपकी पासपोर्ट छवि, पासपोर्ट संख्या, नाम या तस्वीर प्राप्त नहीं करता है। हमें खंड 2 में वर्णित प्रमाण की प्रकट पात्रता जानकारी प्राप्त होती है। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              {
+                tag: "strong",
+                children: ["खाता उन्नयन:"],
+              },
+              " एक क्रेडेंशियल जोड़ने से आपके डिवाइस-आधारित खाते का पंजीकरण हो सकता है या योग्य अतिथि भागीदारी को मौजूदा पंजीकृत खाते में मिलाया जा सकता है। यह हस्तांतरित गतिविधि को हमारे सर्वर पर उस खाते से जोड़ता है। विरोधाभासी रिकॉर्डों को खाता-विलय नियमों के अनुसार संभाला जाता है; इस प्रवाह के माध्यम से दो पंजीकृत खातों को मर्ज नहीं किया जा सकता है। एक पूर्ण अतिथि विलय अपरिवर्तनीय है, और विलय की गई पहचान को दूसरे खाते के रूप में पुनर्प्राप्त नहीं किया जा सकता है। इसे 15-दिन की खाता-हटाने की पुनर्प्राप्ति विंडो प्राप्त नहीं होती है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " आपके खाते का एक चुना हुआ या स्वचालित रूप से उत्पन्न उपयोगकर्ता नाम है। उपयोगकर्ता नाम आपके प्रकाशित कथनों या अन्य सार्वजनिक श्रेय के साथ प्रदर्शित किया जा सकता है और यह आपका वास्तविक नाम होना आवश्यक नहीं है। हम सेवाओं को प्रदान करने के लिए आपकी भाषा सेटिंग्स, प्राथमिकताएं और अधिकृत संगठन/परियोजना भूमिकाएं भी संग्रहीत करते हैं। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " प्रकाशित सामग्री को खोज इंजनों द्वारा कॉपी या अनुक्रमित किया जा सकता है। सूची में नहीं या गैर-अनुक्रमित चर्चाएँ और परियोजनाएँ सामान्य खोज से बाहर हैं लेकिन उनके लिंक वाले लोगों के लिए सुलभ रह सकती हैं; केवल अनुक्रमण को अक्षम करने से वे गोपनीय नहीं हो जाती हैं। आपके कथनों या मतों का खुलासा दृश्यता, पहुँच और निर्यात नियमों पर निर्भर करता है जो नीचे वर्णित हैं। ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["आपकी जानकारी कौन देख सकता है?"],
+          },
+          {
+            tag: "p",
+            children: [" दृश्यता जानकारी की श्रेणी पर निर्भर करती है: "],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  "प्रकाशित कथन, चर्चा/परियोजना सामग्री, सार्वजनिक परिणाम, प्रदर्शित उपयोगकर्ता नाम और प्रकाशित संगठन/परियोजना संपर्क विवरण अन्य आगंतुकों के लिए दिखाई दे सकते हैं।",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "प्रमाणीकरण के लिए उपयोग किए जाने वाले ईमेल पते, फ़ोन मेटाडेटा, पासपोर्ट-व्युत्पन्न क्रेडेंशियल, निजी डिवाइस कुंजियाँ, निजी सेटिंग्स और खाता प्रबंधन जानकारी स्वचालित रूप से प्रकाशित नहीं होती है।",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " व्यक्तिगत मत, सर्वेक्षण उत्तर और रैंकिंग विकल्प हमारे सर्वर पर आपके खाते से जुड़े होते हैं जबकि वह जुड़ाव बनाए रखा जाता है। उनका खुलासा गतिविधि और निर्यात नियमों पर निर्भर करता है; वे सभी गोपनीय नहीं हैं। अधिकृत आयोजक व्यक्तिगत सर्वेक्षण प्रतिक्रियाओं और पूर्ण परिणामों तक पहुँच सकते हैं, निर्यात के माध्यम से भी। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "छोटे समूहों के प्रकटीकरण को कम करने के लिए सार्वजनिक सर्वेक्षण योगों को दबाया जा सकता है। आयोजक पहुँच में बिना दबाए गए योग शामिल हो सकते हैं। किसी खाते की आईडी का समूहीकरण या प्रतिस्थापन अपने आप में जानकारी को गुमनाम नहीं बनाता है।",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "जहाँ निर्यात सक्षम है, पंजीकृत उपयोगकर्ता और डिवाइस-आधारित अतिथि जो चर्चा तक पहुँच रखते हैं, वे इसका मानक निर्यात अनुरोध और डाउनलोड कर सकते हैं, भले ही वे आयोजक या प्रतिभागी न हों। मानक कथन निर्यात, जैसे comments.csv, में कथन पाठ, पुनर्रचित लेखक आईडी, टाइमस्टैम्प और सहमत/असहमत/पास की कुल संख्या शामिल होती है; सार्वजनिक सर्वेक्षण फ़ाइलों में प्रश्न, उत्तर विकल्प और अनुमत एकत्रित परिणाम शामिल हो सकते हैं। व्यक्तिगत सर्वेक्षण-प्रतिक्रिया और पूर्ण सर्वेक्षण-परिणाम फ़ाइलों के लिए मालिक-स्तर की अनुमति आवश्यक है। एक चर्चा लिंक गोपनीयता की गारंटी नहीं है, जिसमें गैर-सूचीबद्ध चर्चाएँ भी शामिल हैं।",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "जहाँ votes.csv या कोई अन्य व्यक्तिगत-मत निर्यात पेश किया जाता है, उसके रिकॉर्ड में व्यक्तिगत सहमत/असहमत/पास मान, मतदाता/प्रतिभागी आईडी, कथन संदर्भ और टाइमस्टैम्प शामिल हो सकते हैं। मालिक-स्तर के सर्वेक्षण-प्रतिक्रिया निर्यात में प्रतिभागी आईडी, चयनित विकल्प, मुक्त-पाठ उत्तर, प्रतिक्रिया स्थिति और निर्माण/अपडेट/पूर्णता समय शामिल हो सकते हैं; पूर्ण सर्वेक्षण-परिणाम निर्यात में सार्वजनिक छोटे-समूह दमन के बिना एकत्रित मान शामिल हो सकते हैं। व्यक्तिगत-भागीदारी निर्यात की सामग्री और अनुमत दर्शक भागीदारी से पहले सुविधा के लिए प्रकट किए जाते हैं। एक निर्यात का फ़ाइल प्रारूप उसके रिकॉर्ड को गुमनाम या यह नहीं बढ़ाता कि उन्हें कौन प्राप्त करने के लिए अधिकृत है।",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " रिपोर्ट, मॉडरेशन के कारण और प्रासंगिक रिपोर्टर/प्रशासक पहचान उन अधिकृत कर्मचारियों या आयोजकों के लिए उपलब्ध हैं जो उन्हें संभालते हैं, न कि एक सार्वजनिक गतिविधि इतिहास बनाते हैं। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " प्रतिभागी, लेखक या मतदाता आईडी निर्यात लेबल होते हैं; एक पुनरैप मैप्ड प्रतिभागीआईडी आपका Agora उपयोगकर्ता नाम नहीं है। वर्तमान कथन निर्यात पुनरैप मैप्ड लेखक आईडी का उपयोग करते हैं। हालांकि, एक प्राप्तकर्ता निर्यात किए गए कथन पाठ, टाइमस्टैम्प या अन्य संदर्भ की तुलना Agora पर उपयोगकर्ता नामों के साथ प्रदर्शित कथनों से कर सकता है, एक निर्यात की गई आईडी को उपयोगकर्ता नाम या व्यक्ति से मैन्युअल रूप से जोड़ सकता है, और अन्य रिकॉर्ड्स को लिंक कर सकता है जो उस आईडी को साझा करते हैं। साझा आईडी कथनों, किसी भी शामिल व्यक्तिगत मतों और एक ही निर्यात पीढ़ी में फ़ाइलों में सर्वेक्षण उत्तरों को लिंक कर सकते हैं। इसलिए उपयोगकर्ता नाम फ़ील्ड को हटाने से गुमनामी की गारंटी नहीं मिलती है। मुक्त-पाठ उत्तर, विशिष्ट मतदान पैटर्न और छोटे समूह के परिणाम भी किसी की पहचान कर सकते हैं। प्रमाणीकरण ईमेल पते मानक व्यक्तिगत सर्वेक्षण-प्रतिक्रिया CSV में शामिल नहीं होते हैं; फिर भी एक उत्तर में संपर्क विवरण हो सकते हैं जो आप प्रदान करने का विकल्प चुनते हैं। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " डाउनलोड किए जा सकने वाले निर्यात CSV फ़ाइलों, कई फ़ाइलों वाले ZIP संग्रह, या अन्य समर्थित स्प्रेडशीट, संरचित-डेटा या रिपोर्ट प्रारूपों के रूप में प्रदान किए जा सकते हैं। भविष्य के निर्यात प्रकारों में लेखक श्रेय के रूप में सार्वजनिक रूप से प्रदर्शित उपयोगकर्ता नाम, प्रतिभागी लेबल, प्रकाशित सामग्री और उस निर्यात के लिए अधिकृत भागीदारी/परिणाम शामिल हो सकते हैं। हम लागू होने से पहले अतिरिक्त श्रेय या भागीदारी खुलासों और उनके दर्शकों की पहचान करते हैं, जिसमें कानून द्वारा आवश्यक कोई नोटिस या सहमति हो। यह निजी प्रमाणीकरण क्रेडेंशियल्स को निर्यात करने या प्रतिबंधित प्रतिक्रियाओं तक पहुंच का विस्तार करने का अधिकार नहीं देता है। फ़ाइल प्रारूप की परवाह किए बिना समान पहुंच, प्रतिधारण और विलोपन नियम लागू होते हैं। प्राप्तकर्ता डाउनलोड की गई फ़ाइलों को रख सकते हैं और संयोजित कर सकते हैं और उन्हें स्वतंत्र रूप से पुन: प्रकाशित कर सकते हैं; पुन: प्रकाशन लागू कानून और किसी भी प्रासंगिक प्रतिबंध के अधीन रहता है। हमारी विलोपन प्रक्रिया स्वतंत्र रूप से रखी गई हर प्रति को दूर से मिटा नहीं सकती है, जैसा कि धारा 3.6 में समझाया गया है। ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["AT Protocol माइग्रेशन की योजना"],
+          },
+          {
+            tag: "p",
+            children: [
+              " हम कुछ Agora सुविधाओं को AT Protocol में माइग्रेट करने की योजना बना रहे हैं, जो Bluesky द्वारा भी उपयोग की जाने वाली खुली नेटवर्किंग तकनीक है। दायरा और कार्यान्वयन अभी भी निर्दिष्ट किए जा रहे हैं। सार्वजनिक प्रोटोकॉल प्रकाशन कथनों, व्यक्तिगत मतों और संबद्ध सार्वजनिक पहचानकर्ताओं को स्वतंत्र होस्टिंग, इंडेक्सिंग और एप्लिकेशन सेवाओं के लिए उपलब्ध करा सकता है, जिसमें EEA के बाहर भी शामिल है। स्थायी पहचानकर्ता और अन्य सार्वजनिक जानकारी सेवाओं में भागीदारी को जोड़ सकती है। Agora से विलोपन उन सेवाओं द्वारा स्वतंत्र रूप से रखी गई प्रतियों को हटाने की गारंटी नहीं देगा। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " जिन चर्चाओं का इंडेक्स नहीं किया गया है और जिन्हें प्रतिबंधित पहुँच ('ऐप में 'निजी'') रखने का इरादा है, उनके डेटा को सार्वजनिक प्रोटोकॉल से बाहर रखने या उपयुक्त होने पर AT Protocol Spaces का उपयोग करने पर हम विचार कर रहे हैं। Spaces एक विकसित हो रही पहुँच-नियंत्रण प्रणाली है, एंड-टू-एंड एन्क्रिप्शन नहीं: अधिकृत पाठक, होस्टिंग सेवाएँ और एप्लिकेशन प्राप्त डेटा को पढ़ और संभावित रूप से कॉपी कर सकते हैं। केवल इंडेक्सिंग को अक्षम करना पहुँच प्रतिबंध नहीं है। अंतिम भंडारण, पाठक अनुमतियाँ, पहचान और विलोपन नियम तय नहीं किए गए हैं। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " आपके व्यक्तिगत डेटा को संसाधित या प्रकट करने के तरीके को बदलने वाले माइग्रेशन को सक्रिय करने से पहले, हम इस नीति को अपडेट करेंगे और डेटा श्रेणियों, प्राप्तकर्ताओं, स्थानों और हस्तांतरण सुरक्षा उपायों, सार्वजनिक या प्रतिबंधित पहुँच, प्रतिधारण, विलोपन और उपलब्ध विकल्पों के बारे में प्रासंगिक जानकारी प्रदान करेंगे। जहाँ आवश्यक होगा, हम सहमति लेंगे। यह योजना सूचना मौजूदा प्रतिबंधित भागीदारी को सार्वजनिक करने या इसके प्रसंस्करण के लिए कानूनी आधार को बदलने का प्राधिकरण नहीं देती है। वर्तमान Agora प्रसंस्करण नियम इस नीति के अन्य अनुभागों में वर्णित हैं। ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["तृतीय-पक्ष सेवाएँ"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Agora ऐसी तृतीय-पक्ष सेवाओं का उपयोग करता है जो आईपी पतों और अन्य व्यक्तिगत डेटा को संसाधित कर सकती हैं। जहाँ संभव हो, Agora सेवाओं को EU क्षेत्रीय एंडपॉइंट्स का उपयोग करने के लिए कॉन्फ़िगर करता है या EU-आधारित प्रदाताओं का उपयोग करता है। इन सेवाओं की अपनी गोपनीयता नीतियाँ हैं, और उपयोगकर्ताओं को उनकी समीक्षा करने के लिए प्रोत्साहित किया जाता है। ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Rarimo"],
+                    href: "https://rarimo.com/privacy-notice.html",
+                    external: true,
+                  },
+                  " (वैश्विक) शून्य-ज्ञान पहचान प्रमाणों के लिए। सुरक्षा और सेवा संचालन के लिए आईपी पतों को संसाधित कर सकता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Zupass"],
+                    href: "https://zupass.org",
+                    external: true,
+                  },
+                  " (वैश्विक, ओपन-सोर्स) ग्रुप प्रूफ ऑफ क्रेडेंशियल्स (GPC) का उपयोग करके इवेंट टिकट और पहचान सत्यापन के लिए। सेवा संचालन के लिए आईपी पतों को संसाधित कर सकता है। Zupass गोपनीयता-अनुकूल वेब एनालिटिक्स के लिए सिंपल एनालिटिक्स का उपयोग करता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Twilio"],
+                    href: "https://www.twilio.com/en-us/legal/privacy",
+                    external: true,
+                  },
+                  " एसएमएस सत्यापन और धोखाधड़ी रोकथाम के लिए। Twilio को प्रदान किया गया पूरा फ़ोन नंबर प्राप्त होता है और वह सत्यापन और नेटवर्क मेटाडेटा संसाधित कर सकता है। Agora अपने खाता डेटाबेस में पूरा नंबर संग्रहीत करने के बजाय, पूरे नंबर का एक पेप्ड क्रिप्टोग्राफ़िक हैश, साथ ही आंशिक नंबर/देश मेटाडेटा और सत्यापन स्थिति संग्रहीत करता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Cloudflare"],
+                    href: "https://www.cloudflare.com/privacypolicy/",
+                    external: true,
+                  },
+                  " Turnstile नेटवर्क/ब्राउज़र संकेतों की जाँच करता है, जिसमें आईपी पते, TLS फिंगरप्रिंट, उपयोगकर्ता-एजेंट जानकारी और साइट/मूल शामिल हैं, ताकि लोगों और बॉट्स में अंतर किया जा सके। यह Agora की सुरक्षा के लिए और, अपने स्वयं के नोटिसों में वर्णित अनुसार, अपनी पहचान सेवा में सुधार के लिए हमारे लिए इन संकेतों को संसाधित करता है। जब Cloudflare प्रॉक्सी/CDN/सुरक्षा सेवाएँ सक्षम होती हैं, तो वे उनके माध्यम से गुजरने वाले ट्रैफ़िक और सामग्री को भी संसाधित करते हैं, जिसमें अलग अनुरोध/सुरक्षा लॉगिंग होती है। ये संचालन Agora के TypeScript logger द्वारा फ़िल्टर नहीं किए जाते हैं। देखें भी ",
+                  {
+                    tag: "a",
+                    children: ["Turnstile Privacy Addendum"],
+                    href: "https://www.cloudflare.com/turnstile-privacy-policy/",
+                    external: true,
+                  },
+                  ". ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Amazon Web Services"],
+                    href: "https://aws.amazon.com/privacy/",
+                    external: true,
+                  },
+                  " नीचे दी गई बुनियादी ढांचे और संचालन के लिए। क्षेत्र-चयन योग्य होस्टिंग, भंडारण और परिचालन सेवाएँ आम तौर पर eu-west-1 (डबलिन) में कॉन्फ़िगर की जाती हैं; Bedrock/Mistral AI प्रसंस्करण us-east-1 का उपयोग करता है। IAM और स्वचालित KMS-समर्थित सुरक्षा अधिकृत सेवा पहुँच/भंडारण की रक्षा करते हैं और संग्रहीत डेटा को गुमनाम नहीं बनाते हैं। ",
+                  {
+                    tag: "ul",
+                    children: [
+                      {
+                        tag: "li",
+                        children: [
+                          "EC2 एप्लिकेशन और सहायक सेवाओं को चलाता है; होस्ट, कंटेनर और रिवर्स-प्रॉक्सी लॉग एप्लिकेशन निदान से स्वतंत्र रूप से नेटवर्क/अनुरोध मेटाडेटा और परिचालन त्रुटियों को रिकॉर्ड कर सकते हैं।",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "RDS/Aurora PostgreSQL खाता, सामग्री और भागीदारी डेटा संग्रहीत करता है। डेटाबेस लॉगिंग अपनी कॉन्फ़िगरेशन के अनुसार कनेक्शन, क्वेरी और त्रुटि जानकारी रिकॉर्ड कर सकती है, जो एप्लिकेशन के SQL-लॉग फ़िल्टरिंग से अलग है। स्वचालित RDS बैकअप में वर्तमान में 8-दिन की प्रतिधारण सेटिंग है; अनुभाग 4 में विलोपन/पुनर्स्थापना नियम और अधिकतम बैकअप सीमा किसी भी प्रतिधारित प्रतियों पर लागू होती है।",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "S3 स्थिर संपत्तियों और गतिशील वस्तुओं जैसे चर्चा निर्यात और अपलोड की गई फ़ाइलों को संग्रहीत करता है। सक्रिय संपत्तियों/फ़ाइलों को केवल इसलिए नहीं हटाया जाता है क्योंकि लॉग-प्रतिधारण या डेटाबेस-बैकअप अवधि समाप्त हो जाती है; प्रत्येक वस्तु का उद्देश्य, विलोपन अनुरोध और निर्यात समाप्ति उसके जीवनचक्र को नियंत्रित करते हैं।",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "CloudWatch उन लॉग को एकत्र और संग्रहीत करता है जो इसे भेजे जाते हैं, जिसमें प्रासंगिक एप्लिकेशन/वर्कर, कंटेनर, होस्ट और डेटाबेस निदान शामिल हैं जहाँ संग्रह कॉन्फ़िगर किया गया है। यह स्वचालित रूप से अन्य प्रणालियों द्वारा उत्पन्न रिकॉर्ड पर TypeScript एप्लिकेशन के अस्पष्टता नियम लागू नहीं करता है।",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "SES प्राप्तकर्ता पते और ईमेल सामग्री प्राप्त करता है जो सत्यापन कोड या ऑप्ट-इन चर्चा ईमेल अपडेट वितरित करने के लिए आवश्यक हैं। SNS कॉन्फ़िगर किए गए वितरण/बाउंस/शिकायत घटनाओं को संभालता है, जिसमें पते, प्रदाता पहचानकर्ता और वितरण संदर्भ हो सकते हैं।",
+                        ],
+                      },
+                      {
+                        tag: "li",
+                        children: [
+                          "Bedrock अनुरोधित सुझावों, मत-समूह विवरण/सुधार और विवरण अनुवाद के लिए Mistral मॉडल चलाता है। हम प्रासंगिक शीर्षक/मुख्य भाग, कथनों या सारांश को बिना किसी Agora खाता UUIDs, उपयोगकर्ता नामों, ईमेल पतों, फ़ोन नंबरों या डिवाइस/प्रमाणीकरण पहचानकर्ताओं के कच्चे पाठ के रूप में भेजते हैं। कुछ ऑपरेशनों में आउटपुट को उनके स्रोतों से मिलाने के लिए भाषा/समूह संदर्भ और सामग्री/विवरण आईडी शामिल हैं। पाठ के अंदर लिखी गई पहचान योग्य जानकारी स्वचालित रूप से नहीं हटाई जाती है। ग्राहक-कॉन्फ़िगर किया गया Bedrock आह्वान लॉगिंग क्लाउडवॉच या S3 में पूर्ण मॉडल इनपुट/आउटपुट को अक्षम कर दिया गया है; सामान्य सेवा-ऑपरेशन मेटाडेटा और लागू प्रदाता प्रसंस्करण अलग रहता है।",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Google Cloud Platform"],
+                    href: "https://cloud.google.com/terms/cloud-privacy-notice",
+                    external: true,
+                  },
+                  " भाषा का पता लगाना सामग्री प्रसंस्करण का एक स्वचालित हिस्सा है और उपयोगकर्ताओं द्वारा अक्षम नहीं किया जा सकता है। यह सामान्यतः हमारे बैकएंड पर Lingua, एक सांख्यिकीय भाषा-पता लगाने वाले उपकरण के साथ चलता है, बिना पाठ को किसी बाहरी डिटेक्टर को भेजे। कुछ मामलों में बैकएंड Google Cloud डिटेक्शन का उपयोग करता है, प्रासंगिक पाठ को संयुक्त राज्य अमेरिका में us-central1 पर भेजता है। वैकल्पिक गतिशील अनुवाद भी अनुवाद के लिए चुने गए पाठ और भाषा निर्देशों को उस सेवा को भेजता है। हम Agora खाता/संपर्क/प्रमाणीकरण पहचानकर्ताओं को संलग्न नहीं करते हैं, लेकिन पाठ के भीतर की पहचान योग्य जानकारी को अभी भी संसाधित किया जा सकता है। गतिशील अनुवाद को अक्षम करने से भाषा का पता लगाना या उसका Google फॉलबैक अक्षम नहीं होता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Plausible Analytics"],
+                    href: "https://plausible.io/data-policy",
+                    external: true,
+                  },
+                  " कुकी रहित पेजव्यू/उपयोग विश्लेषण के लिए। यह विज़िट गिनने के लिए आवश्यक पेज और तकनीकी जानकारी संसाधित करता है बिना किसी स्थायी विज्ञापन पहचान के; इसकी डेटा नीति बताती है कि नेटवर्क/ब्राउज़र जानकारी का उपयोग समग्र आँकड़े बनाने के लिए कैसे किया जाता है। हम खाता क्रेडेंशियल या चर्चा ड्राफ्ट को विश्लेषण गुणों के रूप में नहीं भेजते हैं। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "a",
+                    children: ["Sentry"],
+                    href: "https://sentry.io/privacy/",
+                    external: true,
+                  },
+                  " हमारे EU इनजेशन कॉन्फ़िगरेशन के माध्यम से होस्ट किए गए चयनित फ्रंटएंड त्रुटि/प्रदर्शन निदान और मास्क की गई त्रुटि-ट्रिगर रीप्ले डेटा प्राप्त करता है। इनमें ब्राउज़र/ओएस विवरण, तकनीकी संदर्भ, समय/इंटरैक्शन जानकारी, संरचनात्मक पेज डेटा और छद्मनाम मार्ग पथ शामिल हो सकते हैं। Sentry इनजेशन के लिए उपयोग किए गए नेटवर्क कनेक्शन को भी संसाधित करता है। प्रतिधारण डेटा श्रेणी और सदस्यता के अनुसार भिन्न होता है; एक अनसुलझी समस्या का मतलब यह नहीं है कि हर पुराना इवेंट अनिश्चित काल तक रखा जाता है। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " हमारी स्वयं-होस्टेड Reacher सेवा पहुंच/डिस्पोजेबल-एड्रेस स्थिति का आकलन करने के लिए आवश्यक पूरा ईमेल पता प्राप्त करती है और प्राप्तकर्ता मेल सर्वर या कॉन्फ़िगर किए गए प्रदाता जांच से संपर्क कर सकती है। इसका हमारे बुनियादी ढांचे पर अपना परिचालन लॉगिंग पथ है। Rarimo और Zupass अपने संबंधित प्रमाण/सत्यापन इंटरैक्शन को संभालते हैं; Agora इन प्रमाण संकेतों और पात्रता जानकारी को प्राप्त करता है, उन प्रमाण प्रवाहों के माध्यम से अंतर्निहित पासपोर्ट या इवेंट टिकट को नहीं। प्रोसेसर व्यवस्थाएं और अंतर्राष्ट्रीय-स्थानांतरण सुरक्षा खंड 3 में वर्णित हैं। Tor का उपयोग करने से आपके नेटवर्क पते के संपर्क में कमी आ सकती है लेकिन प्रस्तुत पाठ या खाता गतिविधि को गुमनाम नहीं बनाता है। ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["कुकीज़ और विश्लेषण"],
+          },
+          {
+            tag: "p",
+            children: [
+              " Agora विज्ञापन या क्रॉस-साइट ट्रैकिंग कुकीज़ का उपयोग नहीं करता है, न ही हम विज्ञापन के लिए डेटा बेचते हैं। हम Plausible Analytics का उपयोग करते हैं, जो एक EU-आधारित एनालिटिक्स सेवा है जो कुकीज़ का उपयोग नहीं करती है, और सीमित त्रुटि और प्रदर्शन टेलीमेट्री के लिए Sentry का उपयोग करते हैं। अधिक विवरण के लिए, कृपया देखें ",
+              {
+                tag: "a",
+                children: ["Plausible Analytics"],
+                href: "https://plausible.io/about",
+                external: true,
+              },
+              ". ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " आवश्यक डिवाइस स्टोरेज में ब्राउज़र स्टोरेज में क्रिप्टोग्राफ़िक कुंजियाँ और सत्र-संबंधी स्थिति, साथ ही सहेजी गई भाषा/प्राथमिकताएँ और अप्रकाशित चर्चा/कथन ड्राफ्ट शामिल हैं। स्थानीय ड्राफ्ट नियमित रूप से केवल इसलिए अपलोड नहीं किए जाते हैं क्योंकि वे आपके डिवाइस पर सहेजे गए हैं। एक ड्राफ्ट जमा करना, आयात का अनुरोध करना या वैकल्पिक AI-सुझाव सुविधा का उपयोग करना प्रासंगिक इनपुट को हमारे सर्वर पर भेजता है और, जहाँ आवश्यक हो, सेवा प्रदाता को भेजता है। आप ब्राउज़र नियंत्रणों के माध्यम से स्थानीय डेटा साफ़ कर सकते हैं, लेकिन अतिथि कुंजियों को साफ़ करने से उस खाते तक आपकी पहुँच या उसे पुनर्प्राप्त करने की क्षमता हट सकती है। ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["1. यह गोपनीयता नीति कब लागू होती है?"],
+          },
+          {
+            tag: "p",
+            children: [
+              "1.1. हम आपका व्यक्तिगत डेटा कब एकत्र और उपयोग करते हैं:",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  "हमारी वेबसाइट का उपयोग करते समय (https://agoracitizen.network/);",
+                ],
+              },
+              {
+                tag: "li",
+                children: ["हमारे मोबाइल ऐप का उपयोग करते समय; और"],
+              },
+              {
+                tag: "li",
+                children: [
+                  " ईमेल या किसी अन्य डिजिटल संचार चैनल के माध्यम से हमसे संवाद करते समय। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 1.2. इस गोपनीयता नीति में अनुच्छेद 8 में बताए अनुसार संशोधन किया जा सकता है। ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: [
+              "2. हम कौन सा व्यक्तिगत डेटा संसाधित करते हैं और क्यों?",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " हम केवल एक विशिष्ट उद्देश्य के लिए और कानून द्वारा अनुमत सीमा तक आपका व्यक्तिगत डेटा संसाधित करेंगे। हम नीचे बताते हैं कि हम कौन सा डेटा संसाधित करते हैं, क्यों, और प्रासंगिक कानूनी आधार क्या है। जहाँ सहमति आवश्यक है, यह वर्णित विशिष्ट प्रसंस्करण से संबंधित है, और आपके वापस लेने के अधिकारों की व्याख्या खंड 6 में की गई है। अप्रत्यक्ष रूप से प्राप्त जानकारी, जिसमें आयातित भागीदारी या परियोजना संपर्क जानकारी शामिल है, नीचे पहचानी गई है। ",
+            ],
+          },
+          {
+            tag: "table",
+            children: [
+              {
+                tag: "thead",
+                children: [
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "th",
+                        children: ["कौन सा व्यक्तिगत डेटा?"],
+                      },
+                      {
+                        tag: "th",
+                        children: ["क्यों?"],
+                      },
+                      {
+                        tag: "th",
+                        children: ["कानूनी आधार?"],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                tag: "tbody",
+                children: [
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "डिवाइस पहचानकर्ता (DID - विकेन्द्रीकृत पहचानकर्ता)",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " आपके खाते से जुड़े डिवाइस सार्वजनिक-कुंजी पहचानकर्ता, डिवाइस/उपयोगकर्ता-एजेंट जानकारी और सत्र निर्माण, समाप्ति और निरस्तीकरण की स्थिति। ये अनुरोधों को प्रमाणित करते हैं, सत्रों का प्रबंधन करते हैं, सेवानिवृत्त क्रेडेंशियल्स के पुन: उपयोग को रोकते हैं और सत्यापित रिकवरी का समर्थन करते हैं। एक DID अनंत काल तक पुन: प्रयोज्य सत्र नहीं है: पंजीकृत-डिवाइस पहचानकर्ताओं को सत्र समाप्त होने या निरस्त होने पर सेवानिवृत्त किया जा सकता है। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["वैध हित"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "सॉफ्ट लॉगिन - इवेंट टिकट सत्यापन (Zupass)",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " हम इवेंट पात्रता की जांच करने और डुप्लिकेट उपयोग को रोकने के लिए एक इवेंट-विशिष्ट नलिफायर, इवेंट/प्रदाता पहचानकर्ता और सत्यापन टाइमस्टैम्प संग्रहीत करते हैं। हमें प्रमाण के माध्यम से अंतर्निहित टिकट प्राप्त नहीं होता है। यदि कोई वैकल्पिक प्रमाण अतिरिक्त टिकट विशेषताओं का खुलासा करता है, तो उन्हें केवल प्रासंगिक पात्रता जांच के लिए संसाधित किया जाता है। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["वैध हित"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["प्रमाणीकरण डेटा - फ़ोन नंबर"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " हमें सत्यापन और एसएमएस वितरण के लिए आपके द्वारा प्रदान किया गया नंबर प्राप्त होता है। खाता/प्रमाणीकरण भंडारण में पूर्ण नंबर का पेप्ड हैश, अंतिम दो अंक, कॉलिंग/फ़ोन देश कोड, पेप्पर संस्करण, टाइमस्टैम्प, कोड/चुनौती स्थिति और एंटी-एब्यूज़ काउंटर शामिल हैं। Twilio को पूरा नंबर प्राप्त होता है। हम दुरुपयोग को रोकने और भेजने के नियंत्रण लागू करने के लिए न्यूनतम अवरुद्ध-नंबर और एसएमएस-बजट स्थिति भी बनाए रखते हैं। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["वैध हित"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "प्रमाणीकरण डेटा - पासपोर्ट जीरो-नॉलेज प्रूफ (Rarimo)",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " पासपोर्ट-व्युत्पन्न नलिफायर, और प्रमाण द्वारा प्रकट नागरिकता देश कोड और लिंग का उपयोग करके विशिष्टता और पात्रता सत्यापित करने के लिए। सत्यापन बिना पूरी जन्म तिथि प्रदान किए आयु सीमा की जांच कर सकता है। हमें इस प्रवाह के माध्यम से अंतर्निहित पासपोर्ट नंबर, नाम, तस्वीर या दस्तावेज़ छवि प्राप्त नहीं होती है। ये क्रेडेंशियल रिकवरी या विलोपन अनुरोध के लिए स्वामित्व सत्यापन का भी समर्थन कर सकते हैं। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["वैध हित"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["खाता जानकारी"],
+                          },
+                          " (उपयोगकर्ता नाम, प्रदर्शित/बोली जाने वाली भाषाएँ, प्राथमिकताएँ, विषय/म्यूट सेटिंग्स, खाता स्थिति और संगठन/परियोजना अनुमतियाँ) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " खाते को प्रदान करने और प्रशासित करने, आपकी प्राथमिकताओं और अनुमतियों को लागू करने, सूचनाओं का प्रबंधन करने और खाता पुनर्प्राप्ति/हटाने का समर्थन करने के लिए। पासपोर्ट-व्युत्पन्न विशेषताओं को ऊपर अलग से कवर किया गया है। हम सभी खाता सेटिंग्स प्रकाशित नहीं करते हैं या विज्ञापन के लिए प्रमाणीकरण संपर्क विवरण नहीं बेचते हैं। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["आपकी सहमति"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["आपके द्वारा की गई क्रियाएँ"],
+                          },
+                          " (चर्चाएँ, कथन, सहमत/असहमत/पास मत, सर्वेक्षण विकल्प/मुक्त-पाठ उत्तर, और सर्वश्रेष्ठ/सबसे खराब रैंकिंग तुलनाएँ) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " आपके द्वारा प्रस्तुत सामग्री को प्रकाशित करने, आपकी भागीदारी को रिकॉर्ड करने, रैंकिंग सत्र फिर से शुरू करने और वर्तमान और ऐतिहासिक परिणाम प्रदान करने के लिए। भागीदारी रिकॉर्ड में खाता जुड़ाव, टाइमस्टैम्प, उम्मीदवार सेट/तुलना क्रम और सर्वेक्षण प्रतिक्रिया/पूर्णता स्थिति शामिल है। किसी कथन या आपके खाते को हटाने से वर्तमान दृश्यों और विश्लेषण से प्रभावित व्यक्तिगत कथन हट जाते हैं और हमारे चेकपॉइंट में उनके पाठ को '[हटाया गया]' से बदल दिया जाता है, बिना उनके अनुवाद, उपयोगकर्ता नाम या प्रोफ़ाइल लिंक प्रदर्शित किए। खाता पुनर्प्राप्ति और स्थायी सफाई अनुभाग 6.7 का पालन करती है। कानूनी रूप से बनाए रखा गया सहमत/असहमत/पास मत अन्य पात्र कथनों पर अनुभाग 4 और 6.7 के तहत योगदान देना जारी रख सकता है। अधिकृत आयोजक अनुभाग 3 में वर्णित सर्वेक्षण प्रतिक्रियाओं/परिणामों तक पहुँच सकते हैं। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["आपकी सहमति"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["IP पता"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " प्लेटफ़ॉर्म बुनियादी ढांचे की सुरक्षा करने, दुर्भावनापूर्ण गतिविधियों को रोकने और परिचालन सुरक्षा सुनिश्चित करने के लिए (उदाहरण के लिए, वितरित सेवा से इनकार (DDoS) हमलों के खिलाफ सुरक्षा)। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["वैध हित"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["छद्मनामिक तकनीकी डेटा"],
+                          },
+                          " (चयनित छद्मनामिक खाता/चर्चा/अनुरोध पहचानकर्ता, तकनीकी संदर्भ, त्रुटि श्रेणियाँ, गणनाएँ, समय और टाइमस्टैम्प) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " विश्वसनीयता, सुरक्षा और प्रदर्शन की निगरानी के लिए। कॉन्फ़िगर किए गए TypeScript एप्लिकेशन डायग्नोस्टिक्स अनुमोदित मेटाडेटा का उपयोग करते हैं और कच्चे बॉडी, क्रेडेंशियल्स, प्रदाता प्रतिक्रियाओं, SQL और अनुरोध URL को छोड़ देते हैं। अलग से, Cloudflare, EC2 होस्ट/रिवर्स-प्रॉक्सी, CloudWatch, RDS डेटाबेस, सहायक-सेवा और Sentry रिकॉर्ड अपने कॉन्फ़िगरेशन के अनुसार नेटवर्क/अनुरोध/ब्राउज़र जानकारी और परिचालन/त्रुटि संदर्भ को संसाधित कर सकते हैं। डेटाबेस डायग्नोस्टिक्स में क्वेरी संदर्भ या मान शामिल हो सकते हैं। ये पथ एप्लिकेशन सैनिटाइज़र द्वारा पूरी तरह से कवर नहीं किए जाते हैं और गुमनाम नहीं माने जाते हैं। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["वैध हित"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["चर्चा"],
+                          },
+                          " (हमसे संपर्क करते समय संपर्क विवरण, संदेश/रिपोर्ट की सामग्री और प्रासंगिक तिथियां प्रदान की जाती हैं) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " आपके और हमारे बीच संचार को सक्षम करने के लिए (उदाहरण के लिए, जब आप सोशल मीडिया, टेलीफोन या ईमेल के माध्यम से हमसे संपर्क करते हैं)। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " अनुरोधों, प्रश्नों या टिप्पणियों का जवाब देने या किसी भी प्रकार के प्रश्नों के लिए सक्रिय रूप से आपसे संपर्क करने में हमारी वैध रुचि। ",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["उपरोक्त व्यक्तिगत डेटा।"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " हमारे कानूनी दायित्वों का पालन करने या सक्षम पुलिस अधिकारियों, न्यायिक अधिकारियों, सरकारी संस्थानों या निकायों से किसी भी उचित अनुरोध का पालन करने के लिए, जिसमें सक्षम डेटा संरक्षण प्राधिकरण शामिल हैं। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["हमारा कानूनी दायित्व।"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["उपरोक्त व्यक्तिगत डेटा।"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " आनुपातिक सत्यापन, प्रतिबंध और दमन रिकॉर्ड का उपयोग करके धोखाधड़ी, अवांछित संदेश और अनधिकृत गतिविधि को रोकने, पता लगाने और संबोधित करने के लिए। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["हमारा कानूनी दायित्व।"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["उपरोक्त व्यक्तिगत डेटा।"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "कानूनी कार्यवाही में अपना बचाव करने के लिए।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " इन कार्यवाही में आपके व्यक्तिगत डेटा का उपयोग करने में हमारी वैध रुचि। ",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["उपरोक्त व्यक्तिगत डेटा।"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " किसी तीसरे पक्ष को सूचित करने के लिए संभावित विलय, अधिग्रहण/द्वारा अधिग्रहण या उस तीसरे पक्ष द्वारा विखंडन के संदर्भ में, भले ही वह तीसरा पक्ष EU के बाहर स्थित हो। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " व्यावसायिक लेनदेन में शामिल होने में हमारी वैध रुचि। ",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["खाता उन्नयन/विलय डेटा"],
+                          },
+                          " (उपयोगकर्ता सामग्री, डिवाइस, इवेंट टिकट, प्राथमिकताएं) ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          " पात्र अतिथि गतिविधि को पंजीकृत खाते से जोड़ने और डुप्लिकेट/टकरावों का समाधान करने के लिए। एक बार जब इसका हस्तांतरण सुरक्षित रूप से पूरा हो जाता है तो स्रोत पहचान हटा दी जाती है; एक अपरिवर्तनीय पहचान विलय एक पुनर्प्राप्त करने योग्य खाता-हटाने के अनुरोध से अलग है। ",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: ["आपकी सहमति और हमारा वैध हित।"],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          { tag: "strong", children: ["ईमेल प्रमाणीकरण"] },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "पूरा मानक ईमेल पता, खाता जुड़ाव, वितरण वर्गीकरण, डिवाइस पहचानकर्ता, अस्थायी सत्यापन कोड/समाप्ति, भेजें/अनुमान काउंटर और बैकऑफ़ स्थिति। हम इनका उपयोग पंजीकरण, लॉगिन, रिकवरी और पता सत्यापन के लिए करते हैं; AWS SES कोड वितरित करता है और कॉन्फ़िगर किए गए सत्यापन उपकरण पहुंच का आकलन करते हैं।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "खाता प्रमाणीकरण और दुरुपयोग की रोकथाम में वैध हित।",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "व्युत्पन्न विश्लेषण और रैंकिंग जानकारी",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "मत समूह की सदस्यता, व्यक्तिगत प्राथमिकता अनुमान और अनिश्चितता, वर्तमान विश्लेषण इनपुट और ऐतिहासिक एकत्रित चेकपॉइंट। हम पैटर्न, सामान्य आधार और सामुदायिक प्राथमिकताओं की पहचान करने के लिए भागीदारी से इन्हें प्राप्त करते हैं। निरंतर मत समूह विश्लेषण के लिए प्रत्येक प्रतिभागी के मतदान पैटर्न की आवश्यकता होती है, न कि केवल कथन के कुल। बनाए गए मतदान पैटर्न स्थायी रूप से अनलिंक होने के बाद निरंतर खाता प्रोफ़ाइल के बजाय चर्चा-विशिष्ट भागीदारी पहचानकर्ताओं का उपयोग करते हैं। खाता लिंक हटाए जाने के बाद भी सटीक सदिश, सदस्यता और स्कोर व्यक्तिगत या छद्मनाम डेटा हो सकते हैं; प्रकाशित समुच्चय के लिए अलग प्रकटीकरण-जोखिम मूल्यांकन की आवश्यकता होती है।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "अंतर्निहित भागीदारी और उसके प्रकट विश्लेषण उद्देश्यों के लिए आपकी सहमति, वापसी के अधिकारों के अधीन; संवेदनशील व्यक्तिगत डेटा शामिल होने पर एक लागू अतिरिक्त शर्त। किसी भी स्वतंत्र रूप से लागू प्रतिधारण आधार को विशेष रूप से बनाए गए डेटा और उद्देश्य को कवर करना चाहिए; खाता विलोपन या पहचानकर्ताओं को हटाना एक नहीं बनाता है।",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["परियोजनाएँ, संगठन, दस्तावेज़ और आयात"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "सदस्यताएँ/क्षमताएँ, परियोजना संपर्क और उनके नाम/भूमिकाएँ/संपर्क विवरण/छवियाँ, अपलोड की गई फ़ाइलें और फ़ाइल मेटाडेटा, और सामग्री/संस्करण जानकारी। आयोजक URL या CSV फ़ाइलों से बाहरी चर्चाओं का भी आयात कर सकते हैं, जिसमें कथन, मत, स्रोत प्रतिभागी पहचानकर्ता और टाइमस्टैम्प शामिल हैं। यह उन लोगों के बारे में डेटा का एक अप्रत्यक्ष स्रोत है जिन्होंने Agora का उपयोग नहीं किया हो; हम चर्चा की संरचना को बनाए रखने के लिए आयातित प्रतिभागी रिकॉर्ड बनाते हैं।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "अनुरोधित सेवाओं का प्रदर्शन; अधिकृत परियोजनाओं/आयात को संचालित करने में वैध हित, प्रभावित लोगों के अधिकारों और किसी भी अतिरिक्त आवश्यक कानूनी शर्त के अधीन।",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "स्वचालित भाषा पहचान, वैकल्पिक AI सहायता और गतिशील अनुवाद",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "प्रस्तुत/आयातित शीर्षकों, विवरणों, कथनों और अन्य सामग्री की प्रासंगिक स्वचालित भाषा पहचान प्रक्रियाएँ। इसे बंद नहीं किया जा सकता: Lingua सामान्य रूप से हमारे बैकएंड पर सांख्यिकीय रूप से चलता है, लेकिन कुछ मामलों में Google Cloud in us-central1 पाठ प्राप्त कर सकता है। हम सामग्री हैंडलिंग के लिए पता लगाई गई भाषा/प्रदाता/विश्वास जानकारी संग्रहीत करते हैं। यह वैकल्पिक गतिशील अनुवाद से अलग है। जब आप AI बीज सुझाव का अनुरोध करते हैं, तो प्रासंगिक अप्रकाशित मसौदा पाठ को Bedrock के माध्यम से Mistral को भेजा जा सकता है; समूह विवरण प्रतिनिधि कथनों का उपयोग करते हैं और सुधार में मसौदा सारांश शामिल हो सकते हैं। ये अनुरोध साथ में खाता पहचानकर्ता को छोड़ते हैं लेकिन पाठ के भीतर व्यक्तिगत जानकारी को स्वचालित रूप से नहीं हटाते हैं।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "अंतर्निहित सामग्री को संसाधित करने का लागू आधार; वैकल्पिक प्रसंस्करण के लिए आवश्यक विशिष्ट सहमति। पहचान एक प्रकट स्वचालित सामग्री-प्रसंस्करण कार्य है, न कि अलग से स्विच करने योग्य अनुवाद विकल्प।",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: ["चर्चा ईमेल अपडेट, यदि सक्षम है"],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "सदस्यता विकल्प और उनका स्रोत/दिनांक, प्राप्तकर्ता पते के स्नैपशॉट, भाषा, वितरण प्रयास/प्रदाता आईडी, बाउंस/शिकायत दमन, अनसब्सक्राइब/वरीयता/रिपोर्ट टोकन हैश और उपयोग समय, और दुरुपयोग रिपोर्ट। हम इनका उपयोग आयोजक द्वारा लिखे गए अपडेट भेजने के लिए करते हैं जिन्हें आप प्राप्त करना चुनते हैं, ऑप्ट-आउट का सम्मान करने, वितरण विफलताओं को हल करने और दुरुपयोग को रोकने के लिए। SES/SNS वितरण घटनाओं को संभालता है; पूर्ण घटना प्रसंस्करण कच्चे प्रदाता पेलोड को हटा देता है जबकि आवश्यक डीडुप्लीकेशन/दमन स्थिति को बनाए रखता है।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "वैकल्पिक अपडेट के लिए आवश्यक सहमति; अनुरोधित प्राथमिकता कार्यों का प्रदर्शन; वितरण अखंडता और अवांछित या दुरुपयोग संदेशों को रोकने में वैध हित।",
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    tag: "tr",
+                    children: [
+                      {
+                        tag: "td",
+                        children: [
+                          {
+                            tag: "strong",
+                            children: [
+                              "हटाना, पुनर्प्राप्त करना और प्रतिबंधित मामले के रिकॉर्ड",
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "हटाने के अनुरोध, स्वामित्व सत्यापन परिणाम, पुनर्प्राप्ति की समय सीमा, सफाई की प्रगति और बैकअप से बहाली को रोकने के लिए आवश्यक न्यूनतम विलोपन प्रमाण। प्रतिबंधित सुरक्षा/मॉडरेशन/कानूनी रिकॉर्ड में आवश्यक घटना पहचानकर्ता, कारण, तिथियां और संकीर्ण रूप से दायरे में सबूत हो सकते हैं। वे आपके हटाए गए खाते, क्रेडेंशियल्स या भागीदारी का सामान्य संग्रह नहीं हैं।",
+                        ],
+                      },
+                      {
+                        tag: "td",
+                        children: [
+                          "आपके खाते के जीवनचक्र का अनुरोध, डेटा अधिकारों से संबंधित लागू कानूनी दायित्व, और संकीर्ण रूप से उचित सुरक्षा या कानूनी-दावा हित।",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "कथन, मुक्त-पाठ उत्तर और व्युत्पन्न भागीदारी पैटर्न राजनीतिक राय या अन्य संवेदनशील जानकारी प्रकट कर सकते हैं। हम इस प्रकार की जानकारी केवल लागू कानून द्वारा अनुमत स्थिति के तहत संसाधित करते हैं, जिसमें जहां आवश्यक हो स्पष्ट सहमति शामिल है। सार्वजनिक उपलब्धता, एक छद्म नाम या एक समग्र लेबल उन दायित्वों को समाप्त नहीं करता है। अपने या अन्य लोगों के बारे में अनावश्यक व्यक्तिगत जानकारी जमा करने से बचें।",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["3. हम आपका व्यक्तिगत डेटा किसके साथ साझा करते हैं?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.1. प्राप्तकर्ता सुविधा, प्रकाशन विकल्प और लागू अनुमतियों पर निर्भर करते हैं। निजी जानकारी केवल उन लोगों और सेवा प्रदाताओं तक सीमित है जिन्हें किसी अधिकृत उद्देश्य के लिए इसकी आवश्यकता है, जबकि आप जो जानकारी प्रकाशित करते हैं उसे अन्य आगंतुक देख सकते हैं। प्राप्तकर्ताओं में शामिल हैं: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  "आप, खाता प्रबंधन, आपकी भागीदारी का इतिहास और आपके डेटा-अधिकार अनुरोधों के लिए;",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "अन्य आगंतुक, प्रकाशित सामग्री, सार्वजनिक श्रेय, संपर्क विवरण और सार्वजनिक परिणामों के लिए, जिसमें प्रतिभागी पहचानकर्ता, कोई भी उपयोगकर्ता नाम जो प्रकट सार्वजनिक श्रेय के रूप में प्रदान किया गया हो और पंजीकृत उपयोगकर्ताओं या चर्चा तक पहुँच वाले डिवाइस-आधारित मेहमानों द्वारा अनुरोधित अनुमत निर्यात में शामिल कोई भी व्यक्तिगत मत शामिल है;",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "अधिकृत आयोजक और संगठन/परियोजना कर्मचारी, चर्चाओं के प्रबंधन, व्यक्तिगत सर्वेक्षण प्रतिक्रियाओं, निजी/पूर्ण परिणामों, अनुमत निर्यात और मॉडरेशन के लिए। साझा प्रतिभागी आईडी निर्यात की गई फ़ाइलों में उत्तरों, कथनों और किसी भी शामिल व्यक्तिगत मत को लिंक कर सकती है। प्राप्तकर्ता सार्वजनिक कथन पाठ, टाइमस्टैम्प या अन्य जानकारी की तुलना करके उन आईडी को उपयोगकर्ता नामों या लोगों से जोड़ सकते हैं। आयोजक अपने स्वयं के अधिकृत बाद के उपयोग और उनके द्वारा एकत्र की गई किसी भी अतिरिक्त जानकारी के लिए जिम्मेदार हैं;",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "हमारे अधिकृत कर्मी और आपूर्तिकर्ता, जिसमें ऊपर वर्णित बुनियादी ढांचा, सत्यापन, ईमेल, एआई, अनुवाद, एनालिटिक्स और क्रैश-रिपोर्टिंग सेवाएँ शामिल हैं, जो उपयुक्त पहुंच प्रतिबंधों और प्रोसेसर व्यवस्थाओं के अधीन हैं जहाँ लागू हो; और",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " सरकारी या न्यायिक प्राधिकरण, उस सीमा तक जहाँ हम आपके व्यक्तिगत डेटा को उनके साथ साझा करने के लिए बाध्य हैं (उदाहरण के लिए, कर प्राधिकरण, पुलिस या न्यायिक प्राधिकरण)। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.2. कुछ प्रसंस्करण यूरोपीय आर्थिक क्षेत्र (EEA) के बाहर होता है, जिसमें अमेरिकी AI और अनुवाद एंडपॉइंट और विश्व स्तर पर संचालित सत्यापन/सुरक्षा सेवाएँ शामिल हैं। केवल प्रासंगिक संचालन के लिए आवश्यक जानकारी भेजी जाती है। AI या अनुवाद सेवा को भेजा गया पाठ स्वयं व्यक्तिगत जानकारी रख सकता है, भले ही खाता पहचानकर्ता हटा दिए गए हों। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.3. जहाँ डेटा-सुरक्षा कानून स्थानांतरण तंत्र की मांग करता है, हम लागू यूरोपीय आयोग पर्याप्तता निर्णय, एक अनुमोदित ढाँचा जहाँ प्राप्तकर्ता और प्रसंस्करण शामिल हैं, या प्रासंगिक सुरक्षा उपायों के साथ मानक संविदात्मक खंड जैसे उपयुक्त सुरक्षा उपायों का उपयोग करते हैं। किसी प्रदाता का सामान्य स्थान या गोपनीयता-नीति लिंक अपने आप में एक स्थानांतरण सुरक्षा उपाय नहीं है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.4. आपके डेटा के प्राप्तकर्ताओं, प्रासंगिक प्रसंस्करण स्थानों और लागू सुरक्षा उपायों के बारे में जानकारी के लिए आप legal@zkorum.com पर संपर्क कर सकते हैं, जिसमें स्थानांतरण के लिए उपयोग किए गए संविदात्मक सुरक्षा उपायों के बारे में जानकारी कैसे प्राप्त करें, यह भी शामिल है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 3.5. वास्तव में गुमनाम एकत्रित रिपोर्टों को उनकी अंतर्निहित व्यक्तिगत प्रविष्टियों को बनाए रखे बिना रखा या साझा किया जा सकता है। छद्मनाम रिकॉर्ड, जुड़े निर्यात, छोटे समूह सांख्यिकी और पहचान योग्य पाठ को व्यक्तिगत डेटा के रूप में माना जाता रहता है जहाँ किसी को उचित रूप से पहचाना जा सकता है, अलग किया जा सकता है या अन्य जानकारी से जोड़ा जा सकता है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "3.6. जहाँ आवश्यक हो, हम लागू होने वाले मिटाने, सुधारने या प्रतिबंधित करने की सूचना संबंधित प्राप्तकर्ताओं को देते हैं और अपने प्रोसेसर को निर्देश देते हैं। Agora से जानकारी हटाने से दूसरों द्वारा पहले से डाउनलोड की गई, स्वतंत्र रूप से प्रकाशित या अनुक्रमित प्रतियाँ स्वचालित रूप से नहीं हटती हैं। हम अपने नियंत्रित भंडारण और प्रदर्शन पर विलोपन लागू करते हैं और कानूनी रूप से आवश्यक प्राप्तकर्ता सूचना और अन्य कदम उठाते हैं। यह स्वतंत्र रूप से रखी गई प्रतियों को हटाने की गारंटी नहीं दे सकता। यदि पहचान योग्य सामग्री उपलब्ध रहती है, तो धारा 6 में अधिकार-अनुरोध मार्ग का उपयोग करें। यदि आप सीधे किसी आयोजक के ईमेल पते का उत्तर देते हैं, तो उस आयोजक को आपके उत्तर में शामिल पता और सामग्री प्राप्त होती है।",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["4. हम आपका व्यक्तिगत डेटा कितने समय तक रखते हैं?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.1. सक्रिय खाता, क्रेडेंशियल और प्राथमिकता डेटा तब तक रखा जाता है जब तक आपके खाते और धारा 2 में उल्लिखित उद्देश्यों को प्रदान करने के लिए आवश्यक हो। खाता-हटाने का अनुरोध धारा 6.7 में वर्णित 15-दिन की पुनर्प्राप्ति अवधि शुरू करता है; उस अवधि के दौरान सामान्य खाता एक्सेस अक्षम हो जाता है। पुनर्प्राप्ति अवधि के बिना लागू मिटाने के अनुरोधों को अलग से और अनुचित देरी के बिना संभाला जाता है। सहमति वापस लेने से संबंधित सहमति-आधारित प्रसंस्करण समाप्त हो जाता है, किसी भी स्वतंत्र रूप से लागू कानूनी प्रतिधारण आधार के अधीन। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.2. किसी कथन को हटाने और अपने खाते को हटाने में एक ही कथन-संशोधन नियम का उपयोग होता है: प्रभावित व्यक्तिगत कथन वर्तमान दृश्यों और भविष्य के विश्लेषण से हटा दिए जाते हैं, और उनके पाठ को हमारे चेकपॉइंट में बिना अनुवाद, उपयोगकर्ता नाम या प्रोफ़ाइल लिंक के '[हटाया गया]' से बदल दिया जाता है। खाता विलोपन आपकी व्यक्तिगत भागीदारी के माध्यम से प्रस्तुत किए गए कथनों पर इस नियम को लागू करता है। खाते की 15-दिन की पुनर्प्राप्ति अवधि के दौरान, पुनर्प्राप्ति के लिए आवश्यक स्रोत पाठ, अनुवाद और जुड़ाव निजी तौर पर रखे जाते हैं; उस अवधि के बाद उन्हें धारा 6.7 के तहत स्थायी रूप से मिटा दिया जाता है। स्पष्ट कथन विलोपन की कोई पुनर्प्राप्ति अवधि नहीं होती है। खाता विलोपन स्वयं अन्य योग्य कथनों पर आपके सहमत/असहमत/पार मतों को वापस नहीं लेता है। काम करने वाले मतदान पैटर्न चल रही चर्चा के निरंतर विश्लेषण के लिए आवश्यक और कानूनी होने पर उस चर्चा में भागीदारी के रूप में बने रह सकते हैं, जिसमें उचित पुन: खोलने का उद्देश्य शामिल है, बिना उनके खाते, ईमेल या फ़ोन जुड़ाव को स्थायी सफाई के बाद बनाए रखे। व्यक्तिगत मतदान पैटर्न केवल इसलिए गुमनाम नहीं होते क्योंकि वह जुड़ाव हटा दिया जाता है। आपके वापस लेने और मिटाने के अधिकार लागू रहते हैं। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "ऐतिहासिक इनपुट मैट्रिक्स केवल तभी रखे जाते हैं जब किसी उचित पुनरुत्पादन या अन्य बताए गए उद्देश्य के लिए आवश्यक हो, विश्लेषण जारी रखने के लिए आवश्यक कार्यशील इनपुट से अलग। एक चेकपॉइंट को देखने योग्य रखना हर मध्यवर्ती मैट्रिक्स को हमेशा के लिए रखने या हटाए गए कथन पाठ को संरक्षित करने की आवश्यकता नहीं है। व्यक्तिगत या संवेदनशील इनपुट को रखने के लिए एक लागू कानूनी आधार और कोई अतिरिक्त आवश्यक शर्त की आवश्यकता होती है; सहमति-आधारित प्रसंस्करण वापस लेने के अधीन रहता है, और जब सहमति वापस ले ली जाती है तो हम स्वचालित रूप से इसे किसी अन्य आधार पर नहीं बदलते हैं। अनावश्यक खाता जुड़ाव, निजी सर्वेक्षण उत्तर, रैंकिंग रिकॉर्ड, अप्रचलित संस्करण और अन्य निजी डेटा को तब हटा दिया जाता है या कम कर दिया जाता है जब उनका पुनर्प्राप्ति, परिचालन या अन्य उचित उद्देश्य समाप्त हो जाता है। रखी गई मतदान संरचना हटाए गए खाते का सामान्य संग्रह नहीं है।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "स्पष्ट रूप से हटाए गए सामग्री को तुरंत छिपा दिया जाता है और खाते की पुनर्प्राप्ति में देरी के बिना स्थायी सफाई के लिए पात्र हो जाता है। सफाई प्रति घंटे चलती है और बिना किसी अनुचित देरी के आगे बढ़ती है, सामान्यतः डेटा के लाइव सिस्टम से स्थायी रूप से हटाने के लिए पात्र होने के सात दिनों के भीतर पूरी हो जाती है। हम विफलताओं की निगरानी करते हैं और पुनः प्रयास करते हैं और विलंबित या अवरुद्ध कार्य को बढ़ाते हैं। तकनीकी विफलताएं और पुनः प्रयास उस अवधि को फिर से शुरू नहीं करते हैं या पुनर्प्राप्ति अवधि या लागू कानूनी समय सीमा का विस्तार नहीं करते हैं।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.3. ऐतिहासिक जाँच बिंदु एक विशेष समय पर परिणामों को रिकॉर्ड करते हैं। उनकी संख्याएँ, समूह आकार और रैंक केवल इसलिए वापस नहीं गिने जाते क्योंकि बाद में कोई भागीदारी हटा देता है। हम गोपनीयता-सुरक्षित ऐतिहासिक आउटपुट बनाए रख सकते हैं जबकि उसकी मूल चर्चा/परियोजना बनी रहती है। किसी कथन या उसके लेखक के खाते को हटाने से हमारे जाँच बिंदुओं में प्रभावित व्यक्तिगत कथन का पाठ '[हटाया गया]' से बदल जाता है और उन दृश्यों से उसके अनुवाद और सार्वजनिक लेखक श्रेय हटा दिए जाते हैं। हम प्रभावित निर्यात और अन्य नियंत्रित प्रतियों पर भी यही संपादन लागू करते हैं; निजी खाता-पुनर्प्राप्ति डेटा धारा 4.2 का पालन करता है। सुरक्षित ऐतिहासिक सहमति/असहमति/पास गणना और अन्य संख्यात्मक परिणाम लेखक के खाते के लिंक या मूल पाठ को बनाए रखे बिना स्थिर रह सकते हैं। यह विलोपन मूल संख्यात्मक गणना को फिर से नहीं चलाता है या ऐतिहासिक AI लेबल, सारांश या उनके अनुवाद उत्पन्न नहीं करता है। संग्रहीत AI विवरण एक अलग ऐतिहासिक आउटपुट हैं और लागू मिटाने के अधिकारों और कानूनी-प्रतिधारण सीमाओं के अधीन रहते हैं। जहाँ AI विवरण को स्वयं मिटाने की आवश्यकता होती है, हम ऐतिहासिक जाँच बिंदु के लिए प्रतिस्थापन उत्पन्न किए बिना मौजूदा संग्रहीत आउटपुट और प्रभावित अनुवाद को हटाते या संपादित करते हैं। लागू इनपुट विलोपन एक ऐतिहासिक मैट्रिक्स को हटा सकता है जबकि सुरक्षित सहेजे गए परिणाम बने रहते हैं। छोटे समुच्चय और व्यक्तिगत मतदान पैटर्न स्वचालित रूप से गुमनाम नहीं होते हैं; पहचान योग्य आउटपुट लागू अधिकारों और कानूनी-प्रतिधारण सीमाओं के अधीन रहता है। किसी चर्चा या परियोजना को हटाने से उसकी स्वामित्व वाली ऐतिहासिक रिपोर्ट और भागीदारी ग्राफ भी हट जाती है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 4.4. किसी संगठन/परियोजना से जुड़े स्थिर संपत्ति और अपलोड की गई फ़ाइलें तब तक बनी रहती हैं जब तक उस इकाई या किसी अन्य वैध साझा संदर्भ को उनकी आवश्यकता होती है। माता-पिता का विलोपन या विशेष रूप से स्वामित्व वाली संपत्ति को हटाना सफाई को ट्रिगर करता है; सक्रिय संपत्तियों पर लॉग/बैकअप समाप्ति अवधि लागू नहीं होती है। उत्पन्न चर्चा निर्यात में एक प्रदर्शित अनुरोध समाप्ति होती है, जो सामान्य रूप से डिफ़ॉल्ट कॉन्फ़िगरेशन के तहत 30 दिन होती है, जो उनकी व्यक्तिगत फ़ाइलों और डाउनलोड करने योग्य बंडलों पर लागू होती है। विलोपन या लागू मिटाना प्रभावित CSVs, ZIP बंडलों और अन्य निर्यात प्रारूपों के पहले से अमान्य होने, हटाने या पुन: उत्पन्न होने की आवश्यकता हो सकती है; सामान्य समाप्ति मिटाई गई जानकारी को वितरित करने की अनुमति नहीं है। साझा कलाकृतियाँ तब वापस ले ली जाती हैं जब किसी योग्य अनुरोध को उनकी आवश्यकता नहीं होती है, और विफलता पर सफाई का प्रयास किया जाता है। हमारे ऑब्जेक्ट की समाप्ति/विलोपन प्राप्तकर्ता की डाउनलोड की गई प्रति को मिटाता नहीं है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.5. सत्यापन कोड, चुनौतियाँ, रीप्ले-सुरक्षा हैश और रिकवरी/एक्शन टोकन अपनी समाप्ति और अल्पकालिक परिचालन उद्देश्य के अधीन हैं। समाप्त हुए रहस्य और अनावश्यक तकनीकी स्थिति को सामान्य ऑडिट इतिहास में रखने के बजाय साफ किया जाता है। दुरुपयोग विरोधी बैकऑफ़, क्रेडेंशियल-रिटायरमेंट और SMS-बजट नियंत्रण केवल उनकी सुरक्षात्मक आवश्यकता के दौरान बने रहते हैं; सफाई एक सक्रिय प्रतिबंध या भेजने की सीमा को रीसेट नहीं करती है।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.6. ईमेल सदस्यता/बाहर निकलने और दमन की स्थिति तब तक बनी रहती है जब तक आपकी पसंद का सम्मान करना या अवांछित भेजने से रोकना आवश्यक हो। डिलीवरी इतिहास और कार्रवाई-लिंक संदर्भ केवल वैध लिंक, समाधान, उपयोगी खाता इतिहास या एक स्वतंत्र रूप से उचित उद्देश्य तक सीमित हैं। अपना खाता हटाने से आपके अपने लिंक अमान्य हो जाते हैं और अनावश्यक प्राप्तकर्ता पहचान/डिलीवरी विवरण हट जाते हैं; दूसरे प्राप्तकर्ता का वैध लिंक आपके पूरे खाते को रखने की आवश्यकता नहीं है। पूर्ण डिलीवरी-इवेंट प्रसंस्करण कच्चे प्रदाता पेलोड को साफ़ करता है; अनसुलझे विफलताएं केवल आवश्यक समीक्षा और समाधान के लिए रखी जाती हैं।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.7. हमारे CloudWatch एप्लिकेशन/कंटेनर और PostgreSQL लॉग समूह परिचालन/सुरक्षा जांच और पता लगाने की क्षमता के लिए 180-दिन की रोलिंग प्रतिधारण नीति का उपयोग करते हैं। लॉग समाप्ति किसी सटीक क्षण पर होने के बजाय सेवा के विलोपन चक्र का पालन करती है। संग्रह प्रासंगिक उद्देश्य तक सीमित है; एक विशिष्ट घटना या कानूनी दावा सीमित दायरे के साक्ष्य को अधिक समय तक प्रतिबंधित पहुंच के साथ रखने को उचित ठहरा सकता है। खाता विलोपन स्वचालित रूप से हर मौजूदा लॉग इवेंट को नहीं हटाता है। Cloudflare, Sentry और अन्य स्वतंत्र प्रदाता प्रसंस्करण में अलग-अलग श्रेणी/सेवा प्रतिधारण मानदंड हो सकते हैं। Sentry प्रतिधारण सदस्यता और डेटा श्रेणी पर निर्भर करता है, न कि केवल इस बात पर कि क्या कोई समस्या अभी भी खुली है। सहायता या मॉडरेशन से जुड़े मामले और न्यूनतम प्रवर्तन/दमन रिकॉर्ड केवल तब तक रहते हैं जब तक कि उनके अपने उद्देश्य द्वारा उचित ठहराया जाता है। ये अवधि खाता पुनर्प्राप्ति विंडो और बैकअप सीमा से अलग हैं।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.8. लाइव सिस्टम से स्थायी रूप से हटाने के बाद, मिटाया गया डेटा 30 दिनों से अधिक समय तक प्रतिबंधित आपदा-पुनर्प्राप्ति बैकअप में रह सकता है। यह सामान्य उत्पाद उपयोग के लिए उपलब्ध नहीं है। दूसरी प्रति बनाना या बैकअप पुनर्स्थापित करना उस सीमा को रीसेट नहीं करता है। हम प्रासंगिक बैकअप/रिकवरी क्षितिज के लिए न्यूनतम विलोपन निर्देश रखते हैं और पुनर्स्थापित डेटा उपयोगकर्ताओं के सामने आने से पहले उन्हें फिर से लागू करते हैं।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "4.9. ब्राउज़र-स्थानीय ड्राफ्ट, कुंजियाँ और प्राथमिकताएँ आपकी डिवाइस भंडारण सेटिंग्स का पालन करते हैं और हटाए जाने या साफ़ किए जाने तक बने रह सकते हैं। हमारे सर्वर से खाता मिटाना हर स्थानीय या स्वतंत्र रूप से रखी गई प्रति को दूर से मिटा नहीं सकता है। वैकल्पिक AI सहायता अप्रकाशित इनपुट को संसाधित कर सकती है जब आप इसे बुलाते हैं; आवश्यक दर-सीमा/उपयोग पहचानकर्ता अस्थायी होते हैं और आपके ड्राफ्ट का स्थायी सार्वजनिक इतिहास नहीं होते हैं।",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["5. हम आपके व्यक्तिगत डेटा को कैसे सुरक्षित रखते हैं?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 5.1. Agora में, आपके व्यक्तिगत डेटा की सुरक्षा सर्वोच्च प्राथमिकता है। हमने यह सुनिश्चित करने के लिए विभिन्न तकनीकी और संगठनात्मक उपाय लागू किए हैं कि संसाधित सभी व्यक्तिगत डेटा सुरक्षित रहे। इन उपायों में शामिल हैं: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["डेटा न्यूनीकरण और डिज़ाइन द्वारा गोपनीयता:"],
+                  },
+                  " हम सुविधा के उद्देश्य तक संग्रह और पहुंच को सीमित करते हैं। निजी भागीदारी और पहचान योग्य स्रोत सामग्री को ऐतिहासिक आउटपुट से अलग किया जाता है; गुमनाम एकत्रित प्रतिधारण कच्चे व्यक्तिगत इनपुट को अनिश्चित काल तक रखने का कारण नहीं है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["एन्क्रिप्शन और छद्मनामीकरण:"],
+                  },
+                  " हम उपयुक्त पहुंच और एन्क्रिप्शन सुरक्षा उपायों के साथ ट्रांसमिशन और संग्रहीत डेटा की सुरक्षा करते हैं, जिसमें प्रतिबंधित एन्क्रिप्टेड बैकअप शामिल हैं। पूर्ण फ़ोन नंबर को खाता भंडारण में पेप्पर किया जाता है और हैश किया जाता है, जबकि सत्यापन/खाता कार्यों के लिए आंशिक मेटाडेटा बनाए रखा जाता है। सेवाओं के लिए आवश्यक ईमेल और पाठ को केवल इसलिए गुमनाम डेटा में परिवर्तित नहीं किया जाता है क्योंकि भंडारण सुरक्षित है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["जीरो-नॉलेज प्रूफ प्रमाणीकरण:"],
+                  },
+                  " Agora पासपोर्ट सत्यापन के लिए जीरो-नॉलेज प्रूफ (ZKP) का उपयोग करता है, जिससे उपयोगकर्ताओं को संवेदनशील व्यक्तिगत जानकारी प्रकट किए बिना अपनी पात्रता साबित करने में मदद मिलती है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["क्रिप्टोग्राफ़िक अनुरोध सत्यापन:"],
+                  },
+                  " हस्ताक्षरित अनुरोध और पात्रता प्रमाण अधिकृत कार्यों को प्रमाणित करने और दुरुपयोग को रोकने में मदद करते हैं। हम केवल जवाबदेही के लिए खाते की कार्रवाई या विलोपन प्रमाणों का अनिश्चित सार्वजनिक संग्रह नहीं रखते हैं। न्यूनतम रीप्ले-रोकथाम और उचित विलोपन/सुरक्षा साक्ष्य उपरोक्त प्रतिधारण नियमों का पालन करते हैं। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["सुरक्षित प्रमाणीकरण:"],
+                  },
+                  " हम पासवर्ड संग्रहीत नहीं करते हैं। इसके बजाय, प्रमाणीकरण एक बार के सत्यापन कोड या क्रिप्टोग्राफ़िक कुंजियों के माध्यम से संभाला जाता है, जिससे क्रेडेंशियल लीक का जोखिम कम हो जाता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["बुनियादी ढांचा सुरक्षा:"],
+                  },
+                  " हमारा प्लेटफ़ॉर्म DDoS सुरक्षा, एक्सेस नियंत्रण और हमलों का पता लगाने और उन्हें कम करने के लिए नेटवर्क निगरानी का उपयोग करके साइबर खतरों से सुरक्षित है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["पारदर्शिता और उपयोगकर्ता नियंत्रण:"],
+                  },
+                  " उपयोगकर्ताओं के पास अपना व्यक्तिगत डेटा प्रबंधित करने, अपना खाता हटाने और यह नियंत्रित करने की क्षमता है कि उनकी जानकारी कैसे संसाधित की जाती है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["नियमित सुरक्षा मूल्यांकन:"],
+                  },
+                  " हमारी सुरक्षा उपायों की समय-समय पर समीक्षा और अद्यतन किया जाता है ताकि उभरते खतरों का समाधान किया जा सके और डेटा सुरक्षा में सुधार किया जा सके। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["लॉग और एनालिटिक्स तक नियंत्रित पहुँच:"],
+                  },
+                  " हम जहाँ उपयुक्त हो वहाँ समग्र एनालिटिक्स और जहाँ आवश्यक हो वहाँ गोपनीयता-न्यूनतम तकनीकी निदान का उपयोग करते हैं। कुछ निदान आवश्यक छद्मनामिक पहचानकर्ताओं और तकनीकी संदर्भों को बनाए रखते हैं, इसलिए उन्हें सार्वभौमिक रूप से गुमनाम नहीं बताया जाता है। पहुँच और प्रतिधारण प्रासंगिक परिचालन उद्देश्य तक सीमित है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["डेटा अतिरेक और बैकअप:"],
+                  },
+                  " लाइव स्टोरेज और आपदा-रिकवरी बैकअप तक पहुँच प्रतिबंधित है। बैकअप मिटाना धारा 4.8 में हार्ड-डिलीशन के बाद अधिकतम 30-दिन की अवधि के बाद होता है, जिसमें बैकअप प्रतियां/संस्करण और मिटाने का पुनर्स्थापना-समय पुन: अनुप्रयोग शामिल है। इंफ्रास्ट्रक्चर लचीलापन डिलीट की गई जानकारी का अलग स्थायी संग्रह नहीं बनाता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["सीमित मेटाडेटा संग्रह:"],
+                  },
+                  " कॉन्फ़िगर किए गए TypeScript एप्लिकेशन लॉगर्स अनुरोध IP पते, कच्चे URL/क्वेरी, हेडर, बॉडी और अप्रूव्ड डेटा को छोड़ देते हैं। Cloudflare सिग्नल और कोई भी सक्षम एज/सुरक्षा लॉग, EC2/Nginx होस्ट/एक्सेस/एरर लॉग, CloudWatch संग्रह, RDS डायग्नोस्टिक्स, सहायक-सेवा लॉग और Sentry इनजेस्टन अलग रास्ते हैं। वे नेटवर्क पते, टाइमस्टैम्प, अनुरोध URL/ब्राउज़र जानकारी या क्वेरी/एरर संदर्भ को संसाधित कर सकते हैं। एक लॉगर्स को फ़िल्टर करने से स्वचालित रूप से हर दूसरे सिस्टम को फ़िल्टर नहीं किया जाता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["डेटा-न्यूनतम AI सहायता और अनुवाद:"],
+                  },
+                  " Mistral का उपयोग AWS Bedrock के माध्यम से किया जाता है। चयनित पाठ को बिना किसी खाते/संपर्क/प्रमाणीकरण पहचानकर्ताओं के कच्चा भेजा जाता है; कार्यात्मक सामग्री/विवरण संदर्भ या समूह/भाषा संदर्भ शामिल हो सकता है। Bedrock us-east-1 का उपयोग करता है, और Google भाषा पहचान/अनुवाद us-central1 का उपयोग करता है। Bedrock इनपुट/आउटपुट इन्वोकेशन लॉगिंग अक्षम है। Lingua सामान्य रूप से हमारे बैकएंड पर सांख्यिकीय रूप से भाषा का पता लगाता है; पहचान स्वचालित रहती है और वैकल्पिक गतिशील अनुवाद अक्षम होने पर भी Google का उपयोग कर सकती है। खाता पहचानकर्ताओं को छोड़ना पाठ को गुमनाम करने के समान नहीं है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "का उपयोग ",
+                      {
+                        tag: "a",
+                        children: ["Sentry.io"],
+                        href: "https://sentry.io/privacy/",
+                        external: true,
+                      },
+                      " गोपनीयता-कम क्रैश रिपोर्ट के लिए:",
+                    ],
+                  },
+                  " Agora त्रुटि ट्रैकिंग और क्रैश रिपोर्टिंग के लिए Sentry (EU सर्वर पर होस्ट किया गया) का उपयोग करता है। सत्र रीप्ले के लिए नियमित सत्र अपलोड नहीं किए जाते हैं; जब कोई त्रुटि होती है, तो विफलता का निदान करने में मदद करने के लिए बफ़र्ड हालिया इंटरैक्शन डेटा अपलोड किया जा सकता है। रीप्ले टेक्स्ट और इनपुट को मास्क करता है, मीडिया को ब्लॉक करता है, नेटवर्क बॉडी कैप्चर को अक्षम करता है, और रिकॉर्ड करने से पहले कॉन्फ़िगर किए गए टेक्स्ट और फॉर्म विशेषताओं को मास्क करता है। नेविगेशन और नेटवर्क कस्टम रिकॉर्डिंग इवेंट्स को साफ़ किया जाता है, और अपलोड से पहले रीप्ले इवेंट की विज़िटेड-URL सूची को सैनिटाइज किया जाता है। फर्स्ट-पार्टी Agora और ZKorum URLs पथ और छद्मनामिक रूट पहचानकर्ताओं को बनाए रख सकते हैं, लेकिन क्रेडेंशियल्स, क्वेरी स्ट्रिंग्स और फ़्रैग्मेंट्स हटा दिए जाते हैं। बाहरी URLs को उनके मूल तक कम कर दिया जाता है, जबकि असुरक्षित URL स्कीम्स को हटा दिया जाता है। त्रुटि इवेंट्स भी अनुरोध URLs और मनमाने अतिरिक्त डेटा को हटाते हैं, केवल तकनीकी संदर्भों की एक स्पष्ट अनुमति सूची बनाए रखते हैं, और कंसोल और उपयोगकर्ता-इंटरफ़ेस ब्रेडक्रम्ब्स को छोड़ देते हैं। एक विशिष्ट stack-overflow निदान के लिए, एक संकीर्ण रूप से सीमित अटैचमेंट में संरचनात्मक पेज-लेआउट फ़्लैग शामिल हो सकता है लेकिन OTP स्थिति, ड्राफ्ट, ऑनबोर्डिंग स्थिति, पहचानकर्ता, या उपयोगकर्ता-जनित सामग्री नहीं। रीप्ले और त्रुटि रिपोर्टों में अभी भी संरचनात्मक DOM, छद्मनामिक रूट पथ, संसाधन मूल, तकनीकी और इंटरैक्शन मेटाडेटा हो सकता है, और Sentry अपनी गोपनीयता नीति में वर्णित IP पतों को संसाधित कर सकता है। Sentry ट्रैकिंग कुकीज़ का उपयोग नहीं करता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["एप्लिकेशन और इंफ्रास्ट्रक्चर निदान:"],
+                  },
+                  " हम उपलब्धता बनाए रखने, खराबी का निदान करने और दुरुपयोग को रोकने या जांच करने के लिए लॉग का उपयोग करते हैं। एप्लिकेशन निदान केवल अनुमोदित मेटाडेटा तक सीमित हैं; बुनियादी ढांचा, डेटाबेस और प्रदाताओं की अलग संग्रह सेटिंग्स और प्रतिधारण मानदंड हैं। CloudWatch उन रिकॉर्ड को संग्रहीत करता है जो उसे प्रदान किए जाते हैं न कि सभी स्रोतों को स्वचालित रूप से हटाता है। जहाँ प्रदाता हमारी ओर से जानकारी संसाधित करते हैं, हमारे लागू प्रसंस्करण व्यवस्था लागू होती हैं; उनकी सूचनाएं स्वतंत्र प्रसंस्करण की भी व्याख्या करती हैं। खाता हटाने के बाद लॉग केवल उनके लागू परिचालन, सुरक्षा या कानूनी उद्देश्य के लिए रह सकते हैं, जिसमें प्रासंगिक पहुंच/प्रतिधारण नियंत्रण होते हैं। 15-दिन की पुनर्प्राप्ति विंडो और 30-दिन की बैकअप सीमा सार्वभौमिक लॉग-प्रतिधारण अवधि नहीं हैं। ",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["6. आपके व्यक्तिगत डेटा के संबंध में आपके अधिकार"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.1. आप उपलब्ध खाता नियंत्रणों के माध्यम से या legal@zkorum.com पर संपर्क करके नीचे दिए गए अधिकारों का प्रयोग कर सकते हैं, भले ही आपकी जानकारी आयात की गई हो और आपके पास Agora खाता न हो। हम केवल अनधिकृत प्रकटीकरण, पुनर्प्राप्ति या मिटाने से बचने के लिए आवश्यक सीमा तक स्वामित्व या पहचान सत्यापित करते हैं; समर्थित क्रेडेंशियल या डिवाइस-की प्रमाण के बिना पहचान दस्तावेज़ एकत्र करना पर्याप्त हो सकता है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.2. प्रसंस्करण और कानूनी आधार के आधार पर, एक डेटा विषय के रूप में आपके पास अपने व्यक्तिगत डेटा पर नियंत्रण रखने के कई तरीके हैं: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: ["अपने डेटा तक पहुंचने का अधिकार"],
+              },
+              {
+                tag: "li",
+                children: ["अपने डेटा को संशोधित करने का अधिकार"],
+              },
+              {
+                tag: "li",
+                children: [
+                  "अपने व्यक्तिगत डेटा के प्रसंस्करण पर आपत्ति करने का अधिकार",
+                ],
+              },
+              {
+                tag: "li",
+                children: ["डेटा प्रसंस्करण को प्रतिबंधित करने का अधिकार"],
+              },
+              {
+                tag: "li",
+                children: ["अपने डेटा को मिटाने का अधिकार"],
+              },
+              {
+                tag: "li",
+                children: ["अपनी पहले दी गई सहमति वापस लेने का अधिकार"],
+              },
+              {
+                tag: "li",
+                children: ["अपने डेटा को स्थानांतरित करने का अधिकार"],
+              },
+              {
+                tag: "li",
+                children: [
+                  " सक्षम डेटा संरक्षण प्राधिकरण के पास शिकायत दर्ज करने का अधिकार। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.3. हम आपको बताना चाहेंगे कि ये अधिकार हमेशा पूर्ण नहीं होते हैं, कि कुछ परिस्थितियों में हम आपके व्यक्तिगत डेटा को आगे संसाधित करने के हकदार हैं या कानून द्वारा आवश्यक हैं और इसलिए हम हमेशा आपके अनुरोध का (पूरी तरह से) पालन करने में सक्षम नहीं हो सकते हैं। ऐसे मामलों में, हम आपको सूचित करेंगे। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.4. आप इन अधिकारों का प्रयोग बिना किसी शुल्क के कर सकते हैं। जहाँ कोई अनुरोध स्पष्ट रूप से निराधार या अत्यधिक है, हम प्रशासनिक लागतों को दर्शाने वाली उचित शुल्क ले सकते हैं या कानून द्वारा अनुमत होने पर इसे अस्वीकार कर सकते हैं; हमें यह प्रदर्शित करना होगा कि यह अपवाद क्यों लागू होता है। हम अनुरोध प्राप्त होने के बाद बिना किसी अनुचित देरी के और सामान्यतः एक महीने के भीतर जवाब देते हैं। जहाँ जटिलता या अनुरोधों की संख्या विस्तार को आवश्यक बनाती है, हम उस महीने के भीतर कारणों और दो और महीनों तक के किसी भी विस्तार के बारे में आपको सूचित करते हैं। यह प्रतिक्रिया अवधि उस विलोपन को विलंबित करने का अधिकार नहीं देती है जिसे बिना किसी अनुचित देरी के किया जाना चाहिए। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.5. उपलब्ध नियंत्रणों से आप अपने कथनों/चर्चाओं को हटा सकते हैं, अपने मतों या सर्वेक्षण प्रतिक्रियाओं को वापस ले सकते हैं, जहाँ समर्थित है वहाँ रैंकिंग भागीदारी बदल सकते हैं, और प्राथमिकताएँ/भाषाएँ प्रबंधित कर सकते हैं। अधिकृत स्वामी अपनी अनुमतियों के भीतर परियोजना दस्तावेज़ों, रैंकिंग मदों, चर्चाओं या परियोजनाओं को हटा सकते हैं। किसी कथन या अपने खाते को हटाने से हमारे चेकपॉइंट में प्रभावित व्यक्तिगत कथन पाठ '[हटाया गया]' से बदल जाता है और उन दृश्यों से उसके अनुवाद और सार्वजनिक लेखक श्रेय हटा दिए जाते हैं। यह अस्पष्टता प्राप्त करने के लिए आपको अपने खाते को हटाने से पहले प्रत्येक कथन को अलग से हटाने की आवश्यकता नहीं है। व्यक्तिगत सामग्री का स्पष्ट विलोपन तुरंत छिपा दिया जाता है और खाते की 15-दिन की पुनर्प्राप्ति विंडो के अधीन नहीं है; खाता पुनर्प्राप्ति स्वतंत्र रूप से हटाए गए सामग्री या वापस लिए गए मतों को वापस नहीं लाती है। ऐतिहासिक संख्यात्मक आउटपुट केवल धारा 4.3 में गोपनीयता-सुरक्षित चेकपॉइंट नियमों के तहत रह सकता है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "यदि आप अपने मतों को वापस लेना चाहते हैं तो मत वापस लेने के नियंत्रणों का उपयोग करें। एक बार स्थायी सफाई खाते के जुड़ाव को हटा देती है, तो बरकरार मतदान रिकॉर्ड का सामान्य खाता-आधारित प्रबंधन अनुपलब्ध हो जाता है; समान क्रेडेंशियल का उपयोग करने वाला बाद का खाता उन्हें स्वचालित रूप से वापस नहीं लेता है। लागू डेटा-सुरक्षा अधिकार धारा 6.1 में संपर्क मार्ग के माध्यम से उपलब्ध रहते हैं, जिसमें अन्य लोगों की सामग्री में व्यक्तिगत जानकारी या बरकरार आउटपुट भी शामिल हैं। जहाँ आवश्यक हो, हमें प्रासंगिक रिकॉर्डों की पहचान करने में सक्षम बनाने के लिए लिंक या अन्य जानकारी प्रदान करें। हम आनुपातिक सत्यापन का उपयोग करते हैं और केवल संभावित भविष्य के अनुरोधों के लिए स्थायी पहचान खोज नहीं रखते हैं।",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              "किसी प्रोजेक्ट को हटाने से उसमें हुई चर्चाएँ, दस्तावेज़ और उसके स्वामित्व वाली ऐतिहासिक रिपोर्टें हट जाएँगी। किसी संगठन को हटाने से पहले, उसके केवल स्वामित्व वाले प्रोजेक्ट्स को किसी अन्य बचे हुए मालिक को स्थानांतरित करना होगा; वैकल्पिक रूप से, अधिकृत मालिक पहले उन प्रोजेक्ट्स को अलग से हटा सकते हैं। सह-स्वामित्व वाले प्रोजेक्ट बचे हुए मालिकों के पास रहेंगे, और केवल हटाए गए संगठन के संबंध/डेटा हटाए जाएँगे। ये उत्पाद क्रियाएँ विलोपन हैं, अपरिवर्तनीय संग्रहण नहीं।",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["6.6. सुरक्षा रिकॉर्ड:"],
+          },
+          {
+            tag: "p",
+            children: [
+              " विलोपन के लिए पूर्ण हस्ताक्षरित अनुरोधों या अनिश्चित क्रिप्टोग्राफ़िक खाता इतिहास को रखने की आवश्यकता नहीं है। कुछ संकीर्ण दायरे वाले रिकॉर्ड आवश्यक सुरक्षा, विलोपन-अनुपालन या कानूनी उद्देश्य के लिए बने रह सकते हैं: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  " अल्पकालिक UCAN रीप्ले-सुरक्षा हैश और आवश्यक क्रेडेंशियल-सेवानिवृत्ति/बैकऑफ़ स्थिति, केवल उनकी सुरक्षा अवधि के लिए; ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "न्यूनतम अवरुद्ध-क्रेडेंशियल, ऑप्ट-आउट या शिकायत/दमन स्थिति जहाँ चकमा देने या अवांछित संपर्क को रोकने के लिए आवश्यक हो; और",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "प्रतिबंधित विलोपन प्रमाण और विशिष्ट सुरक्षा, मॉडरेशन और कानूनी मामलों के रिकॉर्ड, जो आवश्यक पहचानकर्ताओं, तिथियों, कारणों और उचित साक्ष्य तक सीमित हैं। जवाबदेही के लिए केवल कच्चे OTPs, पूर्ण प्रमाण पेलोड और हटाए गए भागीदारी की सामान्य प्रतिलिपि नहीं रखी जाती है।",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " प्रत्येक श्रेणी खंड 4 में अपने उद्देश्य, समाप्ति या प्रलेखित आवश्यकता मानदंडों का पालन करती है, जिसमें प्रतिबंधित पहुँच और समीक्षा होती है। एक कानूनी रोक या सुरक्षा अपवाद प्रासंगिक मामले तक सीमित होता है; यह पूरे हटाए गए खाते के प्रतिधारण को चुपचाप विस्तारित नहीं करता है। ",
+            ],
+          },
+          {
+            tag: "h3",
+            children: ["6.7. अपना खाता कैसे हटाएं:"],
+          },
+          {
+            tag: "p",
+            children: [
+              " उपलब्ध खाता नियंत्रणों के माध्यम से खाता विलोपन का अनुरोध करें या सहायता के लिए हमसे संपर्क करें। एक अधिकृत अनुरोध के बाद, खाता ",
+              {
+                tag: "strong",
+                children: ["तुरंत दुर्गम हो जाता है"],
+              },
+              " सामान्य उपयोग के लिए, लेकिन 15-दिन की रद्दीकरण अवधि के दौरान इसे पुनर्प्राप्त किया जा सकता है। समयरेखा है: ",
+            ],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["तत्काल:"],
+                  },
+                  " खाता एक्सेस और सामान्य प्रमाणीकरण अक्षम कर दिया गया है और मौजूदा सत्र रद्द कर दिए गए हैं। आपकी व्यक्तिगत भागीदारी के माध्यम से प्रस्तुत कथन वर्तमान दृश्यों और विश्लेषण से बाहर रखे जाते हैं। उनके पाठ को हमारे चेकपॉइंट में '[हटाया गया]' से बदल दिया जाता है, उनकी अनुवादों, उपयोगकर्ता नाम या प्रोफ़ाइल लिंक के बिना; प्रभावित निर्यात और अन्य नियंत्रित प्रदर्शन भी अमान्य या संपादित कर दिए जाते हैं। अन्य पात्र कथनों पर आपके कानूनी रूप से रखे गए सहमत/असहमत/तय नहीं मत योगदान देना जारी रख सकते हैं; केवल खाता बंद करने से वे वापस नहीं लिए जाते हैं। संबंधित ईमेल वितरण उचित रूप से रोक दिया जाता है। पहले से डाउनलोड की गई या स्वतंत्र सेवाओं के माध्यम से प्रकाशित प्रतियां धारा 3.6 के तहत संभाली जाती हैं। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["अगले 15 दिनों के दौरान:"],
+                  },
+                  " हम खाता पुनर्प्राप्ति के लिए आवश्यक डेटा और जुड़ावों को निजी तौर पर रखते हैं, जिसमें खाता हटाने द्वारा छिपे व्यक्तिगत कथनों का स्रोत पाठ और अनुवाद शामिल हैं, और टकराव वाले पुन: उपयोग से बचने के लिए प्रासंगिक क्रेडेंशियल्स आरक्षित करते हैं। वह पुनर्प्राप्ति डेटा चेकपॉइंट या निर्यात में परोसा नहीं जाता है। पुनर्प्राप्ति के लिए स्वामित्व का सत्यापन और विलोपन रद्द करने की स्पष्ट पुष्टि की आवश्यकता होती है। केवल फिर से कनेक्ट करना या सत्यापन कोड प्राप्त करना खाते को चुपचाप बहाल नहीं करता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  { tag: "strong", children: ["15-दिन की समय सीमा पर:"] },
+                  " पुनर्प्राप्ति समाप्त हो जाती है और स्थायी विलोपन अनिवार्य हो जाता है। अगले निर्धारित प्रति घंटा स्वीप के माध्यम से सफाई शुरू होती है और बिना किसी अनुचित देरी के आगे बढ़ती है, जो सामान्यतः उस समय सीमा के सात दिनों के भीतर पूरी हो जाती है। हम विफलताओं की निगरानी करते हैं और पुनः प्रयास करते हैं और विलंबित या अवरुद्ध कार्य को बढ़ाते हैं। विलंबित स्वीप और पुनः प्रयास उस अवधि को फिर से शुरू नहीं करते हैं या पुनर्प्राप्ति या लागू कानूनी समय सीमाओं का विस्तार नहीं करते हैं; आवश्यक प्रतिधारण अपवाद ऊपर वर्णित के अनुसार सीमित रहते हैं। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: [
+                      "वास्तविक हार्ड डिलीट के बाद: बैकअप में 30 दिन तक और:",
+                    ],
+                  },
+                  " मिटाया गया डेटा वास्तविक लाइव-सिस्टम हार्ड डिलीट होने के 30 दिनों के भीतर प्रतिबंधित एन्क्रिप्टेड आपदा-पुनर्प्राप्ति बैकअप में रह सकता है, बाद की प्रति या पुनर्स्थापना के 30 दिनों के बाद नहीं। पुनर्स्थापना के लिए उपलब्ध कराए जाने से पहले विलोपन निर्देश फिर से लागू किए जाते हैं। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "h4",
+            children: ["पुनर्प्राप्ति और स्थायी विलोपन:"],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  " पुनर्प्राप्ति केवल संग्रहीत 15-दिन की समय सीमा से पहले और अपरिवर्तनीय शुद्धिकरण शुरू होने से पहले ही अनुमत है। हम खाते के प्रकार के आधार पर एक समर्थित खाता क्रेडेंशियल या मूल अतिथि-डिवाइस कुंजियों को सत्यापित करते हैं। खोई हुई अतिथि कुंजियाँ स्वामित्व सत्यापन और पुनर्प्राप्ति को असंभव बना सकती हैं। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  "सफल पुनर्प्राप्ति एक नया अधिकृत सत्र बनाती है; यह सभी पहले रद्द किए गए सत्रों को सक्रिय नहीं करती है या बरकरार मतों की नकल नहीं करती है। यह केवल उन स्थानों पर अनुमत कथन पाठ, अनुवाद, खाता श्रेय और वर्तमान पात्रता को पुनर्स्थापित करती है जहाँ वे केवल खाता विलोपन द्वारा छिपे थे, जिसमें हमारे मौजूदा चेकपॉइंट भी शामिल हैं। स्वतंत्र सामग्री/परियोजना/दस्तावेज़ विलोपन, वापस लिए गए मत, अपरिवर्तनीय अतिथि विलय, इस बीच लिए गए मॉडरेशन के फ़ैसले और अलग से मिटाए गए आउटपुट को पूर्ववत नहीं किया जाता है।",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " स्थायी सफाई खाते के क्रेडेंशियल्स, डिवाइस जुड़ावों, निजी सेटिंग्स, अनावश्यक प्रमाणीकरण/वितरण विवरण और निजी भागीदारी रिकॉर्ड को हटा देती है, ऊपर वर्णित विशिष्ट प्रतिबंधित अपवादों के अधीन। यह हमारे नियंत्रित लाइव-सिस्टम प्रतियों से प्रभावित व्यक्तिगत कथनों के स्रोत पाठ, संस्करणों और अनुवादों को स्थायी रूप से मिटा देती है, जिसमें निजी पुनर्प्राप्ति डेटा भी शामिल है। उनके चेकपॉइंट प्रविष्टियाँ '[हटाया गया]' बनी रहती हैं जहाँ सुरक्षित जमा संख्यात्मक आउटपुट बरकरार रहता है। सफाई अनावश्यक खाता/क्रेडेंशियल जुड़ावों और खाता-लिंक्ड समूह वैयक्तिकरण को हटाती है। आवश्यक चर्चा-विशिष्ट मतदान संरचना खंड 4.2 के तहत बनी रह सकती है; यह एक सुलभ खाता प्रोफ़ाइल नहीं है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " खाता हटाने और स्पष्ट कथन हटाने में एक ही '[हटाया गया]' चेकपॉइंट प्रदर्शन और पाठ-रेडैक्शन नियम का उपयोग होता है। अंतर रिकवरी के समय में है: खाता हटाने पर 15 दिनों के लिए निजी तौर पर पुनर्प्राप्त करने योग्य स्रोत बने रहते हैं, जबकि स्वतंत्र रूप से हटाए गए कथनों की कोई पुनर्प्राप्ति अवधि नहीं होती। ऐतिहासिक चेकपॉइंट संख्याएँ जमी हुई रह सकती हैं, और विलोपन के हिस्से के रूप में ऐतिहासिक AI विवरणों को पुन: उत्पन्न नहीं किया जाता है। संग्रहीत AI विवरण में जानकारी का लागू विलोपन धारा 4.3 के तहत मौजूदा आउटपुट को हटाकर या रेडैक्शन करके संभाला जाता है, बिना किसी प्रतिस्थापन को उत्पन्न किए। व्यक्तिगत मतदान पैटर्न और छोटे समुच्चय अभी भी उनके संदर्भ के माध्यम से किसी को पहचान सकते हैं; केवल खाता लिंक हटाने को गुमनामीकरण या असीमित प्रतिधारण की अनुमति के रूप में नहीं माना जाता है। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " किसी खाते के कथनों को वर्तमान इनपुट से बाहर रखना, या रिकवरी के दौरान उनकी पात्रता बहाल करना, प्रभावित खुली चर्चाओं के अद्यतन विश्लेषण की मांग कर सकता है। केवल खाता श्रेय हटाना, या बाद में पहले से बाहर किए गए स्रोत डेटा को हटाना, दूसरे संख्यात्मक गणना की आवश्यकता नहीं है। बंद करना वर्तमान परिणामों का पुन: उपयोग करता है या आवश्यक बकाया गणना पूरी करता है, फिर गणितीय प्रकाशन को लॉक करता है। बंद होने पर वर्तमान बहिष्करण और लागू रेडैक्शन बिना सामान्य पुनर्गणना के जारी रहता है; फिर से खोलना योग्य डेटा से नए परिणाम मांगता है, जिसमें योग्य कथनों पर कानूनी रूप से रखे गए खाता-विहीन मत शामिल हैं। ऐतिहासिक चेकपॉइंट संख्याएँ मूल गणना का वर्णन करती हैं, न कि आंशिक रूप से पुनर्गणना की गई रिपोर्ट का। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  " आपके द्वारा प्रशासित या उनमें भाग लेने के कारण साझा किए गए संगठन/परियोजना डेटा और अन्य लोगों के योगदान स्वचालित रूप से मिटाए नहीं जाते हैं। आवश्यक जिम्मेदारियों को स्थानांतरित करें या अलग से अधिकृत विलोपन नियंत्रणों का उपयोग करें; यदि आपके खाते को मिटाने के अधिकारों का प्रयोग करने के लिए किसी संक्रमण की आवश्यकता है तो हमसे संपर्क करें। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "h4",
+            children: ["बैकअप, प्राप्तकर्ता और अलग विलोपन अनुरोध:"],
+          },
+          {
+            tag: "ul",
+            children: [
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["डेटाबेस बैकअप:"],
+                  },
+                  " हमारे बैकअप की सीमा वास्तविक हार्ड विलोपन के बाद 30 दिन है। बैकअप का उपयोग मिटाए गए खातों या सामग्री को पुन: सक्रिय करने के लिए नहीं किया जाता है। आवश्यक बैकअप क्षितिज के लिए न्यूनतम पुनर्स्थापना-दमन निर्देश रखे जाते हैं, बिना मिटाई गई सामग्री को उन निर्देशों में संग्रहीत किए। ",
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["Twilio:"],
+                  },
+                  " हम प्रोसेसर को लागू विलोपन के बारे में निर्देश देते हैं और प्रासंगिक प्राप्तकर्ता अनुरोधों में सहायता कर सकते हैं। Twilio अपने स्वयं के लागू उद्देश्यों के लिए आवश्यक सत्यापन/सुरक्षा रिकॉर्ड भी रख सकता है; विवरण में दिया गया है ",
+                  {
+                    tag: "a",
+                    children: ["Twilio की गोपनीयता नीति"],
+                    href: "https://www.twilio.com/en-us/legal/privacy",
+                    external: true,
+                  },
+                ],
+              },
+              {
+                tag: "li",
+                children: [
+                  {
+                    tag: "strong",
+                    children: ["तृतीय-पक्ष सेवाएँ:"],
+                  },
+                  " प्रोसेसर रिकॉर्ड लागू निर्देशों/व्यवस्थाओं के तहत संभाले जाते हैं, और स्वतंत्र प्रदाता प्रसंस्करण का अपना कानूनी उद्देश्य और प्रतिधारण होता है। हम हर स्वतंत्र रूप से डाउनलोड किए गए निर्यात, ईमेल, ब्राउज़र-स्थानीय मसौदे या खोज-इंजन प्रतिलिपि को दूर से नहीं मिटा सकते हैं, लेकिन कानूनी रूप से आवश्यक प्राप्तकर्ता अधिसूचना और अन्य कदम उठाते हैं। ",
+                ],
+              },
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              {
+                tag: "strong",
+                children: ["महत्वपूर्ण:"],
+              },
+              " खाता रिकवरी ठीक 15 दिन की समय सीमा पर समाप्त हो जाती है, भले ही भौतिक सफाई में देरी हो। व्यक्तिगत सामग्री को स्पष्ट रूप से हटाने के लिए कोई समकक्ष रिकवरी अवधि नहीं है। लागू व्यक्तिगत डेटा विलोपन अनुरोध, जिसमें उत्पाद रिकवरी अवधि के बिना अनुरोध या खाता हटाने के बाद रखे गए रिकॉर्ड से संबंधित अनुरोध शामिल हैं, धारा 6.1 में संपर्क मार्ग के माध्यम से उपलब्ध रहते हैं। हम उन्हें बिना अनुचित देरी के संभालते हैं, जहाँ आवश्यक हो आनुपातिक सत्यापन और संकीर्ण रूप से उचित कानूनी अपवादों के अधीन। खाता हटाने से आपके डेटा-सुरक्षा अधिकारों का त्याग नहीं होता है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 6.8. यदि आपको हमारे द्वारा आपके व्यक्तिगत डेटा के प्रसंस्करण के बारे में कोई शिकायत है, तो आप हमेशा हमसे संपर्क कर सकते हैं ",
+              {
+                tag: "a",
+                children: ["legal@zkorum.com"],
+                href: "mailto:legal@zkorum.com",
+              },
+              ". आप एक सक्षम डेटा संरक्षण प्राधिकरण के पास भी सीधे शिकायत दर्ज करा सकते हैं, जिसमें फ्रेंच कमीशन nationale de l'informatique et des libertés (",
+              {
+                tag: "a",
+                children: ["www.cnil.fr"],
+                href: "http://www.cnil.fr/",
+                external: true,
+              },
+              "). ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["7. कैलिफ़ोर्निया निवासियों के लिए महत्वपूर्ण जानकारी"],
+          },
+          {
+            tag: "p",
+            children: [
+              ' 7.1. 2018 के कैलिफ़ोर्निया उपभोक्ता गोपनीयता अधिनियम ("CCPA") के अनुसार, हम कैलिफ़ोर्निया के निवासियों को निम्नलिखित अतिरिक्त विवरण प्रदान करते हैं। पिछले 12 महीनों के दौरान, हमने हमारे परिचालन व्यावसायिक उद्देश्यों के लिए इस गोपनीयता नीति में वर्णित आपकी व्यक्तिगत जानकारी की श्रेणियों को एकत्र किया है, उपयोग किया है और साझा किया है। ',
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 7.2. हमने आपकी व्यक्तिगत जानकारी नहीं बेची है, जिसका अर्थ है कि हमने मौद्रिक या अन्य मूल्यवान प्रतिफल के लिए आपकी व्यक्तिगत जानकारी का खुलासा नहीं किया है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 7.3. आपको अपनी व्यक्तिगत जानकारी तक पहुँचने या उसे हटाने का अनुरोध करने और हमारी गोपनीयता प्रथाओं के बारे में पारदर्शिता का अनुरोध करने का अधिकार है। यदि आप CCPA के तहत अपने अधिकारों का प्रयोग करना चाहते हैं, तो कृपया अनुच्छेद 6 देखें। जैसे ही हमें आपका अनुरोध प्राप्त होगा, हम आपकी पहचान की पुष्टि करने के लिए जानकारी मांगकर इसकी जाँच करेंगे, जिसमें आपसे अतिरिक्त जानकारी पूछना भी शामिल है। यदि आप अपने अधिकारों का प्रयोग करने के लिए कैलिफ़ोर्निया के सचिव के राज्य के साथ पंजीकृत किसी एजेंट का उपयोग करना चाहते हैं, तो हम यह सबूत मांग सकते हैं कि आपने उस एजेंट को पावर ऑफ अटॉर्नी दी है या उस एजेंट के पास आपके अधिकारों के लिए अनुरोध प्रस्तुत करने का कोई अन्य वैध लिखित अधिकार है। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 7.4. यदि आप अपने अधिकारों का प्रयोग करने का विकल्प चुनते हैं, तो हम आपको अलग कीमतें नहीं लेंगे या सेवाओं की अलग गुणवत्ता प्रदान नहीं करेंगे जब तक कि कानून द्वारा इसकी अनुमति न हो। ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["8. गोपनीयता नीति में परिवर्तन"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 8.1. हम किसी भी समय अपनी पहल पर इस गोपनीयता नीति को बदल सकते हैं। यदि इस गोपनीयता नीति में कोई महत्वपूर्ण परिवर्तन आपकी व्यक्तिगत डेटा प्रोसेसिंग को प्रभावित कर सकता है, तो हम आपको उस तरीके से इन परिवर्तनों के बारे में सूचित करेंगे जिससे हम सामान्य रूप से आपसे संवाद करते हैं (उदाहरण के लिए, ईमेल के माध्यम से या प्लेटफ़ॉर्म पर संदेश के माध्यम से)। ",
+            ],
+          },
+          {
+            tag: "p",
+            children: [
+              " 8.2. हम आपको हमारी वेबसाइट (https://agoracitizen.network/) पर इस गोपनीयता नीति के नवीनतम संस्करण को पढ़ने के लिए आमंत्रित करते हैं। गोपनीयता नीति में वह तारीख बताई गई है जब हमारी गोपनीयता नीति में अंतिम बार बदलाव किया गया था। ",
+            ],
+          },
+        ],
+      },
+      {
+        tag: "section",
+        children: [
+          {
+            tag: "h2",
+            children: ["9. क्या आपके कोई प्रश्न हैं?"],
+          },
+          {
+            tag: "p",
+            children: [
+              " 9.1. यदि आपके व्यक्तिगत डेटा की प्रोसेसिंग के बारे में कोई और प्रश्न हैं, तो कृपया हमारे गोपनीयता प्रबंधक से संपर्क करने में संकोच न करें। आप हमारे गोपनीयता प्रबंधक से ईमेल द्वारा संपर्क कर सकते हैं: ",
+              {
+                tag: "a",
+                children: ["legal@zkorum.com"],
+                href: "mailto:legal@zkorum.com",
+              },
+              ". ",
+            ],
+          },
+        ],
+      },
+    ],
+  },
   ar: {
     title: "سياسة الخصوصية",
     automatedTranslationNotice: {

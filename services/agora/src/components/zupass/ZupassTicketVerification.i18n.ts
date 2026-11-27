@@ -38,6 +38,51 @@ export const zupassTicketVerificationTranslations: Record<
     errorTicketAlreadyUsed: 'This ticket has already been verified by another account.',
     errorUnknown: 'An unknown error occurred. Please try again.',
   },
+  de: {
+    title: "Verifizieren Sie Ihr Devconnect 2025 Ticket",
+    description:
+      "Um an dieser Diskussion teilzunehmen, müssen Sie nachweisen, dass Sie ein Devconnect 2025 Ticket besitzen.",
+    verifyButton: "Ticket mit Zupass verifizieren",
+    successMessage:
+      "Ticket erfolgreich verifiziert! Sie können nun an geschützten Diskussionen teilnehmen.",
+    accountRestored: "Willkommen zurück! Ihr Konto wurde wiederhergestellt 🎉",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt 🎉",
+    accountRestoredAndMerged:
+      "Willkommen zurück! Ihr Konto wurde wiederhergestellt und Ihre Gastdaten zusammengeführt 🎉",
+    note: "Dies öffnet ein Popup zu Zupass, wo Sie den Ticketbesitz nachweisen können, ohne persönliche Informationen preiszugeben.",
+    errorDeserialization:
+      "Ungültiges Nachweisformat. Bitte versuchen Sie es erneut.",
+    errorInvalidProof:
+      "Kryptografische Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    errorInvalidSigner: "Ticket nicht von Zupass signiert.",
+    errorWrongEvent:
+      "Falsches Event-Ticket. Devconnect 2025 Ticket erforderlich.",
+    errorTicketAlreadyUsed:
+      "Dieses Ticket wurde bereits von einem anderen Konto verifiziert.",
+    errorUnknown:
+      "Ein unbekannter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+  },
+  hi: {
+    title: "अपने Devconnect 2025 टिकट को सत्यापित करें",
+    description:
+      "इस चर्चा में भाग लेने के लिए, आपको यह सत्यापित करना होगा कि आपके पास Devconnect 2025 का टिकट है।",
+    verifyButton: "Zupass से टिकट सत्यापित करें",
+    successMessage:
+      "टिकट सफलतापूर्वक सत्यापित हो गया! अब आप प्रतिबंधित चर्चाओं में भाग ले सकते हैं।",
+    accountRestored: "आपका स्वागत है! आपका खाता बहाल कर दिया गया है 🎉",
+    accountMerged: "सफलता! आपके खातों को मिला दिया गया है 🎉",
+    accountRestoredAndMerged:
+      "आपका स्वागत है! आपका खाता बहाल कर दिया गया है और आपका अतिथि डेटा मिला दिया गया है 🎉",
+    note: "यह Zupass पर एक पॉपअप खोलेगा जहाँ आप व्यक्तिगत जानकारी बताए बिना टिकट स्वामित्व साबित कर सकते हैं।",
+    errorDeserialization: "अमान्य प्रमाण प्रारूप। कृपया पुनः प्रयास करें।",
+    errorInvalidProof:
+      "क्रिप्टोग्राफ़िक सत्यापन विफल रहा। कृपया पुनः प्रयास करें।",
+    errorInvalidSigner: "टिकट Zupass द्वारा हस्ताक्षरित नहीं है।",
+    errorWrongEvent: "गलत इवेंट टिकट। Devconnect 2025 टिकट आवश्यक है।",
+    errorTicketAlreadyUsed:
+      "इस टिकट को पहले ही किसी अन्य खाते द्वारा सत्यापित किया जा चुका है।",
+    errorUnknown: "एक अज्ञात त्रुटि हुई। कृपया पुनः प्रयास करें।",
+  },
   ar: {
     title: 'تحقق من تذكرة Devconnect 2025 الخاصة بك',
     description: 'للمشاركة في هذه المحادثة، تحتاج إلى التحقق من أنك تمتلك تذكرة Devconnect 2025.',

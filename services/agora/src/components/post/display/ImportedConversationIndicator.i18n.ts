@@ -32,6 +32,34 @@ export const importedConversationIndicatorTranslations: Record<
     analysisNote:
       "The data in the Analysis tab has been completely recalculated by Agora.",
   },
+  de: {
+    importedLabel: "Aus externen Daten importiert",
+    dialogTitle: "Importdetails",
+    importMethodLabel: "Importmethode",
+    importMethodUrl: "URL importieren",
+    importMethodCsv: "CSV-Dateien importieren",
+    sourceUrlLabel: "Quell-URL",
+    conversationUrlLabel: "Ursprüngliche Diskussions-URL",
+    exportUrlLabel: "Ursprüngliche Berichts-URL",
+    originalAuthorLabel: "Ursprünglicher Autor",
+    originalDateLabel: "Ursprüngliches Erstellungsdatum",
+    analysisNote:
+      "Die Daten im Reiter Analyse wurden von Agora vollständig neu berechnet.",
+  },
+  hi: {
+    importedLabel: "बाहरी डेटा से आयात किया गया",
+    dialogTitle: "आयात विवरण",
+    importMethodLabel: "आयात विधि",
+    importMethodUrl: "URL",
+    importMethodCsv: "CSV फ़ाइलें",
+    sourceUrlLabel: "स्रोत URL",
+    conversationUrlLabel: "मूल चर्चा URL",
+    exportUrlLabel: "मूल रिपोर्ट URL",
+    originalAuthorLabel: "मूल लेखक",
+    originalDateLabel: "मूल निर्माण तिथि",
+    analysisNote:
+      "Agora द्वारा विश्लेषण टैब में डेटा पूरी तरह से पुनर्गणना किया गया है।",
+  },
   ar: {
     importedLabel: "مستورد من بيانات خارجية",
     dialogTitle: "تفاصيل الاستيراد",

@@ -13,6 +13,14 @@ export const conversationTitleTranslations: Record<
     privateLabel: "Private",
     prioritizationLabel: "Prioritization",
   },
+  de: {
+    privateLabel: "Privat",
+    prioritizationLabel: "Priorisierung",
+  },
+  hi: {
+    privateLabel: "निजी",
+    prioritizationLabel: "प्राथमिकता निर्धारण",
+  },
   ar: {
     privateLabel: "خاص",
     prioritizationLabel: "ترتيب الأولويات",

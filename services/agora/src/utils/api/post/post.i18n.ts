@@ -13,6 +13,14 @@ export const postApiTranslations: Record<
     conversationNotFound: "Conversation not found",
     failedToDeletePost: "Failed to delete the post.",
   },
+  de: {
+    conversationNotFound: "Diskussion nicht gefunden",
+    failedToDeletePost: "Der Beitrag konnte nicht gelöscht werden.",
+  },
+  hi: {
+    conversationNotFound: "चर्चा नहीं मिली",
+    failedToDeletePost: "पोस्ट हटाने में विफल।",
+  },
   ar: {
     conversationNotFound: "المحادثة غير موجودة",
     failedToDeletePost: "فشل حذف المنشور.",

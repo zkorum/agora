@@ -9,6 +9,8 @@ export const backButtonTranslations: Record<
   BackButtonTranslations
 > = {
   en: { goBack: "Go back" },
+  de: { goBack: "Zurück" },
+  hi: { goBack: "वापस जाएँ" },
   ar: { goBack: "الرجوع" },
   es: { goBack: "Volver" },
   fa: { goBack: "بازگشت" },

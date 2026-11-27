@@ -13,6 +13,14 @@ export const interactionTabTranslations: Record<
     analysis: "Analysis",
     rank: "Rank",
   },
+  de: {
+    analysis: "Analyse",
+    rank: "Rangfolge",
+  },
+  hi: {
+    analysis: "विश्लेषण",
+    rank: "रैंक",
+  },
   ar: {
     analysis: "التحليل",
     rank: "ترتيب",

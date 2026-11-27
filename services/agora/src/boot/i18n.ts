@@ -20,6 +20,8 @@ export type MessageSchema = typeof en;
 const localeMessageImports = {
   en: () => Promise.resolve({ default: en }),
   ar: () => import("../i18n/ar/index"),
+  de: () => import("../i18n/de/index"),
+  hi: () => import("../i18n/hi/index"),
   es: () => import("../i18n/es/index"),
   fa: () => import("../i18n/fa/index"),
   fr: () => import("../i18n/fr/index"),
@@ -96,6 +98,10 @@ function getQuasarLangImport(
       return import("quasar/lang/fa");
     case "he":
       return import("quasar/lang/he");
+    case "de":
+      return import("quasar/lang/de");
+    case "hi":
+      return import("quasar/lang/hi");
     case "en":
       return Promise.resolve({ default: enUS });
     case "es":

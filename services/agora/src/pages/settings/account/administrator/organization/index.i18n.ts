@@ -727,6 +727,130 @@ export const administratorOrganizationTranslations: Record<
   AdministratorOrganizationTranslations
 > = {
   en,
+  de: {
+    administrator: "Organisationen",
+    createTab: "Erstellen",
+    manageTab: "Verwalten",
+    createTitle: "Organisation erstellen",
+    createDescription:
+      "Erstellen Sie zuerst das Standardprofil der Organisation. Fügen Sie Übersetzungen nach der Erstellung über den Tab Verwalten hinzu.",
+    existingTitle: "Bestehende Organisationen verwalten",
+    loadingOrganizationsMessage: "Organisationen werden geladen...",
+    noOrganizationsMessage: "Es sind keine aktiven Organisationen registriert.",
+    selectOrganizationLabel: "Organisation",
+    editTitle: "Organisation bearbeiten",
+    editDescription:
+      "Wählen Sie eine Anzeigesprache, bearbeiten Sie dieses lokalisierte Profil und machen Sie es optional zum Standard-Öffentlichprofil.",
+    saveSlugButton: "Slug speichern",
+    slugWarningTitle: "Öffentlichen Link ändern?",
+    slugWarningDescription:
+      "Die Änderung dieses Slugs kann Links, die bereits besucht oder geteilt wurden, ungültig machen. Fahren Sie nur fort, wenn Sie sich sicher sind.",
+    confirmSlugChangeButton: "Slug ändern",
+    languageLabel: "Anzeigesprache",
+    defaultLanguageLabel:
+      "Diese Sprache als Standard-Öffentlichprofil verwenden",
+    nameLabel: "Name",
+    slugLabel: "URL-Slug",
+    descriptionLabel: "Beschreibung",
+    imagePathLabel: "Bildpfad",
+    imagePathHint:
+      "Verwenden Sie einen Bilddateinamen wie avatar_default_0.png oder eine vollständige HTTPS-URL.",
+    websiteUrlLabel: "Website-URL",
+    websiteUrlHint:
+      "Verwenden Sie eine vollständige HTTPS-URL, zum Beispiel https://example.org.",
+    websiteUrlError:
+      "Die Website-URL muss HTTPS verwenden und darf keine eingebetteten Anmeldeinformationen enthalten.",
+    createButton: "Organisation erstellen",
+    saveButton: "Änderungen speichern",
+    deleteButton: "Organisation löschen",
+    confirmDeleteButton: "Löschen bestätigen",
+    cancelButton: "Abbrechen",
+    deleteConfirmMessage: "Dies wird diese Organisation löschen.",
+    addMemberTitle: "Teilnehmende",
+    membershipDescription:
+      "Fügen Sie einen Benutzernamen zu der ausgewählten Organisation hinzu.",
+    usernameLabel: "Benutzername",
+    addUserButton: "Benutzer hinzufügen",
+    removeUserButton: "Benutzer entfernen",
+    memberListTitle: "Mitglieder der Organisation",
+    memberListDescription:
+      "Die aktuelle Mitgliederliste abrufen und Benutzer direkt aus der Liste entfernen.",
+    fetchMembersButton: "Mitglieder abrufen",
+    noMembersMessage:
+      "Für diese Organisation wurden keine Mitglieder gefunden.",
+    localizationMissingHint:
+      "Diese Sprache hat noch keine gespeicherte Lokalisierung. Das Formular ist aus dem Standardprofil vorausgefüllt, damit Sie es schnell übersetzen können.",
+    defaultLanguageBadge: "Standard",
+    localizationReadyBadge: "Gespeichert",
+    localizationMissingBadge: "Fehlt",
+    dangerZoneTitle: "Gefahrenzone",
+    changeSlugDangerTitle: "Organisations-URL-Slug ändern",
+    changeSlugDangerDescription:
+      "Die Änderung dieses Slugs kann öffentliche Links, die bereits besucht oder geteilt wurden, ungültig machen.",
+    deleteDangerTitle: "Diese Organisation löschen",
+    deleteDangerDescription: "Diese Organisation löschen.",
+  },
+  hi: {
+    administrator: "संगठन",
+    createTab: "बनाएँ",
+    manageTab: "प्रबंधित करें",
+    createTitle: "संगठन बनाएँ",
+    createDescription:
+      "पहले डिफ़ॉल्ट संगठन प्रोफ़ाइल बनाएँ। बनाने के बाद प्रबंधित टैब से अनुवाद जोड़ें।",
+    existingTitle: "मौजूदा संगठनों का प्रबंधन करें",
+    loadingOrganizationsMessage: "संगठन लोड हो रहे हैं...",
+    noOrganizationsMessage: "कोई सक्रिय संगठन पंजीकृत नहीं है।",
+    selectOrganizationLabel: "संगठन",
+    editTitle: "संगठन संपादित करें",
+    editDescription:
+      "एक प्रदर्शन भाषा चुनें, उस स्थानीयकृत प्रोफ़ाइल को संपादित करें, और वैकल्पिक रूप से इसे डिफ़ॉल्ट सार्वजनिक प्रोफ़ाइल बनाएं।",
+    saveSlugButton: "स्लग सहेजें",
+    slugWarningTitle: "सार्वजनिक लिंक बदलें?",
+    slugWarningDescription:
+      "इस स्लग को बदलने से पहले से देखे गए या साझा किए गए लिंक टूट सकते हैं। केवल तभी आगे बढ़ें जब आप निश्चित हों।",
+    confirmSlugChangeButton: "स्लग बदलें",
+    languageLabel: "इंटरफ़ेस की भाषा",
+    defaultLanguageLabel:
+      "इस भाषा का उपयोग डिफ़ॉल्ट सार्वजनिक प्रोफ़ाइल के रूप में करें",
+    nameLabel: "नाम",
+    slugLabel: "URL स्लग",
+    descriptionLabel: "विवरण",
+    imagePathLabel: "छवि पथ",
+    imagePathHint:
+      "avatar_default_0.png जैसी छवि फ़ाइल का नाम या एक पूर्ण https URL का उपयोग करें।",
+    websiteUrlLabel: "वेबसाइट URL",
+    websiteUrlHint:
+      "एक पूर्ण HTTPS URL का उपयोग करें, उदाहरण के लिए https://example.org.",
+    websiteUrlError:
+      "वेबसाइट URL में HTTPS का उपयोग होना चाहिए और इसमें एम्बेडेड क्रेडेंशियल नहीं होने चाहिए।",
+    createButton: "संगठन बनाएँ",
+    saveButton: "परिवर्तन सहेजें",
+    deleteButton: "संगठन हटाएं",
+    confirmDeleteButton: "हटाने की पुष्टि करें",
+    cancelButton: "रद्द करें",
+    deleteConfirmMessage: "इससे यह संगठन डिलीट हो जाएगा।",
+    addMemberTitle: "सदस्यताएँ",
+    membershipDescription: "चयनित संगठन में एक उपयोगकर्ता नाम जोड़ें।",
+    usernameLabel: "उपयोगकर्ता नाम",
+    addUserButton: "उपयोगकर्ता जोड़ें",
+    removeUserButton: "उपयोगकर्ता हटाएं",
+    memberListTitle: "संगठन के सदस्य",
+    memberListDescription:
+      "वर्तमान सदस्य सूची प्राप्त करें, फिर सूची से सीधे उपयोगकर्ताओं को हटा दें।",
+    fetchMembersButton: "सदस्यों को प्राप्त करें",
+    noMembersMessage: "इस संगठन के लिए कोई सदस्य नहीं मिला।",
+    localizationMissingHint:
+      "इस भाषा का कोई सहेजा हुआ स्थानीयकरण नहीं है। फॉर्म डिफ़ॉल्ट प्रोफ़ाइल से पहले से भरा गया है ताकि आप इसे जल्दी से अनुवाद कर सकें।",
+    defaultLanguageBadge: "डिफ़ॉल्ट",
+    localizationReadyBadge: "सहेजा गया",
+    localizationMissingBadge: "अनुपस्थित",
+    dangerZoneTitle: "खतरा क्षेत्र",
+    changeSlugDangerTitle: "संगठन URL स्लग बदलें",
+    changeSlugDangerDescription:
+      "इस स्लग को बदलने से पहले से देखे गए या साझा किए गए सार्वजनिक लिंक टूट सकते हैं।",
+    deleteDangerTitle: "इस संगठन को हटाएं",
+    deleteDangerDescription: "इस संगठन को हटाएं।",
+  },
   ar,
   es,
   fa,

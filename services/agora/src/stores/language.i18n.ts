@@ -16,6 +16,21 @@ export const languageStoreTranslations: Record<
     failedToUpdateSpokenLanguages: "Failed to update spoken languages",
     failedToChangeDisplayLanguage: "Failed to change display language",
   },
+  de: {
+    failedToFetchLanguagePreferences:
+      "Spracheinstellungen vom Backend nicht geladen werden konnte",
+    failedToUpdateSpokenLanguages:
+      "Gesprochene Sprachen konnten nicht aktualisiert werden",
+    failedToChangeDisplayLanguage:
+      "Anzeigesprache konnte nicht geändert werden",
+  },
+  hi: {
+    failedToFetchLanguagePreferences:
+      "बैकएंड से भाषा प्राथमिकताएं प्राप्त करने में विफल",
+    failedToUpdateSpokenLanguages:
+      "बोली जाने वाली भाषाओं को अपडेट करने में विफल",
+    failedToChangeDisplayLanguage: "डिस्प्ले भाषा बदलने में विफल",
+  },
   es: {
     failedToFetchLanguagePreferences:
       "No se pudieron obtener las preferencias de idioma del servidor",

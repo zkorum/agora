@@ -26,11 +26,13 @@ log = logging.getLogger(__name__)
 
 DISPLAY_LANGUAGE_TO_GOOGLE_CODE = {
     "ar": "ar",
+    "de": "de",
     "en": "en",
     "es": "es",
     "fa": "fa",
     "fr": "fr",
     "he": "he",
+    "hi": "hi",
     "ja": "ja",
     "ky": "ky",
     "ru": "ru",

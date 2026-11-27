@@ -13,6 +13,22 @@ export const muteUserApiTranslations: Record<
   MuteUserApiTranslations
 > = {
   en: { userMuted: "User muted", userUnmuted: "User unmuted", failedToMuteUser: "Failed to mute user", failedToUnmuteUser: "Failed to unmute user", failedToFetchMutedUsers: "Failed to fetch muted user list" },
+  de: {
+    userMuted: "Nutzer wurde stummgeschaltet",
+    userUnmuted: "Nutzer wurde wieder entstummgeschaltet",
+    failedToMuteUser: "Stummschaltung des Nutzers fehlgeschlagen",
+    failedToUnmuteUser: "Entstummschaltung des Nutzers fehlgeschlagen",
+    failedToFetchMutedUsers:
+      "Liste der stummgeschalteten Nutzer konnte nicht abgerufen werden",
+  },
+  hi: {
+    userMuted: "उपयोगकर्ता म्यूट कर दिया गया",
+    userUnmuted: "उपयोगकर्ता अनम्यूट कर दिया गया",
+    failedToMuteUser: "उपयोगकर्ता को म्यूट करने में विफल",
+    failedToUnmuteUser: "उपयोगकर्ता को अनम्यूट करने में विफल",
+    failedToFetchMutedUsers:
+      "म्यूट किए गए उपयोगकर्ताओं की सूची प्राप्त करने में विफल",
+  },
   es: { userMuted: "Usuario silenciado", userUnmuted: "Usuario reactivado", failedToMuteUser: "No se pudo silenciar al usuario", failedToUnmuteUser: "No se pudo reactivar al usuario", failedToFetchMutedUsers: "No se pudo obtener la lista de usuarios silenciados" },
   fr: { userMuted: "Utilisateur masqué", userUnmuted: "Utilisateur rétabli", failedToMuteUser: "Échec du masquage de l’utilisateur", failedToUnmuteUser: "Échec du rétablissement de l’utilisateur", failedToFetchMutedUsers: "Échec de la récupération de la liste des utilisateurs masqués" },
   "zh-Hant": { userMuted: "使用者已靜音", userUnmuted: "使用者已取消靜音", failedToMuteUser: "靜音使用者失敗", failedToUnmuteUser: "取消靜音使用者失敗", failedToFetchMutedUsers: "取得靜音使用者列表失敗" },

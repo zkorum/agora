@@ -44,6 +44,52 @@ export const embeddedBrowserWarningTranslations: Record<
     continueAnyway: "Continue Anyway",
     notInAppBrowser: "I'm already in my browser (Chrome, Safari, etc.)",
   },
+  de: {
+    title: "Sie sind im {app}-Browser",
+    titleGeneric: "Sie sind in einem In-App-Browser",
+    message:
+      "Bitte öffnen Sie dies in Ihrem Standardbrowser für das beste Erlebnis.",
+    showManualInstructions: "Oder manuell versuchen",
+    instructionStep1: "Tippen Sie auf das Menüsymbol (⋯ oder ⋮)",
+    instructionStep1iOS:
+      "Tippen Sie auf das Kompasssymbol unten rechts, um es in Ihrem Standardbrowser zu öffnen",
+    instructionStep2:
+      "Wählen Sie „In Browser öffnen“ oder eine ähnliche Option",
+    instructionStep3:
+      "Oder kopieren Sie die URL unten und fügen Sie sie in Ihrer Browser-App ein",
+    retryRedirect: "In Standardbrowser öffnen",
+    retryingRedirect: "Öffne in Standardbrowser...",
+    redirectFailed:
+      "Weiterleitung fehlgeschlagen. Bitte versuchen Sie es manuell.",
+    copyUrl: "URL kopieren",
+    urlCopied: "URL kopiert",
+    urlCopiedNotification: "URL in die Zwischenablage kopiert",
+    copyFailedNotification: "Fehler beim Kopieren der URL",
+    continueAnyway: "Trotzdem fortfahren",
+    notInAppBrowser: "Ich bin bereits in meinem Browser (Chrome, Safari usw.)",
+  },
+  hi: {
+    title: "आप {app} ब्राउज़र में हैं",
+    titleGeneric: "आप इन-ऐप ब्राउज़र में हैं",
+    message: "सर्वोत्तम अनुभव के लिए कृपया अपने डिफ़ॉल्ट ब्राउज़र में खोलें।",
+    showManualInstructions: "या मैन्युअल रूप से प्रयास करें",
+    instructionStep1: "मेनू आइकन (⋯ या ⋮) पर टैप करें",
+    instructionStep1iOS:
+      "अपने डिफ़ॉल्ट ब्राउज़र में खोलने के लिए नीचे-दाएँ कोने में कम्पास आइकन पर टैप करें",
+    instructionStep2: '"ब्राउज़र में खोलें" या इसी तरह के विकल्प का चयन करें',
+    instructionStep3:
+      "या नीचे दिए गए URL को कॉपी करें और इसे अपने ब्राउज़र ऐप में पेस्ट करें",
+    retryRedirect: "डिफ़ॉल्ट ब्राउज़र में खोलें",
+    retryingRedirect: "डिफ़ॉल्ट ब्राउज़र में खोल रहा है...",
+    redirectFailed: "रीडायरेक्ट विफल रहा। कृपया मैन्युअल रूप से प्रयास करें।",
+    copyUrl: "URL कॉपी करें",
+    urlCopied: "URL कॉपी हो गया",
+    urlCopiedNotification: "URL क्लिपबोर्ड पर कॉपी किया गया",
+    copyFailedNotification: "URL कॉपी करने में विफल",
+    continueAnyway: "फिर भी जारी रखें",
+    notInAppBrowser:
+      "मैं पहले से ही अपने ब्राउज़र में हूँ (Chrome, Safari, आदि।)",
+  },
   ar: {
     title: "أنت في متصفح {app}",
     titleGeneric: "أنت في متصفح مدمج",

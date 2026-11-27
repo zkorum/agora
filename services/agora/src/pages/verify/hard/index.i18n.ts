@@ -19,6 +19,21 @@ export const verifyHardTranslations: Record<
     verifyWithPhone: "Log in with phone number",
     verifyWithEmail: "Log in with email",
   },
+  de: {
+    title: "Anmelden",
+    description:
+      "Verifizieren Sie eine Berechtigung, um an dieser Diskussion teilzunehmen",
+    verifyWithRarimo: "Mit Rarimo anmelden",
+    verifyWithPhone: "Mit Telefonnummer anmelden",
+    verifyWithEmail: "Mit E-Mail anmelden",
+  },
+  hi: {
+    title: "लॉग इन करें",
+    description: "इस चर्चा में भाग लेने के लिए एक प्रमाण सत्यापित करें",
+    verifyWithRarimo: "Rarimo से लॉग इन करें",
+    verifyWithPhone: "फ़ोन नंबर से लॉग इन करें",
+    verifyWithEmail: "ईमेल से लॉग इन करें",
+  },
   ar: {
     title: "تسجيل الدخول",
     description: "تحقق من بيانات الاعتماد للمشاركة في هذه المحادثة",

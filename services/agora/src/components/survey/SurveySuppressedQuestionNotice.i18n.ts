@@ -17,6 +17,20 @@ export const surveySuppressedQuestionNoticeTranslations: Record<
     clusterMessage:
       "Results hidden to protect participant privacy because this opinion-group breakdown could reveal individual answers.",
   },
+  de: {
+    title: "Ausgeblendet",
+    lowCountMessage:
+      "Ergebnisse werden zum Schutz der Privatsphäre der Teilnehmenden ausgeblendet, da einige Antwortzahlen sehr niedrig sind.",
+    clusterMessage:
+      "Die Ergebnisse sind verborgen, um die Privatsphäre der Teilnehmenden zu schützen, da diese Aufschlüsselung nach Meinungsgruppen individuelle Antworten offenlegen könnte.",
+  },
+  hi: {
+    title: "छिपाया गया",
+    lowCountMessage:
+      "प्रतिभागी की गोपनीयता की रक्षा के लिए परिणाम छिपे हैं क्योंकि कुछ उत्तरों की संख्या बहुत कम है।",
+    clusterMessage:
+      "प्रतिभागी की गोपनीयता की रक्षा के लिए परिणाम छिपे हैं क्योंकि यह मत समूह का विवरण व्यक्तिगत उत्तरों को प्रकट कर सकता है।",
+  },
   ar: {
     title: "محجوب",
     lowCountMessage:

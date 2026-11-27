@@ -11,6 +11,12 @@ export const useTargetOpinionTranslations: Record<
   en: {
     statementNotFound: "The requested statement could not be found.",
   },
+  de: {
+    statementNotFound: "Die angeforderte Aussage konnte nicht gefunden werden.",
+  },
+  hi: {
+    statementNotFound: "अनुरोधित कथन नहीं मिला।",
+  },
   ar: {
     statementNotFound: "لا يمكن العثور على المقترح المطلوب.",
   },

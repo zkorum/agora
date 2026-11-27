@@ -19,6 +19,20 @@ export const welcomeTranslations: Record<
     launchApp: "Launch App",
     logOut: "Log Out",
   },
+  de: {
+    signUp: "Registrieren",
+    login: "Anmelden",
+    skipAuthentication: "Authentifizierung überspringen",
+    launchApp: "App starten",
+    logOut: "Abmelden",
+  },
+  hi: {
+    signUp: "साइन अप करें",
+    login: "लॉगिन करें",
+    skipAuthentication: "प्रमाणीकरण छोड़ें",
+    launchApp: "ऐप शुरू करें",
+    logOut: "बाहर निकलें",
+  },
   ar: {
     signUp: "التسجيل",
     login: "تسجيل الدخول",

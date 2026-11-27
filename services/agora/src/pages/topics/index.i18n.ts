@@ -12,6 +12,16 @@ export const topicsTranslations: Record<SupportedDisplayLanguageCodes, TopicsTra
     following: "Following",
     follow: "Follow",
   },
+  de: {
+    exploreTopics: "Themen erkunden",
+    following: "Folgt",
+    follow: "Folgen",
+  },
+  hi: {
+    exploreTopics: "विषय देखें",
+    following: "अनुसरण कर रहे हैं",
+    follow: "फ़ॉलो करें",
+  },
   ar: {
     exploreTopics: "استكشف المواضيع",
     following: "المتابَعة",

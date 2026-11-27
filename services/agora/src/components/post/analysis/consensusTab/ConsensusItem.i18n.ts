@@ -17,6 +17,18 @@ export const consensusItemTranslations: Record<
     disagree: "Disagree",
     noVote: "No Vote",
   },
+  de: {
+    agree: "Stimme zu",
+    pass: "Unsicher",
+    disagree: "Stimme nicht zu",
+    noVote: "Nicht abgestimmt",
+  },
+  hi: {
+    agree: "सहमत",
+    pass: "तय नहीं",
+    disagree: "असहमत",
+    noVote: "मत नहीं दिया",
+  },
   ar: {
     agree: "أوافق",
     pass: "غير متأكد",

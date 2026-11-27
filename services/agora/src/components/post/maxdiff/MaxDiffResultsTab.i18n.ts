@@ -81,6 +81,96 @@ export const maxDiffResultsTabTranslations: Record<
     canceledLearnMoreGitHub:
       "GitHub issues closed as not planned, or with the tracking label removed. Their ranking score was frozen at that time.",
   },
+  de: {
+    title: "Gemeinsame Rangliste",
+    noResults:
+      "Noch keine Rangliste vorhanden. Machen Sie den Anfang!",
+    noItems: "Keine Punkte in dieser Kategorie.",
+    subtitle: "Aus den Stimmen aller Teilnehmenden berechnet",
+    scoreScaleExplanation:
+      "Die Werte verwenden eine feste Skala von 0 bis 100. Kleine Unterschiede bleiben klein, anstatt jede Rangfolge zu strecken, um die Balken zu füllen. Diese Werte sind keine Prozentsätze der Teilnehmenden.",
+    loadingError: "Fehler beim Laden der Ergebnisse.",
+    retryButton: "Erneut versuchen",
+    communityLearnMoreHow:
+      "Die Stimmen werden sofort gezählt. Individuelle Präferenzen werden mithilfe von Solidago, einem Open-Source-Algorithmus, der Stimmen basierend auf dem Vertrauensniveau des Nutzers gewichtet, zu einer Gemeinschaftsrangliste aggregiert.",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) ist eine optionale Einrichtung, die hier noch nicht aktiviert ist. Wenn sie aktiviert wird, hilft sie, unrepräsentative Teilnahme zu korrigieren, indem sie die Verteilung der Stimmen über Gruppen quadratisch verbessert.",
+    communityLearnMoreDiversity:
+      "Die Elemente werden in zufälligen Gruppen präsentiert, um eine Positionsverzerrung zu vermeiden. Indirekte Vergleiche werden abgeleitet, um die Abstimmungsrunden zu minimieren.",
+    communityLearnMoreSourceManual:
+      "Die Moderationsleitung kann jederzeit neue Vorschläge hinzufügen. Diese stehen sofort zur Abstimmung.",
+    communityLearnMoreSourceGitHub:
+      "Die Elemente werden aus GitHub-Issues mit dem konfigurierten Label synchronisiert. Neue Issues werden automatisch dem Abstimmungspool hinzugefügt, wenn sie mit einem Label versehen werden.",
+    communityLearnMoreReference: "Erfahren Sie mehr:",
+    meLearnMorePersonal:
+      "Ihre Rangfolge basiert ausschließlich auf den Vergleichen, die Sie vorgenommen haben. Sobald Sie genügend Aussagen verglichen haben, ergibt sich eine vollständige persönliche Rangfolge.",
+    meLearnMoreCounts:
+      "Ihre Stimmen fließen auch sofort in die Gemeinschaftsrangfolge ein. Sie müssen Ihre persönliche Rangfolge nicht zuerst abschließen.",
+    tabSummary: "Zusammenfassung",
+    tabMe: "Ich",
+    tabResults: "Ergebnisse",
+    tabCompleted: "Abgeschlossen",
+    tabCanceled: "Abgebrochen",
+    meTitle: "Meine Rangfolge",
+    meSubtitle: "Ihre persönliche Rangfolge basierend auf Ihren Vergleichen",
+    meVotesCounted:
+      "Ihre Stimmen wurden bereits in der Gemeinschaftsrangfolge berücksichtigt",
+    meProgress: "{percent}% abgeschlossen · {votes} Stimmen abgegeben",
+    meStartVoting: "Abstimmen starten, um Ihre Rangfolge freizuschalten",
+    meKeepVoting: "Weitermachen, um Ihre vollständige Rangfolge freizuschalten",
+    completedLearnMoreManual:
+      "Diese Vorschläge hat die Moderationsleitung als abgeschlossen markiert. Ihr Wert für die Rangliste bleibt seitdem unverändert.",
+    completedLearnMoreGitHub:
+      "Als abgeschlossen abgeschlossene GitHub-Issues. Ihr Rangwert wurde eingefroren, als das Issue auf GitHub geschlossen wurde.",
+    canceledLearnMoreManual:
+      "Artikel, die storniert oder entfernt wurden. Ihr Rangwert wurde zum Zeitpunkt der Stornierung eingefroren.",
+    canceledLearnMoreGitHub:
+      "GitHub-Issues, die als nicht geplant geschlossen oder deren Tracking-Label entfernt wurden. Ihr Rangwert wurde zu diesem Zeitpunkt eingefroren.",
+  },
+  hi: {
+    title: "समुदाय की रैंकिंग",
+    noResults: "अभी कोई रैंकिंग नहीं है। आप शुरुआत कर सकते हैं!",
+    noItems: "इस श्रेणी में कोई मद नहीं है।",
+    subtitle: "सभी प्रतिभागियों के मतों के आधार पर तैयार की गई",
+    scoreScaleExplanation:
+      "स्कोर 0 से 100 के निश्चित पैमाने का उपयोग करते हैं। छोटे अंतर छोटे ही रहते हैं बजाय इसके कि हर रैंकिंग को बार भरने के लिए बढ़ाया जाए। ये स्कोर प्रतिभागियों का प्रतिशत नहीं हैं।",
+    loadingError: "परिणाम लोड करने में विफल।",
+    retryButton: "फिर से प्रयास करें",
+    communityLearnMoreHow:
+      "मत तुरंत गिने जाते हैं। व्यक्तिगत प्राथमिकताएं Solidago का उपयोग करके एक सामुदायिक रैंकिंग में एकत्रित की जाती हैं, जो उपयोगकर्ता विश्वास स्तर के आधार पर मतों को तौलता है।",
+    communityLearnMoreCocm:
+      "Connection-Oriented Cluster Match (COCM) एक वैकल्पिक सेटअप है जो अभी सक्षम नहीं किया गया है। सक्षम होने पर, यह समूहों में मतों के वितरण को चतुर्घात रूप से बेहतर बनाकर गैर-प्रतिनिधित्वपूर्ण भागीदारी को सही करने में मदद करता है।",
+    communityLearnMoreDiversity:
+      "स्थिति पूर्वाग्रह को रोकने के लिए मदों को यादृच्छिक समूहों में प्रस्तुत किया जाता है। मतदान दौर को कम करने के लिए अप्रत्यक्ष तुलनाओं का अनुमान लगाया जाता है।",
+    communityLearnMoreSourceManual:
+      "मद चर्चा संचालक द्वारा जोड़े जाते हैं और समय के साथ बढ़ सकते हैं। जैसे ही नए मद जोड़े जाते हैं, वे मतदान पूल में शामिल हो जाते हैं।",
+    communityLearnMoreSourceGitHub:
+      "मद कॉन्फ़िगर किए गए लेबल के साथ GitHub मुद्दों से सिंक होते हैं। जब मुद्दों को लेबल किया जाता है तो नए मुद्दे स्वचालित रूप से मतदान पूल में जुड़ जाते हैं।",
+    communityLearnMoreReference: "और जानें:",
+    meLearnMorePersonal:
+      "आपकी रैंकिंग केवल आपके द्वारा की गई तुलनाओं पर आधारित है। एक बार जब आप पर्याप्त कथनों की तुलना कर लेते हैं, तो एक पूर्ण व्यक्तिगत रैंकिंग उभरती है।",
+    meLearnMoreCounts:
+      "आपके मत तुरंत सामुदायिक रैंकिंग में भी योगदान करते हैं। आपको पहले अपनी व्यक्तिगत रैंकिंग पूरी करने की आवश्यकता नहीं है।",
+    tabSummary: "सारांश",
+    tabMe: "मैं",
+    tabResults: "परिणाम",
+    tabCompleted: "पूरा हुआ",
+    tabCanceled: "रद्द",
+    meTitle: "मेरी रैंकिंग",
+    meSubtitle: "आपकी तुलनाओं पर आधारित आपकी व्यक्तिगत रैंकिंग",
+    meVotesCounted: "आपके मत पहले ही सामुदायिक रैंकिंग में गिने जा चुके हैं",
+    meProgress: "{percent}% पूर्ण · {votes} मत डाले गए",
+    meStartVoting: "अपनी रैंकिंग अनलॉक करने के लिए मतदान शुरू करें",
+    meKeepVoting: "अपनी पूरी रैंकिंग अनलॉक करने के लिए मतदान जारी रखें",
+    completedLearnMoreManual:
+      "चर्चा संचालक द्वारा पूर्ण के रूप में चिह्नित मद। उनकी रैंकिंग स्कोर पूर्ण होने के समय स्थिर कर दिया गया था।",
+    completedLearnMoreGitHub:
+      "GitHub मुद्दे पूर्ण के रूप में बंद किए गए। उनका रैंकिंग स्कोर तब स्थिर किया गया जब मुद्दा GitHub पर बंद हुआ।",
+    canceledLearnMoreManual:
+      "जिन मदों को रद्द या हटाया गया है। रद्द होने के समय उनका रैंकिंग स्कोर स्थिर कर दिया गया था।",
+    canceledLearnMoreGitHub:
+      "GitHub के वे मुद्दे जो योजना के अनुसार नहीं बंद किए गए, या जिनसे ट्रैकिंग लेबल हटा दिया गया। उनका रैंकिंग स्कोर उस समय स्थिर कर दिया गया था।",
+  },
   ar: {
     title: "تصنيف المجتمع",
     noResults: "لا توجد بيانات ترتيب بعد. كن أول من يشارك!",

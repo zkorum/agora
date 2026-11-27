@@ -42,6 +42,47 @@ export const usernameChangeTranslations: Record<
     reservedUsername: "This username is reserved",
     invalidUsername: "Invalid username",
   },
+  de: {
+    usernameLabel: "Benutzername",
+    generateUsername: "Zufälligen Benutzernamen generieren",
+    updateButton: "Aktualisieren",
+    usernameChanged: "Benutzername geändert",
+    usernameAlreadyInUse: "Dieser Benutzername ist bereits vergeben",
+    usernameCurrentlyInUse: "Dieser Benutzername wird gerade verwendet",
+    submitError:
+      "Fehler beim Versuch, die Änderung des Benutzernamens einzureichen",
+    invalidCharacters:
+      "Der Benutzername darf nur Kleinbuchstaben, Zahlen und Unterstriche enthalten",
+    letterOrNumberRequired:
+      "Der Benutzername muss mindestens einen Buchstaben oder eine Zahl enthalten",
+    consecutiveUnderscores:
+      "Der Benutzername darf keine zwei aufeinanderfolgenden Unterstriche enthalten",
+    tooShort: "Der Benutzername muss mindestens {min} Zeichen enthalten",
+    tooLong: "Der Benutzername darf {max} Zeichen nicht überschreiten",
+    reservedPrefix: "Der Benutzername darf nicht mit 'ext' beginnen",
+    reservedUsername: "Dieser Benutzername ist reserviert",
+    invalidUsername: "Ungültiger Benutzername",
+  },
+  hi: {
+    usernameLabel: "उपयोगकर्ता नाम",
+    generateUsername: "एक यादृच्छिक उपयोगकर्ता नाम बनाएँ",
+    updateButton: "अपडेट करें",
+    usernameChanged: "उपयोगकर्ता नाम बदल गया",
+    usernameAlreadyInUse: "यह उपयोगकर्ता नाम पहले से उपयोग में है",
+    usernameCurrentlyInUse: "यह उपयोगकर्ता नाम वर्तमान में उपयोग में है",
+    submitError: "उपयोगकर्ता नाम बदलने का प्रयास करते समय त्रुटि",
+    invalidCharacters:
+      "उपयोगकर्ता नाम में केवल छोटे अक्षर, संख्याएँ और अंडरस्कोर हो सकते हैं",
+    letterOrNumberRequired:
+      "उपयोगकर्ता नाम में कम से कम एक अक्षर या संख्या होनी चाहिए",
+    consecutiveUnderscores:
+      "उपयोगकर्ता नाम में दो लगातार अंडरस्कोर नहीं होने चाहिए",
+    tooShort: "उपयोगकर्ता नाम में कम से कम {min} अक्षर होने चाहिए",
+    tooLong: "उपयोगकर्ता नाम {max} अक्षरों से अधिक नहीं हो सकता",
+    reservedPrefix: "उपयोगकर्ता नाम 'ext' से शुरू नहीं होना चाहिए",
+    reservedUsername: "यह उपयोगकर्ता नाम आरक्षित है",
+    invalidUsername: "अमान्य उपयोगकर्ता नाम",
+  },
   ar: {
     usernameLabel: "اسم المستخدم",
     generateUsername: "إنشاء اسم مستخدم عشوائي",

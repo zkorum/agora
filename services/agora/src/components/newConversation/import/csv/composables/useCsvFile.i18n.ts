@@ -9,6 +9,8 @@ export const useCsvFileTranslations: Record<
   UseCsvFileTranslations
 > = {
   en: { validationFailed: "Validation failed" },
+  de: { validationFailed: "Validierung fehlgeschlagen" },
+  hi: { validationFailed: "मान्यकरण विफल रहा" },
   ar: { validationFailed: "فشل التحقق" },
   es: { validationFailed: "La validación falló" },
   fa: { validationFailed: "اعتبارسنجی ناموفق بود" },

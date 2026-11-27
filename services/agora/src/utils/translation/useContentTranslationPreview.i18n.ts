@@ -17,6 +17,20 @@ export const contentTranslationPreviewTranslations: Record<
     translationRateLimited:
       "You're requesting translations too quickly. Please wait a moment and try again.",
   },
+  de: {
+    translationFailed:
+      "Die Übersetzung ist fehlgeschlagen. Bitte versuchen Sie es später erneut.",
+    translationNotEnabled:
+      "Die Übersetzung ist für diese Diskussion nicht mehr aktiviert.",
+    translationRateLimited:
+      "Sie fordern zu schnell Übersetzungen an. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+  },
+  hi: {
+    translationFailed: "अनुवाद विफल रहा। कृपया बाद में पुनः प्रयास करें।",
+    translationNotEnabled: "इस चर्चा के लिए अनुवाद अब सक्षम नहीं है।",
+    translationRateLimited:
+      "आप बहुत तेज़ी से अनुवाद का अनुरोध कर रहे हैं। कृपया एक पल प्रतीक्षा करें और पुनः प्रयास करें।",
+  },
   ar: {
     translationFailed: "فشلت الترجمة. يرجى المحاولة لاحقًا.",
     translationNotEnabled: "لم تعد الترجمة مفعلة لهذه المحادثة.",

@@ -14,6 +14,16 @@ export const activeExportBannerTranslations: Record<
       "You have an export in progress. Please wait for it to complete before starting a new one.",
     viewStatus: "View Export Status",
   },
+  de: {
+    message:
+      "Ein Export wird gerade erstellt. Bitte warten Sie, bis dieser abgeschlossen ist, bevor Sie einen neuen starten.",
+    viewStatus: "Exportstatus ansehen",
+  },
+  hi: {
+    message:
+      "आपका निर्यात प्रगति पर है। कृपया नया शुरू करने से पहले इसे पूरा होने दें।",
+    viewStatus: "निर्यात स्थिति देखें",
+  },
   ar: {
     message:
       "لديك عملية تصدير قيد التقدم. يرجى الانتظار حتى تكتمل قبل بدء عملية جديدة.",

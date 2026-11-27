@@ -34,10 +34,11 @@
 </template>
 
 <script setup lang="ts">
+import { useGroupLabel } from "src/composables/opinion/useGroupLabel";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { PolisKey } from "src/shared/types/zod";
 import type { ShortcutItem } from "src/utils/component/analysis/shortcutBar";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { computed } from "vue";
 
 import AnalysisActionButton from "../common/AnalysisActionButton.vue";
@@ -56,6 +57,7 @@ const props = defineProps<{
 
 const currentTab = defineModel<ShortcutItem>({ required: true });
 
+const formatGroupLabel = useGroupLabel();
 const { t } = useComponentI18n<MeTabTranslations>(meTabTranslations);
 
 function getUserAnalysis() {
@@ -65,7 +67,9 @@ function getUserAnalysis() {
   }
 
   // User has cluster assignment
-  const firstPart = `${t("youAgreeWith")} ${formatClusterLabel(props.clusterKey, true, props.aiLabel)}`;
+  const firstPart = t("youAgreeWith", {
+    group: props.aiLabel ?? formatGroupLabel(getClusterLetter(props.clusterKey)),
+  });
   if (props.aiSummary === undefined) {
     return firstPart;
   }

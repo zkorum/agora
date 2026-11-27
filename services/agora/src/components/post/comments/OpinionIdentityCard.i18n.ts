@@ -11,6 +11,12 @@ export const opinionIdentityCardTranslations: Record<
   en: {
     seedOpinion: "Seed statement",
   },
+  de: {
+    seedOpinion: "Startaussage",
+  },
+  hi: {
+    seedOpinion: "शुरुआती कथन",
+  },
   ar: {
     seedOpinion: "المقترح الأولي",
   },

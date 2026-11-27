@@ -43,6 +43,47 @@ export const commentSectionTranslations: Record<
     viewAnalysis: "View analysis",
     newStatementButton: "New statements",
   },
+  de: {
+    loadingOpinions: "Aussagen werden geladen...",
+    retrying: "Versuche es erneut...",
+    failedToLoadOpinions: "Fehler beim Laden der Aussagen",
+    emptyDiscover: "Noch keine Aussagen verfügbar",
+    emptyNew: "Keine neuen Aussagen",
+    emptyModerated: "Keine moderierten Aussagen",
+    emptyMyVotes: "Sie haben noch keine Aussagen bewertet",
+    emptyMyStatements:
+      "Sie haben noch keine Aussagen in dieser Diskussion eingereicht",
+    emptyHidden: "Keine versteckten Aussagen",
+    retryLoadingOpinions: "Aussagen erneut laden",
+    voteUnlockSingular:
+      "Noch eine Stimme bis zu Ihrer Gruppenanalyse",
+    voteUnlockPlural:
+      "Noch {count} Stimmen bis zu Ihrer Gruppenanalyse",
+    notEnoughOpinions:
+      "Erstellen Sie mehr Aussagen, auf die abgestimmt werden kann, um die Abbildung der Meinungsgruppen zu ermöglichen",
+    clusteredBanner: "Sie wurden einer Gruppe zugeordnet!",
+    viewAnalysis: "Analyse ansehen",
+    newStatementButton: "Neue Aussagen",
+  },
+  hi: {
+    loadingOpinions: "कथन लोड हो रहे हैं...",
+    retrying: "पुनः प्रयास कर रहा है...",
+    failedToLoadOpinions: "कथन लोड करने में विफल",
+    emptyDiscover: "अभी कोई कथन उपलब्ध नहीं है",
+    emptyNew: "कोई नया कथन नहीं",
+    emptyModerated: "कोई मॉडरेटेड कथन नहीं",
+    emptyMyVotes: "आपने अभी तक किसी कथन पर मत नहीं दिया है",
+    emptyMyStatements: "आपने अभी तक इस चर्चा में कोई कथन प्रस्तुत नहीं किया है",
+    emptyHidden: "कोई छिपा हुआ कथन नहीं",
+    retryLoadingOpinions: "कथन लोड करने का पुनः प्रयास करें",
+    voteUnlockSingular: "अपना समूह विश्लेषण देखने के लिए एक और मत दें",
+    voteUnlockPlural: "अपना समूह विश्लेषण देखने के लिए {count} और मत दें",
+    notEnoughOpinions:
+      "मत समूह मैपिंग की अनुमति देने के लिए मतदान करने हेतु और कथन बनाएँ",
+    clusteredBanner: "आपको एक समूह सौंपा गया है!",
+    viewAnalysis: "विश्लेषण देखें",
+    newStatementButton: "नए कथन",
+  },
   ar: {
     loadingOpinions: "جاري تحميل المقترحات...",
     retrying: "إعادة المحاولة...",

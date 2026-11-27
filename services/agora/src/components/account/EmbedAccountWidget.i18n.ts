@@ -13,6 +13,14 @@ export const embedAccountWidgetTranslations: Record<
     logoutButton: "Log Out",
     logoutTooltip: "Logout",
   },
+  de: {
+    logoutButton: "Abmelden",
+    logoutTooltip: "Abmelden",
+  },
+  hi: {
+    logoutButton: "बाहर निकलें",
+    logoutTooltip: "बाहर निकलें",
+  },
   ar: {
     logoutButton: "تسجيل الخروج",
     logoutTooltip: "تسجيل الخروج",

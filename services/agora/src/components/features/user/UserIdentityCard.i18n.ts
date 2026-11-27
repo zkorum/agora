@@ -19,6 +19,20 @@ export const userIdentityCardTranslations: Record<
     strongVerificationTooltip: "Phone or passport verification required",
     edited: "Edited",
   },
+  de: {
+    guestParticipationTooltip: "Teilnahme als Gast aktiviert",
+    accountRequiredTooltip: "Konto erforderlich",
+    emailVerificationTooltip: "E-Mail-Verifizierung erforderlich",
+    strongVerificationTooltip: "Telefon- oder Passverifizierung erforderlich",
+    edited: "Bearbeitet",
+  },
+  hi: {
+    guestParticipationTooltip: "अतिथि भागीदारी सक्षम है",
+    accountRequiredTooltip: "खाता आवश्यक है",
+    emailVerificationTooltip: "ईमेल सत्यापन आवश्यक है",
+    strongVerificationTooltip: "फ़ोन या पासपोर्ट सत्यापन आवश्यक है",
+    edited: "संपादित",
+  },
   ar: {
     guestParticipationTooltip: "مشاركة الضيوف مفعلة",
     accountRequiredTooltip: "يتطلب حسابًا",

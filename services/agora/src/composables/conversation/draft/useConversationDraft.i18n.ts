@@ -23,6 +23,20 @@ export const useConversationDraftTranslations: Record<
     titleRequired: "Title is required to continue",
     titleValidationFailed: "Title validation failed",
   },
+  de: {
+    bodyExceedsLimit: "Text überschreitet die maximale Länge ({count}/{max})",
+    polisUrlRequired: "Eine Polis-URL ist erforderlich",
+    polisUrlInvalid: "Bitte geben Sie eine gültige Polis-URL ein.",
+    titleRequired: "Ein Titel ist erforderlich, um fortzufahren",
+    titleValidationFailed: "Titelvalidierung fehlgeschlagen",
+  },
+  hi: {
+    bodyExceedsLimit: "विवरण अधिकतम लंबाई से अधिक है ({count}/{max})",
+    polisUrlRequired: "Polis URL आवश्यक है",
+    polisUrlInvalid: "कृपया एक वैध Polis URL दर्ज करें।",
+    titleRequired: "आगे बढ़ने के लिए शीर्षक आवश्यक है",
+    titleValidationFailed: "शीर्षक सत्यापन विफल रहा",
+  },
   fr: {
     bodyExceedsLimit: "Le corps dépasse la longueur maximale ({count}/{max})",
     polisUrlRequired: "L'URL Polis est requise",

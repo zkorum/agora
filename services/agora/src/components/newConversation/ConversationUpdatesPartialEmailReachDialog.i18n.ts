@@ -26,6 +26,31 @@ export const conversationUpdatesPartialEmailReachDialogTranslations: Record<
       "Strong verification does not require an email address. Only participants who add and verify one in Settings can choose to receive your email updates.",
     turnUpdatesOff: "Turn email updates off",
   },
+  de: {
+    accountPartialReach:
+      "Für die Erstellung eines Kontos ist keine E-Mail-Adresse erforderlich. Nur Teilnehmende, die eine in den Einstellungen hinzufügen und verifizieren, können sich für den Erhalt Ihrer E-Mail-Benachrichtigungen entscheiden.",
+    enforceEmailVerificationOnly: "Nur E-Mail-Verifizierung erzwingen",
+    guestPartialReach:
+      "Für die Teilnahme als Gast ist keine E-Mail-Adresse erforderlich. Nur Teilnehmende, die eine in den Einstellungen hinzufügen und verifizieren, können sich für den Erhalt Ihrer E-Mail-Benachrichtigungen entscheiden.",
+    keepUpdatesOn: "E-Mail-Benachrichtigungen aktivieren",
+    partialReachTitle:
+      "Ihre E-Mail-Benachrichtigungen erreichen möglicherweise nicht alle Teilnehmenden",
+    strongVerificationPartialReach:
+      "Eine starke Verifizierung erfordert keine E-Mail-Adresse. Nur Teilnehmende, die eine in den Einstellungen hinzufügen und verifizieren, können sich für den Erhalt Ihrer E-Mail-Benachrichtigungen entscheiden.",
+    turnUpdatesOff: "E-Mail-Benachrichtigungen deaktivieren",
+  },
+  hi: {
+    accountPartialReach:
+      "खाता बनाने के लिए ईमेल पता आवश्यक नहीं है। केवल वे प्रतिभागी जो सेटिंग्स में एक जोड़ते और सत्यापित करते हैं, वे आपके ईमेल अपडेट प्राप्त करने का विकल्प चुन सकते हैं।",
+    enforceEmailVerificationOnly: "केवल ईमेल सत्यापन अनिवार्य करें",
+    guestPartialReach:
+      "अतिथि के रूप में भाग लेने के लिए ईमेल पता आवश्यक नहीं है। केवल वे प्रतिभागी जो सेटिंग्स में एक जोड़ते और सत्यापित करते हैं, वे आपके ईमेल अपडेट प्राप्त करने का विकल्प चुन सकते हैं।",
+    keepUpdatesOn: "ईमेल अपडेट चालू रखें",
+    partialReachTitle: "आपके ईमेल अपडेट सभी तक नहीं पहुँच सकते",
+    strongVerificationPartialReach:
+      "मजबूत सत्यापन के लिए ईमेल पते की आवश्यकता नहीं है। केवल वे प्रतिभागी जो सेटिंग्स में एक जोड़ते और सत्यापित करते हैं, वे आपके ईमेल अपडेट प्राप्त करने का विकल्प चुन सकते हैं।",
+    turnUpdatesOff: "ईमेल अपडेट बंद करें",
+  },
   ar: {
     accountPartialReach:
       "لا تتطلب الحسابات بريدًا إلكترونيًا. لا تعرض عملية الإعداد الإلزامية خيار الاشتراك إلا للمشاركين الذين أضافوا بريدًا إلكترونيًا وتحققوا منه طوعًا في الإعدادات.",

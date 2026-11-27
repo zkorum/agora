@@ -10,6 +10,8 @@ export const onboardingLayoutTranslations: Record<
   OnboardingLayoutTranslations
 > = {
   en: { goBack: "Go back", close: "Close" },
+  de: { goBack: "Zurück", close: "Schließen" },
+  hi: { goBack: "वापस जाएँ", close: "बंद करें" },
   ar: { goBack: "الرجوع", close: "إغلاق" },
   es: { goBack: "Volver", close: "Cerrar" },
   fa: { goBack: "بازگشت", close: "بستن" },

@@ -11,6 +11,12 @@ export const settingsSearchInputTranslations: Record<
   en: {
     searchPlaceholder: "Search...",
   },
+  de: {
+    searchPlaceholder: "Suchen...",
+  },
+  hi: {
+    searchPlaceholder: "खोजें...",
+  },
   ar: {
     searchPlaceholder: "بحث...",
   },

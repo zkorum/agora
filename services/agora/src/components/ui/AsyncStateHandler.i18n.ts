@@ -21,6 +21,23 @@ export const asyncStateHandlerTranslations: Record<
     emptyMessage: "No data available",
     retry: "Retry",
   },
+  de: {
+    loading: "Wird geladen...",
+    retrying: "Versuche es erneut...",
+    errorTitle: "Etwas ist schiefgelaufen",
+    defaultErrorMessage:
+      "Es ist ein unerwarteter Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+    emptyMessage: "Keine Daten verfügbar",
+    retry: "Erneut versuchen",
+  },
+  hi: {
+    loading: "लोड हो रहा है...",
+    retrying: "पुनः प्रयास कर रहा है...",
+    errorTitle: "कुछ गलत हो गया",
+    defaultErrorMessage: "एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    emptyMessage: "कोई डेटा उपलब्ध नहीं है",
+    retry: "फिर कोशिश करें",
+  },
   ar: {
     loading: "جاري التحميل...",
     retrying: "جاري إعادة المحاولة...",

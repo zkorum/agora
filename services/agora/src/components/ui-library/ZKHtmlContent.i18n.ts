@@ -13,6 +13,14 @@ export const zkHtmlContentTranslations: Record<
     postContentPreview: "Post content preview",
     postContent: "Post content",
   },
+  de: {
+    postContentPreview: "Vorschau des Beitragsinhalts",
+    postContent: "Beitragsinhalt",
+  },
+  hi: {
+    postContentPreview: "पोस्ट सामग्री पूर्वावलोकन",
+    postContent: "पोस्ट सामग्री",
+  },
   ar: {
     postContentPreview: "معاينة محتوى المنشور",
     postContent: "محتوى المنشور",

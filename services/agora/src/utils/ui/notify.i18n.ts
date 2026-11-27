@@ -11,6 +11,12 @@ export const notifyTranslations: Record<
   en: {
     copiedToClipboard: "Link copied to clipboard",
   },
+  de: {
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+  },
+  hi: {
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी किया गया",
+  },
   ar: {
     copiedToClipboard: "تم نسخ الرابط إلى الحافظة",
   },

@@ -14,7 +14,7 @@
     <div v-else class="aggregates-list">
       <div v-for="(row, index) in rows" :key="index" class="aggregate-row">
         <div class="aggregate-row__scope">
-          {{ row.scope === "overall" ? t("overallScope") : t("clusterScope", { label: row.clusterLabel }) }}
+          {{ row.scope === "overall" ? t("overallScope") : formatGroupLabel(row.clusterLabel) }}
         </div>
         <div>{{ row.question }}</div>
         <div>{{ row.option }}</div>
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import ZKCard from "src/components/ui-library/ZKCard.vue";
+import { useGroupLabel } from "src/composables/opinion/useGroupLabel";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type { SurveyAggregateRow, SurveyResultsAccessLevel } from "src/shared/types/zod";
 
@@ -43,6 +44,7 @@ defineProps<{
   rows: readonly SurveyAggregateRow[];
 }>();
 
+const formatGroupLabel = useGroupLabel();
 const { t } = useComponentI18n<SurveyAggregatesCardTranslations>(
   surveyAggregatesCardTranslations
 );

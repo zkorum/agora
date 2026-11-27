@@ -19,6 +19,20 @@ export const preParticipationIntentionDialogTranslations: Record<
     labelCancel: "Cancel",
     subMessageConversationDraft: "Your conversation draft will be saved.",
   },
+  de: {
+    title: "In Agora anmelden",
+    message: "Melden Sie sich an, um an den Diskussionen teilzunehmen",
+    labelOk: "Anmelden",
+    labelCancel: "Abbrechen",
+    subMessageConversationDraft: "Ihr Diskussionsentwurf wird gespeichert.",
+  },
+  hi: {
+    title: "Agora में लॉग इन करें",
+    message: "चर्चाओं में भाग लेने के लिए लॉग इन करें",
+    labelOk: "लॉगिन करें",
+    labelCancel: "रद्द करें",
+    subMessageConversationDraft: "आपकी चर्चा का मसौदा सहेजा जाएगा।",
+  },
   fa: {
     title: "ورود به Agora",
     message: "برای مشارکت در بحث‌ها وارد شوید",

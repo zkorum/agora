@@ -205,6 +205,305 @@ export const guidelinesContent: Record<
       contactAfterEmail: ".",
     },
   },
+  de: {
+    title: "Gemeinschaftsrichtlinien",
+    automatedTranslationNotice: {
+      title: "Automatische Übersetzung",
+      message:
+        "Diese Seite wurde automatisch übersetzt. Sollte es zu Abweichungen kommen, hat die englische Version Vorrang.",
+      viewEnglish: "Verbindliche englische Fassung ansehen",
+      returnTranslated: "Zur Übersetzung zurückkehren",
+    },
+    moderationPrinciples: {
+      heading: "1. Moderationsprinzipien",
+      introduction:
+        "Das Agora Citizen Network ist ein Raum für offene und konstruktive politische und soziale Diskussionen. Um ein faires, respektvolles und inklusives Umfeld zu gewährleisten, folgt unser Moderationssystem diesen Prinzipien:",
+      principles: [
+        {
+          label: "Transparenz:",
+          description:
+            "Alle Moderationsmaßnahmen werden protokolliert und sind öffentlich einsehbar.",
+        },
+        {
+          label: "Inklusivität:",
+          description:
+            "Vielfältige Perspektiven sind willkommen, sofern sie einem respektvollen Diskurs entsprechen.",
+        },
+        {
+          label: "Überprüfbarkeit:",
+          description:
+            "Teilnehmende können die Moderationsverlauf einsehen und Entscheidungen anfechten.",
+        },
+      ],
+    },
+    communityStandards: {
+      heading: "2. Gemeinschaftsstandards",
+      introduction:
+        "Um an Agora teilzunehmen, müssen Teilnehmende diese Richtlinien befolgen:",
+      subsections: [
+        {
+          heading: "2.1 Respektvoller Diskurs",
+          rules: [
+            "Nehmen Sie an Diskussionen mit gegenseitigem Respekt teil.",
+            "Keine persönlichen Angriffe, Beleidigungen oder Belästigungen.",
+            "Meinungsverschiedenheiten sollten konstruktiv geäußert werden.",
+          ],
+        },
+        {
+          heading: "2.2 Keine Hassrede oder Extremismus",
+          rules: [
+            "Keine Inhalte, die Rassismus, Sexismus, Xenophobie, Homophobie oder Diskriminierung fördern.",
+            "Keine Befürwortung von Gewalt, Extremismus oder Radikalisierung.",
+          ],
+        },
+        {
+          heading: "2.3 Keine Fehlinformationen oder Manipulation",
+          rules: [
+            "Keine vorsätzliche Verbreitung falscher Informationen oder Verschwörungstheorien.",
+            "Keine Nutzung von Bots, Astroturfing oder täuschendem Verhalten.",
+          ],
+        },
+        {
+          heading: "2.4 Kein Spam oder unerwünschte Werbung",
+          rules: [
+            "Keine übermäßige Selbstvermarktung, Werbung oder irrelevante Inhalte.",
+            "Kein wiederholtes Posten desselben Inhalts in verschiedenen Diskussionen.",
+          ],
+        },
+        {
+          heading: "2.5 Schutz der Privatsphäre und Sicherheit",
+          rules: [
+            "Keine Weitergabe privater oder persönlich identifizierbarer Informationen ohne Zustimmung.",
+            "Kein Doxxing, Drohungen oder Aufstachelung zu Gewalt.",
+          ],
+        },
+      ],
+    },
+    moderationProcess: {
+      heading: "3. Moderationsprozess",
+      reporting: {
+        heading: "3.1 Community-Moderation & Meldung",
+        introduction:
+          "Teilnehmende können Inhalte unter folgenden Kategorien melden:",
+        categories: [
+          {
+            label: "Antisozial:",
+            description: "Angriffe, Hassrede oder gezielte Belästigung.",
+          },
+          {
+            label: "Irreführend:",
+            description:
+              "Falsche oder irreführende Behauptungen, täuschenden Inhalt.",
+          },
+          {
+            label: "Illegal:",
+            description:
+              "Verstöße gegen Gesetze oder Förderung illegaler Aktivitäten.",
+          },
+          {
+            label: "Doxxing:",
+            description: "Unbefugtes Teilen privater Informationen.",
+          },
+          {
+            label: "Sexuell:",
+            description: "Sexuell explizite oder unangemessene Inhalte.",
+          },
+          {
+            label: "Spam:",
+            description: "Wiederholte, themenfremde oder werbliche Inhalte.",
+          },
+        ],
+      },
+      review: {
+        heading: "3.2 Moderationsprüfung & Einspruchssystem",
+        rules: [
+          "Moderationsmaßnahmen (Warnungen, Entfernungen, Sperrungen) werden protokolliert und sind öffentlich einsehbar.",
+          "Teilnehmende können Moderationsentscheidungen über einen offenen Überprüfungsprozess anfechten.",
+          "Wiederholte Verstöße führen zu eskalierenden Konsequenzen.",
+        ],
+      },
+    },
+    consequences: {
+      heading: "4. Konsequenzen bei Verstößen",
+      violationHeader: "Verstoßlevel",
+      consequenceHeader: "Konsequenz",
+      rows: [
+        {
+          label: "Erster Verstoß",
+          description: "Verwarnung und Entfernung des Inhalts.",
+        },
+        {
+          label: "Zweiter Verstoß",
+          description: "Temporäre Sperrung.",
+        },
+        {
+          label: "Schwere Verstöße (z.B. Drohungen, Doxxing)",
+          description: "Permanente Sperrung.",
+        },
+      ],
+    },
+    feedback: {
+      heading: "5. Feedback & Anpassung",
+      points: [
+        "Teilnehmende können Moderationsentscheidungen über ein transparentes Überprüfungssystem anfechten.",
+        "Feedback zu Moderationsrichtlinien wird ermutigt und regelmäßig überprüft, um sich an die Bedürfnisse der Gemeinschaft anzupassen.",
+      ],
+      closing:
+        "Diese Richtlinien dienen dazu, einen Raum für sinnvolle, respektvolle und wirkungsvolle Diskussionen zu fördern. Vielen Dank, dass Sie Teil des Agora Citizen Networks sind!",
+      contactBeforeEmail:
+        "Wenn Sie Fragen oder Bedenken bezüglich unserer Community-Richtlinien haben, kontaktieren Sie uns bitte unter ",
+      contactAfterEmail: ".",
+    },
+  },
+  hi: {
+    title: "समुदाय दिशानिर्देश",
+    automatedTranslationNotice: {
+      title: "स्वचालित अनुवाद",
+      message:
+        "इस पृष्ठ का स्वचालित रूप से अनुवाद किया गया है। यदि कोई विसंगति है, तो अंग्रेजी संस्करण ही मान्य होगा।",
+      viewEnglish: "प्रामाणिक अंग्रेज़ी संस्करण देखें",
+      returnTranslated: "अनुवाद पर वापस जाएँ",
+    },
+    moderationPrinciples: {
+      heading: "1. मॉडरेशन के सिद्धांत",
+      introduction:
+        "Agora Citizen Network खुली और रचनात्मक राजनीतिक और सामाजिक चर्चाओं के लिए एक स्थान है। एक निष्पक्ष, सम्मानजनक और समावेशी वातावरण सुनिश्चित करने के लिए, हमारी मॉडरेशन प्रणाली इन सिद्धांतों का पालन करती है:",
+      principles: [
+        {
+          label: "पारदर्शिता:",
+          description:
+            "सभी मॉडरेशन कार्रवाइयां लॉग की जाती हैं और सार्वजनिक रूप से समीक्षा योग्य होती हैं।",
+        },
+        {
+          label: "समावेशिता:",
+          description:
+            "विविध दृष्टिकोणों का स्वागत है, बशर्ते वे सम्मानजनक चर्चा का पालन करें।",
+        },
+        {
+          label: "सत्यापन योग्यता:",
+          description:
+            "उपयोगकर्ता मॉडरेशन का इतिहास की समीक्षा कर सकते हैं और निर्णयों के विरुद्ध अपील कर सकते हैं।",
+        },
+      ],
+    },
+    communityStandards: {
+      heading: "2. सामुदायिक मानक",
+      introduction:
+        "Agora में भाग लेने के लिए, उपयोगकर्ताओं को इन दिशानिर्देशों का पालन करना होगा:",
+      subsections: [
+        {
+          heading: "2.1 सम्मानजनक चर्चा",
+          rules: [
+            "आपस में सम्मान के साथ चर्चा में भाग लें।",
+            "कोई व्यक्तिगत हमला, अपमान या उत्पीड़न नहीं।",
+            "असहमति रचनात्मक रूप से व्यक्त की जानी चाहिए।",
+          ],
+        },
+        {
+          heading: "2.2 कोई घृणास्पद भाषण या चरमपंथ नहीं",
+          rules: [
+            "नस्लवाद, लिंगवाद, विदेशियों के प्रति घृणा, समलैंगिकता के प्रति घृणा, या भेदभाव को बढ़ावा देने वाली कोई सामग्री नहीं।",
+            "हिंसा, चरमपंथ या कट्टरता का समर्थन नहीं।",
+          ],
+        },
+        {
+          heading: "2.3 कोई गलत सूचना या हेरफेर नहीं",
+          rules: [
+            "जानबूझकर झूठी जानकारी या षड्यंत्र के सिद्धांतों का प्रसार नहीं।",
+            "बॉट्स, एस्ट्रोटर्फिंग, या भ्रामक व्यवहार का उपयोग नहीं।",
+          ],
+        },
+        {
+          heading: "2.4 कोई स्पैम या अनचाही प्रचार नहीं",
+          rules: [
+            "अत्यधिक आत्म-प्रचार, विज्ञापन, या अप्रासंगिक सामग्री नहीं।",
+            "चर्चाओं में एक ही सामग्री की बार-बार पोस्टिंग नहीं।",
+          ],
+        },
+        {
+          heading: "2.5 गोपनीयता और सुरक्षा संरक्षण",
+          rules: [
+            "सहमति के बिना निजी या व्यक्तिगत रूप से पहचान योग्य जानकारी साझा न करें।",
+            "डॉक्सिंग, धमकी, या हिंसा भड़काने का कोई कार्य नहीं।",
+          ],
+        },
+      ],
+    },
+    moderationProcess: {
+      heading: "3. मॉडरेशन की प्रक्रिया",
+      reporting: {
+        heading: "3.1 सामुदायिक मॉडरेशन और शिकायतें",
+        introduction:
+          "उपयोगकर्ता इन श्रेणियों में सामग्री की शिकायत कर सकते हैं:",
+        categories: [
+          {
+            label: "समाज विरोधी:",
+            description: "अपमानजनक, घृणास्पद, या लक्षित उत्पीड़न।",
+          },
+          {
+            label: "भ्रामक:",
+            description: "झूठे या भ्रामक दावे, धोखा देने वाली सामग्री।",
+          },
+          {
+            label: "अवैध:",
+            description:
+              "कानूनों का उल्लंघन या अवैध गतिविधियों को बढ़ावा देना।",
+          },
+          {
+            label: "डॉक्सिंग:",
+            description: "निजी जानकारी का अनधिकृत साझाकरण।",
+          },
+          {
+            label: "यौन:",
+            description: "यौन रूप से स्पष्ट या अनुचित सामग्री।",
+          },
+          {
+            label: "स्पैम:",
+            description: "दोहराव वाली, विषय से हटकर, या प्रचार सामग्री।",
+          },
+        ],
+      },
+      review: {
+        heading: "3.2 मॉडरेशन समीक्षा और अपील प्रणाली",
+        rules: [
+          "मॉडरेशन कार्रवाइयां (चेतावनी, हटाना, निलंबन) दर्ज की जाती हैं और सार्वजनिक रूप से समीक्षा योग्य होती हैं।",
+          "उपयोगकर्ता खुली समीक्षा प्रक्रिया के माध्यम से मॉडरेशन निर्णयों के विरुद्ध अपील कर सकते हैं।",
+          "बार-बार उल्लंघन से परिणाम बढ़ते हैं।",
+        ],
+      },
+    },
+    consequences: {
+      heading: "4. उल्लंघनों के परिणाम",
+      violationHeader: "उल्लंघन स्तर",
+      consequenceHeader: "परिणाम",
+      rows: [
+        {
+          label: "पहला उल्लंघन",
+          description: "चेतावनी और सामग्री हटाना।",
+        },
+        {
+          label: "दूसरा उल्लंघन",
+          description: "अस्थायी निलंबन।",
+        },
+        {
+          label: "गंभीर उल्लंघन (जैसे, धमकी, डॉक्सिंग)",
+          description: "स्थायी निलंबन।",
+        },
+      ],
+    },
+    feedback: {
+      heading: "5. प्रतिक्रिया और अनुकूलन",
+      points: [
+        "उपयोगकर्ता पारदर्शी समीक्षा प्रणाली के माध्यम से मॉडरेशन निर्णयों के विरुद्ध अपील कर सकते हैं।",
+        "मॉडरेशन नीतियों पर प्रतिक्रिया को प्रोत्साहित किया जाता है और सामुदायिक आवश्यकताओं के अनुरूप ढलने के लिए नियमित रूप से इसकी समीक्षा की जाती है।",
+      ],
+      closing:
+        "ये दिशानिर्देश सार्थक, सम्मानजनक और प्रभावशाली चर्चाओं के लिए एक स्थान बनाने हेतु डिज़ाइन किए गए हैं। Agora Citizen Network का हिस्सा बनने के लिए धन्यवाद!",
+      contactBeforeEmail:
+        "यदि आपके पास हमारे सामुदायिक दिशानिर्देशों के बारे में कोई प्रश्न या चिंता है, तो कृपया हमसे संपर्क करें: ",
+      contactAfterEmail: ".",
+    },
+  },
   ar: {
     title: "إرشادات المجتمع",
     automatedTranslationNotice: {

@@ -56,6 +56,66 @@ export const passportOnboardingTranslations: Record<
     copiedToClipboard: "Copied link to clipboard",
     couldNotCopy: "Could not copy to clipboard",
   },
+  de: {
+    pageTitle: "Behalten Sie Ihre Privatsphäre",
+    description:
+      "Rarimo ist eine ZK-gestützte Identitäts-Wallet, die Ihren Reisepass in einen anonymen digitalen Ausweis umwandelt, der auf Ihrem Gerät gespeichert wird, sodass Sie nachweisen können, dass Sie ein einzigartiger Mensch sind, ohne persönliche Daten mit jemandem zu teilen.",
+    download: "Herunterladen",
+    claimAnonymousId: "Beanspruchen Sie Ihre anonyme ID",
+    comeBackAndVerify:
+      "Kommen Sie hier zurück und klicken Sie auf Verifizieren",
+    scanQrCode:
+      "Scannen Sie den QR-Code mit Rarimo, um Ihre Identität zu verifizieren",
+    failedToGenerateLink: "Fehler beim Generieren des Verifizierungslinks",
+    loadingVerificationLink: "Verifizierungslink wird geladen",
+    openLinkOnMobile:
+      "Oder öffnen Sie den untenstehenden Link in Ihrem mobilen Browser:",
+    copy: "Kopieren",
+    waitingForVerification: "Wartet auf Verifizierung...",
+    verify: "Verifizieren",
+    preferPhoneVerification:
+      "Ich würde lieber mit meiner Telefonnummer verifizieren",
+    preferEmailLogin: "Ich bevorzuge die Nutzung meiner E-Mail-Adresse",
+    verificationSuccessful: "Verifizierung erfolgreich 🎉",
+    accountMerged: "Erfolg! Ihre Konten wurden zusammengeführt 🎉",
+    verificationFailed:
+      "Verifizierungsversuch fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    passportAlreadyLinked:
+      "Dieser Reisepass ist bereits mit einem anderen Rarimo-Konto verknüpft. Bitte versuchen Sie es mit einem anderen.",
+    unexpectedError:
+      "Ups! Unerwarteter Fehler – versuchen Sie, die Seite neu zu laden",
+    credentialAlreadyLinked:
+      "Dieser Reisepass ist bereits mit einem anderen Konto verknüpft",
+    copiedToClipboard: "Link in die Zwischenablage kopiert",
+    couldNotCopy: "Konnte nicht in die Zwischenablage kopieren",
+  },
+  hi: {
+    pageTitle: "अपनी गोपनीयता का स्वामित्व रखें",
+    description:
+      "Rarimo एक ZK-संचालित पहचान वॉलेट है जो आपके पासपोर्ट को एक गुमनाम डिजिटल आईडी में बदलता है, जो आपके डिवाइस पर संग्रहीत होती है, ताकि आप किसी के साथ कोई व्यक्तिगत डेटा साझा किए बिना यह साबित कर सकें कि आप एक अद्वितीय इंसान हैं।",
+    download: "डाउनलोड करें",
+    claimAnonymousId: "अपनी गुमनाम आईडी का दावा करें",
+    comeBackAndVerify: "यहां वापस आएं और सत्यापित करें",
+    scanQrCode: "अपनी पहचान सत्यापित करने के लिए Rarimo से QR कोड स्कैन करें",
+    failedToGenerateLink: "सत्यापन लिंक बनाने में विफल",
+    loadingVerificationLink: "सत्यापन लिंक लोड हो रहा है",
+    openLinkOnMobile: "या नीचे दिए गए लिंक को अपने मोबाइल ब्राउज़र पर खोलें:",
+    copy: "कॉपी करें",
+    waitingForVerification: "सत्यापन की प्रतीक्षा है...",
+    verify: "सत्यापित करें",
+    preferPhoneVerification: "मैं अपने फ़ोन नंबर से सत्यापित करना चाहूँगा",
+    preferEmailLogin: "मैं अपना ईमेल पता इस्तेमाल करना पसंद करूँगा",
+    verificationSuccessful: "सत्यापन सफल 🎉",
+    accountMerged: "सफलता! आपके खातों को मिला दिया गया है 🎉",
+    verificationFailed: "सत्यापन का प्रयास विफल रहा। कृपया पुनः प्रयास करें।",
+    passportAlreadyLinked:
+      "यह पासपोर्ट पहले से ही किसी अन्य Rarimo खाते से जुड़ा हुआ है। कृपया कोई अन्य प्रयास करें।",
+    unexpectedError: "ओह! अप्रत्याशित त्रुटि—कृपया पेज को रीफ़्रेश करें",
+    credentialAlreadyLinked:
+      "यह पासपोर्ट पहले से ही किसी अन्य खाते से जुड़ा हुआ है",
+    copiedToClipboard: "लिंक क्लिपबोर्ड पर कॉपी हो गया",
+    couldNotCopy: "क्लिपबोर्ड पर कॉपी नहीं किया जा सका",
+  },
   ar: {
     pageTitle: "احم خصوصيتك",
     description:

@@ -19,6 +19,20 @@ export const contentTranslationControlTranslations: Record<
     showOriginalLanguage: "Show original ({language})",
     showTranslation: "Show translation",
   },
+  de: {
+    translatedAutomatically: "Automatisch übersetzt",
+    translating: "Wird übersetzt...",
+    showOriginal: "Original anzeigen",
+    showOriginalLanguage: "Original anzeigen ({language})",
+    showTranslation: "Übersetzung anzeigen",
+  },
+  hi: {
+    translatedAutomatically: "स्वचालित रूप से अनुवादित",
+    translating: "अनुवाद किया जा रहा है...",
+    showOriginal: "मूल पाठ देखें",
+    showOriginalLanguage: "मूल पाठ देखें ({language})",
+    showTranslation: "अनुवाद देखें",
+  },
   ar: {
     translatedAutomatically: "مترجم",
     translating: "جارٍ الترجمة...",

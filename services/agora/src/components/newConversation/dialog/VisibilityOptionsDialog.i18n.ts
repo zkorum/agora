@@ -19,6 +19,22 @@ export const visibilityOptionsDialogTranslations: Record<
     privateDescription:
       "Only visible to those with whom you share a link or QR code",
   },
+  de: {
+    publicTitle: "Öffentlich",
+    publicDescription:
+      "Diese Diskussion ist für alle Nutzer im Haupt-Agora-Feed sichtbar.",
+    privateTitle: "Privat",
+    privateDescription:
+      "Nur für diejenigen sichtbar, mit denen Sie einen Link oder QR-Code teilen.",
+  },
+  hi: {
+    publicTitle: "सार्वजनिक",
+    publicDescription:
+      "यह चर्चा मुख्य Agora फ़ीड में सभी उपयोगकर्ताओं के लिए दिखाई देगी।",
+    privateTitle: "निजी",
+    privateDescription:
+      "केवल उन लोगों को दिखाई देगा जिनके साथ आप लिंक या QR कोड साझा करते हैं।",
+  },
   ar: {
     publicTitle: "عام",
     publicDescription:

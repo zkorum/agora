@@ -46,6 +46,51 @@ export const createConversationUpdatesSettingsTranslations: Record<
   CreateConversationUpdatesSettingsTranslations
 > = {
   en,
+  de: {
+    controlLabel: "E-Mail-Benachrichtigungen: {value} ({source})",
+    defaultLabel: "Standard",
+    emailUpdates: "E-Mail-Benachrichtigungen",
+    enableAriaLabel:
+      "E-Mail-Benachrichtigungen für {conversationTitle} aktivieren",
+    inheritsDescription:
+      "Verwendet den Standard von {defaultValue} aus {scopeLabel}.",
+    manualUpdatesSubtitle:
+      "Senden Sie gelegentliche manuelle E-Mail-Benachrichtigungen an Teilnehmende, die zugestimmt haben.",
+    missingContact:
+      "Geben Sie vor dem Versand eine regelmäßig gelesene Kontaktadresse für Rückfragen der Teilnehmenden an.",
+    noProjectDefault: "Kein Projektdefault",
+    noProjectGroup: "Die Gruppe 'Kein Projekt'",
+    off: "Aus",
+    on: "An",
+    override: "Überschreiben",
+    overridesDescription:
+      "Überschreibt den {defaultValue} Standard von {scopeLabel}.",
+    projectDefault: "Projektstandard",
+    projectFallback: "Das Projekt",
+    useDefault: "{source} verwenden",
+  },
+  hi: {
+    controlLabel: "ईमेल अपडेट: {value} ({source})",
+    defaultLabel: "डिफ़ॉल्ट",
+    emailUpdates: "ईमेल अपडेट",
+    enableAriaLabel: "{conversationTitle} के लिए ईमेल अपडेट सक्षम करें",
+    inheritsDescription:
+      "{scopeLabel} से {defaultValue} डिफ़ॉल्ट का उपयोग करता है।",
+    manualUpdatesSubtitle:
+      "जो प्रतिभागी विकल्प चुनते हैं, उन्हें कभी-कभी मैन्युअल ईमेल अपडेट भेजें।",
+    missingContact:
+      "ईमेल अपडेट भेजने से पहले प्रतिभागियों के लिए ऐसा संपर्क ईमेल पता जोड़ें जिसे नियमित रूप से देखा जाता हो।",
+    noProjectDefault: "कोई परियोजना डिफ़ॉल्ट नहीं",
+    noProjectGroup: "कोई परियोजना समूह नहीं",
+    off: "बंद",
+    on: "चालू",
+    override: "अधिलेखित करें",
+    overridesDescription:
+      "{scopeLabel} से {defaultValue} डिफ़ॉल्ट को अधिलेखित करता है।",
+    projectDefault: "परियोजना डिफ़ॉल्ट",
+    projectFallback: "परियोजना",
+    useDefault: "{source} का उपयोग करें",
+  },
   ar: {
     controlLabel: "تحديثات البريد الإلكتروني: {value} ({source})",
     defaultLabel: "افتراضي",

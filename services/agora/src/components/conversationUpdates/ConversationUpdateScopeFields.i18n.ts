@@ -66,6 +66,73 @@ export const conversationUpdateScopeFieldsTranslations: Record<
     conversationSingular: "{count} conversation",
     conversationPlural: "{count} conversations",
   },
+  de: {
+    projectLabel: "Projekt",
+    required: "Erforderlich.",
+    chooseProject: "Bitte wählen Sie ein Projekt",
+    projectAuthorizationDescription:
+      "Die Autorisierung wird aus Ihren berechtigten Projektmitgliedschaften abgeleitet.",
+    conversationsHeading: "Diskussionen",
+    recipientIntersectionDescription:
+      "Die E-Mail fügt automatisch die empfänger-spezifische Schnittmenge hinzu.",
+    includedConversationsLabel: "Enthaltene Diskussionen",
+    conversationPlaceholder: "Bitte wählen Sie mindestens eine Diskussion",
+    chooseConversations: "Diskussionen wählen",
+    clearAll: "Alles löschen",
+    noProjectHint:
+      "Wählen Sie eine berechtigte Diskussion, die ohne Projekt erstellt wurde.",
+    noProjectDialogSubtitle:
+      "Wählen Sie genau eine Diskussion, die ohne Projekt erstellt wurde.",
+    projectDialogSubtitle:
+      "Wählen Sie eine oder mehrere Diskussionen aus diesem Projekt.",
+    selectAllEligibleSingular: "Wählen Sie die {count} berechtigte Diskussion",
+    selectAllEligiblePlural:
+      "Wählen Sie alle {count} berechtigten Diskussionen",
+    eligibleWithoutProjectSingular:
+      "{count} berechtigte Diskussion ohne Projekt",
+    eligibleWithoutProjectPlural:
+      "{count} berechtigte Diskussionen ohne Projekt",
+    eligibleConversationSingular: "{count} berechtigte Diskussion",
+    eligibleConversationPlural: "{count} berechtigte Diskussionen",
+    updatesDisabled:
+      "E-Mail-Benachrichtigungen für diese Diskussion sind deaktiviert",
+    participantEstimateSingular:
+      "Ungefähr {count} Teilnehmende vor E-Mail-Einwilligungsfiltern",
+    participantEstimatePlural:
+      "Ungefähr {count} Teilnehmende vor E-Mail-Einwilligungsfiltern",
+    conversationSingular: "{count} Diskussion",
+    conversationPlural: "{count} Diskussionen",
+  },
+  hi: {
+    projectLabel: "परियोजना",
+    required: "आवश्यक।",
+    chooseProject: "एक परियोजना चुनें",
+    projectAuthorizationDescription:
+      "प्राधिकरण आपकी पात्र परियोजना सदस्यता से अनुमानित होता है।",
+    conversationsHeading: "चर्चाएँ",
+    recipientIntersectionDescription:
+      "ईमेल स्वचालित रूप से प्राप्तकर्ता-विशिष्ट प्रतिच्छेदन जोड़ेगा।",
+    includedConversationsLabel: "शामिल चर्चाएँ",
+    conversationPlaceholder: "कम से कम एक चर्चा चुनें",
+    chooseConversations: "चर्चाएँ चुनें",
+    clearAll: "सभी साफ़ करें",
+    noProjectHint: "परियोजना के बिना बनाई गई एक पात्र चर्चा चुनें।",
+    noProjectDialogSubtitle: "परियोजना के बिना बनाई गई ठीक एक चर्चा चुनें।",
+    projectDialogSubtitle: "इस प्रोजेक्ट से एक या अधिक चर्चाएँ चुनें।",
+    selectAllEligibleSingular: "{count} योग्य चर्चा चुनें",
+    selectAllEligiblePlural: "सभी {count} योग्य चर्चाएँ चुनें",
+    eligibleWithoutProjectSingular: "प्रोजेक्ट के बिना {count} योग्य चर्चा",
+    eligibleWithoutProjectPlural: "प्रोजेक्ट के बिना {count} योग्य चर्चाएँ",
+    eligibleConversationSingular: "{count} योग्य चर्चा",
+    eligibleConversationPlural: "{count} योग्य चर्चाएँ",
+    updatesDisabled: "इस चर्चा के लिए ईमेल अपडेट अक्षम हैं",
+    participantEstimateSingular:
+      "ईमेल सहमति फ़िल्टर से पहले लगभग {count} प्रतिभागी",
+    participantEstimatePlural:
+      "ईमेल सहमति फ़िल्टर से पहले लगभग {count} प्रतिभागी",
+    conversationSingular: "{count} चर्चा",
+    conversationPlural: "{count} चर्चाएँ",
+  },
   ar: {
     projectLabel: "المشروع",
     required: "مطلوب.",

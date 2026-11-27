@@ -29,6 +29,34 @@ export const opinionEditingTranslations: Record<
       "This statement has changed. Your changes have not been saved; reopen the editor to use the latest version.",
     failed: "Could not save your changes. Your text is still here.",
   },
+  de: {
+    save: "Änderungen speichern",
+    cancel: "Abbrechen",
+    discard: "Änderungen verwerfen?",
+    discardDescription:
+      "Ihre Änderungen an dieser Aussage werden nicht gespeichert.",
+    keepEditing: "Bearbeitung beibehalten",
+    hasVotes:
+      "Diese Aussage hat gültige Stimmen und kann nicht bearbeitet werden, solange diese vorhanden sind.",
+    unavailable: "Diese Aussage kann momentan nicht bearbeitet werden.",
+    changed:
+      "Diese Aussage wurde geändert. Ihre Änderungen wurden nicht gespeichert; öffnen Sie den Editor erneut, um die neueste Version zu verwenden.",
+    failed:
+      "Ihre Änderungen konnten nicht gespeichert werden. Ihr Text ist noch vorhanden.",
+  },
+  hi: {
+    save: "परिवर्तन सहेजें",
+    cancel: "रद्द करें",
+    discard: "परिवर्तन त्यागें?",
+    discardDescription: "इस कथन में आपके परिवर्तन सहेजे नहीं जाएंगे।",
+    keepEditing: "संपादित करना जारी रखें",
+    hasVotes:
+      "इस कथन पर वैध वोट हैं और जब तक वे बने रहते हैं, इसे संपादित नहीं किया जा सकता।",
+    unavailable: "इस कथन को अभी संपादित नहीं किया जा सकता।",
+    changed:
+      "इस कथन में बदलाव हुआ है। आपके परिवर्तन सहेजे नहीं गए हैं; नवीनतम संस्करण का उपयोग करने के लिए संपादक खोलें।",
+    failed: "आपके परिवर्तन सहेजे नहीं जा सके। आपका पाठ अभी भी यहाँ है।",
+  },
   fr: {
     save: "Enregistrer",
     cancel: "Annuler",

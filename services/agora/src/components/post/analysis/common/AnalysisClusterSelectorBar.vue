@@ -86,7 +86,7 @@ import {
   computeIsClusterSelectorSticky,
   computeIsSecondaryContentMerged,
 } from "src/utils/component/analysis/clusterSelectorBar";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { getHeaderHeight } from "src/utils/html/scroll";
 import {
   computed,
@@ -156,7 +156,7 @@ const selectedClusterLabel = computed(() => {
 
   const cluster = selectedCluster.value;
   if (cluster === undefined) {
-    return formatClusterLabel(key, false);
+    return getClusterLetter(key);
   }
 
   return getClusterLabel(cluster);
@@ -233,7 +233,7 @@ onBeforeUnmount(() => {
 });
 
 function getClusterLabel(cluster: ClusterItem): string {
-  return formatClusterLabel(cluster.key, false, cluster.aiLabel);
+  return cluster.aiLabel ?? getClusterLetter(cluster.key);
 }
 
 async function selectFromDrawer({

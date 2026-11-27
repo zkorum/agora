@@ -645,6 +645,7 @@ import {
 } from "src/components/ui/VoteLegend.i18n";
 import VoteLegend from "src/components/ui/VoteLegend.vue";
 import ZKSelect from "src/components/ui-library/ZKSelect.vue";
+import { useGroupLabel } from "src/composables/opinion/useGroupLabel";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
@@ -653,7 +654,7 @@ import type {
   SurveyAggregateRow,
 } from "src/shared/types/zod";
 import { formatAmount, formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import {
   REPORT_ITEMS_PER_CAPTURE_PAGE,
   type ReportAllStatementsOrder,
@@ -746,6 +747,7 @@ const effectiveItemsPerPage = computed(
   () => props.itemsPerPage ?? REPORT_ITEMS_PER_CAPTURE_PAGE
 );
 
+const formatGroupLabel = useGroupLabel();
 const { t } = useComponentI18n<AnalysisReportTranslations>(
   analysisReportTranslations
 );
@@ -808,10 +810,10 @@ const surveyOverallTitle = computed(
 function getSurveyGroupPageLabel(clusterKey: PolisKey): string {
   const cluster = props.clusters[clusterKey];
   if (useLetterCodes.value) {
-    return formatClusterLabel(clusterKey, true);
+    return formatGroupLabel(getClusterLetter(clusterKey));
   }
 
-  return cluster?.aiLabel || formatClusterLabel(clusterKey, true);
+  return cluster?.aiLabel || formatGroupLabel(getClusterLetter(clusterKey));
 }
 
 const surveyClusterPages = computed(() => {

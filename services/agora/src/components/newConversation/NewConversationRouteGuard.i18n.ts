@@ -13,6 +13,14 @@ export const newConversationRouteGuardTranslations: Record<
     saveConversationDraft: "Save conversation as draft?",
     draftWillBeHere: "Your drafted conversation will be here when you return.",
   },
+  de: {
+    saveConversationDraft: "Diskussion als Entwurf speichern?",
+    draftWillBeHere: "Ihr Entwurf wird hier sein, wenn Sie zurückkehren.",
+  },
+  hi: {
+    saveConversationDraft: "चर्चा को ड्राफ्ट के रूप में सहेजें?",
+    draftWillBeHere: "आपकी ड्राफ्ट की गई चर्चा वापस आने पर यहाँ होगी।",
+  },
   ar: {
     saveConversationDraft: "حفظ المحادثة كمسودة؟",
     draftWillBeHere: "ستكون مسودة محادثتك هنا عند عودتك.",

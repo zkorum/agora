@@ -43,6 +43,48 @@ export const editSeedOpinionsTranslations: Record<
     sourceManaged:
       "These statements are synced from GitHub. Manage them on GitHub.",
   },
+  de: {
+    existingTitle: "Bestehende Startaussagen",
+    newTitle: "Neue Aussagen hinzufügen",
+    draftDescription:
+      "Änderungen werden erst wirksam, wenn Sie speichern. Sie können Bearbeitungen und Löschungen vor dem Speichern rückgängig machen.",
+    editedStatus: "Bearbeitet — nicht gespeichert",
+    deletedStatus: "Gelöscht — nicht gespeichert",
+    editStatement: "Bearbeiten",
+    deleteStatement: "Aussage löschen",
+    undoDelete: "Löschung rückgängig machen",
+    undoEdit: "Bearbeitung rückgängig machen",
+    doneEditing: "Fertig",
+    statementChanged:
+      "Diese Aussage wurde geändert oder gelöscht. Ihr Entwurf ist noch vorhanden. Laden Sie die Diskussion neu, bevor Sie speichern.",
+    editingUnavailable: "Diese Aussage kann hier nicht bearbeitet werden.",
+    changeLimit:
+      "Sie können pro Speicherung bis zu {limit} bestehende Aussagen ändern. Machen Sie einige Änderungen rückgängig, um fortzufahren.",
+    emptyExisting: "Noch keine Startaussagen vorhanden.",
+    sourceManaged:
+      "Diese Aussagen werden von GitHub synchronisiert. Verwalten Sie diese auf GitHub.",
+  },
+  hi: {
+    existingTitle: "मौजूदा शुरुआती कथन",
+    newTitle: "नए कथन जोड़ें",
+    draftDescription:
+      "परिवर्तन केवल सहेजने पर प्रभावी होते हैं। सहेजने से पहले आप संपादन और विलोपन को पूर्ववत कर सकते हैं।",
+    editedStatus: "संपादित — सहेजा नहीं गया",
+    deletedStatus: "हटाया गया — सहेजा नहीं गया",
+    editStatement: "संपादित करें",
+    deleteStatement: "कथन हटाएँ",
+    undoDelete: "हटाना पूर्ववत करें",
+    undoEdit: "संपादन पूर्ववत करें",
+    doneEditing: "हो गया",
+    statementChanged:
+      "यह कथन बदल गया है या हटा दिया गया है। आपका मसौदा अभी भी यहाँ है। सहेजने से पहले चर्चा को पुनः लोड करें।",
+    editingUnavailable: "इस कथन को यहाँ संपादित नहीं किया जा सकता।",
+    changeLimit:
+      "आप प्रति सहेजने पर {limit} तक मौजूदा कथनों को बदल सकते हैं। जारी रखने के लिए कुछ परिवर्तन पूर्ववत करें।",
+    emptyExisting: "अभी कोई शुरुआती कथन नहीं है।",
+    sourceManaged:
+      "ये कथन GitHub से सिंक किए गए हैं। इन्हें GitHub पर प्रबंधित करें।",
+  },
   fr: {
     existingTitle: "Propositions initiales existantes",
     newTitle: "Ajouter de nouvelles propositions",

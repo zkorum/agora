@@ -12,6 +12,14 @@ export const phoneAuthUnavailableNoticeTranslations: Record<
     technicalUnavailable:
       "Phone authentication is temporarily unavailable due to a technical issue. Please use another method and try again later.",
   },
+  de: {
+    technicalUnavailable:
+      "Die Telefonauthentifizierung ist aufgrund eines technischen Problems vorübergehend nicht verfügbar. Bitte verwenden Sie eine andere Methode und versuchen Sie es später erneut.",
+  },
+  hi: {
+    technicalUnavailable:
+      "तकनीकी समस्या के कारण फ़ोन प्रमाणीकरण अस्थायी रूप से अनुपलब्ध है। कृपया कोई अन्य तरीका उपयोग करें और बाद में पुनः प्रयास करें।",
+  },
   ar: {
     technicalUnavailable:
       "التحقق عبر الهاتف غير متاح مؤقتًا بسبب مشكلة تقنية. يرجى استخدام طريقة أخرى والمحاولة لاحقًا.",

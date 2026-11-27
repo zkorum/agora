@@ -22,6 +22,26 @@ export const analysisPreferenceDialogTranslations: Record<
     unavailableDescription:
       "This setting is not available with your current plan.",
   },
+  de: {
+    recommendedDefaultTitle: "Automatisch",
+    recommendedDefaultDescription:
+      "Agora wählt für jeden Analyse-Schnappschuss die Gruppe mit der besten Punktzahl.",
+    groupsTitle: "{count} Gruppen",
+    groupsDescription:
+      "Verwenden Sie standardmäßig {count}-Gruppen, wenn Teilnehmende die Ansicht der Moderatoreinstellungen öffnen.",
+    unavailableDescription:
+      "Diese Einstellung ist mit Ihrem aktuellen Plan nicht verfügbar.",
+  },
+  hi: {
+    recommendedDefaultTitle: "स्वचालित",
+    recommendedDefaultDescription:
+      "Agora प्रत्येक विश्लेषण स्नैपशॉट के लिए सर्वोत्तम स्कोरिंग समूह संख्या चुनता है।",
+    groupsTitle: "{count} समूह",
+    groupsDescription:
+      "जब लोग संचालक प्राथमिकता दृश्य खोलते हैं तो डिफ़ॉल्ट रूप से {count} समूहों का उपयोग करें।",
+    unavailableDescription:
+      "यह सेटिंग आपकी वर्तमान योजना के साथ उपलब्ध नहीं है।",
+  },
   fr: {
     recommendedDefaultTitle: "Automatique",
     recommendedDefaultDescription:

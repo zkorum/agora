@@ -39,16 +39,18 @@ export interface ApiV1AdministratorOrganizationCreateOrganizationPostRequest {
 
 export const ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum = typeof ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationCreateOrganizationPostRequestDefaultLanguageCodeEnum];
@@ -69,16 +71,18 @@ export interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200Respons
 
 export const ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum = typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerDefaultLanguageCodeEnum];
@@ -94,16 +98,18 @@ export interface ApiV1AdministratorOrganizationGetAllOrganizationsPost200Respons
 
 export const ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationGetAllOrganizationsPost200ResponseOrganizationListInnerLocalizationsInnerLanguageCodeEnum];
@@ -141,16 +147,18 @@ export interface ApiV1AdministratorOrganizationLocalizationUpdatePostRequest {
 
 export const ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
@@ -372,16 +380,18 @@ export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRol
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfRoleEnum];
 export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfDefaultLanguageCodeEnum];
@@ -397,16 +407,18 @@ export interface ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneO
 
 export const ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestAttributionsInnerOneOfAdditionalLocalizationsInnerLanguageCodeEnum];
@@ -468,16 +480,18 @@ export interface ApiV1AdministratorProjectCreatePostRequestContentLocalizationsI
 
 export const ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestContentLocalizationsInnerLanguageCodeEnum];
@@ -489,16 +503,18 @@ export interface ApiV1AdministratorProjectCreatePostRequestLanguageSettings {
 
 export const ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum = typeof ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum[keyof typeof ApiV1AdministratorProjectCreatePostRequestLanguageSettingsTargetLanguageCodesEnum];
@@ -523,16 +539,18 @@ export interface ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsIn
 
 export const ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum = typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerDefaultLanguageCodeEnum];
@@ -545,16 +563,18 @@ export interface ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsIn
 
 export const ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectDocumentListPost200ResponseDocumentsInnerLocalizationsInnerLanguageCodeEnum];
@@ -592,16 +612,18 @@ export interface ApiV1AdministratorProjectExternalOrganizationLocalizationUpdate
 
 export const ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum = typeof ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectExternalOrganizationLocalizationUpdatePostRequestLanguageCodeEnum];
@@ -674,16 +696,18 @@ export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListIn
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1RoleEnum];
 export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1DefaultLanguageCodeEnum];
@@ -699,16 +723,18 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLi
 
 export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerAttributionsInnerOneOf1AdditionalLocalizationsInnerLanguageCodeEnum];
@@ -765,16 +791,18 @@ export interface ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectLi
 
 export const ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum = typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum[keyof typeof ApiV1AdministratorProjectGetAllProjectsPost200ResponseProjectListInnerContentLocalizationsInnerLanguageCodeEnum];
@@ -2555,16 +2583,18 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1
 
 export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf1TranslationTargetLanguageCodeEnum];
@@ -2930,16 +2960,18 @@ export interface ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2
 
 export const ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPost200ResponseAnyOfContentAnyOf2TranslationTargetLanguageCodeEnum];
@@ -3104,16 +3136,18 @@ export interface ApiV1ContentTranslationRequestPostRequest {
 
 export const ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum = typeof ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum[keyof typeof ApiV1ContentTranslationRequestPostRequestTargetLanguageCodeEnum];
@@ -3412,16 +3446,18 @@ export interface ApiV1ConversationCreatePostRequestOneOfMultilingualSetting {
 
 export const ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationCreatePostRequestOneOfMultilingualSettingAdditionalLanguageCodesEnum];
@@ -3978,16 +4014,18 @@ export interface ApiV1ConversationEmailUpdateDevComparePost200ResponseOneOfMetad
 
 export const ApiV1ConversationEmailUpdateDevComparePost200ResponseOneOfMetadataLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateDevComparePost200ResponseOneOfMetadataLanguageEnum = typeof ApiV1ConversationEmailUpdateDevComparePost200ResponseOneOfMetadataLanguageEnum[keyof typeof ApiV1ConversationEmailUpdateDevComparePost200ResponseOneOfMetadataLanguageEnum];
@@ -4013,16 +4051,18 @@ export interface ApiV1ConversationEmailUpdateDevComparePostRequest {
 
 export const ApiV1ConversationEmailUpdateDevComparePostRequestLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateDevComparePostRequestLanguageEnum = typeof ApiV1ConversationEmailUpdateDevComparePostRequestLanguageEnum[keyof typeof ApiV1ConversationEmailUpdateDevComparePostRequestLanguageEnum];
@@ -4056,16 +4096,18 @@ export const ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfAttributionsE
 export type ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfAttributionsEnum = typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfAttributionsEnum[keyof typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfAttributionsEnum];
 export const ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfLanguageEnum = typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfLanguageEnum[keyof typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOfLanguageEnum];
@@ -4092,16 +4134,18 @@ export const ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1FixtureEnum 
 export type ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1FixtureEnum = typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1FixtureEnum[keyof typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1FixtureEnum];
 export const ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1LanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1LanguageEnum = typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1LanguageEnum[keyof typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf1LanguageEnum];
@@ -4127,16 +4171,18 @@ export const ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2FixtureEnum 
 export type ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2FixtureEnum = typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2FixtureEnum[keyof typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2FixtureEnum];
 export const ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2LanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2LanguageEnum = typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2LanguageEnum[keyof typeof ApiV1ConversationEmailUpdateDevPreviewPostRequestOneOf2LanguageEnum];
@@ -4261,16 +4307,18 @@ export interface ApiV1ConversationEmailUpdateDraftPreparePost200ResponseOneOfRev
 
 export const ApiV1ConversationEmailUpdateDraftPreparePost200ResponseOneOfReviewLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateDraftPreparePost200ResponseOneOfReviewLanguageEnum = typeof ApiV1ConversationEmailUpdateDraftPreparePost200ResponseOneOfReviewLanguageEnum[keyof typeof ApiV1ConversationEmailUpdateDraftPreparePost200ResponseOneOfReviewLanguageEnum];
@@ -4551,16 +4599,18 @@ export interface ApiV1ConversationEmailUpdateHistoryPreviewPostRequest {
 
 export const ApiV1ConversationEmailUpdateHistoryPreviewPostRequestLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationEmailUpdateHistoryPreviewPostRequestLanguageEnum = typeof ApiV1ConversationEmailUpdateHistoryPreviewPostRequestLanguageEnum[keyof typeof ApiV1ConversationEmailUpdateHistoryPreviewPostRequestLanguageEnum];
@@ -5707,16 +5757,18 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
 
 export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfContentLanguageMetadataDetectedDisplayLanguageCodeEnum];
@@ -5916,31 +5968,35 @@ export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerCo
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingModeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingModeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingModeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingLanguageCodeEnum];
 export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingDetectedLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingDetectedLanguageCodeEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingDetectedLanguageCodeEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfLanguageSettingDetectedLanguageCodeEnum];
@@ -6147,16 +6203,18 @@ export interface ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInn
 
 export const ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationFetchRecentPost200ResponseOneOfFeedItemListInnerConversationDataMetadataOneOfMultilingualSettingAdditionalLanguageCodesEnum];
@@ -6461,16 +6519,18 @@ export interface ApiV1ConversationGetForEditPost200ResponseOneOfProjectLanguageP
 
 export const ApiV1ConversationGetForEditPost200ResponseOneOfProjectLanguageProjectDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfProjectLanguageProjectDefaultLanguageCodeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectLanguageProjectDefaultLanguageCodeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectLanguageProjectDefaultLanguageCodeEnum];
@@ -6496,16 +6556,18 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerP
 export type ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerPremiumFeaturesEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerPremiumFeaturesEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerPremiumFeaturesEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerDefaultLanguageCodeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerDefaultLanguageCodeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerDefaultLanguageCodeEnum];
@@ -6531,16 +6593,18 @@ export const ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerA
 export type ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfPremiumFeaturesEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfPremiumFeaturesEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfPremiumFeaturesEnum];
 export const ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfDefaultLanguageCodeEnum = typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfDefaultLanguageCodeEnum[keyof typeof ApiV1ConversationGetForEditPost200ResponseOneOfProjectOptionsInnerAnyOfDefaultLanguageCodeEnum];
@@ -6768,16 +6832,18 @@ export interface ApiV1ConversationImportPostRequestMultilingualSetting {
 
 export const ApiV1ConversationImportPostRequestMultilingualSettingAdditionalLanguageCodesEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ConversationImportPostRequestMultilingualSettingAdditionalLanguageCodesEnum = typeof ApiV1ConversationImportPostRequestMultilingualSettingAdditionalLanguageCodesEnum[keyof typeof ApiV1ConversationImportPostRequestMultilingualSettingAdditionalLanguageCodesEnum];
@@ -7973,16 +8039,18 @@ export interface ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200Response
 
 export const ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayDisplayedLocaleEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayDisplayedLocaleEnum = typeof ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayDisplayedLocaleEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameGroupLabelsByFramePost200ResponseGroupDescriptionDisplayDisplayedLocaleEnum];
@@ -8501,16 +8569,18 @@ export interface ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequest
 
 export const ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequestFreshnessExpectedDescriptionLocalesEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequestFreshnessExpectedDescriptionLocalesEnum = typeof ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequestFreshnessExpectedDescriptionLocalesEnum[keyof typeof ApiV1OpinionFetchAnalysisFrameManifestByConversationPostRequestFreshnessExpectedDescriptionLocalesEnum];
@@ -8830,16 +8900,18 @@ export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInn
 
 export const ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum = typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum[keyof typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerDefaultLanguageCodeEnum];
@@ -8856,16 +8928,18 @@ export interface ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInn
 
 export const ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum = typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum[keyof typeof ApiV1ProjectCreateOptionsListPost200ResponseOneOfProjectListInnerLanguageSettingsTargetLanguageCodesEnum];
@@ -8915,16 +8989,18 @@ export const ApiV1ProjectDocumentAccessPostRequestAudienceEnum = {
 export type ApiV1ProjectDocumentAccessPostRequestAudienceEnum = typeof ApiV1ProjectDocumentAccessPostRequestAudienceEnum[keyof typeof ApiV1ProjectDocumentAccessPostRequestAudienceEnum];
 export const ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum = typeof ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum[keyof typeof ApiV1ProjectDocumentAccessPostRequestLanguageCodeEnum];
@@ -9122,16 +9198,18 @@ export interface ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInner {
 
 export const ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum = typeof ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseLanguageOptionsInnerValueEnum];
@@ -9291,16 +9369,18 @@ export interface ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInner {
 
 export const ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum = typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum[keyof typeof ApiV1ProjectPageFetchPost200ResponseProjectDocumentsInnerLanguageCodeEnum];
@@ -10339,16 +10419,18 @@ export const ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum =
 export type ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseSpokenLanguagesEnum];
 export const ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPost200ResponseDisplayLanguageEnum];
@@ -10359,16 +10441,18 @@ export interface ApiV1UserLanguagePreferencesGetPostRequest {
 
 export const ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesGetPostRequestCurrentDisplayLanguageEnum];
@@ -10520,16 +10604,18 @@ export const ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestSpokenLanguagesEnum];
 export const ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = {
     En: 'en',
-    Es: 'es',
-    Fr: 'fr',
-    ZhHant: 'zh-Hant',
-    ZhHans: 'zh-Hans',
-    Ja: 'ja',
     Ar: 'ar',
-    Fa: 'fa',
+    ZhHans: 'zh-Hans',
+    ZhHant: 'zh-Hant',
+    Fr: 'fr',
+    De: 'de',
     He: 'he',
+    Hi: 'hi',
+    Ja: 'ja',
     Ky: 'ky',
+    Fa: 'fa',
     Ru: 'ru',
+    Es: 'es',
 } as const;
 
 export type ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum = typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum[keyof typeof ApiV1UserLanguagePreferencesUpdatePostRequestDisplayLanguageEnum];

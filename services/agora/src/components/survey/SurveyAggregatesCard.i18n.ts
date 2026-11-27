@@ -7,7 +7,6 @@ export interface SurveyAggregatesCardTranslations {
   noSurvey: string;
   noRows: string;
   overallScope: string;
-  clusterScope: string;
   suppressed: string;
 }
 
@@ -22,8 +21,25 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "No survey aggregates are available for this conversation.",
     noRows: "No aggregate rows returned.",
     overallScope: "Overall",
-    clusterScope: "Groupe {label}",
     suppressed: "Suppressed",
+  },
+  de: {
+    title: "Umfrageergebnisse",
+    accessLevel: "Zugriffsebene: {level}",
+    rowsLabel: "Zeilen: {count}",
+    noSurvey: "Für diese Diskussion sind keine Umfrageergebnisse verfügbar.",
+    noRows: "Es wurden keine aggregierten Zeilen zurückgegeben.",
+    overallScope: "Gesamtbewertung",
+    suppressed: "Ausgeblendet",
+  },
+  hi: {
+    title: "सर्वेक्षण सारांश",
+    accessLevel: "पहुँच स्तर: {level}",
+    rowsLabel: "पंक्तियाँ: {count}",
+    noSurvey: "इस चर्चा के लिए कोई सर्वेक्षण सारांश उपलब्ध नहीं है।",
+    noRows: "कोई सारांश पंक्तियाँ वापस नहीं आई।",
+    overallScope: "कुल",
+    suppressed: "छिपाया गया",
   },
   ar: {
     title: "ملخصات الاستبيان",
@@ -32,7 +48,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "لا توجد ملخصات استبيان متاحة لهذه المحادثة.",
     noRows: "لم يتم إرجاع أي صفوف مجمعة.",
     overallScope: "إجمالي",
-    clusterScope: "المجموعة {label}",
     suppressed: "محجوب",
   },
   es: {
@@ -42,7 +57,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "No hay agregados de encuesta disponibles para esta conversación.",
     noRows: "No se devolvieron filas agregadas.",
     overallScope: "General",
-    clusterScope: "Grupo {label}",
     suppressed: "Suprimido",
   },
   fa: {
@@ -52,7 +66,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "هیچ تجمیع نظرسنجی‌ای برای این گفتگو در دسترس نیست.",
     noRows: "هیچ ردیف تجمیعی بازگردانده نشد.",
     overallScope: "کلی",
-    clusterScope: "خوشه {label}",
     suppressed: "پنهان‌شده",
   },
   fr: {
@@ -62,7 +75,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "Aucun agrégat de questionnaire n'est disponible pour cette conversation.",
     noRows: "Aucune ligne agrégée n'a été renvoyée.",
     overallScope: "Global",
-    clusterScope: "Cluster {label}",
     suppressed: "Masqué",
   },
   he: {
@@ -72,7 +84,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "אין נתוני צבירה של סקר זמינים לשיחה הזו.",
     noRows: "לא הוחזרו שורות צבירה.",
     overallScope: "כולל",
-    clusterScope: "אשכול {label}",
     suppressed: "מוסתר",
   },
   ja: {
@@ -82,7 +93,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "この会話では利用できるアンケート集計がありません。",
     noRows: "集計行は返されませんでした。",
     overallScope: "全体",
-    clusterScope: "クラスタ {label}",
     suppressed: "非表示",
   },
   ky: {
@@ -92,7 +102,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "Бул сүйлөшүү үчүн сурамжылоо жыйынтыктары жеткиликтүү эмес.",
     noRows: "Жыйынтык катарлары кайтарылган жок.",
     overallScope: "Жалпы",
-    clusterScope: "Кластер {label}",
     suppressed: "Жашырылган",
   },
   ru: {
@@ -102,7 +111,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "Для этой беседы агрегаты опроса недоступны.",
     noRows: "Агрегированные строки не возвращены.",
     overallScope: "Общее",
-    clusterScope: "Кластер {label}",
     suppressed: "Скрыто",
   },
   "zh-Hans": {
@@ -112,7 +120,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "这场对话没有可用的问卷汇总数据。",
     noRows: "未返回汇总行。",
     overallScope: "总体",
-    clusterScope: "群组 {label}",
     suppressed: "已隐藏",
   },
   "zh-Hant": {
@@ -122,7 +129,6 @@ export const surveyAggregatesCardTranslations: Record<
     noSurvey: "這場對話沒有可用的問卷彙總資料。",
     noRows: "未返回彙總列。",
     overallScope: "整體",
-    clusterScope: "群組 {label}",
     suppressed: "已隱藏",
   },
 };

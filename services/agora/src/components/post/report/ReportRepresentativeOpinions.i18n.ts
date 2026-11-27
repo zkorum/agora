@@ -21,6 +21,23 @@ export const reportRepresentativeOpinionsTranslations: Record<
     overall: "Overall",
     noStatements: "No representative statements available.",
   },
+  de: {
+    title: "Repräsentative Aussagen",
+    groupSubtitle:
+      "Bei diesen Aussagen unterscheidet sich das Abstimmungsverhalten dieser Gruppe von dem der anderen:",
+    participants: "Teilnehmende",
+    statement: "Aussage",
+    overall: "Gesamtbewertung",
+    noStatements: "Keine repräsentativen Aussagen verfügbar.",
+  },
+  hi: {
+    title: "प्रतिनिधि कथन",
+    groupSubtitle: "इन कथनों पर इस समूह के मत दूसरे समूहों से अलग रहे:",
+    participants: "प्रतिभागी",
+    statement: "कथन",
+    overall: "कुल",
+    noStatements: "कोई प्रतिनिधि कथन उपलब्ध नहीं है।",
+  },
   fr: {
     title: "Propositions représentatives",
     groupSubtitle:

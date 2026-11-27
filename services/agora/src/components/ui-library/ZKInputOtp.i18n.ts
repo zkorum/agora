@@ -13,6 +13,14 @@ export const zkInputOtpTranslations: Record<
     codeLabel: "Verification code",
     characterLabel: "Verification code, character {index} of {total}",
   },
+  de: {
+    codeLabel: "Verifizierungscode",
+    characterLabel: "Verifizierungscode, Zeichen {index} von {total}",
+  },
+  hi: {
+    codeLabel: "सत्यापन कोड",
+    characterLabel: "सत्यापन कोड, {total} का अक्षर {index}",
+  },
   fr: {
     codeLabel: "Code de vérification",
     characterLabel: "Code de vérification, caractère {index} sur {total}",

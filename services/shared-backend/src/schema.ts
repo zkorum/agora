@@ -24,7 +24,7 @@ import {
 import { gt, isNotNull, isNull, type SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm/sql";
 import {
-    ZodSupportedDisplayLanguageCodes,
+    type ZodSupportedDisplayLanguageCodes,
     ZodSupportedSpokenLanguageCodes,
 } from "@/shared/languages.js";
 import { projectOrganizationAttributionRoleValues } from "@/shared/types/project.js";
@@ -633,7 +633,22 @@ export const languageDetectionProviderEnum = pgEnum(
 );
 export const displayLanguageCodeEnum = pgEnum(
     "display_language_code",
-    ZodSupportedDisplayLanguageCodes.enum,
+    // PostgreSQL enum order is append-only; pickers use the display order instead.
+    {
+        en: "en",
+        es: "es",
+        fr: "fr",
+        "zh-Hant": "zh-Hant",
+        "zh-Hans": "zh-Hans",
+        ja: "ja",
+        ar: "ar",
+        fa: "fa",
+        he: "he",
+        ky: "ky",
+        ru: "ru",
+        de: "de",
+        hi: "hi",
+    } satisfies typeof ZodSupportedDisplayLanguageCodes.enum,
 );
 export const projectDocumentAudienceEnum = pgEnum("project_document_audience", [
     "participant",

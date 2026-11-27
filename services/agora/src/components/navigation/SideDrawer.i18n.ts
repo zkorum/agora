@@ -19,6 +19,20 @@ export const sideDrawerTranslations: Record<
     profile: "Profile",
     settings: "Settings",
   },
+  de: {
+    home: "Startseite",
+    explore: "Entdecken",
+    dings: "Dings",
+    profile: "Profil",
+    settings: "Einstellungen",
+  },
+  hi: {
+    home: "मुखपृष्ठ",
+    explore: "खोजें",
+    dings: "Dings",
+    profile: "प्रोफ़ाइल",
+    settings: "सेटिंग्स",
+  },
   ar: {
     home: "الرئيسية",
     explore: "استكشاف",

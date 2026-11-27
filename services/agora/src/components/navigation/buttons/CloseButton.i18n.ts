@@ -9,6 +9,8 @@ export const closeButtonTranslations: Record<
   CloseButtonTranslations
 > = {
   en: { close: "Close" },
+  de: { close: "Schließen" },
+  hi: { close: "बंद करें" },
   ar: { close: "إغلاق" },
   es: { close: "Cerrar" },
   fa: { close: "بستن" },

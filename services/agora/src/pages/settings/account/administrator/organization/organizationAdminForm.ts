@@ -1,8 +1,6 @@
 import {
-  type DisplayLanguageMetadata,
-  type LanguageMetadata,
   type SupportedDisplayLanguageCodes,
-  SupportedSpokenLanguageMetadataList,
+  SupportedDisplayLanguageMetadataList,
   ZodSupportedDisplayLanguageCodes,
 } from "src/shared/languages";
 import {
@@ -36,15 +34,9 @@ export interface OrganizationCreateFormState {
   websiteUrl: string;
 }
 
-function isDisplayLanguage(
-  language: LanguageMetadata
-): language is DisplayLanguageMetadata {
-  return language.displaySupported;
-}
-
 export const displayLanguageOptions: Array<
   SelectOption<SupportedDisplayLanguageCodes>
-> = SupportedSpokenLanguageMetadataList.filter(isDisplayLanguage).map(
+> = SupportedDisplayLanguageMetadataList.map(
   (language) => ({
     label: `${language.name} (${language.code})`,
     value: language.code,

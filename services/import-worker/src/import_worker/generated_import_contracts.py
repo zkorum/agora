@@ -27,16 +27,18 @@ class PreferredOpinionGroupCount(RootModel[int]):
 
 class ManualTargetLanguageCode(StrEnum):
     en = "en"
-    es = "es"
-    fr = "fr"
-    zh_hant = "zh-Hant"
-    zh_hans = "zh-Hans"
-    ja = "ja"
     ar = "ar"
-    fa = "fa"
+    zh_hans = "zh-Hans"
+    zh_hant = "zh-Hant"
+    fr = "fr"
+    de = "de"
     he = "he"
+    hi = "hi"
+    ja = "ja"
     ky = "ky"
+    fa = "fa"
     ru = "ru"
+    es = "es"
 
 
 class LanguageTargetPolicy(BaseModel):

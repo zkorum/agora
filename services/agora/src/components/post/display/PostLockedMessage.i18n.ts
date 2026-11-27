@@ -16,6 +16,20 @@ export const postLockedMessageTranslations: Record<
       "This conversation was closed by the facilitator. New statements and votes cannot be posted.",
     editButton: "Edit",
   },
+  de: {
+    lockedMessage:
+      'Beitrag ist als "{reason}" gesperrt. Neue Aussagen können nicht gepostet werden.',
+    closedMessage:
+      "Diese Diskussion wurde von der Moderationsleitung geschlossen. Neue Aussagen und Stimmen können nicht gepostet werden.",
+    editButton: "Bearbeiten",
+  },
+  hi: {
+    lockedMessage:
+      'पोस्ट "{reason}" के रूप में लॉक कर दी गई है। नए कथन पोस्ट नहीं किए जा सकते।',
+    closedMessage:
+      "इस चर्चा को संचालक द्वारा बंद कर दिया गया है। नए कथन और मत पोस्ट नहीं किए जा सकते।",
+    editButton: "संपादित करें",
+  },
   ar: {
     lockedMessage: 'تم قفل المنشور بسبب "{reason}". لا يمكن نشر مقترحات جديدة.',
     closedMessage:

@@ -19,6 +19,22 @@ export const aiLabelingOptionsDialogTranslations: Record<
     aiOffDescription:
       "Do not use an LLM to create labels and summaries for opinion groups.",
   },
+  de: {
+    aiOnTitle: "LLM an",
+    aiOnDescription:
+      "Verwenden Sie ein LLM, um Bezeichnungen und Zusammenfassungen für Meinungsgruppen zu erstellen.",
+    aiOffTitle: "LLM aus",
+    aiOffDescription:
+      "Verwenden Sie kein LLM, um Bezeichnungen und Zusammenfassungen für Meinungsgruppen zu erstellen.",
+  },
+  hi: {
+    aiOnTitle: "LLM चालू",
+    aiOnDescription:
+      "मत समूहों के लिए लेबल और सारांश बनाने हेतु LLM का उपयोग करें।",
+    aiOffTitle: "LLM बंद",
+    aiOffDescription:
+      "मत समूहों के लिए लेबल और सारांश बनाने हेतु LLM का उपयोग न करें।",
+  },
   ar: {
     aiOnTitle: "LLM مفعّل",
     aiOnDescription:

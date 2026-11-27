@@ -20,6 +20,26 @@ export const welcomeTranslations: Record<
     reportUserContent: "A user account is required to report user content.",
     voting: "You will be returned to this conversation when you return.",
   },
+  de: {
+    newOpinion:
+      "Ihr Entwurf der schriftlichen Aussage wird beim Zurückkehren wiederhergestellt.",
+    newConversation:
+      "Ihr Entwurf der schriftlichen Diskussion wird beim Zurückkehren wiederhergestellt.",
+    agreement:
+      "Sie werden zu dieser Aussage zurückgeleitet, wenn Sie zurückkehren.",
+    reportUserContent:
+      "Ein Benutzerkonto ist erforderlich, um Benutzerinhalte zu melden.",
+    voting:
+      "Sie werden zu dieser Diskussion zurückgeleitet, wenn Sie zurückkehren.",
+  },
+  hi: {
+    newOpinion: "वापस आने पर आपका लिखित कथन मसौदा बहाल हो जाएगा।",
+    newConversation: "वापस आने पर आपकी लिखित चर्चा का मसौदा बहाल हो जाएगा।",
+    agreement: "वापस आने पर आपको इस कथन पर वापस लाया जाएगा।",
+    reportUserContent:
+      "उपयोगकर्ता सामग्री की रिपोर्ट करने के लिए एक उपयोगकर्ता खाता आवश्यक है।",
+    voting: "वापस आने पर आपको इस चर्चा पर वापस लाया जाएगा।",
+  },
   ar: {
     newOpinion: "سيتم استعادة مسودة مقترحك المكتوب عند عودتك.",
     newConversation: "سيتم استعادة مسودة محادثتك المكتوبة عند عودتك.",

@@ -35,6 +35,39 @@ export const conversationProjectSettingsTranslations: Record<
   ConversationProjectSettingsTranslations
 > = {
   en: englishTranslations,
+  de: {
+    projectLabel: "Projekt",
+    noProjectLabel: "Kein Projekt",
+    projectSelectionDescription:
+      "Wählen Sie das Projekt aus der Liste, zu dem diese Diskussion gehört, oder wählen Sie kein Projekt.",
+    projectLanguagesDescription:
+      "Wählen Sie, ob diese Diskussion die Projekteinstellungen für die Sprache erben oder diese überschreiben soll.",
+    inheritProjectLanguagesTitle: "Sprachen des Projekts übernehmen",
+    inheritProjectLanguagesDescription:
+      "Verwenden Sie die Sprache und die Übersetzungseinstellungen des ausgewählten Projekts.",
+    inheritedProjectLanguagesDescription:
+      "Verwenden Sie die Spracheinstellungen des ausgewählten Projekts.",
+    customLanguagesDescription:
+      "Benutzerdefinierte Spracheinstellungen für diese Diskussion.",
+    inheritSummary: "Übernehmen: {languages}",
+    overrideSummary: "Überschreiben: {languages}",
+  },
+  hi: {
+    projectLabel: "परियोजना",
+    noProjectLabel: "कोई परियोजना नहीं",
+    projectSelectionDescription:
+      "इस चर्चा से संबंधित सूचीबद्ध परियोजना चुनें, या कोई परियोजना न चुनें।",
+    projectLanguagesDescription:
+      "चुनें कि क्या इस चर्चा को परियोजना भाषा सेटिंग्स विरासत में लेनी चाहिए या उन्हें ओवरराइड करना चाहिए।",
+    inheritProjectLanguagesTitle: "परियोजना की भाषाएँ विरासत में लें",
+    inheritProjectLanguagesDescription:
+      "चयनित परियोजना की भाषा और अनुवाद सेटिंग्स का उपयोग करें।",
+    inheritedProjectLanguagesDescription:
+      "चयनित परियोजना की भाषा सेटिंग्स का उपयोग करें।",
+    customLanguagesDescription: "इस चर्चा के लिए कस्टम भाषा सेटिंग्स।",
+    inheritSummary: "विरासत में लें: {languages}",
+    overrideSummary: "ओवरराइड करें: {languages}",
+  },
   es: {
     projectLabel: "Proyecto",
     noProjectLabel: "Sin proyecto",

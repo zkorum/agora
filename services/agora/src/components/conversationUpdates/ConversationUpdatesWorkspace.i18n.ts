@@ -107,6 +107,132 @@ export const conversationUpdatesWorkspaceTranslations: Record<
     ownerCopyUnavailable:
       "Required conversation owner copies cannot currently be delivered.",
   },
+  de: {
+    introTitle:
+      "Halten Sie die Teilnehmenden mit der Arbeit verbunden, der sie beigetreten sind",
+    introDescription:
+      "Teilen Sie ein fokussiertes Update zu den ausgewählten Diskussionen, testen Sie die genaue E-Mail und überprüfen Sie akzeptierte Sendungen an einem Ort.",
+    tryAgain: "Erneut versuchen",
+    verifyEmailBanner:
+      "Verifizieren Sie Ihre E-Mail-Adresse, bevor Sie ein E-Mail-Update verfassen oder testen. Der Verlauf bleibt verfügbar.",
+    verifyEmail: "E-Mail verifizieren",
+    retry: "Erneut versuchen",
+    compose: "Verfassen",
+    history: "Verlauf",
+    loadMore: "Mehr laden",
+    sendDialogTitle: "Dieses Update senden?",
+    sendUpdate: "Update senden",
+    cancel: "Abbrechen",
+    audienceSummary: "Derzeit berechtigte Teilnehmende {count}",
+    sendWarning:
+      "Erforderliche Kopien des Besitzers werden zuerst gesendet. Die Zustellung an Teilnehmende kann nicht nach Akzeptanz des Updates storniert werden.",
+    verifyDialogTitle: "Ihre E-Mail verifizieren?",
+    continueVerification: "Mit Verifizierung fortfahren",
+    notNow: "Nicht jetzt",
+    verifyDialogDescription:
+      "Zur Erstellung von Aktualisierungen und zum Empfang der exakten Test-E-Mail vor dem Senden ist eine verifizierte E-Mail-Adresse erforderlich. Sie werden nach der Verifizierung hierher zurückgeleitet.",
+    workspaceUnavailable:
+      "E-Mail-Aktualisierungen sind momentan nicht verfügbar.",
+    audienceEstimateUnavailable:
+      "Die Anzahl der berechtigten Empfänger konnte nicht geladen werden.",
+    historyUnavailable:
+      "Die Historie der E-Mail-Aktualisierungen ist momentan nicht verfügbar.",
+    moreHistoryUnavailable:
+      "Weitere Historie der E-Mail-Aktualisierungen konnte nicht geladen werden.",
+    testAccepted: "Test für diese exakte E-Mail-Version akzeptiert.",
+    testDeliveryRetryable:
+      "Die Testzustellung ist fehlgeschlagen, da der E-Mail-Anbieter sie vorübergehend abgelehnt hat.",
+    testDeliveryAuthorization:
+      "Die Test-E-Mail wurde nicht gesendet, da das Ziel oder die Sendeautorisierung nicht mehr verfügbar ist.",
+    testDeliveryPermanent:
+      "Die Testzustellung ist fehlgeschlagen, da der E-Mail-Anbieter sie dauerhaft abgelehnt hat.",
+    testDeliveryUnknown:
+      "Die Testzustellung ist aus unbekannten Gründen fehlgeschlagen.",
+    contextNotFound:
+      "Dieser Kontext der E-Mail-Aktualisierungen konnte nicht gefunden werden.",
+    scopeUnavailable:
+      "Der ausgewählte Umfang der E-Mail-Aktualisierungen ist nicht mehr verfügbar.",
+    conversationsUnavailable:
+      "Eine oder mehrere ausgewählte Diskussionen sind in diesem Umfang nicht mehr verfügbar.",
+    sendingDisabled:
+      "E-Mail-Aktualisierungen sind für diese Auswahl derzeit deaktiviert.",
+    contentInvalid:
+      "Das Thema oder die Nachricht ist ungültig. Bitte überprüfen Sie den Inhalt und versuchen Sie es erneut.",
+    missingContactEmail:
+      "Fügen Sie bitte eine Kontakt-E-Mail einer Teilnehmenden hinzu, bevor Sie einen Test senden.",
+    verifyBeforeTest:
+      "Bitte verifizieren Sie eine E-Mail-Adresse, bevor Sie eine Test-E-Mail senden.",
+    noEligibleParticipants:
+      "Derzeit sind keine Teilnehmenden berechtigt, diese E-Mail zu erhalten.",
+    successfulTestNotFound:
+      "Der erfolgreiche Test konnte nicht gefunden werden. Senden Sie einen weiteren Test, bevor Sie es erneut versuchen.",
+    testNotAccepted:
+      "Der E-Mail-Anbieter hat den Test nicht akzeptiert. Senden Sie einen weiteren Test, bevor Sie es erneut versuchen.",
+    testUsed:
+      "Dieser Test hat bereits ein Update autorisiert. Senden Sie einen weiteren Test, bevor Sie es erneut versuchen.",
+    deliveryAlreadyActive:
+      "Eine andere E-Mail-Aktualisung ist für dieses Projekt bereits aktiv.",
+    ownerCopyUnavailable:
+      "Die erforderlichen Kopien für die Diskussionsleitung können derzeit nicht bereitgestellt werden.",
+  },
+  hi: {
+    introTitle: "प्रतिभागियों को उस काम से जोड़े रखें जिसमें उन्होंने भाग लिया",
+    introDescription:
+      "चयनित चर्चाओं के बारे में एक केंद्रित अपडेट साझा करें, सटीक ईमेल का परीक्षण करें, और स्वीकृत प्रेषण की समीक्षा एक ही स्थान पर करें।",
+    tryAgain: "फिर से प्रयास करें",
+    verifyEmailBanner:
+      "ईमेल अपडेट बनाने या परीक्षण करने से पहले अपना ईमेल पता सत्यापित करें। इतिहास उपलब्ध रहेगा।",
+    verifyEmail: "ईमेल सत्यापित करें",
+    retry: "फिर कोशिश करें",
+    compose: "लिखें",
+    history: "इतिहास",
+    loadMore: "और लोड करें",
+    sendDialogTitle: "यह अपडेट भेजें?",
+    sendUpdate: "अपडेट भेजें",
+    cancel: "रद्द करें",
+    audienceSummary: "वर्तमान में {count} पात्र प्राप्तकर्ता",
+    sendWarning:
+      "आवश्यक मालिक प्रतियाँ पहले भेजी जाती हैं। अपडेट स्वीकार होने के बाद प्रतिभागी वितरण रद्द नहीं किया जा सकता।",
+    verifyDialogTitle: "क्या आप अपना ईमेल सत्यापित करना चाहते हैं?",
+    continueVerification: "सत्यापन जारी रखें",
+    notNow: "अभी नहीं",
+    verifyDialogDescription:
+      "अपडेट लिखने और भेजने से पहले सटीक टेस्ट ईमेल प्राप्त करने के लिए एक सत्यापित ईमेल आवश्यक है। सत्यापन के बाद आप यहाँ वापस आएंगे।",
+    workspaceUnavailable: "ईमेल अपडेट अभी उपलब्ध नहीं हैं।",
+    audienceEstimateUnavailable:
+      "पात्र प्राप्तकर्ता की संख्या लोड नहीं की जा सकी।",
+    historyUnavailable: "ईमेल अपडेट का इतिहास अभी उपलब्ध नहीं है।",
+    moreHistoryUnavailable: "अधिक ईमेल अपडेट का इतिहास लोड नहीं किया जा सका।",
+    testAccepted: "इस सटीक ईमेल संस्करण के लिए टेस्ट स्वीकार कर लिया गया है।",
+    testDeliveryRetryable:
+      "टेस्ट डिलीवरी विफल हो गई क्योंकि ईमेल प्रदाता ने अस्थायी रूप से इसे अस्वीकार कर दिया।",
+    testDeliveryAuthorization:
+      "टेस्ट ईमेल नहीं भेजा गया क्योंकि उसका गंतव्य या भेजने का प्राधिकरण अब उपलब्ध नहीं था।",
+    testDeliveryPermanent:
+      "टेस्ट डिलीवरी विफल हो गई क्योंकि ईमेल प्रदाता ने इसे स्थायी रूप से अस्वीकार कर दिया।",
+    testDeliveryUnknown: "अज्ञात कारण से टेस्ट डिलीवरी विफल हो गई।",
+    contextNotFound: "इस ईमेल अपडेट संदर्भ को नहीं ढूंढा जा सका।",
+    scopeUnavailable: "चयनित ईमेल अपडेट दायरा अब उपलब्ध नहीं है।",
+    conversationsUnavailable:
+      "इस दायरे में एक या अधिक चयनित चर्चाएँ अब उपलब्ध नहीं हैं।",
+    sendingDisabled: "इस चयन के लिए ईमेल अपडेट वर्तमान में अक्षम हैं।",
+    contentInvalid:
+      "विषय या संदेश अमान्य है। सामग्री की समीक्षा करें और पुनः प्रयास करें।",
+    missingContactEmail: "टेस्ट भेजने से पहले प्रतिभागी का संपर्क ईमेल जोड़ें।",
+    verifyBeforeTest: "टेस्ट ईमेल भेजने से पहले एक ईमेल पता सत्यापित करें।",
+    noEligibleParticipants:
+      "वर्तमान में इस ईमेल प्राप्त करने के लिए कोई प्रतिभागी योग्य नहीं है।",
+    successfulTestNotFound:
+      "सफल टेस्ट नहीं मिल सका। पुनः प्रयास करने से पहले एक और टेस्ट भेजें।",
+    testNotAccepted:
+      "ईमेल प्रदाता ने टेस्ट स्वीकार नहीं किया है। पुनः प्रयास करने से पहले एक और टेस्ट भेजें।",
+    testUsed:
+      "इस टेस्ट ने पहले ही एक अपडेट को अधिकृत कर दिया है। पुनः प्रयास करने से पहले एक और टेस्ट भेजें।",
+    deliveryAlreadyActive:
+      "इस प्रोजेक्ट के लिए पहले से ही एक ईमेल अपडेट डिलीवरी सक्रिय है।",
+    ownerCopyUnavailable:
+      "आवश्यक चर्चा स्वामी की प्रतियां वर्तमान में प्रदान नहीं की जा सकती हैं।",
+  },
   es: {
     introTitle:
       "Mantenga conectados a los participantes con el trabajo al que se unieron",

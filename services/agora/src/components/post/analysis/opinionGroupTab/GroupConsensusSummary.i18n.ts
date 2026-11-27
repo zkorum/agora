@@ -19,6 +19,22 @@ export const groupConsensusSummaryTranslations: Record<
     aiSummaryPendingDescription:
       "LLM-generated details for this group are still being generated. Agora shows its neutral group label for now and retries in the background.",
   },
+  de: {
+    groupSummaryTitle: "Gruppenzusammenfassung",
+    aiSummaryTitle: "LLM-Zusammenfassung",
+    aiSummaryDescription:
+      "Wir verwenden Mistral Large, ein LLM-Modell, um die Zusammenfassung und die Bezeichnungen für jede Konsensgruppe zu generieren.",
+    aiSummaryPendingDescription:
+      "Die vom LLM generierten Details für diese Gruppe werden noch erstellt. Agora zeigt vorerst das neutrale Gruppennamen an und versucht im Hintergrund erneut.",
+  },
+  hi: {
+    groupSummaryTitle: "समूह सारांश",
+    aiSummaryTitle: "LLM सारांश",
+    aiSummaryDescription:
+      "हम प्रत्येक सहमति समूह के लिए सारांश और लेबल उत्पन्न करने हेतु Mistral Large, एक LLM मॉडल का उपयोग करते हैं।",
+    aiSummaryPendingDescription:
+      "इस समूह के लिए LLM-जनरेटेड विवरण अभी भी उत्पन्न हो रहे हैं। Agora अभी अपना तटस्थ समूह लेबल दिखाता है और पृष्ठभूमि में पुनः प्रयास करता है।",
+  },
   ar: {
     groupSummaryTitle: "ملخص المجموعة",
     aiSummaryTitle: "ملخص LLM",

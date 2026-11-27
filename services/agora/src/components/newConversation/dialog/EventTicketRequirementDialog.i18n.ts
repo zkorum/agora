@@ -19,6 +19,22 @@ export const eventTicketRequirementDialogTranslations: Record<
     requiresEventTicketDescription:
       "Only verified event ticket holders can vote and contribute statements",
   },
+  de: {
+    noVerificationTitle: "Keine Verifizierung",
+    noVerificationDescription:
+      "Jede Teilnehmende kann ohne Event-Ticket-Verifizierung teilnehmen",
+    requiresEventTicketTitle: "Event-Ticket erforderlich",
+    requiresEventTicketDescription:
+      "Nur verifizierte Inhaber eines Event-Tickets können abstimmen und Aussagen beitragen",
+  },
+  hi: {
+    noVerificationTitle: "कोई सत्यापन नहीं",
+    noVerificationDescription:
+      "कोई भी इवेंट टिकट सत्यापन के बिना भाग ले सकता है",
+    requiresEventTicketTitle: "इवेंट टिकट आवश्यक",
+    requiresEventTicketDescription:
+      "केवल सत्यापित इवेंट टिकट धारक ही वोट कर सकते हैं और कथन दे सकते हैं",
+  },
   ar: {
     noVerificationTitle: "بدون تحقق",
     noVerificationDescription:

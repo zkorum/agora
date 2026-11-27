@@ -10,13 +10,13 @@
       <h2 class="section-title">
         <span class="group-name">
           <template v-if="useLetterCodes">
-            {{ formatClusterLabel(entry.key, false)
+            {{ getClusterLetter(entry.key)
             }}<template v-if="entry.cluster.aiLabel">
               · {{ entry.cluster.aiLabel }}</template
             >
           </template>
           <template v-else>
-            {{ entry.cluster.aiLabel || formatClusterLabel(entry.key, true) }}
+            {{ entry.cluster.aiLabel || formatGroupLabel(getClusterLetter(entry.key)) }}
           </template>
         </span>
         <span class="group-meta">
@@ -49,14 +49,14 @@
               }"
             >
               <template v-if="useLetterCodes">
-                {{ formatClusterLabel(clusterEntry.key, false) }} ({{
+                {{ getClusterLetter(clusterEntry.key) }} ({{
                   formatAmount(clusterEntry.cluster.numUsers)
                 }})
               </template>
               <template v-else>
                 {{
                   clusterEntry.cluster.aiLabel ||
-                  formatClusterLabel(clusterEntry.key, true)
+                  formatGroupLabel(getClusterLetter(clusterEntry.key))
                 }}
                 ({{ formatAmount(clusterEntry.cluster.numUsers) }})
               </template>
@@ -145,6 +145,7 @@
 
 <script setup lang="ts">
 import AnalysisOpinionText from "src/components/post/analysis/common/AnalysisOpinionText.vue";
+import { useGroupLabel } from "src/composables/opinion/useGroupLabel";
 import { useComponentI18n } from "src/composables/ui/useComponentI18n";
 import type {
   AnalysisOpinionItem,
@@ -153,7 +154,7 @@ import type {
 } from "src/shared/types/zod";
 import { calculatePercentage } from "src/shared/util";
 import { formatAmount, formatPercentage } from "src/utils/common";
-import { formatClusterLabel } from "src/utils/component/opinion";
+import { getClusterLetter } from "src/utils/component/opinion";
 import { REPORT_MAX_REPRESENTATIVE_ITEMS } from "src/utils/component/report/reportData";
 import { computed } from "vue";
 
@@ -179,6 +180,7 @@ const props = withDefaults(
   }
 );
 
+const formatGroupLabel = useGroupLabel();
 const { t } = useComponentI18n<ReportRepresentativeOpinionsTranslations>(
   reportRepresentativeOpinionsTranslations
 );

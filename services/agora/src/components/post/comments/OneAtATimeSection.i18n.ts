@@ -39,6 +39,47 @@ export const oneAtATimeTranslations: Record<
       "A statement you voted on is no longer available. It was skipped.",
     votingUnavailable: "Voting is no longer available in this conversation.",
   },
+  de: {
+    remaining: "{count} verbleibend",
+    caughtUp: "Sie sind alle auf dem neuesten Stand!",
+    caughtUpDescription:
+      "Vielen Dank für Ihren Beitrag. Neue Aussagen werden hier erscheinen.",
+    loadError: "Die nächste Aussage konnte nicht geladen werden",
+    retry: "Erneut versuchen",
+    statementSubmitted: "Ihre Aussage wurde erfolgreich eingereicht.",
+    undoFailed:
+      "Ihre Stimme konnte nicht rückgängig gemacht werden. Bitte versuchen Sie es erneut.",
+    finishingSaving: "Speichern wird abgeschlossen…",
+    recoveryError:
+      "Die Aussagen, die noch einmal betrachtet werden müssen, konnten nicht geladen werden.",
+    voteChanged:
+      "Diese Aussage wurde geändert. Ihre vorherige Stimme wurde nicht gespeichert. Bitte überprüfen Sie sie und stimmen Sie erneut ab.",
+    voteUnconfirmed:
+      "Wir konnten Ihre vorherige Stimme zu dieser Aussage nicht bestätigen. Bitte wählen Sie erneut.",
+    voteUnavailable:
+      "Eine von Ihnen bewertete Aussage ist nicht mehr verfügbar. Sie wurde übersprungen.",
+    votingUnavailable:
+      "Die Abstimmung ist in dieser Diskussion nicht mehr möglich.",
+  },
+  hi: {
+    remaining: "{count} शेष",
+    caughtUp: "आप सब अद्यतन हैं!",
+    caughtUpDescription: "योगदान के लिए धन्यवाद। नए कथन यहाँ दिखाई देंगे।",
+    loadError: "अगला कथन लोड नहीं किया जा सका",
+    retry: "फिर से प्रयास करें",
+    statementSubmitted: "आपका कथन सफलतापूर्वक जमा कर दिया गया है।",
+    undoFailed: "आपके मत को पूर्ववत नहीं किया जा सका। कृपया पुनः प्रयास करें।",
+    finishingSaving: "सहेजना समाप्त हो रहा है…",
+    recoveryError:
+      "जिन कथनों को दोबारा देखने की आवश्यकता है, उन्हें लोड नहीं किया जा सका।",
+    voteChanged:
+      "यह कथन बदल गया है। आपका पिछला मत सहेजा नहीं गया। कृपया इसकी समीक्षा करें और फिर से मतदान करें।",
+    voteUnconfirmed:
+      "हम इस कथन पर आपके पिछले मत की पुष्टि नहीं कर सके। कृपया फिर से चुनें।",
+    voteUnavailable:
+      "जिस कथन पर आपने मतदान किया था, वह अब उपलब्ध नहीं है। उसे छोड़ दिया गया।",
+    votingUnavailable: "इस चर्चा में मतदान अब उपलब्ध नहीं है।",
+  },
   fr: {
     remaining: "{count} restantes",
     caughtUp: "Vous êtes à jour !",

@@ -9,6 +9,8 @@ export const notFoundTranslations: Record<
   NotFoundTranslations
 > = {
   en: { pageNotFound: "Page not found." },
+  de: { pageNotFound: "Seite nicht gefunden." },
+  hi: { pageNotFound: "पृष्ठ नहीं मिला।" },
   ar: { pageNotFound: "الصفحة غير موجودة." },
   es: { pageNotFound: "Página no encontrada." },
   fa: { pageNotFound: "صفحه یافت نشد." },
